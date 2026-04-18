@@ -1,125 +1,168 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>إدارة الفرق</title>
-  <link rel="stylesheet" href="admin.css" />
+<meta charset="UTF-8">
+<title>إدارة الفرق</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<style>
+body {
+  font-family: Arial;
+  background: #0b1c2c;
+  color: white;
+  padding: 20px;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+}
+
+.card {
+  background: #132f4c;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+input, select, button {
+  padding: 10px;
+  margin: 5px;
+  border-radius: 6px;
+  border: none;
+}
+
+button {
+  background: #3a8cff;
+  color: white;
+  cursor: pointer;
+}
+
+.counter {
+  margin-top: 10px;
+  color: #ffd54f;
+}
+</style>
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-icon">👥</div>
-      <div>
-        <h1>إدارة الفرق</h1>
-        <p>إضافة الفرق وربطها بالبطولة النشطة مباشرة من GitHub</p>
-      </div>
-    </div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap">
-      <a class="secondary-link" href="./admin-home.html">العودة إلى لوحة الأدمن</a>
-    </div>
-  </header>
+<div class="container">
 
-  <main class="container">
-    <section class="note">
-      <h3>تنبيه مهم</h3>
-      <p>
-        هذه الصفحة تعتمد على جدول <strong>teams</strong> وتفترض وجود الأعمدة التالية على الأقل:
-        <strong>name, short_name, logo_url, color_primary, color_secondary, notes, tournament_id, is_active</strong>.
-        إذا كانت بعض الأعمدة غير موجودة في مشروعك، استخدم كود SQL المرفق لإضافتها دون حذف البيانات الحالية.
-      </p>
-    </section>
+<h2>إدارة الفرق</h2>
 
-    <section class="layout-2">
-      <div class="panel">
-        <h3>نموذج الفريق</h3>
-        <form id="team-form">
-          <div class="form-grid">
-            <div class="field">
-              <label for="team-name">اسم الفريق</label>
-              <input id="team-name" name="name" required placeholder="مثال: المجد" />
-            </div>
+<div class="card">
+  <label>اختر البطولة</label><br>
+  <select id="tournamentSelect"></select>
+</div>
 
-            <div class="field">
-              <label for="short-name">الاسم المختصر</label>
-              <input id="short-name" name="short_name" placeholder="مثال: MJD" />
-            </div>
+<div class="card">
+  <h3>إضافة فريق</h3>
 
-            <div class="field">
-              <label for="logo-url">رابط الشعار</label>
-              <input id="logo-url" name="logo_url" placeholder="https://..." />
-            </div>
+  <input id="teamName" placeholder="اسم الفريق">
+  <button onclick="addTeam()">إضافة</button>
 
-            <div class="field">
-              <label for="tournament-select">البطولة</label>
-              <select id="tournament-select" name="tournament_id"></select>
-            </div>
+  <div class="counter" id="counter"></div>
+</div>
 
-            <div class="field">
-              <label for="color-primary">اللون الأساسي</label>
-              <input id="color-primary" name="color_primary" placeholder="مثال: أزرق" />
-            </div>
+<div class="card">
+  <h3>الفرق الحالية</h3>
+  <ul id="teamsList"></ul>
+</div>
 
-            <div class="field">
-              <label for="color-secondary">اللون الاحتياطي</label>
-              <input id="color-secondary" name="color_secondary" placeholder="مثال: أبيض" />
-            </div>
+</div>
 
-            <div class="field full">
-              <label for="team-notes">ملاحظات</label>
-              <textarea id="team-notes" name="notes" placeholder="أي ملاحظات خاصة بالفريق"></textarea>
-            </div>
+<script>
+const supabase = supabase.createClient(
+  "https://YOUR_URL.supabase.co",
+  "YOUR_ANON_KEY"
+);
 
-            <div class="field full">
-              <label><input id="is-active" name="is_active" type="checkbox" checked style="width:auto;margin-left:8px" /> الفريق نشط</label>
-            </div>
-          </div>
+let selectedTournament = null;
+let maxTeams = 0;
 
-          <div class="actions">
-            <button class="button" type="submit">حفظ الفريق</button>
-            <button class="secondary-link" type="button" id="reset-form">تفريغ الحقول</button>
-            <button class="secondary-link" type="button" id="refresh-list">تحديث القائمة</button>
-          </div>
+// تحميل البطولات
+async function loadTournaments() {
+  const { data } = await supabase.from("tournaments").select("*");
 
-          <div id="form-status" class="status-line"></div>
-        </form>
-      </div>
+  const select = document.getElementById("tournamentSelect");
 
-      <div class="panel">
-        <h3>حالة الصفحة</h3>
-        <div class="system-row"><span>حالة الاتصال</span><strong id="teams-connection">جاري الفحص...</strong></div>
-        <div class="system-row"><span>اسم الجدول المتوقع</span><strong>teams</strong></div>
-        <div class="system-row"><span>البطولة النشطة</span><strong id="active-tournament-name">جاري التحميل...</strong></div>
-        <div class="system-row"><span>عدد الفرق</span><strong id="teams-total-count">0</strong></div>
-        <div class="status-line warning" id="schema-note">
-          إذا فشل الحفظ أو القراءة فالأرجح أن بعض أعمدة teams غير موجودة في مشروعك.
-        </div>
-      </div>
-    </section>
+  data.forEach(t => {
+    const option = document.createElement("option");
+    option.value = t.id;
+    option.textContent = t.name;
+    select.appendChild(option);
+  });
 
-    <section class="panel" style="margin-top:24px">
-      <h3>الفرق الحالية</h3>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>الاسم</th>
-              <th>الاختصار</th>
-              <th>البطولة</th>
-              <th>نشط</th>
-              <th>إجراء</th>
-            </tr>
-          </thead>
-          <tbody id="teams-body">
-            <tr><td colspan="5">جاري التحميل...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </main>
+  select.onchange = () => {
+    selectedTournament = select.value;
+    const t = data.find(x => x.id === selectedTournament);
+    maxTeams = t.team_count || 0;
+    loadTeams();
+  };
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js"></script>
-  <script src="teams-admin.js"></script>
+  // تشغيل أول بطولة تلقائي
+  if (data.length) {
+    selectedTournament = data[0].id;
+    maxTeams = data[0].team_count || 0;
+    loadTeams();
+  }
+}
+
+// تحميل الفرق
+async function loadTeams() {
+  const { data } = await supabase
+    .from("teams")
+    .select("*")
+    .eq("tournament_id", selectedTournament);
+
+  const list = document.getElementById("teamsList");
+  list.innerHTML = "";
+
+  data.forEach(team => {
+    const li = document.createElement("li");
+    li.textContent = team.name;
+    list.appendChild(li);
+  });
+
+  updateCounter(data.length);
+}
+
+// إضافة فريق
+async function addTeam() {
+  const name = document.getElementById("teamName").value;
+
+  if (!name || !selectedTournament) return;
+
+  const { data: existing } = await supabase
+    .from("teams")
+    .select("*")
+    .eq("tournament_id", selectedTournament);
+
+  if (existing.length >= maxTeams) {
+    alert("تم الوصول للحد الأقصى من الفرق");
+    return;
+  }
+
+  await supabase.from("teams").insert([
+    {
+      name: name,
+      tournament_id: selectedTournament,
+      is_active: true
+    }
+  ]);
+
+  document.getElementById("teamName").value = "";
+  loadTeams();
+}
+
+// تحديث العداد
+function updateCounter(current) {
+  document.getElementById("counter").innerText =
+    `المطلوب: ${maxTeams} | الحالي: ${current} | المتبقي: ${maxTeams - current}`;
+}
+
+loadTournaments();
+</script>
+
 </body>
 </html>
