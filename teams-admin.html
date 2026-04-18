@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>إدارة الفرق</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
 <style>
@@ -38,32 +39,53 @@ button {
   cursor: pointer;
 }
 
+button:hover {
+  opacity: 0.9;
+}
+
 .counter {
   margin-top: 10px;
   color: #ffd54f;
+  font-weight: bold;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  padding: 8px;
+  background: #1c3b5c;
+  margin-bottom: 5px;
+  border-radius: 6px;
 }
 </style>
 </head>
 
 <body>
+
 <div class="container">
 
 <h2>إدارة الفرق</h2>
 
+<!-- اختيار البطولة -->
 <div class="card">
   <label>اختر البطولة</label><br>
   <select id="tournamentSelect"></select>
 </div>
 
+<!-- إضافة فريق -->
 <div class="card">
   <h3>إضافة فريق</h3>
 
   <input id="teamName" placeholder="اسم الفريق">
-  <button onclick="addTeam()">إضافة</button>
+  <button onclick="addTeam()">إضافة فريق</button>
 
   <div class="counter" id="counter"></div>
 </div>
 
+<!-- عرض الفرق -->
 <div class="card">
   <h3>الفرق الحالية</h3>
   <ul id="teamsList"></ul>
@@ -72,9 +94,11 @@ button {
 </div>
 
 <script>
-const supabase = supabase.createClient(
-  "https://YOUR_URL.supabase.co",
-  "YOUR_ANON_KEY"
+
+// 🔥 ربط Supabase (جاهز)
+const supabaseClient = supabase.createClient(
+  "https://npoowwdjpbvhyjrmeqkv.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY"
 );
 
 let selectedTournament = null;
@@ -82,9 +106,12 @@ let maxTeams = 0;
 
 // تحميل البطولات
 async function loadTournaments() {
-  const { data } = await supabase.from("tournaments").select("*");
+  const { data, error } = await supabaseClient
+    .from("tournaments")
+    .select("*");
 
   const select = document.getElementById("tournamentSelect");
+  select.innerHTML = "";
 
   data.forEach(t => {
     const option = document.createElement("option");
@@ -95,12 +122,13 @@ async function loadTournaments() {
 
   select.onchange = () => {
     selectedTournament = select.value;
+
     const t = data.find(x => x.id === selectedTournament);
     maxTeams = t.team_count || 0;
+
     loadTeams();
   };
 
-  // تشغيل أول بطولة تلقائي
   if (data.length) {
     selectedTournament = data[0].id;
     maxTeams = data[0].team_count || 0;
@@ -110,7 +138,7 @@ async function loadTournaments() {
 
 // تحميل الفرق
 async function loadTeams() {
-  const { data } = await supabase
+  const { data } = await supabaseClient
     .from("teams")
     .select("*")
     .eq("tournament_id", selectedTournament);
@@ -131,9 +159,12 @@ async function loadTeams() {
 async function addTeam() {
   const name = document.getElementById("teamName").value;
 
-  if (!name || !selectedTournament) return;
+  if (!name || !selectedTournament) {
+    alert("أدخل اسم الفريق أولاً");
+    return;
+  }
 
-  const { data: existing } = await supabase
+  const { data: existing } = await supabaseClient
     .from("teams")
     .select("*")
     .eq("tournament_id", selectedTournament);
@@ -143,13 +174,20 @@ async function addTeam() {
     return;
   }
 
-  await supabase.from("teams").insert([
-    {
-      name: name,
-      tournament_id: selectedTournament,
-      is_active: true
-    }
-  ]);
+  const { error } = await supabaseClient
+    .from("teams")
+    .insert([
+      {
+        name: name,
+        tournament_id: selectedTournament,
+        is_active: true
+      }
+    ]);
+
+  if (error) {
+    alert("خطأ: " + error.message);
+    return;
+  }
 
   document.getElementById("teamName").value = "";
   loadTeams();
@@ -158,10 +196,14 @@ async function addTeam() {
 // تحديث العداد
 function updateCounter(current) {
   document.getElementById("counter").innerText =
-    `المطلوب: ${maxTeams} | الحالي: ${current} | المتبقي: ${maxTeams - current}`;
+    "المطلوب: " + maxTeams +
+    " | الحالي: " + current +
+    " | المتبقي: " + (maxTeams - current);
 }
 
+// تشغيل الصفحة
 loadTournaments();
+
 </script>
 
 </body>
