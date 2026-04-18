@@ -1,0 +1,1 @@
+تم تفعيل الربط مع Supabase. صفحة admin-setup مبنية على افتراض وجود جدول tournaments بالأعمدة: name, season_label, tournament_type, status, team_count, group_count, is_active, notes.
