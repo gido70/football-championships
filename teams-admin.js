@@ -19,6 +19,20 @@
     statusEl.textContent = text;
   }
 
+  function readForm() {
+    const fd = new FormData(form);
+    return {
+      name: (fd.get('name') || '').toString().trim(),
+      short_name: (fd.get('short_name') || '').toString().trim() || null,
+      logo_url: (fd.get('logo_url') || '').toString().trim() || null,
+      color_primary: (fd.get('color_primary') || '').toString().trim() || null,
+      color_secondary: (fd.get('color_secondary') || '').toString().trim() || null,
+      notes: (fd.get('notes') || '').toString().trim() || null,
+      tournament_id: fd.get('tournament_id') ? String(fd.get('tournament_id')) : null, // UUID-safe
+      is_active: document.getElementById('is-active').checked
+    };
+  }
+
   function teamDisplayName(row) {
     return row.name || row.team_name || row.title || '';
   }
@@ -28,7 +42,7 @@
     const { data, error } = await client
       .from(tournamentsTable)
       .select('id, name, season_label, is_active')
-      .order('id', { ascending: false });
+      .order('created_at', { ascending: false, nullsFirst: false });
 
     if (error) {
       activeTournamentEl.textContent = 'تعذر القراءة';
@@ -43,7 +57,7 @@
       tournamentsMap.set(String(row.id), row);
       const label = row.name + (row.season_label ? ' - ' + row.season_label : '');
       const option = document.createElement('option');
-      option.value = row.id;
+      option.value = String(row.id); // UUID-safe
       option.textContent = label;
       if (row.is_active && !activeFound) {
         option.selected = true;
@@ -55,25 +69,11 @@
 
     if (!activeFound && data && data.length) {
       const first = data[0];
-      tournamentSelect.value = first.id;
+      tournamentSelect.value = String(first.id);
       activeTournamentEl.textContent = first.name + (first.season_label ? ' - ' + first.season_label : '');
     } else if (!data || !data.length) {
       activeTournamentEl.textContent = 'لا توجد بطولة';
     }
-  }
-
-  function readForm() {
-    const fd = new FormData(form);
-    return {
-      name: (fd.get('name') || '').toString().trim(),
-      short_name: (fd.get('short_name') || '').toString().trim() || null,
-      logo_url: (fd.get('logo_url') || '').toString().trim() || null,
-      color_primary: (fd.get('color_primary') || '').toString().trim() || null,
-      color_secondary: (fd.get('color_secondary') || '').toString().trim() || null,
-      notes: (fd.get('notes') || '').toString().trim() || null,
-      tournament_id: fd.get('tournament_id') ? Number(fd.get('tournament_id')) : null,
-      is_active: document.getElementById('is-active').checked
-    };
   }
 
   function renderRows(rows) {
@@ -94,7 +94,7 @@
           <td>${row.short_name ?? ''}</td>
           <td>${tournamentLabel}</td>
           <td>${row.is_active ? 'نعم' : 'لا'}</td>
-          <td><button class="small-btn delete" data-id="${row.id}">حذف</button></td>
+          <td><button class="small-btn delete" data-id="${String(row.id)}">حذف</button></td>
         </tr>
       `;
     }).join('');
@@ -103,7 +103,7 @@
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         if (!confirm('هل تريد حذف هذا الفريق؟')) return;
-        const { error } = await client.from(teamsTable).delete().eq('id', id);
+        const { error } = await client.from(teamsTable).delete().eq('id', id); // UUID-safe
         if (error) {
           msg('فشل الحذف: ' + error.message, 'error');
           return;
@@ -119,7 +119,7 @@
     const { data, error } = await client
       .from(teamsTable)
       .select('*')
-      .order('id', { ascending: false });
+      .order('created_at', { ascending: false, nullsFirst: false });
 
     if (error) {
       bodyEl.innerHTML = `<tr><td colspan="5">تعذر القراءة: ${error.message}</td></tr>`;

@@ -30,7 +30,7 @@
     const { data, error } = await client
       .from(tournamentsTable)
       .select('id, name, season_label, is_active')
-      .order('id', { ascending: false });
+      .order('created_at', { ascending: false, nullsFirst: false });
 
     if (error) {
       msg('تعذر قراءة البطولات: ' + error.message, 'error');
@@ -39,6 +39,7 @@
 
     tournaments = data || [];
     tournamentSelect.innerHTML = '';
+
     if (!tournaments.length) {
       tournamentSelect.innerHTML = '<option value="">لا توجد بطولة</option>';
       activeTournamentEl.textContent = 'لا توجد بطولة';
@@ -46,10 +47,11 @@
     }
 
     let selectedId = null;
-    tournaments.forEach((row, idx) => {
+
+    tournaments.forEach((row) => {
       const label = row.name + (row.season_label ? ' - ' + row.season_label : '');
       const op = document.createElement('option');
-      op.value = row.id;
+      op.value = String(row.id); // UUID-safe
       op.textContent = label;
       if (row.is_active && selectedId === null) selectedId = String(row.id);
       tournamentSelect.appendChild(op);
@@ -63,7 +65,7 @@
   }
 
   async function loadTeamsForTournament() {
-    const tid = tournamentSelect.value;
+    const tid = tournamentSelect.value; // keep as string for UUID compatibility
     teamSelect.innerHTML = '<option value="">اختر الفريق</option>';
 
     if (!tid) {
@@ -76,8 +78,8 @@
     const { data, error } = await client
       .from(teamsTable)
       .select('id, name, short_name, tournament_id, group_code, group_seed, is_active')
-      .eq('tournament_id', Number(tid))
-      .order('id', { ascending: true });
+      .eq('tournament_id', tid) // UUID-safe
+      .order('created_at', { ascending: true, nullsFirst: false });
 
     if (error) {
       bodyEl.innerHTML = `<tr><td colspan="5">تعذر قراءة الفرق: ${error.message}</td></tr>`;
@@ -90,7 +92,7 @@
 
     teams.forEach(row => {
       const op = document.createElement('option');
-      op.value = row.id;
+      op.value = String(row.id); // UUID-safe
       op.textContent = teamName(row);
       teamSelect.appendChild(op);
     });
@@ -117,7 +119,7 @@
         <td>${row.short_name ?? ''}</td>
         <td>${row.group_code ?? '-'}</td>
         <td>${row.group_seed ?? '-'}</td>
-        <td><button class="small-btn delete" data-id="${row.id}">إزالة</button></td>
+        <td><button class="small-btn delete" data-id="${String(row.id)}">إزالة</button></td>
       </tr>
     `).join('');
 
@@ -127,7 +129,7 @@
         const { error } = await client
           .from(teamsTable)
           .update({ group_code: null, group_seed: null })
-          .eq('id', id);
+          .eq('id', id); // UUID-safe
 
         if (error) {
           msg('فشل إزالة التوزيع: ' + error.message, 'error');
@@ -199,7 +201,7 @@
         group_code: groupCode,
         group_seed: groupSeed ? Number(groupSeed) : null
       })
-      .eq('id', Number(teamId));
+      .eq('id', teamId); // UUID-safe
 
     if (error) {
       msg('فشل الحفظ: ' + error.message, 'error');
@@ -220,7 +222,7 @@
     const { error } = await client
       .from(teamsTable)
       .update({ group_code: null, group_seed: null })
-      .eq('id', Number(teamId));
+      .eq('id', teamId); // UUID-safe
 
     if (error) {
       msg('فشل إزالة التوزيع: ' + error.message, 'error');

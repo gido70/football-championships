@@ -1,4 +1,10 @@
-هذه الحزمة تضيف صفحة groups-admin الحقيقية.
+هذا إصلاح لمشكلة UUID.
 
-إذا ظهرت رسالة خطأ بأن أعمدة group_code أو group_seed غير موجودة:
-نفّذ ملف groups-table-patch.sql مرة واحدة في Supabase.
+المشكلة كانت أن الكود كان يحول tournament_id و team_id إلى Number،
+بينما قاعدة بياناتك تستخدم UUID.
+
+استبدل الملفين التاليين في GitHub:
+- groups-admin.js
+- teams-admin.js
+
+ثم اعمل Refresh قوي للصفحات.
