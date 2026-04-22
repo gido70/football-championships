@@ -1,5 +1,352 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>المجموعات والتوزيع</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="page-head">
+        <div class="page-icon">🧩</div>
+        <div class="page-title">
+          <h1>المجموعات والتوزيع</h1>
+          <p>توزيع الفرق على المجموعات وربطها بالبطولة المختارة</p>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <a class="btn secondary" href="./admin-home.html">العودة إلى لوحة الأدمن</a>
+        <a class="btn secondary" href="./index.html">العودة إلى الموقع العام</a>
+      </div>
+    </div>
+  </header>
 
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>المجموعات والتوزيع</title><link rel="stylesheet" href="admin.css"></head><body>
-<header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">🧩</div><div class="page-title"><h1>المجموعات والتوزيع</h1><p>هذه الصفحة ستبنى بعد تثبيت الفرق واللاعبين بشكل نهائي</p></div></div><div class="nav-actions"><a class="btn secondary" href="./admin-home.html">العودة إلى لوحة الأدمن</a><a class="btn secondary" href="./index.html">العودة إلى الموقع العام</a></div></div></header>
-<main class="container center-placeholder"><div class="card"><h2 style="margin-top:0;">تم تثبيت القالب والرجوع</h2><p class="note">نتوقف هنا كما طلبت، ونعتبر هذه الصفحة نقطة انتظار إلى أن نثبت بقية ملفات الأدمن على نفس القالب وبنفس اتجاه RTL الصحيح.</p></div></main>
-</body></html>
+  <main class="container">
+    <section class="card note">
+      هذه الصفحة تعمل على جدول <strong>teams</strong>، وتحفظ التوزيع داخل العمودين:
+      <strong>group_code</strong> و <strong>group_seed</strong>.
+      إذا ظهر خطأ أن الأعمدة غير موجودة، نفذ كود SQL الموجود أسفل الرسالة.
+    </section>
+
+    <section class="grid-2">
+      <section class="panel">
+        <h3>اختيار البطولة</h3>
+        <div class="form-grid">
+          <div class="field full">
+            <label>البطولة</label>
+            <select id="tournamentSelect"></select>
+          </div>
+        </div>
+
+        <ul class="quick-list" style="margin-top:18px;">
+          <li><span>حالة الاتصال</span><strong id="conn">جاري الفحص...</strong></li>
+          <li><span>عدد الفرق في البطولة</span><strong id="teamsCount">0</strong></li>
+          <li><span>عدد المجموعات المطلوب</span><strong id="groupsCount">0</strong></li>
+        </ul>
+
+        <div id="pageStatus" class="status"></div>
+      </section>
+
+      <section class="panel">
+        <h3>توزيع فريق</h3>
+
+        <div class="form-grid">
+          <div class="field">
+            <label>الفريق</label>
+            <select id="teamSelect"></select>
+          </div>
+
+          <div class="field">
+            <label>المجموعة</label>
+            <select id="groupCode">
+              <option value="">اختر المجموعة</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>ترتيب الفريق داخل المجموعة</label>
+            <input id="groupSeed" type="number" min="1" placeholder="مثال: 1" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="saveBtn">حفظ التوزيع</button>
+          <button class="btn secondary" id="clearBtn">إزالة التوزيع</button>
+          <button class="btn secondary" id="reloadBtn">تحديث القائمة</button>
+        </div>
+
+        <div id="formStatus" class="status"></div>
+      </section>
+    </section>
+
+    <section class="panel" style="margin-top:24px;">
+      <h3>التوزيع الحالي</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>الفريق</th>
+              <th>الاختصار</th>
+              <th>المجموعة</th>
+              <th>الترتيب</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+    let tournaments = [];
+    let teams = [];
+    let selectedTournament = null;
+    let selectedTournamentGroupsCount = 0;
+
+    const tournamentSelect = document.getElementById('tournamentSelect');
+    const teamSelect = document.getElementById('teamSelect');
+    const groupCode = document.getElementById('groupCode');
+    const groupSeed = document.getElementById('groupSeed');
+    const rows = document.getElementById('rows');
+    const conn = document.getElementById('conn');
+    const teamsCount = document.getElementById('teamsCount');
+    const groupsCount = document.getElementById('groupsCount');
+    const pageStatus = document.getElementById('pageStatus');
+    const formStatus = document.getElementById('formStatus');
+
+    function setPageStatus(text, cls = '') {
+      pageStatus.className = 'status ' + cls;
+      pageStatus.textContent = text;
+    }
+
+    function setFormStatus(text, cls = '') {
+      formStatus.className = 'status ' + cls;
+      formStatus.textContent = text;
+    }
+
+    function buildGroupOptions(count) {
+      groupCode.innerHTML = '<option value="">اختر المجموعة</option>';
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      for (let i = 0; i < count; i++) {
+        const option = document.createElement('option');
+        option.value = letters[i];
+        option.textContent = letters[i];
+        groupCode.appendChild(option);
+      }
+    }
+
+    async function loadTournaments() {
+      const { data, error } = await client
+        .from('tournaments')
+        .select('*')
+        .order('created_at', { ascending: false, nullsFirst: false });
+
+      if (error) {
+        conn.textContent = 'خطأ';
+        setPageStatus('تعذر قراءة البطولات: ' + error.message, 'err');
+        return;
+      }
+
+      tournaments = data || [];
+      tournamentSelect.innerHTML = '';
+
+      if (!tournaments.length) {
+        tournamentSelect.innerHTML = '<option value="">لا توجد بطولات</option>';
+        conn.textContent = 'متصل';
+        setPageStatus('لا توجد بطولات حالياً', 'warn');
+        return;
+      }
+
+      tournaments.forEach(t => {
+        const option = document.createElement('option');
+        option.value = t.id;
+        option.textContent = t.name + (t.season_label ? ' - ' + t.season_label : '');
+        tournamentSelect.appendChild(option);
+      });
+
+      selectedTournament = tournaments[0].id;
+      tournamentSelect.value = selectedTournament;
+      selectedTournamentGroupsCount = tournaments[0].group_count || 0;
+      groupsCount.textContent = selectedTournamentGroupsCount;
+      buildGroupOptions(selectedTournamentGroupsCount);
+      conn.textContent = 'متصل';
+
+      await loadTeams();
+    }
+
+    async function loadTeams() {
+      if (!selectedTournament) {
+        rows.innerHTML = '<tr><td colspan="5">اختر بطولة أولاً</td></tr>';
+        teamSelect.innerHTML = '<option value="">اختر الفريق</option>';
+        teamsCount.textContent = '0';
+        return;
+      }
+
+      const { data, error } = await client
+        .from('teams')
+        .select('*')
+        .eq('tournament_id', selectedTournament)
+        .order('created_at', { ascending: true, nullsFirst: false });
+
+      if (error) {
+        rows.innerHTML = '<tr><td colspan="5">' + error.message + '</td></tr>';
+        teamSelect.innerHTML = '<option value="">اختر الفريق</option>';
+        teamsCount.textContent = '0';
+        setPageStatus('تعذر قراءة الفرق: ' + error.message, 'err');
+        return;
+      }
+
+      teams = data || [];
+      teamsCount.textContent = teams.length;
+
+      teamSelect.innerHTML = '<option value="">اختر الفريق</option>';
+      teams.forEach(team => {
+        const option = document.createElement('option');
+        option.value = team.id;
+        option.textContent = team.name;
+        teamSelect.appendChild(option);
+      });
+
+      if (!teams.length) {
+        rows.innerHTML = '<tr><td colspan="5">لا توجد فرق في هذه البطولة</td></tr>';
+        return;
+      }
+
+      const sortedTeams = [...teams].sort((a, b) => {
+        const aGroup = a.group_code || 'ZZ';
+        const bGroup = b.group_code || 'ZZ';
+        if (aGroup < bGroup) return -1;
+        if (aGroup > bGroup) return 1;
+        return (a.group_seed || 999) - (b.group_seed || 999);
+      });
+
+      rows.innerHTML = sortedTeams.map(team => `
+        <tr>
+          <td>${team.name ?? ''}</td>
+          <td>${team.short_name ?? ''}</td>
+          <td>${team.group_code ?? '-'}</td>
+          <td>${team.group_seed ?? '-'}</td>
+          <td>
+            <button class="btn secondary small-danger" onclick="removeAssignment('${team.id}')">إزالة</button>
+          </td>
+        </tr>
+      `).join('');
+
+      setPageStatus('تم تحميل الفرق بنجاح', 'ok');
+    }
+
+    tournamentSelect.addEventListener('change', async () => {
+      selectedTournament = tournamentSelect.value;
+      const tournament = tournaments.find(t => t.id === selectedTournament);
+      selectedTournamentGroupsCount = tournament ? (tournament.group_count || 0) : 0;
+      groupsCount.textContent = selectedTournamentGroupsCount;
+      buildGroupOptions(selectedTournamentGroupsCount);
+      await loadTeams();
+    });
+
+    teamSelect.addEventListener('change', () => {
+      const team = teams.find(t => t.id === teamSelect.value);
+      if (!team) {
+        groupCode.value = '';
+        groupSeed.value = '';
+        return;
+      }
+      groupCode.value = team.group_code || '';
+      groupSeed.value = team.group_seed || '';
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const teamId = teamSelect.value;
+      const code = groupCode.value;
+      const seed = groupSeed.value ? Number(groupSeed.value) : null;
+
+      if (!teamId) {
+        setFormStatus('اختر الفريق أولاً', 'warn');
+        return;
+      }
+
+      if (!code) {
+        setFormStatus('اختر المجموعة أولاً', 'warn');
+        return;
+      }
+
+      const { error } = await client
+        .from('teams')
+        .update({
+          group_code: code,
+          group_seed: seed
+        })
+        .eq('id', teamId);
+
+      if (error) {
+        setFormStatus('فشل الحفظ: ' + error.message, 'err');
+        return;
+      }
+
+      setFormStatus('تم حفظ التوزيع بنجاح', 'ok');
+      await loadTeams();
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', async () => {
+      const teamId = teamSelect.value;
+
+      if (!teamId) {
+        setFormStatus('اختر الفريق أولاً', 'warn');
+        return;
+      }
+
+      const { error } = await client
+        .from('teams')
+        .update({
+          group_code: null,
+          group_seed: null
+        })
+        .eq('id', teamId);
+
+      if (error) {
+        setFormStatus('فشل إزالة التوزيع: ' + error.message, 'err');
+        return;
+      }
+
+      groupCode.value = '';
+      groupSeed.value = '';
+      setFormStatus('تمت إزالة التوزيع بنجاح', 'ok');
+      await loadTeams();
+    });
+
+    document.getElementById('reloadBtn').addEventListener('click', async () => {
+      await loadTournaments();
+      setFormStatus('تم تحديث البيانات', 'ok');
+    });
+
+    async function removeAssignment(teamId) {
+      const { error } = await client
+        .from('teams')
+        .update({
+          group_code: null,
+          group_seed: null
+        })
+        .eq('id', teamId);
+
+      if (error) {
+        setFormStatus('فشل إزالة التوزيع: ' + error.message, 'err');
+        return;
+      }
+
+      setFormStatus('تمت إزالة التوزيع بنجاح', 'ok');
+      await loadTeams();
+    }
+
+    window.removeAssignment = removeAssignment;
+
+    loadTournaments();
+  </script>
+</body>
+</html>
