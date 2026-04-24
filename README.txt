@@ -1,1 +1,1 @@
-ارفع schedule-admin.html إلى GitHub مكان الملف الحالي. نفّذ ملف SQL مرة واحدة إذا ظهرت أخطاء في جدول matches.
+استبدل schedule-admin.html كاملًا بهذا الملف. نفّذ SQL إذا احتجت أعمدة matches.
