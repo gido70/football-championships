@@ -1,10 +1,1 @@
-هذا إصلاح لمشكلة UUID.
-
-المشكلة كانت أن الكود كان يحول tournament_id و team_id إلى Number،
-بينما قاعدة بياناتك تستخدم UUID.
-
-استبدل الملفين التاليين في GitHub:
-- groups-admin.js
-- teams-admin.js
-
-ثم اعمل Refresh قوي للصفحات.
+ارفع schedule-admin.html إلى GitHub مكان الملف الحالي. نفّذ ملف SQL مرة واحدة إذا ظهرت أخطاء في جدول matches.

@@ -1,5 +1,310 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>الجدول والمباريات</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="page-head">
+        <div class="page-icon">📅</div>
+        <div class="page-title">
+          <h1>الجدول والمباريات</h1>
+          <p>إنشاء مباريات البطولة بعد تثبيت الفرق والمجموعات</p>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <a class="btn secondary" href="./admin-home.html">العودة إلى لوحة الأدمن</a>
+        <a class="btn secondary" href="./index.html">العودة إلى الموقع العام</a>
+      </div>
+    </div>
+  </header>
 
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>الجدول والمباريات</title><link rel="stylesheet" href="admin.css"></head><body>
-<header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">📅</div><div class="page-title"><h1>الجدول والمباريات</h1><p>صفحة مؤجلة إلى ما بعد تثبيت الفرق واللاعبين والمجموعات</p></div></div><div class="nav-actions"><a class="btn secondary" href="./admin-home.html">العودة إلى لوحة الأدمن</a><a class="btn secondary" href="./index.html">العودة إلى الموقع العام</a></div></div></header>
-<main class="container center-placeholder"><div class="card"><h2 style="margin-top:0;">هذه الصفحة ستبنى في المرحلة التالية</h2><p class="note">الآن نحن نثبت شكل الأدمن الموحد والرجوع الصحيح واتجاه الواجهة العربي. بعد ذلك نكمل الجدول والمباريات.</p></div></main>
-</body></html>
+  <main class="container">
+    <section class="card note">
+      هذه الصفحة تحفظ المباريات في جدول <strong>matches</strong>. قبل استخدامها نفّذ ملف SQL المرفق مرة واحدة فقط إذا كانت أعمدة matches غير مكتملة.
+    </section>
+
+    <section class="grid-2">
+      <section class="panel">
+        <h3>اختيار البطولة</h3>
+        <div class="form-grid">
+          <div class="field full">
+            <label>البطولة</label>
+            <select id="tournamentSelect"></select>
+          </div>
+        </div>
+        <ul class="quick-list" style="margin-top:18px;">
+          <li><span>حالة الاتصال</span><strong id="conn">جاري الفحص...</strong></li>
+          <li><span>عدد الفرق</span><strong id="teamsCount">0</strong></li>
+          <li><span>عدد المباريات</span><strong id="matchesCount">0</strong></li>
+        </ul>
+        <div id="pageStatus" class="status"></div>
+      </section>
+
+      <section class="panel">
+        <h3>إنشاء تلقائي لمباريات المجموعات</h3>
+        <p class="note">يولّد مباريات كل مجموعة بنظام كل فريق ضد الآخر داخل نفس المجموعة. يجب أن تحتوي كل مجموعة على فريقين على الأقل.</p>
+        <div class="actions">
+          <button class="btn" id="generateGroupsBtn">توليد مباريات المجموعات</button>
+          <button class="btn secondary" id="reloadBtn">تحديث البيانات</button>
+        </div>
+        <div id="generateStatus" class="status"></div>
+      </section>
+    </section>
+
+    <section class="panel" style="margin-top:24px;">
+      <h3>إضافة مباراة يدويًا</h3>
+      <div class="form-grid">
+        <div class="field">
+          <label>الدور</label>
+          <select id="roundName">
+            <option value="group">دور المجموعات</option>
+            <option value="quarter_final">ربع النهائي</option>
+            <option value="semi_final">نصف النهائي</option>
+            <option value="third_place">تحديد المركز الثالث</option>
+            <option value="final">النهائي</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>المجموعة</label>
+          <select id="groupCode"><option value="">بدون مجموعة</option></select>
+        </div>
+        <div class="field">
+          <label>الفريق الأول</label>
+          <select id="homeTeam"></select>
+        </div>
+        <div class="field">
+          <label>الفريق الثاني</label>
+          <select id="awayTeam"></select>
+        </div>
+        <div class="field">
+          <label>تاريخ المباراة</label>
+          <input id="matchDate" type="date" />
+        </div>
+        <div class="field">
+          <label>وقت المباراة</label>
+          <input id="matchTime" type="time" />
+        </div>
+        <div class="field full">
+          <label>الملعب / المكان</label>
+          <input id="venue" placeholder="مثال: الملعب الرئيسي" />
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="saveManualBtn">حفظ المباراة</button>
+        <button class="btn secondary" id="clearFormBtn">تفريغ الحقول</button>
+      </div>
+      <div id="manualStatus" class="status"></div>
+    </section>
+
+    <section class="panel" style="margin-top:24px;">
+      <h3>المباريات الحالية</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>رقم</th><th>الدور</th><th>المجموعة</th><th>الفريق الأول</th><th>الفريق الثاني</th><th>التاريخ</th><th>الوقت</th><th>الحالة</th><th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="matchesRows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    let tournaments = [], teams = [], matches = [], selectedTournament = null;
+
+    const tournamentSelect = document.getElementById('tournamentSelect');
+    const groupCode = document.getElementById('groupCode');
+    const homeTeam = document.getElementById('homeTeam');
+    const awayTeam = document.getElementById('awayTeam');
+    const matchesRows = document.getElementById('matchesRows');
+
+    function setText(id, text){ document.getElementById(id).textContent = text; }
+    function setStatus(id, text, cls=''){ const el = document.getElementById(id); el.className = 'status ' + cls; el.textContent = text; }
+    function teamName(id){ const t = teams.find(x => x.id === id); return t ? t.name : ''; }
+    function roundLabel(v){ return ({group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'المركز الثالث',final:'النهائي'})[v] || v || ''; }
+
+    async function loadTournaments(){
+      const { data, error } = await client.from('tournaments').select('*').order('created_at', { ascending:false, nullsFirst:false });
+      if(error){ setText('conn','خطأ'); setStatus('pageStatus','تعذر قراءة البطولات: ' + error.message,'err'); return; }
+      tournaments = data || [];
+      tournamentSelect.innerHTML = '';
+      if(!tournaments.length){
+        tournamentSelect.innerHTML = '<option value="">لا توجد بطولات</option>';
+        setText('conn','متصل'); setStatus('pageStatus','لا توجد بطولات حالياً','warn'); return;
+      }
+      tournaments.forEach(t => {
+        const op = document.createElement('option');
+        op.value = t.id;
+        op.textContent = t.name + (t.season_label ? ' - ' + t.season_label : '');
+        tournamentSelect.appendChild(op);
+      });
+      selectedTournament = tournaments[0].id;
+      tournamentSelect.value = selectedTournament;
+      setText('conn','متصل');
+      await loadAll();
+    }
+
+    async function loadTeams(){
+      const { data, error } = await client.from('teams').select('*').eq('tournament_id', selectedTournament).order('group_code', { ascending:true, nullsFirst:false });
+      if(error){ setStatus('pageStatus','تعذر قراءة الفرق: ' + error.message,'err'); teams = []; return; }
+      teams = data || [];
+      setText('teamsCount', teams.length);
+      fillTeamSelects();
+      fillGroupSelect();
+    }
+
+    async function loadMatches(){
+      const { data, error } = await client.from('matches').select('*').eq('tournament_id', selectedTournament).order('match_no', { ascending:true, nullsFirst:false }).order('created_at', { ascending:true, nullsFirst:false });
+      if(error){ matchesRows.innerHTML = '<tr><td colspan="9">' + error.message + '</td></tr>'; setText('matchesCount','0'); return; }
+      matches = data || [];
+      setText('matchesCount', matches.length);
+      renderMatches();
+    }
+
+    async function loadAll(){
+      await loadTeams();
+      await loadMatches();
+      setStatus('pageStatus','تم تحميل البيانات بنجاح','ok');
+    }
+
+    function fillTeamSelects(){
+      homeTeam.innerHTML = '<option value="">اختر الفريق الأول</option>';
+      awayTeam.innerHTML = '<option value="">اختر الفريق الثاني</option>';
+      teams.forEach(team => {
+        const label = team.name + (team.group_code ? ' - المجموعة ' + team.group_code : '');
+        const a = document.createElement('option'); a.value = team.id; a.textContent = label;
+        const b = document.createElement('option'); b.value = team.id; b.textContent = label;
+        homeTeam.appendChild(a); awayTeam.appendChild(b);
+      });
+    }
+
+    function fillGroupSelect(){
+      const groups = [...new Set(teams.map(t => t.group_code).filter(Boolean))].sort();
+      groupCode.innerHTML = '<option value="">بدون مجموعة</option>';
+      groups.forEach(code => {
+        const op = document.createElement('option');
+        op.value = code; op.textContent = code;
+        groupCode.appendChild(op);
+      });
+    }
+
+    function renderMatches(){
+      if(!matches.length){ matchesRows.innerHTML = '<tr><td colspan="9">لا توجد مباريات حالياً</td></tr>'; return; }
+      matchesRows.innerHTML = matches.map(m => `
+        <tr>
+          <td>${m.match_no ?? ''}</td>
+          <td>${roundLabel(m.round_name)}</td>
+          <td>${m.group_code ?? '-'}</td>
+          <td>${teamName(m.home_team_id)}</td>
+          <td>${teamName(m.away_team_id)}</td>
+          <td>${m.match_date ?? '-'}</td>
+          <td>${m.match_time ?? '-'}</td>
+          <td>${m.status ?? 'scheduled'}</td>
+          <td><button class="btn secondary small-danger" onclick="deleteMatch('${m.id}')">حذف</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function getNextMatchNo(){
+      if(!matches.length) return 1;
+      return Math.max(...matches.map(m => Number(m.match_no || 0))) + 1;
+    }
+
+    async function saveManualMatch(){
+      const home = homeTeam.value, away = awayTeam.value;
+      if(!selectedTournament){ setStatus('manualStatus','اختر البطولة أولاً','warn'); return; }
+      if(!home || !away){ setStatus('manualStatus','اختر الفريقين أولاً','warn'); return; }
+      if(home === away){ setStatus('manualStatus','لا يمكن اختيار نفس الفريق مرتين','warn'); return; }
+
+      const payload = {
+        tournament_id: selectedTournament,
+        round_name: document.getElementById('roundName').value,
+        group_code: groupCode.value || null,
+        match_no: getNextMatchNo(),
+        home_team_id: home,
+        away_team_id: away,
+        match_date: document.getElementById('matchDate').value || null,
+        match_time: document.getElementById('matchTime').value || null,
+        venue: document.getElementById('venue').value.trim() || null,
+        status: 'scheduled'
+      };
+
+      const { error } = await client.from('matches').insert([payload]);
+      if(error){ setStatus('manualStatus','فشل حفظ المباراة: ' + error.message,'err'); return; }
+      setStatus('manualStatus','تم حفظ المباراة بنجاح','ok');
+      clearManualForm();
+      await loadMatches();
+    }
+
+    function clearManualForm(){
+      homeTeam.value = ''; awayTeam.value = ''; groupCode.value = '';
+      document.getElementById('matchDate').value = '';
+      document.getElementById('matchTime').value = '';
+      document.getElementById('venue').value = '';
+    }
+
+    async function generateGroupMatches(){
+      if(!selectedTournament){ setStatus('generateStatus','اختر البطولة أولاً','warn'); return; }
+      const grouped = {};
+      teams.forEach(team => {
+        if(!team.group_code) return;
+        if(!grouped[team.group_code]) grouped[team.group_code] = [];
+        grouped[team.group_code].push(team);
+      });
+
+      const newMatches = [];
+      let nextNo = getNextMatchNo();
+
+      Object.keys(grouped).sort().forEach(code => {
+        const groupTeams = grouped[code];
+        for(let i=0;i<groupTeams.length;i++){
+          for(let j=i+1;j<groupTeams.length;j++){
+            const home = groupTeams[i], away = groupTeams[j];
+            const exists = matches.some(m => m.round_name === 'group' && m.group_code === code &&
+              ((m.home_team_id === home.id && m.away_team_id === away.id) || (m.home_team_id === away.id && m.away_team_id === home.id)));
+            if(!exists){
+              newMatches.push({ tournament_id:selectedTournament, round_name:'group', group_code:code, match_no:nextNo++, home_team_id:home.id, away_team_id:away.id, status:'scheduled' });
+            }
+          }
+        }
+      });
+
+      if(!newMatches.length){
+        setStatus('generateStatus','لا توجد مباريات جديدة. تأكد أن كل مجموعة بها فريقان على الأقل أو أن المباريات غير موجودة مسبقاً.','warn');
+        return;
+      }
+
+      const { error } = await client.from('matches').insert(newMatches);
+      if(error){ setStatus('generateStatus','فشل التوليد: ' + error.message,'err'); return; }
+      setStatus('generateStatus','تم توليد ' + newMatches.length + ' مباراة بنجاح','ok');
+      await loadMatches();
+    }
+
+    async function deleteMatch(id){
+      if(!confirm('هل تريد حذف هذه المباراة؟')) return;
+      const { error } = await client.from('matches').delete().eq('id', id);
+      if(error){ setStatus('pageStatus','فشل حذف المباراة: ' + error.message,'err'); return; }
+      setStatus('pageStatus','تم حذف المباراة','ok');
+      await loadMatches();
+    }
+
+    window.deleteMatch = deleteMatch;
+    tournamentSelect.addEventListener('change', async () => { selectedTournament = tournamentSelect.value; await loadAll(); });
+    document.getElementById('generateGroupsBtn').addEventListener('click', generateGroupMatches);
+    document.getElementById('reloadBtn').addEventListener('click', loadAll);
+    document.getElementById('saveManualBtn').addEventListener('click', saveManualMatch);
+    document.getElementById('clearFormBtn').addEventListener('click', clearManualForm);
+    loadTournaments();
+  </script>
+</body>
+</html>
