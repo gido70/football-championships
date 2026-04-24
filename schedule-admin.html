@@ -155,7 +155,10 @@
     }
 
     async function loadTeams(){
-      const { data, error } = await client.from('teams').select('*').eq('tournament_id', selectedTournament).order('group_code', { ascending:true, nullsFirst:false });
+      const { data, error } = await client.from('teams').select('*').eq('tournament_id', selectedTournament)const { data, error } = await client
+  .from('teams')
+  .select('*')
+  .eq('tournament_id', selectedTournament);
       if(error){ setStatus('pageStatus','تعذر قراءة الفرق: ' + error.message,'err'); teams = []; return; }
       teams = data || [];
       setText('teamsCount', teams.length);
