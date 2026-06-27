@@ -150,8 +150,11 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
               </div>
 
               <div class="field" style="margin-top:12px">
-                <label>أو أدخل رابط الشعار مباشرة</label>
-                <input id="logo_url_direct" placeholder="https://... رابط الشعار" oninput="onLogoUrlInput(this.value)">
+                <label>أو أدخل رابط الشعار من الإنترنت</label>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <input id="logo_url_direct" placeholder="https://... رابط الشعار" oninput="onLogoUrlInput(this.value)" style="flex:1">
+                </div>
+                <div id="uploadStatus" style="font-size:12px;margin-top:6px;font-family:Tajawal,sans-serif;display:none"></div>
               </div>
             </div>
 
@@ -545,6 +548,51 @@ document.getElementById('tForm').addEventListener('submit', async e => {
   resetForm();
   loadRows();
 });
+
+// ======== رفع الشعار لـ Supabase Storage ========
+async function uploadLogoToStorage(file) {
+  const statusEl = document.getElementById('uploadStatus');
+  statusEl.style.display = 'block';
+  statusEl.style.color = '#ffd54f';
+  statusEl.textContent = '⏳ جاري رفع الشعار...';
+
+  try {
+    const ext = file.name.split('.').pop();
+    const fileName = `logos/${Date.now()}.${ext}`;
+    
+    const { data, error } = await sb.storage
+      .from('tournament-assets')
+      .upload(fileName, file, { upsert: true, contentType: file.type });
+
+    if (error) throw error;
+
+    const { data: urlData } = sb.storage
+      .from('tournament-assets')
+      .getPublicUrl(fileName);
+
+    const publicUrl = urlData.publicUrl;
+    document.getElementById('logo_url').value = publicUrl;
+    document.getElementById('logo_url_direct').value = publicUrl;
+    statusEl.style.color = '#34d399';
+    statusEl.textContent = '✅ تم رفع الشعار بنجاح';
+    return publicUrl;
+  } catch(err) {
+    statusEl.style.color = '#ff6b6b';
+    statusEl.textContent = '⚠️ تعذر الرفع — سيُستخدم الرابط المباشر إن وُجد';
+    return null;
+  }
+}
+
+// تعديل handleLogoUpload لدعم الرفع لـ Supabase
+const origHandleLogoUpload = handleLogoUpload;
+window.handleLogoUpload = async function(file) {
+  origHandleLogoUpload(file);
+  // رفع للتخزين في الخلفية
+  const url = await uploadLogoToStorage(file);
+  if (url) {
+    document.getElementById('logo_url').value = url;
+  }
+};
 
 window.delTournament=delTournament;
 window.switchColorMode=switchColorMode;
