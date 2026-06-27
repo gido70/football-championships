@@ -1,5 +1,360 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إدارة المباراة المباشرة</title>
+<link rel="stylesheet" href="admin.css">
+<style>
+.live-header{background:linear-gradient(135deg,#1a0a0a,#2d1515);border:1px solid rgba(255,107,107,.3);border-radius:24px;padding:24px;margin-bottom:24px}
+.scoreboard{display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:center;margin:20px 0}
+.team-col{text-align:center}
+.team-name-big{font-size:22px;font-weight:800;color:#eef5ff;margin-bottom:8px}
+.team-color-strip{height:5px;border-radius:3px;width:60px;margin:0 auto 16px}
+.score-controls{display:flex;gap:10px;justify-content:center}
+.score-btn{width:44px;height:44px;border-radius:50%;border:2px solid;font-size:22px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;background:transparent}
+.score-btn-plus{border-color:#34d399;color:#34d399}.score-btn-plus:hover{background:#34d399;color:#071426}
+.score-btn-minus{border-color:#ff6b6b;color:#ff6b6b}.score-btn-minus:hover{background:#ff6b6b;color:#071426}
+.score-center{text-align:center}
+.score-nums{font-size:64px;font-weight:900;color:#eef5ff;display:flex;align-items:center;gap:16px;justify-content:center}
+.score-sep{color:rgba(255,255,255,.2);font-weight:300}
+.match-minute{font-size:15px;color:#ff6b6b;font-weight:700;margin-top:8px}
+.status-btns{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.btn-live{background:linear-gradient(135deg,#ff6b6b,#cc3333)!important;border-color:#ff6b6b!important}
+.btn-done{background:linear-gradient(135deg,#34d399,#059669)!important;border-color:#34d399!important}
+.minute-row{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:12px}
+.minute-row input{width:80px;text-align:center;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#eef5ff;font-size:16px}
+.events-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.event-panel{background:rgba(16,40,70,.8);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:20px}
+.event-panel-title{font-size:16px;font-weight:700;color:#eef5ff;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.08)}
+.evt-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.evt-btn{padding:12px 8px;border-radius:12px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#eef5ff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;transition:.2s}
+.evt-btn:hover{border-color:#4ea1ff;background:rgba(78,161,255,.1)}
+.evt-btn.goal{border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.06)}
+.evt-btn.goal:hover{background:rgba(52,211,153,.15)}
+.evt-btn.yellow{border-color:rgba(255,213,79,.3);background:rgba(255,213,79,.06)}
+.evt-btn.yellow:hover{background:rgba(255,213,79,.15)}
+.evt-btn.red{border-color:rgba(255,107,107,.3);background:rgba(255,107,107,.06)}
+.evt-btn.red:hover{background:rgba(255,107,107,.15)}
+.evt-form{background:rgba(0,0,0,.3);border-radius:12px;padding:14px;margin-top:10px;display:none}
+.evt-form.show{display:block}
+.evt-form select,.evt-form input{width:100%;margin-bottom:8px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);color:#eef5ff;font-size:14px}
+.evt-form-btns{display:flex;gap:8px}
+.btn-sm{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:700}
+.btn-sm-ok{background:#4ea1ff;color:#071426}
+.btn-sm-cancel{background:rgba(255,255,255,.1);color:#eef5ff}
+.events-log{background:rgba(16,40,70,.8);border:1px solid rgba(255,255,255,.08);border-radius:20px;overflow:hidden;margin-bottom:20px}
+.events-log-head{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.08);font-size:15px;font-weight:700;color:#eef5ff}
+.evt-item{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.05);font-size:14px}
+.evt-item:last-child{border-bottom:none}
+.evt-min-badge{background:#112a49;color:#4ea1ff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;min-width:42px;text-align:center}
+.evt-icon{font-size:20px;width:28px;text-align:center}
+.evt-detail{flex:1;color:#b7c6dc}
+.evt-player{font-weight:700;color:#eef5ff}
+.evt-del{background:none;border:none;cursor:pointer;color:#b7c6dc;padding:4px 8px;border-radius:6px;font-size:14px}
+.evt-del:hover{color:#ff6b6b;background:rgba(255,107,107,.1)}
+.no-events{padding:24px;text-align:center;color:#b7c6dc;font-size:14px}
+.live-pulse{display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff6b6b;animation:pulse 1.2s infinite;margin-left:8px}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.status-scheduled{color:#ffd54f}
+.status-live{color:#ff6b6b}
+.status-completed{color:#34d399}
+@media(max-width:768px){.events-grid{grid-template-columns:1fr}.scoreboard{grid-template-columns:1fr;text-align:center}.score-nums{font-size:48px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="page-head">
+      <div class="page-icon">🎯</div>
+      <div class="page-title">
+        <h1>إدارة المباراة المباشرة</h1>
+        <p>أهداف · بطاقات · نتيجة فورية للجمهور</p>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <a class="btn secondary" href="./schedule-admin.html">الجدول</a>
+      <a class="btn secondary" href="./admin-home.html">لوحة الأدمن</a>
+    </div>
+  </div>
+</header>
 
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>إدارة المباراة</title><link rel="stylesheet" href="admin.css"></head><body>
-<header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">🎯</div><div class="page-title"><h1>إدارة المباراة</h1><p>صفحة مؤجلة إلى ما بعد بناء الجدول والمباريات</p></div></div><div class="nav-actions"><a class="btn secondary" href="./admin-home.html">العودة إلى لوحة الأدمن</a><a class="btn secondary" href="./index.html">العودة إلى الموقع العام</a></div></div></header>
-<main class="container center-placeholder"><div class="card"><h2 style="margin-top:0;">هذه الصفحة ستبنى بعد الجدول</h2><p class="note">تم هنا فقط تثبيت القالب الموحد والرجوع والهوية البصرية العربية.</p></div></main>
-</body></html>
+<main class="container">
+
+  <!-- اختيار المباراة -->
+  <section class="panel" style="margin-bottom:20px">
+    <h3>اختيار المباراة</h3>
+    <div class="form-grid">
+      <div class="field">
+        <label>البطولة</label>
+        <select id="selTournament"></select>
+      </div>
+      <div class="field">
+        <label>المباراة</label>
+        <select id="selMatch">
+          <option value="">— اختر المباراة —</option>
+        </select>
+      </div>
+    </div>
+    <div id="selStatus" class="status"></div>
+  </section>
+
+  <!-- لوحة المباراة -->
+  <div id="matchPanel" style="display:none">
+
+    <!-- النتيجة المباشرة -->
+    <div class="live-header">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <span id="matchRoundLabel" style="color:#b7c6dc;font-size:14px"></span>
+        <span id="statusLabel" style="font-size:13px;padding:4px 14px;border-radius:20px;background:rgba(255,255,255,.08)">مجدولة</span>
+      </div>
+
+      <div class="scoreboard">
+        <div class="team-col">
+          <div class="team-name-big" id="homeTeamName">الفريق الأول</div>
+          <div class="team-color-strip" id="homeColorStrip"></div>
+          <div class="score-controls">
+            <button class="score-btn score-btn-plus" onclick="changeScore('home',1)">+</button>
+            <button class="score-btn score-btn-minus" onclick="changeScore('home',-1)">−</button>
+          </div>
+        </div>
+        <div class="score-center">
+          <div class="score-nums">
+            <span id="homeScoreDisplay">0</span>
+            <span class="score-sep">—</span>
+            <span id="awayScoreDisplay">0</span>
+          </div>
+          <div class="match-minute" id="minuteDisplay"></div>
+        </div>
+        <div class="team-col">
+          <div class="team-name-big" id="awayTeamName">الفريق الثاني</div>
+          <div class="team-color-strip" id="awayColorStrip"></div>
+          <div class="score-controls">
+            <button class="score-btn score-btn-plus" onclick="changeScore('away',1)">+</button>
+            <button class="score-btn score-btn-minus" onclick="changeScore('away',-1)">−</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="status-btns">
+        <button class="btn btn-live" id="btnStart" onclick="setStatus('live')">▶ بدء المباراة</button>
+        <button class="btn btn-done" id="btnFinish" onclick="setStatus('completed')" disabled>⏹ إنهاء المباراة</button>
+      </div>
+      <div class="minute-row">
+        <label style="color:#b7c6dc;font-size:14px">الدقيقة:</label>
+        <input type="number" id="minuteInput" min="1" max="120" value="1">
+        <button class="btn secondary" onclick="saveMinute()" style="padding:8px 16px">تحديث</button>
+      </div>
+    </div>
+
+    <!-- تسجيل الأحداث -->
+    <div class="events-grid">
+      <div class="event-panel">
+        <div class="event-panel-title" id="homeEvtTitle">⚽ الفريق الأول</div>
+        <div class="evt-btns">
+          <button class="evt-btn goal" onclick="openEvt('home','goal')">⚽ هدف</button>
+          <button class="evt-btn yellow" onclick="openEvt('home','yellow_card')">🟨 صفراء</button>
+          <button class="evt-btn red" onclick="openEvt('home','red_card')">🟥 حمراء</button>
+          <button class="evt-btn" onclick="openEvt('home','substitution')">🔄 تبديل</button>
+        </div>
+        <div class="evt-form" id="homeEvtForm">
+          <div style="font-size:13px;color:#b7c6dc;margin-bottom:10px" id="homeEvtLabel">تسجيل حدث</div>
+          <select id="homePlayerSel"><option value="">— اللاعب —</option></select>
+          <input type="number" id="homeEvtMin" placeholder="الدقيقة" min="1" max="120">
+          <div class="evt-form-btns">
+            <button class="btn-sm btn-sm-ok" onclick="submitEvt('home')">تأكيد</button>
+            <button class="btn-sm btn-sm-cancel" onclick="closeEvt('home')">إلغاء</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="event-panel">
+        <div class="event-panel-title" id="awayEvtTitle">⚽ الفريق الثاني</div>
+        <div class="evt-btns">
+          <button class="evt-btn goal" onclick="openEvt('away','goal')">⚽ هدف</button>
+          <button class="evt-btn yellow" onclick="openEvt('away','yellow_card')">🟨 صفراء</button>
+          <button class="evt-btn red" onclick="openEvt('away','red_card')">🟥 حمراء</button>
+          <button class="evt-btn" onclick="openEvt('away','substitution')">🔄 تبديل</button>
+        </div>
+        <div class="evt-form" id="awayEvtForm">
+          <div style="font-size:13px;color:#b7c6dc;margin-bottom:10px" id="awayEvtLabel">تسجيل حدث</div>
+          <select id="awayPlayerSel"><option value="">— اللاعب —</option></select>
+          <input type="number" id="awayEvtMin" placeholder="الدقيقة" min="1" max="120">
+          <div class="evt-form-btns">
+            <button class="btn-sm btn-sm-ok" onclick="submitEvt('away')">تأكيد</button>
+            <button class="btn-sm btn-sm-cancel" onclick="closeEvt('away')">إلغاء</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- سجل الأحداث -->
+    <div class="events-log">
+      <div class="events-log-head">📋 أحداث المباراة</div>
+      <div id="evtsList"><div class="no-events">لا توجد أحداث بعد</div></div>
+    </div>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+let cur = null, homePlayers = [], awayPlayers = [], curEvtType = null, curEvtSide = null;
+
+const evtLabels = {goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل'};
+const evtIcons = {goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
+
+async function init() {
+  const {data:tours} = await sb.from('tournaments').select('id,name,season_label').order('created_at',{ascending:false});
+  const sel = document.getElementById('selTournament');
+  sel.innerHTML = '<option value="">— اختر البطولة —</option>';
+  (tours||[]).forEach(t => sel.innerHTML += `<option value="${t.id}">${t.name}${t.season_label?' - '+t.season_label:''}</option>`);
+}
+
+async function loadMatches() {
+  const tId = document.getElementById('selTournament').value;
+  if (!tId) return;
+  const {data} = await sb.from('matches')
+    .select('id,match_no,round_name,status,home_score,away_score,match_minute,home_team_id,away_team_id')
+    .eq('tournament_id', tId).order('match_no');
+  const sel = document.getElementById('selMatch');
+  sel.innerHTML = '<option value="">— اختر المباراة —</option>';
+  (data||[]).forEach(m => {
+    const icon = m.status==='live'?'🔴 ':m.status==='completed'?'✅ ':'⏳ ';
+    sel.innerHTML += `<option value="${m.id}">${icon}مباراة ${m.match_no||''} — ${m.round_name||''}</option>`;
+  });
+}
+
+async function loadMatch() {
+  const mId = document.getElementById('selMatch').value;
+  if (!mId) { document.getElementById('matchPanel').style.display='none'; return; }
+
+  const {data:m} = await sb.from('matches')
+    .select('*,home_team:teams!matches_home_team_id_fkey(id,name,color_primary),away_team:teams!matches_away_team_id_fkey(id,name,color_primary)')
+    .eq('id',mId).single();
+
+  if (!m) return;
+  cur = m;
+
+  const {data:hp} = await sb.from('players').select('id,name,number').eq('team_id',m.home_team_id).order('number');
+  const {data:ap} = await sb.from('players').select('id,name,number').eq('team_id',m.away_team_id).order('number');
+  homePlayers = hp||[]; awayPlayers = ap||[];
+
+  fillPlayerSel('homePlayerSel', homePlayers);
+  fillPlayerSel('awayPlayerSel', awayPlayers);
+  renderMatch(m);
+  loadEvts();
+  document.getElementById('matchPanel').style.display = 'block';
+}
+
+function fillPlayerSel(selId, players) {
+  const sel = document.getElementById(selId);
+  sel.innerHTML = '<option value="">— اللاعب —</option>';
+  players.forEach(p => sel.innerHTML += `<option value="${p.id}">${p.number?'#'+p.number+' ':''}${p.name}</option>`);
+}
+
+function renderMatch(m) {
+  document.getElementById('homeTeamName').textContent = m.home_team?.name||'الفريق الأول';
+  document.getElementById('awayTeamName').textContent = m.away_team?.name||'الفريق الثاني';
+  document.getElementById('homeEvtTitle').textContent = '⚽ '+(m.home_team?.name||'الفريق الأول');
+  document.getElementById('awayEvtTitle').textContent = '⚽ '+(m.away_team?.name||'الفريق الثاني');
+  document.getElementById('homeColorStrip').style.background = m.home_team?.color_primary||'#4ea1ff';
+  document.getElementById('awayColorStrip').style.background = m.away_team?.color_primary||'#ff6b6b';
+  document.getElementById('homeScoreDisplay').textContent = m.home_score??0;
+  document.getElementById('awayScoreDisplay').textContent = m.away_score??0;
+  document.getElementById('matchRoundLabel').textContent = m.round_name||'';
+  if (m.match_minute) document.getElementById('minuteDisplay').textContent = m.match_minute+"'";
+  updateStatusUI(m.status||'scheduled');
+}
+
+function updateStatusUI(status) {
+  const lbl = document.getElementById('statusLabel');
+  const btnS = document.getElementById('btnStart');
+  const btnF = document.getElementById('btnFinish');
+  const map = {scheduled:{t:'مجدولة',c:'status-scheduled'},live:{t:'🔴 مباشر',c:'status-live'},completed:{t:'✅ منتهية',c:'status-completed'}};
+  const s = map[status]||map.scheduled;
+  lbl.textContent = s.t; lbl.className = s.c;
+  btnS.disabled = status !== 'scheduled';
+  btnF.disabled = status !== 'live';
+}
+
+async function changeScore(side, delta) {
+  if (!cur) return;
+  const field = side==='home'?'home_score':'away_score';
+  const newVal = Math.max(0, (cur[field]||0) + delta);
+  await sb.from('matches').update({[field]:newVal}).eq('id',cur.id);
+  cur[field] = newVal;
+  document.getElementById(side+'ScoreDisplay').textContent = newVal;
+  if (delta > 0) openEvt(side, 'goal');
+}
+
+async function setStatus(status) {
+  if (!cur) return;
+  await sb.from('matches').update({status, match_minute: status==='live'?1:cur.match_minute}).eq('id',cur.id);
+  cur.status = status;
+  updateStatusUI(status);
+}
+
+async function saveMinute() {
+  const min = parseInt(document.getElementById('minuteInput').value)||1;
+  if (!cur) return;
+  await sb.from('matches').update({match_minute:min}).eq('id',cur.id);
+  cur.match_minute = min;
+  document.getElementById('minuteDisplay').textContent = min+"'";
+}
+
+function openEvt(side, type) {
+  curEvtSide = side; curEvtType = type;
+  const min = cur?.match_minute||'';
+  document.getElementById(side+'EvtLabel').textContent = 'تسجيل: '+(evtLabels[type]||type);
+  document.getElementById(side+'EvtMin').value = min;
+  document.getElementById(side+'EvtForm').classList.add('show');
+}
+function closeEvt(side) { document.getElementById(side+'EvtForm').classList.remove('show'); }
+
+async function submitEvt(side) {
+  const playerId = document.getElementById(side+'PlayerSel').value;
+  const minute = parseInt(document.getElementById(side+'EvtMin').value)||cur?.match_minute||0;
+  const teamId = side==='home'?cur.home_team_id:cur.away_team_id;
+  const {error} = await sb.from('match_events').insert({
+    match_id:cur.id, player_id:playerId||null, team_id:teamId,
+    event_type:curEvtType, minute
+  });
+  if (!error) { closeEvt(side); loadEvts(); }
+}
+
+async function loadEvts() {
+  const {data} = await sb.from('match_events')
+    .select('*,player:players(name,number),team:teams(name)')
+    .eq('match_id',cur.id).order('minute');
+  const list = document.getElementById('evtsList');
+  if (!data||!data.length) { list.innerHTML='<div class="no-events">لا توجد أحداث بعد</div>'; return; }
+  list.innerHTML = data.map(e=>`
+    <div class="evt-item">
+      <span class="evt-min-badge">${e.minute||0}'</span>
+      <span class="evt-icon">${evtIcons[e.event_type]||'📌'}</span>
+      <div class="evt-detail">
+        <div class="evt-player">${e.player?.name||'—'}</div>
+        <div>${e.team?.name||''} — ${evtLabels[e.event_type]||e.event_type}</div>
+      </div>
+      <button class="evt-del" onclick="delEvt('${e.id}')">🗑</button>
+    </div>`).join('');
+}
+
+async function delEvt(id) {
+  if (!confirm('حذف هذا الحدث؟')) return;
+  await sb.from('match_events').delete().eq('id',id);
+  loadEvts();
+}
+
+window.changeScore=changeScore; window.setStatus=setStatus; window.saveMinute=saveMinute;
+window.openEvt=openEvt; window.closeEvt=closeEvt; window.submitEvt=submitEvt; window.delEvt=delEvt;
+
+document.getElementById('selTournament').addEventListener('change', loadMatches);
+document.getElementById('selMatch').addEventListener('change', loadMatch);
+init();
+</script>
+</body>
+</html>

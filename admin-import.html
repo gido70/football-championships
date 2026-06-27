@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>استيراد الفرق واللاعبين</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --primary: #0b1f3a;
+  --gold: #c9a84c;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --text: #1a202c;
+  --muted: #718096;
+  --success: #38a169;
+  --error: #e53e3e;
+  --warning: #d69e2e;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+.topbar {
+  background: var(--primary);
+  color: white;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+.topbar-logo { display: flex; align-items: center; gap: 10px; }
+.topbar-logo span { font-size: 20px; font-weight: 700; }
+.topbar-logo small { font-size: 11px; color: var(--gold); display: block; }
+.topbar-nav { display: flex; gap: 8px; }
+.topbar-nav a {
+  color: rgba(255,255,255,.75);
+  text-decoration: none;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all .2s;
+}
+.topbar-nav a:hover { background: rgba(255,255,255,.1); color: white; }
+
+.main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+
+.page-title { font-size: 22px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+.page-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card-title { font-size: 15px; font-weight: 600; color: var(--primary); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.card-title::before { content: ''; width: 4px; height: 18px; background: var(--gold); border-radius: 2px; display: inline-block; }
+
+/* اختيار البطولة */
+.tourn-select-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 13px; font-weight: 500; color: var(--muted); }
+.form-group select, .form-group input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+  color: var(--text);
+  min-width: 220px;
+  transition: border .2s;
+}
+.form-group select:focus, .form-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* منطقة رفع الملف */
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  background: #fafbfc;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--primary);
+  background: #f0f4ff;
+}
+.drop-zone input[type=file] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+.drop-icon { font-size: 48px; margin-bottom: 12px; }
+.drop-text { font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 6px; }
+.drop-sub { font-size: 13px; color: var(--muted); }
+
+/* معاينة البيانات */
+.preview-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-box {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+.stat-num { font-size: 28px; font-weight: 700; color: var(--primary); }
+.stat-lbl { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.preview-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.preview-table th {
+  background: var(--primary);
+  color: white;
+  padding: 10px 12px;
+  text-align: right;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.preview-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.preview-table tr:last-child td { border-bottom: none; }
+.preview-table tr:nth-child(even) td { background: #fafbfc; }
+.preview-table img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); }
+.no-photo { width: 32px; height: 32px; border-radius: 50%; background: var(--bg); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; color: var(--muted); border: 2px solid var(--border); }
+
+/* شارات الصفة */
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.badge-admin { background: #e6f3ff; color: #0052cc; }
+.badge-coach { background: #fff0e6; color: #cc5200; }
+.badge-resident { background: #e6ffe6; color: #006600; }
+.badge-visitor { background: #f5e6ff; color: #5500cc; }
+.badge-sub { background: #f0f0f0; color: #555; }
+
+/* أزرار */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  transition: all .2s;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: #1a3a5c; }
+.btn-gold { background: var(--gold); color: white; }
+.btn-gold:hover { background: #a88030; }
+.btn-success { background: var(--success); color: white; }
+.btn-success:hover { background: #2f8a5a; }
+.btn-outline { background: white; color: var(--primary); border: 1.5px solid var(--primary); }
+.btn-outline:hover { background: var(--primary); color: white; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+/* شريط التقدم */
+.progress-wrap { margin: 16px 0; display: none; }
+.progress-bar-bg {
+  background: var(--border);
+  border-radius: 20px;
+  height: 10px;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--gold));
+  border-radius: 20px;
+  transition: width .3s;
+  width: 0%;
+}
+.progress-text { font-size: 13px; color: var(--muted); margin-top: 6px; text-align: center; }
+
+/* سجل العمليات */
+.log-wrap {
+  background: #0d1117;
+  border-radius: 8px;
+  padding: 16px;
+  font-family: monospace;
+  font-size: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+}
+.log-line { margin-bottom: 4px; }
+.log-ok { color: #39d353; }
+.log-err { color: #f85149; }
+.log-info { color: #79c0ff; }
+.log-warn { color: #e3b341; }
+
+/* إشعارات */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--primary);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  z-index: 999;
+  transition: transform .3s;
+  text-align: center;
+  max-width: 90vw;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { background: var(--success); }
+.toast.error { background: var(--error); }
+
+/* فلترة الفرق في المعاينة */
+.filter-row { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; flex-wrap: wrap; }
+.filter-row select { min-width: 180px; }
+.row-count { font-size: 13px; color: var(--muted); margin-right: auto; }
+
+/* حالة الاتصال */
+.conn-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.1);
+  color: rgba(255,255,255,.8);
+}
+.conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #fc8181; }
+.conn-dot.ok { background: #68d391; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+section { display: none; }
+section.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-logo">
+    <span>🏆 إدارة البطولات</span>
+    <small>استيراد الفرق واللاعبين</small>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="conn-badge">
+      <div class="conn-dot" id="connDot"></div>
+      <span id="connText">جاري الاتصال...</span>
+    </div>
+    <nav class="topbar-nav">
+      <a href="admin-home.html">الرئيسية</a>
+      <a href="admin-setup.html">البطولات</a>
+      <a href="#" style="background:rgba(201,168,76,.2);color:#f6d885">استيراد</a>
+    </nav>
+  </div>
+</div>
+
+<div class="main">
+  <div class="page-title">استيراد الفرق واللاعبين</div>
+  <div class="page-sub">ارفع ملف Excel مرة واحدة — يدخل كل الفرق واللاعبين والصور تلقائياً</div>
+
+  <!-- خطوة 1: اختيار البطولة -->
+  <div class="card">
+    <div class="card-title">الخطوة 1 — اختر البطولة</div>
+    <div class="tourn-select-row">
+      <div class="form-group">
+        <label>البطولة المستهدفة</label>
+        <select id="tournSelect">
+          <option value="">جاري التحميل...</option>
+        </select>
+      </div>
+      <button class="btn btn-outline" onclick="openCreateTournament()">+ بطولة جديدة</button>
+    </div>
+  </div>
+
+  <!-- خطوة 2: رفع الملف -->
+  <div class="card">
+    <div class="card-title">الخطوة 2 — ارفع ملف Excel</div>
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept=".xlsx,.xlsm,.xls" onchange="handleFile(this.files[0])">
+      <div class="drop-icon">📊</div>
+      <div class="drop-text">اسحب ملف Excel هنا أو اضغط للاختيار</div>
+      <div class="drop-sub">الأعمدة المدعومة: الفريق، الأسم، الجنسية، الصفة، الرقم، رابط الصور</div>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-text" id="progressText">جاري المعالجة...</div>
+    </div>
+  </div>
+
+  <!-- خطوة 3: معاينة وتأكيد -->
+  <section id="previewSection">
+    <div class="card">
+      <div class="card-title">الخطوة 3 — معاينة وتأكيد</div>
+      
+      <div class="preview-stats" id="previewStats"></div>
+
+      <div class="filter-row">
+        <div class="form-group">
+          <label>تصفية حسب الفريق</label>
+          <select id="teamFilter" onchange="filterPreview()">
+            <option value="">كل الفرق</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>تصفية حسب الصفة</label>
+          <select id="roleFilter" onchange="filterPreview()">
+            <option value="">كل الصفات</option>
+            <option value="إداري">إداري</option>
+            <option value="مدرب">مدرب</option>
+            <option value="لاعب مقيم">لاعب مقيم</option>
+            <option value="لاعب زائر">لاعب زائر</option>
+            <option value="لاعب بديل">لاعب بديل</option>
+          </select>
+        </div>
+        <span class="row-count" id="rowCount"></span>
+      </div>
+
+      <div class="preview-table-wrap">
+        <table class="preview-table">
+          <thead>
+            <tr>
+              <th>الصورة</th>
+              <th>الاسم</th>
+              <th>الفريق</th>
+              <th>الصفة</th>
+              <th>الرقم</th>
+              <th>الجنسية</th>
+            </tr>
+          </thead>
+          <tbody id="previewBody"></tbody>
+        </table>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-success" id="importBtn" onclick="startImport()">
+          ✅ استيراد الكل إلى Supabase
+        </button>
+        <button class="btn btn-outline" onclick="resetAll()">إعادة تعيين</button>
+      </div>
+
+      <div class="progress-wrap" id="importProgressWrap">
+        <div class="progress-bar-bg">
+          <div class="progress-bar" id="importBar"></div>
+        </div>
+        <div class="progress-text" id="importText">جاري الاستيراد...</div>
+      </div>
+
+      <div class="log-wrap" id="logWrap"></div>
+    </div>
+  </section>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ======== إعدادات Supabase ========
+const SUPABASE_URL = 'https://npoowwdjpbvhyjrmeqkv.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY'; // ← ضع مفتاحك هنا
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let parsedData = [];
+let allData = [];
+
+// ======== اتصال ========
+async function checkConnection() {
+  try {
+    const { data, error } = await sb.from('tournaments').select('id').limit(1);
+    if (error) throw error;
+    document.getElementById('connDot').classList.add('ok');
+    document.getElementById('connText').textContent = 'متصل';
+    loadTournaments();
+  } catch(e) {
+    document.getElementById('connText').textContent = 'خطأ في الاتصال';
+    showToast('تعذر الاتصال بقاعدة البيانات. تحقق من المفتاح.', 'error');
+  }
+}
+
+async function loadTournaments() {
+  const { data } = await sb.from('tournaments').select('id,name,season').order('created_at', { ascending: false });
+  const sel = document.getElementById('tournSelect');
+  sel.innerHTML = '<option value="">-- اختر البطولة --</option>';
+  (data || []).forEach(t => {
+    sel.innerHTML += `<option value="${t.id}">${t.name}${t.season ? ' - ' + t.season : ''}</option>`;
+  });
+}
+
+// ======== معالجة الملف ========
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  showProgress('progressWrap', 0, 'جاري قراءة الملف...');
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'binary' });
+      const sheetName = wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      showProgress('progressWrap', 50, 'جاري تحليل البيانات...');
+      processData(raw);
+      showProgress('progressWrap', 100, 'تم التحليل');
+      setTimeout(() => { document.getElementById('progressWrap').style.display = 'none'; }, 800);
+    } catch(err) {
+      showToast('خطأ في قراءة الملف: ' + err.message, 'error');
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function processData(raw) {
+  // كشف أعمدة الملف تلقائياً
+  const colMap = {};
+  if (raw.length === 0) { showToast('الملف فارغ', 'error'); return; }
+  const keys = Object.keys(raw[0]);
+  keys.forEach(k => {
+    const kl = k.trim().toLowerCase();
+    if (kl.includes('فريق') || kl.includes('team')) colMap.team = k;
+    else if (kl.includes('اسم') || kl.includes('أسم') || kl.includes('name')) colMap.name = k;
+    else if (kl.includes('جنسية') || kl.includes('nation')) colMap.nationality = k;
+    else if (kl.includes('صفة') || kl.includes('role')) colMap.role = k;
+    else if (kl.includes('رقم') || kl.includes('number')) colMap.number = k;
+    else if (kl.includes('صور') || kl.includes('photo') || kl.includes('image') || kl.includes('url')) colMap.photo = k;
+  });
+
+  allData = raw
+    .filter(r => r[colMap.name] && String(r[colMap.name]).trim())
+    .map((r, i) => ({
+      _id: i,
+      team: String(r[colMap.team] || '').trim(),
+      name: String(r[colMap.name] || '').trim(),
+      nationality: String(r[colMap.nationality] || '').trim(),
+      role: String(r[colMap.role] || 'لاعب مقيم').trim(),
+      number: parseInt(r[colMap.number]) || 0,
+      photo_url: String(r[colMap.photo] || '').trim(),
+    }))
+    .filter(r => r.name);
+
+  parsedData = [...allData];
+  renderPreview();
+  renderStats();
+  populateTeamFilter();
+  document.getElementById('previewSection').classList.add('active');
+}
+
+function renderStats() {
+  const teams = [...new Set(allData.map(r => r.team))];
+  const roles = allData.reduce((acc, r) => { acc[r.role] = (acc[r.role]||0)+1; return acc; }, {});
+  document.getElementById('previewStats').innerHTML = `
+    <div class="stat-box"><div class="stat-num">${allData.length}</div><div class="stat-lbl">إجمالي الأشخاص</div></div>
+    <div class="stat-box"><div class="stat-num">${teams.length}</div><div class="stat-lbl">فريق</div></div>
+    <div class="stat-box"><div class="stat-num">${roles['لاعب مقيم']||roles['لاعب زائر']||0}</div><div class="stat-lbl">لاعب</div></div>
+    <div class="stat-box"><div class="stat-num">${roles['مدرب']||0}</div><div class="stat-lbl">مدرب</div></div>
+    <div class="stat-box"><div class="stat-num">${allData.filter(r=>r.photo_url).length}</div><div class="stat-lbl">لديهم صورة</div></div>
+  `;
+}
+
+function populateTeamFilter() {
+  const teams = [...new Set(allData.map(r => r.team))].sort();
+  const sel = document.getElementById('teamFilter');
+  sel.innerHTML = '<option value="">كل الفرق</option>';
+  teams.forEach(t => sel.innerHTML += `<option value="${t}">${t}</option>`);
+}
+
+function filterPreview() {
+  const tf = document.getElementById('teamFilter').value;
+  const rf = document.getElementById('roleFilter').value;
+  parsedData = allData.filter(r =>
+    (!tf || r.team === tf) && (!rf || r.role === rf)
+  );
+  renderPreview();
+}
+
+function renderPreview() {
+  const tbody = document.getElementById('previewBody');
+  document.getElementById('rowCount').textContent = `${parsedData.length} سجل`;
+  tbody.innerHTML = parsedData.slice(0, 100).map(r => `
+    <tr>
+      <td>${r.photo_url
+        ? `<img src="${r.photo_url}" alt="${r.name}" onerror="this.outerHTML='<span class=no-photo>👤</span>'">`
+        : '<span class="no-photo">👤</span>'}</td>
+      <td>${r.name}</td>
+      <td>${r.team}</td>
+      <td>${roleBadge(r.role)}</td>
+      <td>${r.number || '—'}</td>
+      <td>${r.nationality || '—'}</td>
+    </tr>
+  `).join('');
+  if (parsedData.length > 100) {
+    tbody.innerHTML += `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:12px">+ ${parsedData.length-100} سجل إضافي (ستُستورد كلها)</td></tr>`;
+  }
+}
+
+function roleBadge(role) {
+  const map = {
+    'إداري': 'badge-admin', 'مدرب': 'badge-coach',
+    'لاعب مقيم': 'badge-resident', 'لاعب زائر': 'badge-visitor',
+    'لاعب بديل': 'badge-sub', 'لاعب مستبدل': 'badge-sub',
+  };
+  return `<span class="badge ${map[role]||'badge-sub'}">${role}</span>`;
+}
+
+// ======== الاستيراد الفعلي ========
+async function startImport() {
+  const tournId = document.getElementById('tournSelect').value;
+  if (!tournId) { showToast('اختر البطولة أولاً', 'error'); return; }
+  if (allData.length === 0) { showToast('لا توجد بيانات للاستيراد', 'error'); return; }
+
+  document.getElementById('importBtn').disabled = true;
+  document.getElementById('importProgressWrap').style.display = 'block';
+  document.getElementById('logWrap').style.display = 'block';
+
+  const log = (msg, type='info') => {
+    const div = document.createElement('div');
+    div.className = `log-line log-${type}`;
+    div.textContent = `[${new Date().toLocaleTimeString('ar')}] ${msg}`;
+    document.getElementById('logWrap').appendChild(div);
+    document.getElementById('logWrap').scrollTop = 9999;
+  };
+
+  log('بدء الاستيراد...', 'info');
+
+  // 1. استخراج الفرق الفريدة
+  const teamNames = [...new Set(allData.map(r => r.team).filter(Boolean))];
+  log(`وُجد ${teamNames.length} فريق`, 'info');
+
+  const teamIdMap = {};
+  let done = 0;
+
+  for (const teamName of teamNames) {
+    const sample = allData.find(r => r.team === teamName);
+    const { data, error } = await sb.from('teams').upsert({
+      tournament_id: tournId,
+      name: teamName,
+    }, { onConflict: 'tournament_id,name', ignoreDuplicates: false }).select('id');
+
+    if (error) { log(`خطأ في الفريق "${teamName}": ${error.message}`, 'err'); continue; }
+    if (data && data[0]) {
+      teamIdMap[teamName] = data[0].id;
+      log(`✓ فريق: ${teamName}`, 'ok');
+    }
+    done++;
+    setProgress('importBar', 'importText', Math.round(done / (teamNames.length + allData.length) * 100), `الفرق: ${done}/${teamNames.length}`);
+  }
+
+  // 2. استيراد اللاعبين
+  log('بدء استيراد اللاعبين...', 'info');
+  const roleMap = {
+    'إداري': 'admin', 'مدرب': 'coach',
+    'لاعب مقيم': 'player_resident', 'لاعب زائر': 'player_visitor',
+    'لاعب بديل': 'player_sub', 'لاعب مستبدل': 'player_replaced',
+  };
+
+  let playersDone = 0;
+  const batchSize = 50;
+  for (let i = 0; i < allData.length; i += batchSize) {
+    const batch = allData.slice(i, i + batchSize).map(r => ({
+      tournament_id: tournId,
+      team_id: teamIdMap[r.team] || null,
+      name: r.name,
+      number: r.number || null,
+      nationality: r.nationality || null,
+      role: roleMap[r.role] || 'player_resident',
+      photo_url: r.photo_url || null,
+    }));
+
+    const { error } = await sb.from('players').insert(batch);
+    if (error) { log(`خطأ في دفعة اللاعبين: ${error.message}`, 'err'); }
+    else {
+      playersDone += batch.length;
+      log(`✓ استُورد ${playersDone} لاعب`, 'ok');
+    }
+    setProgress('importBar', 'importText',
+      Math.round((teamNames.length + playersDone) / (teamNames.length + allData.length) * 100),
+      `اللاعبون: ${playersDone}/${allData.length}`);
+  }
+
+  setProgress('importBar', 'importText', 100, 'اكتمل الاستيراد!');
+  log(`✅ انتهى! ${teamNames.length} فريق + ${playersDone} لاعب`, 'ok');
+  showToast(`تم استيراد ${teamNames.length} فريق و ${playersDone} لاعب بنجاح`, 'success');
+  document.getElementById('importBtn').disabled = false;
+}
+
+// ======== أدوات مساعدة ========
+function showProgress(wrapId, pct, txt) {
+  document.getElementById(wrapId).style.display = 'block';
+  document.getElementById(wrapId.replace('Wrap','Bar') || 'progressBar').style.width = pct + '%';
+  document.getElementById(wrapId.replace('Wrap','Text') || 'progressText').textContent = txt;
+}
+function setProgress(barId, txtId, pct, txt) {
+  document.getElementById(barId).style.width = pct + '%';
+  document.getElementById(txtId).textContent = txt;
+}
+
+let toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function resetAll() {
+  allData = []; parsedData = [];
+  document.getElementById('previewSection').classList.remove('active');
+  document.getElementById('fileInput').value = '';
+  document.getElementById('logWrap').innerHTML = '';
+  document.getElementById('logWrap').style.display = 'none';
+  document.getElementById('importProgressWrap').style.display = 'none';
+}
+
+function openCreateTournament() {
+  window.location.href = 'admin-setup.html';
+}
+
+// Drag & Drop
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  handleFile(e.dataTransfer.files[0]);
+});
+
+// بدء
+checkConnection();
+</script>
+</body>
+</html>

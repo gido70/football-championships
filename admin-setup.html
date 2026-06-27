@@ -1,24 +1,302 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إعداد البطولة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+<style>
+body { font-family: "Tajawal", sans-serif !important; }
+.topbar-inner, .page-head, .nav-actions, .actions { flex-direction: row; }
 
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>إعداد البطولة</title><link rel="stylesheet" href="admin.css"></head><body>
-<header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">⚙️</div><div class="page-title"><h1>إعداد البطولة</h1><p>صفحة إعداد البطولة مرتبطة بجدول tournaments</p></div></div><div class="nav-actions"><a class="btn secondary" href="./admin-home.html">العودة إلى لوحة الأدمن</a><a class="btn secondary" href="./index.html">العودة إلى الموقع العام</a></div></div></header>
-<main class="container"><section class="card note">هذه الصفحة تعمل فعليًا. من هنا تحدد اسم البطولة والموسم ونوع البطولة وعدد الفرق. بعد ذلك ننتقل إلى صفحة الفرق الخاصة بهذه البطولة.</section>
-<section class="grid-2">
-<section class="panel"><h3>نموذج البطولة</h3><form id="tForm"><div class="form-grid">
-<div class="field"><label>اسم البطولة</label><input id="name" required placeholder="مثال: بطولة كأس منصور بن زايد"></div>
-<div class="field"><label>الموسم</label><input id="season_label" required placeholder="مثال: 2027"></div>
-<div class="field"><label>نوع البطولة</label><select id="tournament_type"><option value="groups_knockout">مجموعات + خروج مغلوب</option><option value="knockout">خروج مغلوب</option><option value="league">دوري</option><option value="mixed">مختلط</option></select></div>
-<div class="field"><label>الحالة</label><select id="status"><option value="draft">مسودة</option><option value="active">نشطة</option><option value="completed">مكتملة</option><option value="archived">مؤرشفة</option></select></div>
-<div class="field"><label>عدد الفرق</label><input id="team_count" type="number" min="0" value="16"></div>
-<div class="field"><label>عدد المجموعات</label><input id="group_count" type="number" min="0" value="4"></div>
-<div class="field full"><label>ملاحظات</label><textarea id="notes" placeholder="ملاحظات عامة"></textarea></div>
-</div><div class="actions"><button type="submit" class="btn">حفظ البطولة</button><button type="button" class="btn secondary" id="reloadBtn">تحديث القائمة</button></div><div id="statusBox" class="status"></div></form></section>
-<section class="panel"><h3>حالة الصفحة</h3><ul class="quick-list"><li><span>حالة الاتصال</span><strong id="conn">جاري الفحص...</strong></li><li><span>اسم الجدول</span><strong>tournaments</strong></li><li><span>وضع الصفحة</span><strong>إضافة + قراءة + حذف</strong></li></ul></section>
-</section>
-<section class="panel" style="margin-top:24px;"><h3>البطولات الحالية</h3><div class="table-wrap"><table><thead><tr><th>الاسم</th><th>الموسم</th><th>النوع</th><th>الحالة</th><th>الفرق</th><th>المجموعات</th><th>إجراء</th></tr></thead><tbody id="rows"></tbody></table></div></section></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script>
+/* معاينة الهوية البصرية */
+.color-preview {
+  border-radius: 16px;
+  overflow: hidden;
+  margin-top: 16px;
+  border: 1px solid rgba(255,255,255,.08);
+}
+.color-preview-banner {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0,0,0,.4);
+  font-family: "Tajawal", sans-serif;
+  transition: background .3s;
+}
+.color-preview-bar {
+  display: flex;
+  height: 8px;
+}
+.color-preview-bar div { flex: 1; }
+
+/* الجدول المحسّن */
+.status-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: "Tajawal", sans-serif;
+}
+.badge-active { background: rgba(52,211,153,.15); color: #34d399; }
+.badge-draft { background: rgba(255,213,79,.1); color: #ffd54f; }
+.badge-completed { background: rgba(78,161,255,.1); color: #4ea1ff; }
+.badge-archived { background: rgba(255,255,255,.05); color: #b7c6dc; }
+
+.type-badge {
+  font-size: 12px;
+  color: #b7c6dc;
+  font-family: "Tajawal", sans-serif;
+}
+
+/* زر الانتقال للفرق */
+.btn-go {
+  background: linear-gradient(135deg, #34d399, #059669) !important;
+  border-color: #34d399 !important;
+  font-size: 13px !important;
+  padding: 7px 14px !important;
+}
+.btn-go:hover { opacity: .9; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="page-head">
+      <div class="page-icon">⚙️</div>
+      <div class="page-title">
+        <h1>إعداد البطولة</h1>
+        <p>أنشئ بطولة جديدة وحدد هويتها البصرية وإعداداتها</p>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <a class="btn secondary" href="./admin-home.html">← لوحة الأدمن</a>
+      <a class="btn secondary" href="./index.html">🌐 الموقع العام</a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="grid-2">
+
+    <!-- نموذج البطولة -->
+    <section class="panel">
+      <h3>بطولة جديدة</h3>
+      <form id="tForm">
+        <div class="form-grid">
+          <div class="field full">
+            <label>اسم البطولة *</label>
+            <input id="name" required placeholder="مثال: بطولة كأس منصور بن زايد 2027">
+          </div>
+          <div class="field">
+            <label>الموسم *</label>
+            <input id="season_label" required placeholder="مثال: 2027">
+          </div>
+          <div class="field">
+            <label>نوع البطولة</label>
+            <select id="tournament_type">
+              <option value="groups_knockout">مجموعات + إقصاء</option>
+              <option value="knockout">إقصاء مباشر</option>
+              <option value="league">دوري</option>
+              <option value="mixed">مختلط</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>عدد الفرق</label>
+            <input id="team_count" type="number" min="2" max="64" value="16">
+          </div>
+          <div class="field">
+            <label>عدد المجموعات</label>
+            <input id="group_count" type="number" min="0" max="16" value="4">
+          </div>
+          <div class="field">
+            <label>الحالة</label>
+            <select id="status">
+              <option value="draft">مسودة</option>
+              <option value="active">نشطة</option>
+              <option value="completed">مكتملة</option>
+              <option value="archived">مؤرشفة</option>
+            </select>
+          </div>
+
+          <!-- الهوية البصرية -->
+          <div class="field">
+            <label>اللون الأساسي</label>
+            <input id="primary_color" type="color" value="#0b1f3a" style="height:48px;cursor:pointer" oninput="updatePreview()">
+          </div>
+          <div class="field">
+            <label>اللون الثانوي</label>
+            <input id="secondary_color" type="color" value="#c9a84c" style="height:48px;cursor:pointer" oninput="updatePreview()">
+          </div>
+
+          <div class="field full">
+            <label>شعار البطولة (رابط صورة)</label>
+            <input id="logo_url" placeholder="https://... رابط الشعار (اختياري)">
+          </div>
+
+          <div class="field full">
+            <label>ملاحظات</label>
+            <textarea id="notes" placeholder="أي ملاحظات إضافية"></textarea>
+          </div>
+        </div>
+
+        <!-- معاينة الهوية -->
+        <div class="color-preview" id="colorPreview">
+          <div class="color-preview-banner" id="previewBanner">اسم البطولة</div>
+          <div class="color-preview-bar">
+            <div id="previewBar1"></div>
+            <div id="previewBar2"></div>
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:20px">
+          <button type="submit" class="btn">💾 حفظ البطولة</button>
+          <button type="button" class="btn secondary" onclick="resetForm()">تفريغ</button>
+        </div>
+        <div id="statusBox" class="status"></div>
+      </form>
+    </section>
+
+    <!-- قائمة البطولات -->
+    <section class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <h3 style="margin:0">البطولات الحالية</h3>
+        <button class="btn secondary" onclick="loadRows()" style="padding:8px 14px;font-size:13px">🔄 تحديث</button>
+      </div>
+      <ul class="quick-list" style="margin-bottom:18px">
+        <li><span>حالة الاتصال</span><strong id="conn" style="color:#ffd54f">جاري الفحص...</strong></li>
+        <li><span>عدد البطولات</span><strong id="tourCount">0</strong></li>
+      </ul>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>البطولة</th>
+              <th>النوع</th>
+              <th>الحالة</th>
+              <th>الفرق</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="rows">
+            <tr><td colspan="5">جاري التحميل...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script>
-const client=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY),rows=document.getElementById('rows'),statusBox=document.getElementById('statusBox');function setMsg(t,c=''){statusBox.className='status '+c;statusBox.textContent=t}
-async function loadRows(){const {data,error}=await client.from('tournaments').select('*').order('created_at',{ascending:false,nullsFirst:false});document.getElementById('conn').textContent=error?'خطأ':'متصل';if(error){rows.innerHTML=`<tr><td colspan="7">${error.message}</td></tr>`;return}if(!data||!data.length){rows.innerHTML='<tr><td colspan="7">لا توجد بطولات حاليًا</td></tr>';return}rows.innerHTML=data.map(r=>`<tr><td>${r.name??''}</td><td>${r.season_label??''}</td><td>${r.tournament_type??''}</td><td>${r.status??''}</td><td>${r.team_count??0}</td><td>${r.group_count??0}</td><td><button class="btn secondary small-danger" onclick="removeTournament('${r.id}')">حذف</button></td></tr>`).join('')}
-async function removeTournament(id){if(!confirm('هل تريد حذف البطولة؟'))return;const {error}=await client.from('tournaments').delete().eq('id',id);if(error){setMsg('فشل الحذف: '+error.message,'err');return}setMsg('تم حذف البطولة','ok');loadRows()}
-document.getElementById('reloadBtn').onclick=loadRows;document.getElementById('tForm').addEventListener('submit',async(e)=>{e.preventDefault();const payload={name:document.getElementById('name').value.trim(),season_label:document.getElementById('season_label').value.trim(),tournament_type:document.getElementById('tournament_type').value,status:document.getElementById('status').value,team_count:Number(document.getElementById('team_count').value||0),group_count:Number(document.getElementById('group_count').value||0),notes:document.getElementById('notes').value.trim()||null,is_active:true};const {error}=await client.from('tournaments').insert([payload]);if(error){setMsg('فشل الحفظ: '+error.message,'err');return}setMsg('تم حفظ البطولة بنجاح','ok');e.target.reset();document.getElementById('team_count').value=16;document.getElementById('group_count').value=4;loadRows()});loadRows();
-</script></body></html>
+const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+function setMsg(t, c='') {
+  const box = document.getElementById('statusBox');
+  box.className = 'status ' + c;
+  box.textContent = t;
+}
+
+function updatePreview() {
+  const p = document.getElementById('primary_color').value;
+  const s = document.getElementById('secondary_color').value;
+  const name = document.getElementById('name').value || 'اسم البطولة';
+  document.getElementById('previewBanner').style.background = `linear-gradient(135deg,${p},${s})`;
+  document.getElementById('previewBanner').textContent = name;
+  document.getElementById('previewBar1').style.background = p;
+  document.getElementById('previewBar2').style.background = s;
+}
+
+function resetForm() {
+  document.getElementById('tForm').reset();
+  document.getElementById('primary_color').value = '#0b1f3a';
+  document.getElementById('secondary_color').value = '#c9a84c';
+  updatePreview();
+  setMsg('');
+}
+
+const typeLabels = {groups_knockout:'مجموعات + إقصاء', knockout:'إقصاء', league:'دوري', mixed:'مختلط'};
+const statusLabels = {draft:'مسودة', active:'نشطة', completed:'مكتملة', archived:'مؤرشفة'};
+const statusClass = {draft:'badge-draft', active:'badge-active', completed:'badge-completed', archived:'badge-archived'};
+
+async function loadRows() {
+  const {data, error} = await sb.from('tournaments').select('*').order('created_at', {ascending:false});
+  const connEl = document.getElementById('conn');
+  if (error) {
+    connEl.textContent = 'خطأ في الاتصال';
+    connEl.style.color = '#ff6b6b';
+    document.getElementById('rows').innerHTML = `<tr><td colspan="5">${error.message}</td></tr>`;
+    return;
+  }
+  connEl.textContent = '✅ متصل';
+  connEl.style.color = '#34d399';
+  document.getElementById('tourCount').textContent = data?.length || 0;
+  if (!data || !data.length) {
+    document.getElementById('rows').innerHTML = '<tr><td colspan="5">لا توجد بطولات بعد</td></tr>';
+    return;
+  }
+  document.getElementById('rows').innerHTML = data.map(r => `
+    <tr>
+      <td>
+        <strong style="color:#eef5ff;font-family:Tajawal,sans-serif">${r.name||''}</strong>
+        <div style="font-size:12px;color:#b7c6dc;margin-top:2px">${r.season_label||''}</div>
+      </td>
+      <td><span class="type-badge">${typeLabels[r.tournament_type]||r.tournament_type||''}</span></td>
+      <td><span class="status-badge ${statusClass[r.status]||''}">${statusLabels[r.status]||r.status||''}</span></td>
+      <td style="text-align:center">${r.team_count||0}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <a class="btn btn-go" href="teams-admin.html">→ الفرق</a>
+          <button class="btn secondary small-danger" onclick="delTournament('${r.id}')">حذف</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function delTournament(id) {
+  if (!confirm('هل تريد حذف هذه البطولة نهائياً؟')) return;
+  const {error} = await sb.from('tournaments').delete().eq('id', id);
+  if (error) { setMsg('فشل الحذف: ' + error.message, 'err'); return; }
+  setMsg('تم الحذف بنجاح', 'ok');
+  loadRows();
+}
+
+document.getElementById('name').addEventListener('input', updatePreview);
+document.getElementById('tForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const payload = {
+    name: document.getElementById('name').value.trim(),
+    season_label: document.getElementById('season_label').value.trim(),
+    tournament_type: document.getElementById('tournament_type').value,
+    status: document.getElementById('status').value,
+    team_count: Number(document.getElementById('team_count').value || 0),
+    group_count: Number(document.getElementById('group_count').value || 0),
+    primary_color: document.getElementById('primary_color').value,
+    secondary_color: document.getElementById('secondary_color').value,
+    logo_url: document.getElementById('logo_url').value.trim() || null,
+    notes: document.getElementById('notes').value.trim() || null,
+    is_active: document.getElementById('status').value === 'active',
+  };
+  setMsg('جاري الحفظ...');
+  const {error} = await sb.from('tournaments').insert([payload]);
+  if (error) { setMsg('فشل الحفظ: ' + error.message, 'err'); return; }
+  setMsg('✅ تم حفظ البطولة بنجاح — انتقل الآن إلى صفحة الفرق', 'ok');
+  resetForm();
+  loadRows();
+});
+
+window.delTournament = delTournament;
+updatePreview();
+loadRows();
+</script>
+</body>
+</html>
