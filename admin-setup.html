@@ -81,7 +81,7 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
 
     <!-- نموذج البطولة -->
     <section class="panel">
-      <h3>بطولة جديدة</h3>
+      <h3 id="formTitle">بطولة جديدة</h3>
       <form id="tForm">
         <div class="form-grid">
           <div class="field full">
@@ -218,7 +218,7 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
         </div>
 
         <div class="actions" style="margin-top:20px">
-          <button type="submit" class="btn">💾 حفظ البطولة</button>
+          <button type="submit" class="btn" id="submitBtn">💾 حفظ البطولة</button>
           <button type="button" class="btn secondary" onclick="resetForm()">تفريغ</button>
         </div>
         <div id="statusBox" class="status"></div>
@@ -460,6 +460,7 @@ function resetForm() {
   uploadedLogoBase64 = null;
   updatePreview();
   setMsg('');
+  resetEditMode();
 }
 
 function setMsg(t,c=''){
@@ -498,6 +499,7 @@ async function loadRows(){
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <a class="btn btn-go" href="teams-admin.html">→ الفرق</a>
+          <button class="btn" onclick="editTournament('${r.id}')" style="padding:7px 14px;font-size:13px;background:rgba(78,161,255,.15);border-color:#4ea1ff;color:#4ea1ff">✏️ تعديل</button>
           <button class="btn secondary small-danger" onclick="delTournament('${r.id}')">حذف</button>
         </div>
       </td>
@@ -542,9 +544,19 @@ document.getElementById('tForm').addEventListener('submit', async e => {
   };
 
   setMsg('جاري الحفظ...');
-  const {error} = await sb.from('tournaments').insert([payload]);
-  if(error){setMsg('فشل الحفظ: '+error.message,'err');return;}
-  setMsg('✅ تم حفظ البطولة بنجاح — انتقل الآن إلى صفحة الفرق','ok');
+  let error;
+  if (editingId) {
+    // تعديل موجود
+    ({error} = await sb.from('tournaments').update(payload).eq('id', editingId));
+    if(error){setMsg('فشل التعديل: '+error.message,'err');return;}
+    setMsg('✅ تم تعديل البطولة بنجاح','ok');
+    resetEditMode();
+  } else {
+    // إضافة جديد
+    ({error} = await sb.from('tournaments').insert([payload]));
+    if(error){setMsg('فشل الحفظ: '+error.message,'err');return;}
+    setMsg('✅ تم حفظ البطولة بنجاح — انتقل الآن إلى صفحة الفرق','ok');
+  }
   resetForm();
   loadRows();
 });
@@ -594,7 +606,65 @@ window.handleLogoUpload = async function(file) {
   }
 };
 
+// ======== تعديل بطولة موجودة ========
+let editingId = null;
+
+async function editTournament(id) {
+  const {data:r, error} = await sb.from('tournaments').select('*').eq('id', id).single();
+  if (error || !r) { setMsg('تعذر تحميل البطولة', 'err'); return; }
+  
+  editingId = id;
+  
+  // ملء النموذج
+  document.getElementById('name').value = r.name || '';
+  document.getElementById('season_label').value = r.season_label || '';
+  document.getElementById('tournament_type').value = r.tournament_type || 'groups_knockout';
+  document.getElementById('team_count').value = r.team_count || 16;
+  document.getElementById('group_count').value = r.group_count || 4;
+  document.getElementById('status').value = r.status || 'draft';
+  document.getElementById('notes').value = r.notes || '';
+
+  // الألوان
+  if (r.primary_color) {
+    document.getElementById('primary_color').value = r.primary_color;
+    document.getElementById('primary_color_manual').value = r.primary_color;
+  }
+  if (r.secondary_color) {
+    document.getElementById('secondary_color').value = r.secondary_color;
+    document.getElementById('secondary_color_manual').value = r.secondary_color;
+  }
+
+  // الشعار
+  if (r.logo_url) {
+    document.getElementById('logo_url').value = r.logo_url;
+    document.getElementById('logo_url_direct').value = r.logo_url;
+    document.getElementById('previewLogoWrap').innerHTML = `<img src="${r.logo_url}" class="color-preview-logo">`;
+    document.getElementById('logoPreviewWrap').style.display = 'block';
+    document.getElementById('logoPreviewImg').src = r.logo_url;
+    document.getElementById('logoDropZone').style.display = 'none';
+  }
+
+  // تحديث الواجهة
+  updatePreview();
+  updateSelectedDisplay();
+  document.getElementById('formTitle').textContent = '✏️ تعديل البطولة';
+  document.getElementById('submitBtn').textContent = '💾 حفظ التعديلات';
+  document.getElementById('submitBtn').style.background = 'linear-gradient(135deg,#4ea1ff,#2563eb)';
+
+  // التمرير للنموذج
+  document.querySelector('.panel').scrollIntoView({behavior:'smooth'});
+  setMsg('جاري تعديل: ' + r.name, 'ok');
+}
+
+function resetEditMode() {
+  editingId = null;
+  document.getElementById('formTitle').textContent = 'بطولة جديدة';
+  document.getElementById('submitBtn').textContent = '💾 حفظ البطولة';
+  document.getElementById('submitBtn').style.background = '';
+}
+
 window.delTournament=delTournament;
+window.editTournament=editTournament;
 window.switchColorMode=switchColorMode;
 window.setSwatchMode=setSwatchMode;
 updatePreview();
