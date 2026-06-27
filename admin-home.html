@@ -1,16 +1,325 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم الأدمن</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+<style>
+body { font-family: "Tajawal", sans-serif !important; }
+.topbar-inner { flex-direction: row; }
+.page-head { flex-direction: row; }
+.nav-actions { flex-direction: row; }
+.actions { flex-direction: row; }
 
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>لوحة الأدمن الرئيسية</title><link rel="stylesheet" href="admin.css"></head><body>
-<header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">🏆</div><div class="page-title"><h1>لوحة تحكم الأدمن</h1><p>بطولة كأس منصور بن زايد - نظام إدارة من GitHub مرتبط مباشرة بقاعدة البيانات</p></div></div><div class="nav-actions"><a class="btn secondary" href="./index.html">العودة إلى الموقع العام</a></div></div></header>
-<main class="container"><section class="hero"><div class="card"><span class="badge">GitHub Pages + Supabase</span><h2>المدخل الرئيسي لإدارة البطولة</h2><p>من هذه الصفحة تنتقل إلى صفحات الأدمن الفرعية. سنثبت الآن شكل القالب والرجوع والتنقل والاتجاه العربي بشكل موحد، ثم نكمل بقية الصفحات على نفس الأساس.</p></div><div class="card"><ul class="quick-list"><li><span>حالة النظام</span><strong id="conn">جاري الفحص...</strong></li><li><span>عدد الفرق</span><strong id="teamsCount">0</strong></li><li><span>عدد اللاعبين</span><strong id="playersCount">0</strong></li><li><span>عدد المباريات</span><strong id="matchesCount">0</strong></li></ul></div></section>
-<section class="cards-row">
-<a class="feature-card" href="./admin-setup.html"><div class="feature-icon">⚙️</div><h3>إعداد البطولة</h3><p>اسم البطولة، الموسم، النوع، وعدد الفرق والحالة العامة.</p></a>
-<a class="feature-card" href="./teams-admin.html"><div class="feature-icon">👥</div><h3>الفرق</h3><p>إضافة الفرق للبطولة المختارة وقراءة العدد المطلوب والحالي.</p></a>
-<a class="feature-card" href="./groups-admin.html"><div class="feature-icon">🧩</div><h3>المجموعات</h3><p>توزيع الفرق على المجموعات عندما يكون نوع البطولة يسمح بذلك.</p></a>
-<a class="feature-card" href="./schedule-admin.html"><div class="feature-icon">📅</div><h3>الجدول والمباريات</h3><p>هذه الصفحة ستبنى بعد تثبيت الفرق والمجموعات بشكل نهائي.</p></a>
-<a class="feature-card" href="./match-admin.html"><div class="feature-icon">🎯</div><h3>إدارة المباراة</h3><p>هذه الصفحة ستبنى بعد إنشاء الجدول والمباريات.</p></a>
-</section></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script>
+/* بطاقات الإحصائيات */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: linear-gradient(180deg, rgba(16,40,70,.96), rgba(11,28,49,.96));
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px;
+  padding: 22px 20px;
+  text-align: center;
+}
+.stat-card-num {
+  font-size: 42px;
+  font-weight: 900;
+  color: #4ea1ff;
+  font-family: "Tajawal", sans-serif;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+.stat-card-lbl {
+  font-size: 14px;
+  color: #b7c6dc;
+  font-family: "Tajawal", sans-serif;
+}
+.stat-card.gold .stat-card-num { color: #c9a84c; }
+.stat-card.green .stat-card-num { color: #34d399; }
+.stat-card.red .stat-card-num { color: #ff6b6b; }
+
+/* حالة الاتصال */
+.conn-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: rgba(52,211,153,.08);
+  border: 1px solid rgba(52,211,153,.2);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  color: #34d399;
+  font-family: "Tajawal", sans-serif;
+}
+.conn-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #34d399;
+  animation: pulse 2s infinite;
+}
+.conn-dot.err { background: #ff6b6b; animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.conn-bar.err { background: rgba(255,107,107,.08); border-color: rgba(255,107,107,.2); color: #ff6b6b; }
+
+/* شبكة بطاقات الأدمن */
+.admin-cards {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.admin-card {
+  display: block;
+  padding: 24px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: linear-gradient(180deg, rgba(16,40,70,.96), rgba(11,28,49,.96));
+  text-decoration: none;
+  transition: all .25s;
+  position: relative;
+  overflow: hidden;
+}
+.admin-card::before {
+  content: "";
+  position: absolute;
+  top: 0; right: 0;
+  width: 4px; height: 100%;
+  background: var(--card-color, #4ea1ff);
+  border-radius: 0 20px 20px 0;
+}
+.admin-card:hover {
+  border-color: var(--card-color, #4ea1ff);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,.3);
+}
+.admin-card-icon {
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  margin-bottom: 14px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+}
+.admin-card h3 {
+  font-size: 17px;
+  font-weight: 800;
+  color: #eef5ff;
+  margin: 0 0 8px;
+  font-family: "Tajawal", sans-serif;
+}
+.admin-card p {
+  font-size: 13px;
+  color: #b7c6dc;
+  line-height: 1.7;
+  margin: 0;
+  font-family: "Tajawal", sans-serif;
+}
+.admin-card .step-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  background: rgba(255,255,255,.08);
+  color: #b7c6dc;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-family: "Tajawal", sans-serif;
+}
+
+/* بطولة نشطة */
+.active-tournament {
+  background: linear-gradient(135deg, rgba(201,168,76,.1), rgba(201,168,76,.05));
+  border: 1px solid rgba(201,168,76,.25);
+  border-radius: 20px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.active-tournament-info h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #c9a84c;
+  margin: 0 0 4px;
+  font-family: "Tajawal", sans-serif;
+}
+.active-tournament-info p {
+  font-size: 14px;
+  color: #b7c6dc;
+  margin: 0;
+  font-family: "Tajawal", sans-serif;
+}
+.active-tournament-badge {
+  background: rgba(201,168,76,.15);
+  color: #c9a84c;
+  border: 1px solid rgba(201,168,76,.3);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-family: "Tajawal", sans-serif;
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="page-head">
+      <div class="page-icon">🏆</div>
+      <div class="page-title">
+        <h1>لوحة تحكم الأدمن</h1>
+        <p>إدارة البطولات — مرتبط مباشرة بقاعدة البيانات</p>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <a class="btn secondary" href="./admin-import.html">📥 استيراد Excel</a>
+      <a class="btn secondary" href="./index.html">🌐 الموقع العام</a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- حالة الاتصال -->
+  <div class="conn-bar" id="connBar">
+    <div class="conn-dot" id="connDot"></div>
+    <span id="connText">جاري الاتصال بقاعدة البيانات...</span>
+  </div>
+
+  <!-- البطولة النشطة -->
+  <div class="active-tournament" id="activeTournamentBox" style="display:none">
+    <div class="active-tournament-info">
+      <h3 id="activeTournamentName">—</h3>
+      <p id="activeTournamentDesc">—</p>
+    </div>
+    <span class="active-tournament-badge">🟢 نشطة</span>
+  </div>
+
+  <!-- الإحصائيات -->
+  <div class="stats-row">
+    <div class="stat-card gold">
+      <div class="stat-card-num" id="statTournaments">—</div>
+      <div class="stat-card-lbl">بطولة</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-num" id="statTeams">—</div>
+      <div class="stat-card-lbl">فريق</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-card-num" id="statPlayers">—</div>
+      <div class="stat-card-lbl">لاعب</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-card-num" id="statMatches">—</div>
+      <div class="stat-card-lbl">مباراة</div>
+    </div>
+  </div>
+
+  <!-- بطاقات الإدارة -->
+  <div class="admin-cards">
+    <a class="admin-card" href="./admin-setup.html" style="--card-color:#c9a84c">
+      <span class="step-badge">الخطوة 1</span>
+      <div class="admin-card-icon">⚙️</div>
+      <h3>إعداد البطولة</h3>
+      <p>أنشئ بطولة جديدة وحدد نوعها وموسمها وألوانها</p>
+    </a>
+    <a class="admin-card" href="./teams-admin.html" style="--card-color:#4ea1ff">
+      <span class="step-badge">الخطوة 2</span>
+      <div class="admin-card-icon">👥</div>
+      <h3>الفرق</h3>
+      <p>أضف الفرق المشاركة وحدد ألوانها وشعاراتها</p>
+    </a>
+    <a class="admin-card" href="./groups-admin.html" style="--card-color:#34d399">
+      <span class="step-badge">الخطوة 3</span>
+      <div class="admin-card-icon">🧩</div>
+      <h3>المجموعات</h3>
+      <p>وزّع الفرق على المجموعات</p>
+    </a>
+    <a class="admin-card" href="./schedule-admin.html" style="--card-color:#a78bfa">
+      <span class="step-badge">الخطوة 4</span>
+      <div class="admin-card-icon">📅</div>
+      <h3>الجدول والمباريات</h3>
+      <p>أنشئ جدول المباريات يدوياً أو تلقائياً</p>
+    </a>
+    <a class="admin-card" href="./match-admin.html" style="--card-color:#ff6b6b">
+      <span class="step-badge">الخطوة 5</span>
+      <div class="admin-card-icon">🎯</div>
+      <h3>إدارة المباراة</h3>
+      <p>سجّل الأهداف والبطاقات والنتيجة مباشرة</p>
+    </a>
+  </div>
+
+  <!-- روابط إضافية -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <a class="admin-card" href="./admin-import.html" style="--card-color:#fbbf24">
+      <div class="admin-card-icon">📥</div>
+      <h3>استيراد لاعبين من Excel</h3>
+      <p>ارفع ملف Excel وأدخل كل اللاعبين دفعة واحدة</p>
+    </a>
+    <a class="admin-card" href="./index.html" style="--card-color:#34d399">
+      <div class="admin-card-icon">🌐</div>
+      <h3>الموقع العام</h3>
+      <p>شاهد ما يراه الجمهور من نتائج وترتيب وإحصائيات</p>
+    </a>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script>
-const client=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-(async()=>{try{document.getElementById('conn').textContent='متصل';const [teams,players,matches]=await Promise.all([client.from('teams').select('*',{count:'exact',head:true}),client.from('players').select('*',{count:'exact',head:true}),client.from('matches').select('*',{count:'exact',head:true})]);document.getElementById('teamsCount').textContent=teams.count??0;document.getElementById('playersCount').textContent=players.count??0;document.getElementById('matchesCount').textContent=matches.count??0;}catch(e){document.getElementById('conn').textContent='خطأ في الربط';}})();
-</script></body></html>
+const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+async function init() {
+  try {
+    const [tours, teams, players, matches] = await Promise.all([
+      sb.from('tournaments').select('id,name,season_label,status', {count:'exact'}),
+      sb.from('teams').select('id', {count:'exact', head:true}),
+      sb.from('players').select('id', {count:'exact', head:true}),
+      sb.from('matches').select('id', {count:'exact', head:true}),
+    ]);
+
+    // اتصال ناجح
+    document.getElementById('connDot').classList.remove('err');
+    document.getElementById('connBar').classList.remove('err');
+    document.getElementById('connText').textContent = '✅ متصل بقاعدة البيانات — البيانات محدّثة';
+
+    // إحصائيات
+    document.getElementById('statTournaments').textContent = tours.count ?? 0;
+    document.getElementById('statTeams').textContent = teams.count ?? 0;
+    document.getElementById('statPlayers').textContent = players.count ?? 0;
+    document.getElementById('statMatches').textContent = matches.count ?? 0;
+
+    // البطولة النشطة
+    const active = (tours.data || []).find(t => t.status === 'active') || (tours.data || [])[0];
+    if (active) {
+      document.getElementById('activeTournamentName').textContent = active.name;
+      document.getElementById('activeTournamentDesc').textContent =
+        (active.season_label || '') + (active.status ? ' — ' + {draft:'مسودة',active:'نشطة',completed:'منتهية',archived:'مؤرشفة'}[active.status] : '');
+      document.getElementById('activeTournamentBox').style.display = 'flex';
+    }
+
+  } catch(e) {
+    document.getElementById('connDot').classList.add('err');
+    document.getElementById('connBar').classList.add('err');
+    document.getElementById('connText').textContent = '❌ تعذر الاتصال — تحقق من إعدادات Supabase';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
