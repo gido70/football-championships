@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>البطولة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh}
+
+/* NAV */
+.nav{background:#161b22;border-bottom:1px solid #30363d;padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-logo{font-size:18px;font-weight:800;color:white;text-decoration:none;display:flex;align-items:center;gap:8px}
+.nav-logo em{color:#c9a84c;font-style:normal}
+.nav-back{color:#8b949e;text-decoration:none;font-size:14px;font-weight:600;padding:6px 14px;border-radius:8px;border:1px solid #30363d;transition:.2s}
+.nav-back:hover{background:#21262d;color:white}
+
+/* HERO */
+.hero{position:relative;overflow:hidden;padding:56px 24px 44px;text-align:center}
+.hero-bg{position:absolute;inset:0;z-index:0}
+.hero-bg-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(13,17,23,0) 0%,rgba(13,17,23,.85) 100%)}
+.hero-content{position:relative;z-index:1}
+.hero-logo{width:88px;height:88px;object-fit:contain;border-radius:50%;border:3px solid rgba(255,255,255,.2);box-shadow:0 8px 32px rgba(0,0,0,.5);margin-bottom:18px}
+.hero-logo-ph{font-size:72px;margin-bottom:18px;display:block;filter:drop-shadow(0 4px 16px rgba(0,0,0,.6))}
+.hero-title{font-size:clamp(28px,4vw,52px);font-weight:900;color:white;margin-bottom:8px;text-shadow:0 2px 16px rgba(0,0,0,.6)}
+.hero-season{font-size:15px;color:rgba(255,255,255,.6);margin-bottom:32px;font-weight:500}
+.hero-stats{display:flex;gap:0;justify-content:center;flex-wrap:wrap}
+.hero-stat{text-align:center;padding:0 28px;border-left:1px solid rgba(255,255,255,.15)}
+.hero-stat:last-child{border-left:none}
+.hero-stat-num{font-size:36px;font-weight:900;line-height:1}
+.hero-stat-lbl{font-size:12px;color:rgba(255,255,255,.5);margin-top:5px;font-weight:500;letter-spacing:.5px}
+
+/* TABS */
+.tabs-wrap{background:#161b22;border-bottom:1px solid #30363d;position:sticky;top:58px;z-index:99}
+.tabs{max-width:1200px;margin:0 auto;display:flex;padding:0 20px;gap:0;overflow-x:auto}
+.tab{padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#8b949e;transition:.2s;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
+.tab:hover{color:#e6edf3}
+.tab.active{color:#c9a84c;border-bottom-color:#c9a84c}
+
+/* MAIN */
+.main{max-width:1200px;margin:0 auto;padding:32px 20px}
+.section-hd{font-size:17px;font-weight:800;color:#e6edf3;margin-bottom:20px;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid #21262d}
+
+/* STANDINGS */
+.standings-wrap{background:#161b22;border:1px solid #30363d;border-radius:14px;overflow:hidden;margin-bottom:24px}
+.group-title{background:linear-gradient(135deg,#1f2937,#111827);padding:12px 20px;font-size:14px;font-weight:700;color:#c9a84c;letter-spacing:.5px;border-bottom:1px solid #30363d}
+.st-table{width:100%;border-collapse:collapse}
+.st-table th{padding:11px 16px;text-align:right;font-size:12px;font-weight:700;color:#8b949e;background:#0d1117;letter-spacing:.5px;border-bottom:1px solid #21262d}
+.st-table td{padding:12px 16px;border-bottom:1px solid #21262d;font-size:14px;color:#c9d1d9}
+.st-table tr:last-child td{border-bottom:none}
+.st-table tr:hover td{background:rgba(255,255,255,.03)}
+.rank-circle{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:#21262d;color:#8b949e}
+.rank-1{background:linear-gradient(135deg,#f6d860,#c9a84c);color:#0d1117}
+.rank-2{background:linear-gradient(135deg,#d4d4d4,#a3a3a3);color:#0d1117}
+.rank-3{background:linear-gradient(135deg,#cd7f32,#a0522d);color:white}
+.team-cell-inner{display:flex;align-items:center;gap:10px}
+.team-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(255,255,255,.15)}
+.team-name-cell{font-weight:700;color:#e6edf3;font-size:15px}
+.pts-cell{font-weight:900;font-size:17px;color:#c9a84c}
+.num-cell{font-size:14px;color:#8b949e}
+.gd-pos{color:#3fb950}
+.gd-neg{color:#f85149}
+
+/* MATCHES */
+.matches-group{margin-bottom:24px}
+.matches-round-title{font-size:13px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;padding-right:4px}
+.match-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px 20px;margin-bottom:8px;transition:.2s}
+.match-card:hover{border-color:#c9a84c;background:#1c2128}
+.match-card.live{border-color:#f85149;background:linear-gradient(135deg,rgba(248,81,73,.05),#161b22)}
+.match-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.match-meta-left{font-size:12px;color:#8b949e}
+.match-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700}
+.badge-live{background:#f85149;color:white;animation:blink 1.5s infinite}
+.badge-done{background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.2)}
+.badge-sched{background:#21262d;color:#8b949e}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.6}}
+.match-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center}
+.mt{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#e6edf3}
+.mt.away{flex-direction:row-reverse}
+.mt-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(255,255,255,.2)}
+.ms{text-align:center}
+.ms-nums{font-size:26px;font-weight:900;color:#e6edf3;display:flex;align-items:center;gap:8px;justify-content:center;line-height:1}
+.ms-sep{color:#30363d;font-weight:300;font-size:20px}
+.ms-time{font-size:12px;color:#8b949e;margin-top:6px}
+
+/* SCORERS */
+.scorer-item{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;gap:14px;transition:.2s}
+.scorer-item:hover{border-color:#30363d;background:#1c2128}
+.scorer-rank{font-size:20px;font-weight:900;color:#c9a84c;min-width:28px;text-align:center}
+.scorer-photo{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #30363d}
+.scorer-ph{width:46px;height:46px;border-radius:50%;background:#21262d;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid #30363d;flex-shrink:0}
+.scorer-info{flex:1}
+.scorer-name{font-size:15px;font-weight:800;color:#e6edf3}
+.scorer-team{font-size:12px;color:#8b949e;margin-top:2px;display:flex;align-items:center;gap:6px}
+.scorer-team-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.scorer-goals{text-align:center}
+.scorer-goals-num{font-size:28px;font-weight:900;color:#e6edf3;line-height:1}
+.scorer-goals-lbl{font-size:11px;color:#8b949e;margin-top:2px}
+
+/* TEAMS */
+.teams-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.team-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px 16px;text-align:center;text-decoration:none;display:block;transition:.2s;position:relative;overflow:hidden}
+.team-card::before{content:"";position:absolute;top:0;right:0;left:0;height:4px;background:var(--tc,#c9a84c)}
+.team-card:hover{border-color:#c9a84c;transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.team-card-icon{font-size:40px;margin-bottom:12px;display:block}
+.team-card-name{font-size:15px;font-weight:800;color:#e6edf3;margin-bottom:4px}
+.team-card-count{font-size:13px;color:#8b949e}
+
+/* EMPTY */
+.empty{text-align:center;padding:64px 20px;color:#8b949e}
+.empty-icon{font-size:52px;margin-bottom:14px;opacity:.4;display:block}
+.empty p{font-size:15px;line-height:1.8}
+
+/* SKELETON */
+.skeleton{background:linear-gradient(90deg,#161b22 25%,#1c2128 50%,#161b22 75%);background-size:200% 100%;animation:sh 1.5s infinite;border-radius:12px}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.tab-content{display:none}.tab-content.active{display:block}
+
+@media(max-width:640px){
+  .hero-stat{padding:0 16px}
+  .hero-stat-num{font-size:28px}
+  .match-teams{grid-template-columns:1fr auto 1fr;gap:8px}
+  .mt{font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div style="display:flex;align-items:center;gap:8px">
+    <div id="navTournName" style="font-size:16px;font-weight:800;color:white;font-family:Tajawal,sans-serif">البطولة</div>
+    <div id="navStatusBadge" style="font-size:11px;padding:2px 10px;border-radius:20px;background:rgba(201,168,76,.15);color:#c9a84c;border:1px solid rgba(201,168,76,.25);font-family:Tajawal,sans-serif;display:none"></div>
+  </div>
+  <a href="index.html" style="color:#8b949e;text-decoration:none;font-size:13px;font-weight:600;padding:6px 14px;border-radius:8px;border:1px solid #30363d;transition:.2s;font-family:Tajawal,sans-serif" onmouseover="this.style.background='#21262d';this.style.color='white'" onmouseout="this.style.background='transparent';this.style.color='#8b949e'">🏠 كل البطولات</a>
+</nav>
+
+<div class="hero" id="hero">
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-bg-overlay"></div>
+  <div class="hero-content">
+    <div id="heroLogoWrap"><span class="hero-logo-ph">🏆</span></div>
+    <div class="hero-title" id="heroTitle">جاري التحميل...</div>
+    <div class="hero-season" id="heroSeason"></div>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="hTeams" style="color:#c9a84c">—</div>
+        <div class="hero-stat-lbl">فريق</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="hMatches" style="color:#3fb950">—</div>
+        <div class="hero-stat-lbl">مباراة</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="hPlayers" style="color:#58a6ff">—</div>
+        <div class="hero-stat-lbl">لاعب</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="hGoals" style="color:#f85149">—</div>
+        <div class="hero-stat-lbl">هدف</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab(this,'standings')">🏅 الترتيب</button>
+    <button class="tab" onclick="showTab(this,'matches')">📅 المباريات</button>
+    <button class="tab" onclick="showTab(this,'scorers')">⚽ الهدافون</button>
+    <button class="tab" onclick="showTab(this,'teams')">👥 الفرق</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="tab-content active" id="tab-standings">
+    <div id="standingsWrap">
+      <div class="skeleton" style="height:200px;margin-bottom:12px"></div>
+      <div class="skeleton" style="height:200px"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-matches">
+    <div id="matchesWrap">
+      <div class="skeleton" style="height:90px;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:90px;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:90px"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-scorers">
+    <div id="scorersWrap">
+      <div class="skeleton" style="height:70px;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:70px;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:70px"></div>
+    </div>
+  </div>
+  <div class="tab-content" id="tab-teams">
+    <div id="teamsWrap">
+      <div class="skeleton" style="height:120px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SURL="https://npoowwdjpbvhyjrmeqkv.supabase.co", SKEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY";
+const sb=supabase.createClient(SURL,SKEY);
+const TID=new URLSearchParams(location.search).get('id');
+
+function showTab(btn,name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+async function loadTournament(){
+  if(!TID){document.getElementById('heroTitle').textContent='لم يتم تحديد البطولة';return;}
+  const {data:t}=await sb.from('tournaments').select('*').eq('id',TID).single();
+  if(!t)return;
+  document.title=t.name;
+  document.getElementById('heroTitle').textContent=t.name;
+  document.getElementById('navTournName').textContent=t.name;
+  const navBadge=document.getElementById('navStatusBadge');
+  const statusLbl={draft:'مسودة',active:'نشطة',completed:'منتهية',archived:'مؤرشفة'};
+  if(t.status){navBadge.textContent=statusLbl[t.status]||t.status;navBadge.style.display='inline';}
+  document.getElementById('heroSeason').textContent=t.season_label||'';
+  const p=t.primary_color||'#0b1f3a', s=t.secondary_color||'#c9a84c';
+  document.getElementById('heroBg').style.background=`linear-gradient(135deg,${p} 0%,${s} 100%)`;
+  if(t.logo_url){
+    document.getElementById('heroLogoWrap').innerHTML=`<img class="hero-logo" src="${t.logo_url}" alt="${t.name}">`;
+  }
+}
+
+async function loadStandings(){
+  const {data:teams}=await sb.from('teams').select('*').eq('tournament_id',TID);
+  const {data:matches}=await sb.from('matches').select('*').eq('tournament_id',TID).eq('status','completed');
+  document.getElementById('hTeams').textContent=teams?.length||0;
+
+  if(!teams||!teams.length){
+    document.getElementById('standingsWrap').innerHTML=`<div class="empty"><span class="empty-icon">📊</span><p>لا يوجد ترتيب بعد<br>أضف الفرق وابدأ المباريات</p></div>`;
+    return;
+  }
+
+  const st={};
+  teams.forEach(t=>{st[t.id]={t,p:0,w:0,d:0,l:0,gf:0,ga:0};});
+  (matches||[]).forEach(m=>{
+    if(!st[m.home_team_id]||!st[m.away_team_id])return;
+    const h=st[m.home_team_id],a=st[m.away_team_id];
+    const hs=m.home_score||0,as=m.away_score||0;
+    h.p++;a.p++;h.gf+=hs;h.ga+=as;a.gf+=as;a.ga+=hs;
+    if(hs>as){h.w++;a.l++;}else if(hs<as){a.w++;h.l++;}else{h.d++;a.d++;}
+  });
+
+  const grouped={};
+  teams.forEach(t=>{const g=t.group_code||'عام';if(!grouped[g])grouped[g]=[];grouped[g].push(st[t.id]);});
+  Object.values(grouped).forEach(arr=>arr.sort((a,b)=>{const pa=a.w*3+a.d,pb=b.w*3+b.d;return pb-pa||((b.gf-b.ga)-(a.gf-a.ga));}));
+
+  let html='';
+  Object.entries(grouped).sort().forEach(([grp,rows])=>{
+    html+=`<div class="standings-wrap"><div class="group-title">المجموعة ${grp}</div>
+    <table class="st-table"><thead><tr>
+      <th style="width:40px">#</th><th>الفريق</th>
+      <th title="لعب">ل</th><th title="فاز">ف</th><th title="تعادل">ت</th><th title="خسر">خ</th>
+      <th title="له">له</th><th title="عليه">عل</th><th title="الفارق">فق</th>
+      <th title="النقاط" style="color:#c9a84c">نق</th>
+    </tr></thead><tbody>`;
+    rows.forEach((r,i)=>{
+      const pts=r.w*3+r.d, gd=r.gf-r.ga;
+      const gdClass=gd>0?'gd-pos':gd<0?'gd-neg':'';
+      html+=`<tr>
+        <td><span class="rank-circle rank-${i+1}">${i+1}</span></td>
+        <td><div class="team-cell-inner"><div class="team-dot" style="background:${r.t.color_primary||'#8b949e'}"></div><span class="team-name-cell">${r.t.name}</span></div></td>
+        <td class="num-cell">${r.p}</td><td class="num-cell">${r.w}</td>
+        <td class="num-cell">${r.d}</td><td class="num-cell">${r.l}</td>
+        <td class="num-cell">${r.gf}</td><td class="num-cell">${r.ga}</td>
+        <td class="num-cell ${gdClass}">${gd>0?'+':''}${gd}</td>
+        <td><span class="pts-cell">${pts}</span></td>
+      </tr>`;
+    });
+    html+='</tbody></table></div>';
+  });
+  document.getElementById('standingsWrap').innerHTML=html;
+}
+
+async function loadMatches(){
+  const {data}=await sb.from('matches')
+    .select('*,ht:teams!matches_home_team_id_fkey(name,color_primary),at:teams!matches_away_team_id_fkey(name,color_primary)')
+    .eq('tournament_id',TID).order('match_no');
+  document.getElementById('hMatches').textContent=data?.length||0;
+  if(!data||!data.length){
+    document.getElementById('matchesWrap').innerHTML=`<div class="empty"><span class="empty-icon">📅</span><p>لا توجد مباريات بعد</p></div>`;
+    return;
+  }
+  const rounds={};
+  data.forEach(m=>{const r=m.round_name||'عام';if(!rounds[r])rounds[r]=[];rounds[r].push(m);});
+  const roundLabels={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'المركز الثالث',final:'النهائي'};
+  const sMap={scheduled:'badge-sched',live:'badge-live',completed:'badge-done'};
+  const sLbl={scheduled:'مجدولة',live:'🔴 مباشر',completed:'منتهية'};
+
+  let html='';
+  Object.entries(rounds).forEach(([rnd,ms])=>{
+    html+=`<div class="matches-group"><div class="matches-round-title">${roundLabels[rnd]||rnd}</div>`;
+    ms.forEach(m=>{
+      const live=m.status==='live';
+      const done=m.status==='completed';
+      html+=`<div class="match-card ${live?'live':''}">
+        <div class="match-meta">
+          <span class="match-meta-left">${m.match_date?new Date(m.match_date).toLocaleDateString('ar-EG',{weekday:'short',month:'short',day:'numeric'}):''} ${m.match_time||''} ${m.venue?'· '+m.venue:''}</span>
+          <span class="match-badge ${sMap[m.status]||'badge-sched'}">${sLbl[m.status]||m.status}</span>
+        </div>
+        <div class="match-teams">
+          <div class="mt"><div class="mt-dot" style="background:${m.ht?.color_primary||'#8b949e'}"></div>${m.ht?.name||'؟'}</div>
+          <div class="ms">
+            <div class="ms-nums">
+              <span>${done||live?m.home_score??0:'–'}</span>
+              <span class="ms-sep">:</span>
+              <span>${done||live?m.away_score??0:'–'}</span>
+            </div>
+            ${live?`<div class="ms-time" style="color:#f85149">${m.match_minute||0}'</div>`:''}
+            ${!live&&m.match_time?`<div class="ms-time">${m.match_time}</div>`:''}
+          </div>
+          <div class="mt away">${m.at?.name||'؟'}<div class="mt-dot" style="background:${m.at?.color_primary||'#8b949e'}"></div></div>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  document.getElementById('matchesWrap').innerHTML=html;
+}
+
+async function loadScorers(){
+  const {data:mids}=await sb.from('matches').select('id').eq('tournament_id',TID);
+  if(!mids||!mids.length){document.getElementById('scorersWrap').innerHTML=`<div class="empty"><span class="empty-icon">⚽</span><p>لا توجد أهداف بعد</p></div>`;return;}
+  const ids=mids.map(m=>m.id);
+  const {data:evts}=await sb.from('match_events')
+    .select('player_id,player:players(id,name,photo_url),team:teams(name,color_primary)')
+    .eq('event_type','goal').in('match_id',ids);
+
+  let totalGoals=0;
+  const counts={};
+  (evts||[]).forEach(e=>{
+    if(!e.player_id)return;
+    totalGoals++;
+    if(!counts[e.player_id])counts[e.player_id]={name:e.player?.name||'—',photo:e.player?.photo_url,team:e.team?.name||'',color:e.team?.color_primary,goals:0};
+    counts[e.player_id].goals++;
+  });
+  document.getElementById('hGoals').textContent=totalGoals;
+
+  const sorted=Object.values(counts).sort((a,b)=>b.goals-a.goals).slice(0,20);
+  if(!sorted.length){document.getElementById('scorersWrap').innerHTML=`<div class="empty"><span class="empty-icon">⚽</span><p>لا توجد أهداف بعد</p></div>`;return;}
+
+  document.getElementById('scorersWrap').innerHTML=`<div class="section-hd">⚽ الهدافون</div>`+
+    sorted.map((p,i)=>`
+    <div class="scorer-item">
+      <div class="scorer-rank">${i+1}</div>
+      ${p.photo?`<img class="scorer-photo" src="${p.photo}" alt="" onerror="this.outerHTML='<div class=scorer-ph>👤</div>'">`:`<div class="scorer-ph">👤</div>`}
+      <div class="scorer-info">
+        <div class="scorer-name">${p.name}</div>
+        <div class="scorer-team"><div class="scorer-team-dot" style="background:${p.color||'#8b949e'}"></div>${p.team}</div>
+      </div>
+      <div class="scorer-goals">
+        <div class="scorer-goals-num">${p.goals}</div>
+        <div class="scorer-goals-lbl">هدف</div>
+      </div>
+    </div>`).join('');
+}
+
+async function loadTeams(){
+  const {data}=await sb.from('teams').select('*').eq('tournament_id',TID).order('name');
+  if(!data||!data.length){document.getElementById('teamsWrap').innerHTML=`<div class="empty"><span class="empty-icon">👥</span><p>لا توجد فرق بعد</p></div>`;return;}
+  const {data:players}=await sb.from('players').select('team_id').eq('tournament_id',TID);
+  const counts={};
+  (players||[]).forEach(p=>{counts[p.team_id]=(counts[p.team_id]||0)+1;});
+  document.getElementById('hPlayers').textContent=players?.length||0;
+  document.getElementById('teamsWrap').innerHTML=`<div class="section-hd">👥 الفرق المشاركة</div><div class="teams-grid">`+
+    data.map(t=>`
+    <a class="team-card" href="team.html?id=${t.id}" style="--tc:${t.color_primary||'#c9a84c'}">
+      <span class="team-card-icon">⚽</span>
+      <div class="team-card-name">${t.name}</div>
+      <div class="team-card-count">${counts[t.id]||0} لاعب</div>
+    </a>`).join('')+'</div>';
+}
+
+sb.channel('rt-t').on('postgres_changes',{event:'*',schema:'public',table:'matches',filter:`tournament_id=eq.${TID}`},()=>{loadMatches();loadStandings();}).subscribe();
+
+if(TID){loadTournament();loadStandings();loadMatches();loadScorers();loadTeams();}
+else document.getElementById('heroTitle').textContent='لم يتم تحديد البطولة';
+</script>
+</body>
+</html>
