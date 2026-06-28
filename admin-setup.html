@@ -182,6 +182,60 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
           <input type="hidden" id="secondary_color" value="#c9a84c">
           <input type="hidden" id="logo_url" value="">
 
+          <!-- ===== صور البطولة ===== -->
+          <div class="field full">
+            <label style="font-size:15px;font-weight:800;color:#eef5ff;margin-bottom:14px;display:block">🖼 صور البطولة</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+
+              <!-- خلفية البطولة -->
+              <div>
+                <div style="font-size:13px;color:#b7c6dc;margin-bottom:8px;font-family:Tajawal,sans-serif">📸 خلفية البطولة (الصورة الكبيرة)</div>
+                <div class="logo-upload-area" style="height:100px;padding:14px" id="bgDropZone" onclick="document.getElementById('bgFile').click()">
+                  <input type="file" id="bgFile" accept="image/*" style="display:none" onchange="uploadImage(this.files[0],'bg')">
+                  <div style="font-size:24px;margin-bottom:6px">🌄</div>
+                  <div style="font-size:12px;color:#b7c6dc;font-family:Tajawal,sans-serif">اسحب أو اضغط للرفع</div>
+                </div>
+                <div id="bgStatus" style="font-size:11px;margin-top:6px;font-family:Tajawal,sans-serif;display:none"></div>
+                <div id="bgPreview" style="display:none;margin-top:8px">
+                  <img id="bgPreviewImg" style="width:100%;height:60px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1)">
+                </div>
+              </div>
+
+              <!-- شعار الكأس -->
+              <div>
+                <div style="font-size:13px;color:#b7c6dc;margin-bottom:8px;font-family:Tajawal,sans-serif">🏆 شعار الكأس (يمين)</div>
+                <div class="logo-upload-area" style="height:100px;padding:14px" id="cupDropZone" onclick="document.getElementById('cupFile').click()">
+                  <input type="file" id="cupFile" accept="image/*" style="display:none" onchange="uploadImage(this.files[0],'cup')">
+                  <div style="font-size:24px;margin-bottom:6px">🥇</div>
+                  <div style="font-size:12px;color:#b7c6dc;font-family:Tajawal,sans-serif">شعار الكأس الصغير</div>
+                </div>
+                <div id="cupStatus" style="font-size:11px;margin-top:6px;font-family:Tajawal,sans-serif;display:none"></div>
+                <div id="cupPreview" style="display:none;margin-top:8px;text-align:center">
+                  <img id="cupPreviewImg" style="height:60px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))">
+                </div>
+              </div>
+
+              <!-- شعار اللجنة -->
+              <div>
+                <div style="font-size:13px;color:#b7c6dc;margin-bottom:8px;font-family:Tajawal,sans-serif">⭐ شعار اللجنة (يسار)</div>
+                <div class="logo-upload-area" style="height:100px;padding:14px" id="comDropZone" onclick="document.getElementById('comFile').click()">
+                  <input type="file" id="comFile" accept="image/*" style="display:none" onchange="uploadImage(this.files[0],'committee')">
+                  <div style="font-size:24px;margin-bottom:6px">⭐</div>
+                  <div style="font-size:12px;color:#b7c6dc;font-family:Tajawal,sans-serif">شعار اللجنة الرياضية</div>
+                </div>
+                <div id="comStatus" style="font-size:11px;margin-top:6px;font-family:Tajawal,sans-serif;display:none"></div>
+                <div id="comPreview" style="display:none;margin-top:8px;text-align:center">
+                  <img id="comPreviewImg" style="height:60px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))">
+                </div>
+              </div>
+
+            </div>
+          </div>
+          <!-- حقول مخفية لروابط الصور -->
+          <input type="hidden" id="bg_image_url" value="">
+          <input type="hidden" id="cup_logo_url" value="">
+          <input type="hidden" id="committee_logo_url" value="">
+
           <div class="field full">
             <label>ملاحظات</label>
             <textarea id="notes" placeholder="أي ملاحظات إضافية"></textarea>
@@ -538,7 +592,9 @@ document.getElementById('tForm').addEventListener('submit', async e => {
     group_count: Number(document.getElementById('group_count').value||0),
     primary_color: document.getElementById('primary_color').value || '#0b1f3a',
     secondary_color: document.getElementById('secondary_color').value || '#c9a84c',
-    logo_url: logoUrl || null,
+    logo_url: document.getElementById('cup_logo_url').value || logoUrl || null,
+    bg_image_url: document.getElementById('bg_image_url').value || null,
+    committee_logo_url: document.getElementById('committee_logo_url').value || null,
     notes: document.getElementById('notes').value.trim() || null,
     is_active: document.getElementById('status').value === 'active',
   };
@@ -638,10 +694,26 @@ async function editTournament(id) {
   if (r.logo_url) {
     document.getElementById('logo_url').value = r.logo_url;
     document.getElementById('logo_url_direct').value = r.logo_url;
+    document.getElementById('cup_logo_url').value = r.logo_url;
     document.getElementById('previewLogoWrap').innerHTML = `<img src="${r.logo_url}" class="color-preview-logo">`;
     document.getElementById('logoPreviewWrap').style.display = 'block';
     document.getElementById('logoPreviewImg').src = r.logo_url;
     document.getElementById('logoDropZone').style.display = 'none';
+    // معاينة شعار الكأس
+    document.getElementById('cupPreview').style.display='block';
+    document.getElementById('cupPreviewImg').src=r.logo_url;
+  }
+  // الخلفية
+  if (r.bg_image_url) {
+    document.getElementById('bg_image_url').value = r.bg_image_url;
+    document.getElementById('bgPreview').style.display='block';
+    document.getElementById('bgPreviewImg').src=r.bg_image_url;
+  }
+  // شعار اللجنة
+  if (r.committee_logo_url) {
+    document.getElementById('committee_logo_url').value = r.committee_logo_url;
+    document.getElementById('comPreview').style.display='block';
+    document.getElementById('comPreviewImg').src=r.committee_logo_url;
   }
 
   // تحديث الواجهة
@@ -663,6 +735,44 @@ function resetEditMode() {
   document.getElementById('submitBtn').style.background = '';
 }
 
+// ======== رفع الصور لـ Supabase Storage ========
+async function uploadImage(file, type) {
+  if(!file) return;
+  const statusMap = {bg:'bgStatus', cup:'cupStatus', committee:'comStatus'};
+  const previewMap = {bg:'bgPreview', cup:'cupPreview', committee:'comPreview'};
+  const imgMap = {bg:'bgPreviewImg', cup:'cupPreviewImg', committee:'comPreviewImg'};
+  const fieldMap = {bg:'bg_image_url', cup:'cup_logo_url', committee:'committee_logo_url'};
+  const nameMap = {bg:'backgrounds', cup:'logos', committee:'logos'};
+
+  const statusEl = document.getElementById(statusMap[type]);
+  statusEl.style.display='block';
+  statusEl.style.color='#ffd54f';
+  statusEl.textContent='⏳ جاري الرفع...';
+
+  // معاينة فورية
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById(previewMap[type]).style.display='block';
+    document.getElementById(imgMap[type]).src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+
+  try {
+    const ext = file.name.split('.').pop();
+    const fileName = `${nameMap[type]}/${type}_${Date.now()}.${ext}`;
+    const {data, error} = await sb.storage.from('tournament-assets').upload(fileName, file, {upsert:true, contentType:file.type});
+    if(error) throw error;
+    const {data:urlData} = sb.storage.from('tournament-assets').getPublicUrl(fileName);
+    const url = urlData.publicUrl;
+    document.getElementById(fieldMap[type]).value = url;
+    statusEl.style.color='#34d399';
+    statusEl.textContent='✅ تم الرفع';
+  } catch(err) {
+    statusEl.style.color='#ff6b6b';
+    statusEl.textContent='⚠️ فشل الرفع — ' + (err.message||'');
+  }
+}
+window.uploadImage = uploadImage;
 window.delTournament=delTournament;
 window.editTournament=editTournament;
 window.switchColorMode=switchColorMode;
