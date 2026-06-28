@@ -201,26 +201,46 @@ async function loadStandings(){
 }
 
 async function loadMatches(){
-  const {data}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,color_primary),at:teams!matches_away_team_id_fkey(name,color_primary)').eq('tournament_id',TID).order('match_no');
-  document.getElementById('hM').textContent=data?.length||0;
-  if(!data||!data.length){document.getElementById('maWrap').innerHTML='<div class="empty"><span>📅</span><p>لا توجد مباريات بعد</p></div>';return;}
+  // نحمل المباريات والفرق بشكل منفصل لتجنب مشاكل FK
+  const {data:matches}=await sb.from('matches').select('*').eq('tournament_id',TID).order('match_no');
+  const {data:teams}=await sb.from('teams').select('id,name,name_ar,primary_color,color_primary').eq('tournament_id',TID);
+  document.getElementById('hM').textContent=matches?.length||0;
+  if(!matches||!matches.length){document.getElementById('maWrap').innerHTML='<div class="empty"><span>📅</span><p>لا توجد مباريات بعد</p></div>';return;}
+  
+  // خريطة الفرق
+  const tm={};
+  (teams||[]).forEach(t=>{tm[t.id]=t;});
+  
   const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'المركز الثالث',final:'النهائي'};
   const rounds={};
-  data.forEach(m=>{const r=m.round_name||'عام';if(!rounds[r])rounds[r]=[];rounds[r].push(m);});
+  matches.forEach(m=>{const r=m.round_name||'عام';if(!rounds[r])rounds[r]=[];rounds[r].push(m);});
   const sm={scheduled:'b-sched',live:'b-live',completed:'b-done'};
   const sl={scheduled:'مجدولة',live:'🔴 مباشر',completed:'منتهية'};
   let html='';
   Object.entries(rounds).forEach(([rnd,ms])=>{
     html+=`<div class="m-group"><div class="m-round">${rl[rnd]||rnd}</div>`;
     ms.forEach(m=>{
-      const d=m.status==='done'||m.status==='completed',lv=m.status==='live';
+      const ht=tm[m.home_team_id]||{};
+      const at=tm[m.away_team_id]||{};
+      const d=m.status==='completed', lv=m.status==='live';
+      const hName=ht.name_ar||ht.name||'؟';
+      const aName=at.name_ar||at.name||'؟';
+      const hColor=ht.primary_color||ht.color_primary||'#8b949e';
+      const aColor=at.primary_color||at.color_primary||'#8b949e';
       html+=`<div class="m-card ${lv?'live':''}">
-        <div class="m-top"><span class="m-info">${m.match_date?new Date(m.match_date).toLocaleDateString('ar-SA',{weekday:'short',month:'short',day:'numeric'}):''}</span><span class="m-badge ${sm[m.status]||'b-sched'}">${sl[m.status]||m.status}</span></div>
+        <div class="m-top">
+          <span class="m-info">${m.match_date?new Date(m.match_date).toLocaleDateString('ar-SA',{weekday:'short',month:'short',day:'numeric'}):''} ${m.match_time||''}</span>
+          <span class="m-badge ${sm[m.status]||'b-sched'}">${sl[m.status]||m.status}</span>
+        </div>
         <div class="m-teams">
-          <div class="mt"><div class="mt-dot" style="background:${m.ht?.color_primary||'#8b949e'}"></div>${m.ht?.name||'؟'}</div>
-          <div class="ms"><div class="ms-n"><span>${d||lv?m.home_score??0:'–'}</span><span class="ms-sep">:</span><span>${d||lv?m.away_score??0:'–'}</span></div>${lv?`<div class="ms-sub" style="color:#f85149">${m.match_minute||0}'</div>`:`<div class="ms-sub">${m.match_time||''}</div>`}</div>
-          <div class="mt away">${m.at?.name||'؟'}<div class="mt-dot" style="background:${m.at?.color_primary||'#8b949e'}"></div></div>
-        </div></div>`;
+          <div class="mt"><div class="mt-dot" style="background:${hColor}"></div>${hName}</div>
+          <div class="ms">
+            <div class="ms-n"><span>${d||lv?m.home_score??0:'–'}</span><span class="ms-sep">:</span><span>${d||lv?m.away_score??0:'–'}</span></div>
+            ${lv?`<div class="ms-sub" style="color:#f85149">${m.match_minute||0}'</div>`:`<div class="ms-sub">${m.match_time||''}</div>`}
+          </div>
+          <div class="mt away">${aName}<div class="mt-dot" style="background:${aColor}"></div></div>
+        </div>
+      </div>`;
     });
     html+='</div>';
   });
@@ -230,7 +250,7 @@ async function loadMatches(){
 async function loadScorers(){
   const {data:mids}=await sb.from('matches').select('id').eq('tournament_id',TID);
   if(!mids||!mids.length){document.getElementById('scWrap').innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف بعد</p></div>';return;}
-  const {data:evts}=await sb.from('match_events').select('player_id,player:players(name,photo_url),team:teams(name,color_primary)').eq('event_type','goal').in('match_id',mids.map(m=>m.id));
+  const {data:evts}=await sb.from('match_events').select('player_id,player:players(name,full_name_ar,photo_url),team:teams(name,name_ar,primary_color,color_primary)').eq('event_type','goal').in('match_id',mids.map(m=>m.id));
   let tot=0;const cnt={};
   (evts||[]).forEach(e=>{if(!e.player_id)return;tot++;if(!cnt[e.player_id])cnt[e.player_id]={name:e.player?.name||'—',photo:e.player?.photo_url,team:e.team?.name||'',col:e.team?.color_primary,g:0};cnt[e.player_id].g++;});
   document.getElementById('hG').textContent=tot;
@@ -248,13 +268,13 @@ async function loadScorers(){
 async function loadTeams(){
   const {data}=await sb.from('teams').select('*').eq('tournament_id',TID).order('name');
   if(!data||!data.length){document.getElementById('tmWrap').innerHTML='<div class="empty"><span>👥</span><p>لا توجد فرق بعد</p></div>';return;}
-  const {data:pl}=await sb.from('players').select('team_id').eq('tournament_id',TID);
+  const {data:pl}=await sb.from('players').select('team_id,tournament_id').eq('tournament_id',TID);
   const cnt={};(pl||[]).forEach(p=>{cnt[p.team_id]=(cnt[p.team_id]||0)+1;});
   document.getElementById('hP').textContent=pl?.length||0;
   document.getElementById('tmWrap').innerHTML='<div class="sec-hd">👥 الفرق</div><div class="tm-grid">'+data.map(t=>`
-    <a class="tm-card" href="team.html?id=${t.id}" style="--c:${t.color_primary||'#c9a84c'}">
+    <a class="tm-card" href="team.html?id=${t.id}" style="--c:${t.primary_color||t.color_primary||'#c9a84c'}">
       <span class="tm-icon">⚽</span>
-      <div class="tm-name">${t.name}</div>
+      <div class="tm-name">${t.name_ar||t.name}</div>
       <div class="tm-cnt">${cnt[t.id]||0} لاعب</div>
     </a>`).join('')+'</div>';
 }

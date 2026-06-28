@@ -94,7 +94,7 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 
 <nav class="nav">
   <div class="nav-team" id="navTeam">الفريق</div>
-  <a href="javascript:history.back()" class="nav-back">← رجوع</a>
+  <a href="javascript:history.back()" class="nav-back" id="backBtn">← رجوع للبطولة</a>
 </nav>
 
 <div class="hero" id="hero">
@@ -316,6 +316,12 @@ async function loadMatches(){
 }
 
 async function init(){
+  // تحديد رابط الرجوع للبطولة
+  const ref = document.referrer;
+  const backBtn = document.getElementById('backBtn');
+  if(ref && ref.includes('tournament.html')){
+    backBtn.href = ref;
+  }
   await loadTeam();
   await loadSquad();
   await loadStats();
