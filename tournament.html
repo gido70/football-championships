@@ -168,7 +168,7 @@ function showTab(btn,name){
 
 async function loadTournament(){
   if(!TID)return;
-  const {data:t}=await sb.from('tournaments').select('*').eq('id',TID).single();
+  const {data:t}=await sb.from('tournaments').select('id,name,name_ar,season_label,status,primary_color,secondary_color,logo_url,bg_image_url,cup_logo_url,committee_logo_url').eq('id',TID).single();
   if(!t)return;
   document.title=t.name;
   document.getElementById('navName').textContent=t.name;
