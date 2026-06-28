@@ -21,7 +21,7 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .hero-logo{width:84px;height:84px;object-fit:contain;border-radius:50%;border:3px solid rgba(255,255,255,.25);margin-bottom:16px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
 .hero-logo-ph{font-size:68px;margin-bottom:16px;display:block}
 .hero-title{font-size:clamp(26px,4vw,48px);font-weight:900;color:white;margin-bottom:8px;text-shadow:0 2px 16px rgba(0,0,0,.5)}
-.hero-season{font-size:15px;color:rgba(255,255,255,.6);margin-bottom:30px}
+.hero-season{font-size:22px;font-weight:800;color:rgba(255,255,255,.9);margin-bottom:30px;letter-spacing:2px;background:rgba(255,255,255,.1);display:inline-block;padding:6px 24px;border-radius:30px;border:1px solid rgba(255,255,255,.2)}
 .hero-stats{display:flex;justify-content:center;flex-wrap:wrap}
 .hs{text-align:center;padding:0 24px;border-left:1px solid rgba(255,255,255,.12)}
 .hs:last-child{border-left:none}
@@ -115,7 +115,11 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
   <div class="hero-bg" id="heroBg" style="background:linear-gradient(135deg,#0b1f3a,#c9a84c)"></div>
   <div class="hero-overlay"></div>
   <div class="hero-content">
-    <div id="heroLogoWrap"><span class="hero-logo-ph">🏆</span></div>
+    <div id="heroLogoWrap">
+      <div style="width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;border:2px solid rgba(255,255,255,.2);box-shadow:0 8px 32px rgba(0,0,0,.4)">
+        <span style="font-size:56px">🏆</span>
+      </div>
+    </div>
     <div class="hero-title" id="heroTitle">جاري التحميل...</div>
     <div class="hero-season" id="heroSeason"></div>
     <div class="hero-stats">
