@@ -417,14 +417,17 @@ document.getElementById('tForm').addEventListener('submit',async e=>{
   let error;
   if(eid){
     ({error}=await sb.from('tournaments').update(payload).eq('id',eid));
-    if(!error){setMsg('✅ تم التعديل بنجاح','ok');resetForm();}
-    else setMsg('فشل التعديل: '+error.message,'err');
+    if(!error){
+      setMsg('✅ تم التعديل بنجاح','ok');
+      loadRows();
+      // أعد تحميل البيانات بدل resetForm
+      setTimeout(()=>editTour(eid), 800);
+    } else setMsg('فشل التعديل: '+error.message,'err');
   } else {
     ({error}=await sb.from('tournaments').insert([payload]));
-    if(!error){setMsg('✅ تم الحفظ — انتقل للفرق','ok');resetForm();}
+    if(!error){setMsg('✅ تم الحفظ — انتقل للفرق','ok');resetForm();loadRows();}
     else setMsg('فشل الحفظ: '+error.message,'err');
   }
-  if(!error) loadRows();
 });
 
 window.editTour=editTour;window.delTour=delTour;
