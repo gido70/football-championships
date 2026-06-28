@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إعداد البطولة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css">
+<style>
+body{font-family:"Tajawal",sans-serif!important}
+.topbar-inner,.page-head,.nav-actions,.actions{flex-direction:row}
+select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!important}
+
+/* معاينة هوية البطولة */
+.identity-preview{border-radius:20px;overflow:hidden;margin:16px 0;position:relative;min-height:140px}
+.id-bg{position:absolute;inset:0;background-size:cover;background-position:center;transition:all .3s}
+.id-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.3),rgba(0,0,0,.75))}
+.id-content{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:20px 24px;gap:16px}
+.id-logo{width:70px;height:70px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.6))}
+.id-center{flex:1;text-align:center}
+.id-name{font-size:20px;font-weight:900;color:white;text-shadow:0 2px 8px rgba(0,0,0,.5);margin-bottom:4px;font-family:"Tajawal",sans-serif}
+.id-year{font-size:18px;font-weight:800;letter-spacing:3px;text-shadow:0 2px 8px rgba(0,0,0,.5);font-family:"Tajawal",sans-serif}
+
+/* مناطق رفع الصور */
+.upload-zones{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.upload-zone{border:2px dashed rgba(255,255,255,.15);border-radius:14px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s;background:rgba(255,255,255,.02);position:relative}
+.upload-zone:hover{border-color:rgba(78,161,255,.4);background:rgba(78,161,255,.05)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.upload-zone-icon{font-size:28px;margin-bottom:6px}
+.upload-zone-label{font-size:12px;color:#b7c6dc;font-family:"Tajawal",sans-serif;line-height:1.4}
+.upload-zone-status{font-size:11px;margin-top:6px;font-family:"Tajawal",sans-serif;min-height:16px}
+.upload-zone-preview{margin-top:8px;display:none}
+.upload-zone-preview img{max-height:50px;max-width:100%;object-fit:contain}
+.zone-bg{border-color:rgba(88,166,255,.2)}
+.zone-cup{border-color:rgba(201,168,76,.2)}
+.zone-com{border-color:rgba(52,211,153,.2)}
+
+/* جدول البطولات */
+.status-badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:700;font-family:"Tajawal",sans-serif}
+.badge-active{background:rgba(52,211,153,.15);color:#34d399}
+.badge-draft{background:rgba(255,213,79,.1);color:#ffd54f}
+.badge-completed{background:rgba(78,161,255,.1);color:#4ea1ff}
+.badge-archived{background:rgba(255,255,255,.05);color:#b7c6dc}
+.btn-edit{background:rgba(78,161,255,.15)!important;border-color:#4ea1ff!important;color:#4ea1ff!important;font-size:13px!important;padding:7px 14px!important}
+.btn-go{background:linear-gradient(135deg,#34d399,#059669)!important;font-size:13px!important;padding:7px 14px!important}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="page-head">
+      <div class="page-icon">⚙️</div>
+      <div class="page-title"><h1>إعداد البطولة</h1><p>أنشئ أو عدّل بطولة — شعار + ألوان + خلفية</p></div>
+    </div>
+    <div class="nav-actions">
+      <a class="btn secondary" href="./admin-home.html">← لوحة الأدمن</a>
+      <a class="btn secondary" href="./index.html" target="_blank">🌐 الموقع العام ↗</a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+<div class="grid-2">
+
+<!-- نموذج البطولة -->
+<section class="panel">
+  <h3 id="formTitle">بطولة جديدة</h3>
+  <form id="tForm">
+    <div class="form-grid">
+      <div class="field full">
+        <label>اسم البطولة *</label>
+        <input id="name" required placeholder="مثال: كأس منصور بن زايد">
+      </div>
+      <div class="field">
+        <label>الموسم *</label>
+        <input id="season_label" required placeholder="2027">
+      </div>
+      <div class="field">
+        <label>نوع البطولة</label>
+        <select id="tournament_type">
+          <option value="groups_knockout">مجموعات + إقصاء</option>
+          <option value="knockout">إقصاء مباشر</option>
+          <option value="league">دوري</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>عدد الفرق</label>
+        <input id="team_count" type="number" value="16" min="2" max="64">
+      </div>
+      <div class="field">
+        <label>عدد المجموعات</label>
+        <input id="group_count" type="number" value="4" min="0" max="16">
+      </div>
+      <div class="field">
+        <label>الحالة</label>
+        <select id="status">
+          <option value="draft">مسودة</option>
+          <option value="active">نشطة</option>
+          <option value="completed">مكتملة</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ===== الهوية البصرية ===== -->
+    <div style="margin:18px 0 10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="font-size:15px;font-weight:800;color:#eef5ff;font-family:Tajawal,sans-serif;margin-bottom:14px">🎨 الهوية البصرية</div>
+
+      <!-- مناطق الرفع -->
+      <div class="upload-zones">
+        <!-- الخلفية الكبيرة -->
+        <div class="upload-zone zone-bg">
+          <input type="file" accept="image/*" onchange="handleUpload(this,'bg')">
+          <div class="upload-zone-icon">🌄</div>
+          <div class="upload-zone-label">خلفية البطولة<br><small>الصورة الكبيرة</small></div>
+          <div class="upload-zone-status" id="bg-status"></div>
+          <div class="upload-zone-preview" id="bg-preview"><img id="bg-img"></div>
+        </div>
+
+        <!-- شعار الكأس -->
+        <div class="upload-zone zone-cup">
+          <input type="file" accept="image/*" onchange="handleUpload(this,'cup')">
+          <div class="upload-zone-icon">🏆</div>
+          <div class="upload-zone-label">شعار الكأس<br><small>يظهر على اليمين</small></div>
+          <div class="upload-zone-status" id="cup-status"></div>
+          <div class="upload-zone-preview" id="cup-preview"><img id="cup-img"></div>
+        </div>
+
+        <!-- شعار اللجنة -->
+        <div class="upload-zone zone-com">
+          <input type="file" accept="image/*" onchange="handleUpload(this,'committee')">
+          <div class="upload-zone-icon">⭐</div>
+          <div class="upload-zone-label">شعار اللجنة<br><small>يظهر على اليسار</small></div>
+          <div class="upload-zone-status" id="committee-status"></div>
+          <div class="upload-zone-preview" id="committee-preview"><img id="committee-img"></div>
+        </div>
+      </div>
+
+      <!-- ألوان السمة -->
+      <div class="form-grid" style="margin-top:10px">
+        <div class="field">
+          <label>اللون الأساسي</label>
+          <input id="primary_color" type="color" value="#0b1f3a" style="height:46px;cursor:pointer" oninput="updatePreview()">
+        </div>
+        <div class="field">
+          <label>اللون الثانوي (السنة)</label>
+          <input id="secondary_color" type="color" value="#c9a84c" style="height:46px;cursor:pointer" oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
+
+    <!-- معاينة الهوية -->
+    <div class="identity-preview" id="idPreview">
+      <div class="id-bg" id="idBg" style="background:linear-gradient(135deg,#0b1f3a,#1a4a7a)"></div>
+      <div class="id-overlay"></div>
+      <div class="id-content">
+        <img class="id-logo" id="idComLogo" src="" alt="" style="display:none" onerror="this.style.display='none'">
+        <div id="idComPh" style="width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:32px;opacity:.5">⭐</div>
+        <div class="id-center">
+          <div class="id-name" id="idName">اسم البطولة</div>
+          <div class="id-year" id="idYear" style="color:#c9a84c">2027</div>
+        </div>
+        <img class="id-logo" id="idCupLogo" src="" alt="" style="display:none" onerror="this.style.display='none'">
+        <div id="idCupPh" style="width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:32px;opacity:.5">🏆</div>
+      </div>
+    </div>
+
+    <!-- حقول مخفية -->
+    <input type="hidden" id="bg_image_url">
+    <input type="hidden" id="cup_logo_url">
+    <input type="hidden" id="committee_logo_url">
+    <input type="hidden" id="editing_id">
+
+    <div class="field full" style="margin-top:14px">
+      <label>ملاحظات</label>
+      <textarea id="notes" placeholder="أي ملاحظات إضافية" style="height:70px"></textarea>
+    </div>
+
+    <div class="actions" style="margin-top:16px">
+      <button type="submit" class="btn" id="submitBtn">💾 حفظ البطولة</button>
+      <button type="button" class="btn secondary" onclick="resetForm()">تفريغ</button>
+    </div>
+    <div id="statusBox" class="status"></div>
+  </form>
+</section>
+
+<!-- قائمة البطولات -->
+<section class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h3 style="margin:0">البطولات الحالية</h3>
+    <button class="btn secondary" onclick="loadRows()" style="padding:8px 14px;font-size:13px">🔄 تحديث</button>
+  </div>
+  <ul class="quick-list" style="margin-bottom:16px">
+    <li><span>الاتصال</span><strong id="conn" style="color:#ffd54f">جاري...</strong></li>
+    <li><span>عدد البطولات</span><strong id="tourCount">0</strong></li>
+  </ul>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>البطولة</th><th>الحالة</th><th>الفرق</th><th>إجراء</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="4">جاري التحميل...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+</div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const SB_BUCKET='tournament-assets';
+
+function setMsg(t,c=''){const b=document.getElementById('statusBox');b.className='status '+c;b.textContent=t;}
+
+function updatePreview(){
+  const p=document.getElementById('primary_color').value;
+  const s=document.getElementById('secondary_color').value;
+  const name=document.getElementById('name').value||'اسم البطولة';
+  const year=document.getElementById('season_label').value||'';
+  const bgUrl=document.getElementById('bg_image_url').value;
+
+  const bg=document.getElementById('idBg');
+  if(bgUrl) bg.style.cssText=`background-image:url('${bgUrl}');background-size:cover;background-position:center`;
+  else bg.style.cssText=`background:linear-gradient(135deg,${p},${s})`;
+
+  document.getElementById('idName').textContent=name;
+  document.getElementById('idYear').textContent=year;
+  document.getElementById('idYear').style.color=s;
+}
+
+// رفع الصورة — تُحفظ كـ base64 مباشرة في قاعدة البيانات
+async function handleUpload(input,type){
+  const file=input.files[0];
+  if(!file) return;
+
+  const statusEl=document.getElementById(type+'-status');
+  const previewEl=document.getElementById(type+'-preview');
+  const imgEl=document.getElementById(type+'-img');
+  const fieldMap={bg:'bg_image_url',cup:'cup_logo_url',committee:'committee_logo_url'};
+
+  statusEl.textContent='⏳ جاري المعالجة...';
+  statusEl.style.color='#ffd54f';
+
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    const dataUrl=e.target.result;
+
+    // معاينة فورية
+    imgEl.src=dataUrl;
+    previewEl.style.display='block';
+
+    // تحديث المعاينة الكبيرة
+    if(type==='bg'){
+      document.getElementById('idBg').style.cssText=`background-image:url('${dataUrl}');background-size:cover;background-position:center`;
+    } else if(type==='cup'){
+      document.getElementById('idCupLogo').src=dataUrl;
+      document.getElementById('idCupLogo').style.display='block';
+      document.getElementById('idCupPh').style.display='none';
+    } else if(type==='committee'){
+      document.getElementById('idComLogo').src=dataUrl;
+      document.getElementById('idComLogo').style.display='block';
+      document.getElementById('idComPh').style.display='none';
+    }
+
+    // محاولة رفع للـ Storage أولاً
+    try{
+      const ext=file.name.split('.').pop();
+      const folder=type==='bg'?'backgrounds':'logos';
+      const fname=`${folder}/${type}_${Date.now()}.${ext}`;
+      const {error}=await sb.storage.from(SB_BUCKET).upload(fname,file,{upsert:true,contentType:file.type});
+      if(!error){
+        const {data:u}=sb.storage.from(SB_BUCKET).getPublicUrl(fname);
+        document.getElementById(fieldMap[type]).value=u.publicUrl;
+        statusEl.textContent='✅ تم الرفع';
+        statusEl.style.color='#34d399';
+        return;
+      }
+    } catch(err){}
+
+    // إذا فشل Storage — نحفظ base64 مباشرة
+    document.getElementById(fieldMap[type]).value=dataUrl;
+    statusEl.textContent='✅ محفوظ';
+    statusEl.style.color='#34d399';
+  };
+  reader.readAsDataURL(file);
+}
+
+// تحميل قائمة البطولات
+async function loadRows(){
+  const {data,error}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});
+  const connEl=document.getElementById('conn');
+  if(error){connEl.textContent='❌ خطأ';connEl.style.color='#ff6b6b';return;}
+  connEl.textContent='✅ متصل';connEl.style.color='#34d399';
+  document.getElementById('tourCount').textContent=data?.length||0;
+  const sl={draft:'مسودة',active:'نشطة',completed:'مكتملة',archived:'مؤرشفة'};
+  const sc={draft:'badge-draft',active:'badge-active',completed:'badge-completed',archived:'badge-archived'};
+  document.getElementById('rows').innerHTML=(data||[]).map(r=>`
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${r.bg_image_url?`<div style="width:32px;height:32px;border-radius:6px;background:url('${r.bg_image_url}') center/cover;flex-shrink:0"></div>`:
+            `<div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,${r.primary_color||'#0b1f3a'},${r.secondary_color||'#c9a84c'});flex-shrink:0"></div>`}
+          <div>
+            <strong style="color:#eef5ff;font-family:Tajawal,sans-serif">${r.name||''}</strong>
+            <div style="font-size:12px;color:#b7c6dc">${r.season_label||''}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="status-badge ${sc[r.status]||''}">${sl[r.status]||r.status||''}</span></td>
+      <td style="text-align:center">${r.team_count||0}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-edit" onclick="editTour('${r.id}')">✏️ تعديل</button>
+          <a class="btn btn-go" href="teams-admin.html">→ الفرق</a>
+          <button class="btn secondary" onclick="delTour('${r.id}')" style="font-size:12px;padding:6px 10px">حذف</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+// تعديل بطولة
+async function editTour(id){
+  const {data:r}=await sb.from('tournaments').select('*').eq('id',id).single();
+  if(!r) return;
+  document.getElementById('editing_id').value=id;
+  document.getElementById('name').value=r.name||'';
+  document.getElementById('season_label').value=r.season_label||'';
+  document.getElementById('tournament_type').value=r.tournament_type||'groups_knockout';
+  document.getElementById('team_count').value=r.team_count||16;
+  document.getElementById('group_count').value=r.group_count||4;
+  document.getElementById('status').value=r.status||'draft';
+  document.getElementById('notes').value=r.notes||'';
+  if(r.primary_color) document.getElementById('primary_color').value=r.primary_color;
+  if(r.secondary_color) document.getElementById('secondary_color').value=r.secondary_color;
+
+  // الخلفية
+  if(r.bg_image_url){
+    document.getElementById('bg_image_url').value=r.bg_image_url;
+    document.getElementById('bg-img').src=r.bg_image_url;
+    document.getElementById('bg-preview').style.display='block';
+  }
+  // شعار الكأس
+  if(r.cup_logo_url||r.logo_url){
+    const u=r.cup_logo_url||r.logo_url;
+    document.getElementById('cup_logo_url').value=u;
+    document.getElementById('cup-img').src=u;
+    document.getElementById('cup-preview').style.display='block';
+    document.getElementById('idCupLogo').src=u;
+    document.getElementById('idCupLogo').style.display='block';
+    document.getElementById('idCupPh').style.display='none';
+  }
+  // شعار اللجنة
+  if(r.committee_logo_url){
+    document.getElementById('committee_logo_url').value=r.committee_logo_url;
+    document.getElementById('committee-img').src=r.committee_logo_url;
+    document.getElementById('committee-preview').style.display='block';
+    document.getElementById('idComLogo').src=r.committee_logo_url;
+    document.getElementById('idComLogo').style.display='block';
+    document.getElementById('idComPh').style.display='none';
+  }
+
+  updatePreview();
+  document.getElementById('formTitle').textContent='✏️ تعديل البطولة';
+  document.getElementById('submitBtn').textContent='💾 حفظ التعديلات';
+  document.querySelector('.panel').scrollIntoView({behavior:'smooth'});
+  setMsg('جاري تعديل: '+r.name,'ok');
+}
+
+async function delTour(id){
+  if(!confirm('حذف هذه البطولة نهائياً؟')) return;
+  const {error}=await sb.from('tournaments').delete().eq('id',id);
+  if(error){setMsg('فشل الحذف','err');return;}
+  setMsg('تم الحذف','ok');loadRows();
+}
+
+function resetForm(){
+  document.getElementById('tForm').reset();
+  document.getElementById('editing_id').value='';
+  document.getElementById('bg_image_url').value='';
+  document.getElementById('cup_logo_url').value='';
+  document.getElementById('committee_logo_url').value='';
+  ['bg','cup','committee'].forEach(t=>{
+    document.getElementById(t+'-preview').style.display='none';
+    document.getElementById(t+'-status').textContent='';
+  });
+  document.getElementById('idBg').style.cssText='background:linear-gradient(135deg,#0b1f3a,#1a4a7a)';
+  document.getElementById('idCupLogo').style.display='none';
+  document.getElementById('idCupPh').style.display='flex';
+  document.getElementById('idComLogo').style.display='none';
+  document.getElementById('idComPh').style.display='flex';
+  document.getElementById('primary_color').value='#0b1f3a';
+  document.getElementById('secondary_color').value='#c9a84c';
+  document.getElementById('formTitle').textContent='بطولة جديدة';
+  document.getElementById('submitBtn').textContent='💾 حفظ البطولة';
+  setMsg('');
+}
+
+document.getElementById('name').addEventListener('input',updatePreview);
+document.getElementById('season_label').addEventListener('input',updatePreview);
+
+document.getElementById('tForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const eid=document.getElementById('editing_id').value;
+  const payload={
+    name:document.getElementById('name').value.trim(),
+    season_label:document.getElementById('season_label').value.trim(),
+    tournament_type:document.getElementById('tournament_type').value,
+    status:document.getElementById('status').value,
+    team_count:Number(document.getElementById('team_count').value||0),
+    group_count:Number(document.getElementById('group_count').value||0),
+    primary_color:document.getElementById('primary_color').value||'#0b1f3a',
+    secondary_color:document.getElementById('secondary_color').value||'#c9a84c',
+    bg_image_url:document.getElementById('bg_image_url').value||null,
+    logo_url:document.getElementById('cup_logo_url').value||null,
+    cup_logo_url:document.getElementById('cup_logo_url').value||null,
+    committee_logo_url:document.getElementById('committee_logo_url').value||null,
+    notes:document.getElementById('notes').value.trim()||null,
+    is_active:document.getElementById('status').value==='active',
+  };
+  setMsg('جاري الحفظ...');
+  let error;
+  if(eid){
+    ({error}=await sb.from('tournaments').update(payload).eq('id',eid));
+    if(!error){
+      setMsg('✅ تم التعديل بنجاح','ok');
+      loadRows();
+      // أعد تحميل البيانات بدل resetForm
+      setTimeout(()=>editTour(eid), 800);
+    } else setMsg('فشل التعديل: '+error.message,'err');
+  } else {
+    ({error}=await sb.from('tournaments').insert([payload]));
+    if(!error){setMsg('✅ تم الحفظ — انتقل للفرق','ok');resetForm();loadRows();}
+    else setMsg('فشل الحفظ: '+error.message,'err');
+  }
+});
+
+window.editTour=editTour;window.delTour=delTour;
+updatePreview();loadRows();
+</script>
+</body>
+</html>
