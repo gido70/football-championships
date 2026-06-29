@@ -17,7 +17,8 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .hero{position:relative;overflow:hidden;padding:52px 24px 40px;text-align:center}
 .hero-bg{position:absolute;inset:0}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(13,17,23,.2) 0%,rgba(13,17,23,.9) 100%)}
-.hero-content{position:relative;z-index:1}
+.hero-content{position:relative;z-index:1;display:flex;flex-direction:column;min-height:260px}
+.hero-side-logo{width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))}
 .hero-logo{width:84px;height:84px;object-fit:contain;border-radius:50%;border:3px solid rgba(255,255,255,.25);margin-bottom:16px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
 .hero-logo-ph{font-size:68px;margin-bottom:16px;display:block}
 .hero-title{font-size:clamp(26px,4vw,48px);font-weight:900;color:white;margin-bottom:8px;text-shadow:0 2px 16px rgba(0,0,0,.5)}
@@ -100,6 +101,9 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .skeleton{background:linear-gradient(90deg,#161b22 25%,#1c2128 50%,#161b22 75%);background-size:200% 100%;animation:sh 1.5s infinite;border-radius:12px}
 @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .tc{display:none}.tc.active{display:block}
+/* إخفاء الصور المكسورة */
+img[src=""], img:not([src]) { display:none !important; }
+.hero-side-logo-ph { display:none !important; }
 </style>
 </head>
 <body>
@@ -115,21 +119,17 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
   <div class="hero-bg" id="heroBg"></div>
   <div class="hero-overlay"></div>
   <div class="hero-content">
-    <div class="hero-logos-row">
-      <!-- شعار اللجنة يسار -->
-      <div id="committeeLogoWrap">
-        <div class="hero-side-logo-ph">⭐</div>
-      </div>
-      <!-- الوسط: الاسم والسنة -->
-      <div class="hero-center-area">
-        <div class="hero-title" id="heroTitle">جاري التحميل...</div>
-        <span class="hero-season" id="heroSeason"></span>
-      </div>
-      <!-- شعار الكأس يمين -->
-      <div id="cupLogoWrap">
-        <div class="hero-side-logo-ph">🏆</div>
-      </div>
+    <!-- صف الشعارات: يسار ويمين فقط -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:20px 28px;position:relative;z-index:2;width:100%">
+      <div id="committeeLogoWrap"></div>
+      <div id="cupLogoWrap"></div>
     </div>
+    <!-- الاسم والسنة في الوسط -->
+    <div style="text-align:center;position:relative;z-index:2;padding:0 20px 16px">
+      <div class="hero-title" id="heroTitle">جاري التحميل...</div>
+      <span class="hero-season" id="heroSeason"></span>
+    </div>
+    <!-- الإحصائيات -->
     <div class="hero-stats">
       <div class="hs"><div class="hs-num" id="hT" style="color:#c9a84c">—</div><div class="hs-lbl">فريق</div></div>
       <div class="hs"><div class="hs-num" id="hM" style="color:#3fb950">—</div><div class="hs-lbl">مباراة</div></div>
