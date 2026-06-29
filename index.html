@@ -129,9 +129,7 @@ async function loadTournaments(){
     const bg=`linear-gradient(135deg,${t.primary_color||"#0b1f3a"},${t.secondary_color||"#c9a84c"})`;
     return `<a class="t-card" href="tournament.html?id=${t.id}">
       <div class="t-banner" style="background:${bg}">
-        ${t.logo_url
-          ? `<img class="t-logo" src="${t.logo_url}" alt="${t.name}" style="max-width:80px;max-height:80px">`
-          : '<div class="t-logo-ph">🏆</div>'}
+        ${(()=>{const s=t.season_label||'';const gh='https://gido70.github.io/football-championships/';const f=s.includes('2027')?'logo_cup_2027.png':s.includes('2026')?'logo_cup_2026.png':(t.logo_url||'');return f?`<img class="t-logo" src="${gh+f}" alt="${t.name}" onerror="this.style.display='none'">`:'<div class="t-logo-ph">🏆</div>';})()}
         <span class="pill ${sc[t.status]||"pill-draft"}">${sl[t.status]||""}</span>
       </div>
       <div class="t-body">
