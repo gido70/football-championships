@@ -168,21 +168,62 @@ function showTab(btn,name){
 
 async function loadTournament(){
   if(!TID)return;
-  const {data:t}=await sb.from('tournaments').select('id,name,name_ar,season_label,status,primary_color,secondary_color,logo_url,bg_image_url,cup_logo_url,committee_logo_url').eq('id',TID).single();
-  if(!t)return;
-  document.title=t.name;
-  document.getElementById('navName').textContent=t.name;
-  document.getElementById('heroTitle').textContent=t.name;
-  document.getElementById('heroSeason').textContent=t.season_label||'';
+  const {data:t,error:terr}=await sb.from('tournaments').select('*').eq('id',TID).single();
+  if(terr||!t){
+    document.getElementById('heroTitle').textContent='تعذر تحميل البطولة';
+    return;
+  }
+  const name=t.name_ar||t.name||'البطولة';
+  const p=t.primary_color||'#0b1f3a';
+  const s=t.secondary_color||'#c9a84c';
+  const season=t.season_label||'';
+
+  document.title=name;
+  document.getElementById('navName').textContent=name;
+  document.getElementById('heroTitle').textContent=name;
+  document.getElementById('heroSeason').textContent=season;
+  document.documentElement.style.setProperty('--season-color',s);
+
+  // حالة البطولة
   const ns=document.getElementById('navStatus');
   const sl={draft:'مسودة',active:'نشطة',completed:'منتهية',archived:'مؤرشفة'};
-  if(t.status){ns.textContent=sl[t.status]||t.status;ns.style.display='inline';}
-  if(t.status==='active'){ns.style.background='rgba(63,185,80,.15)';ns.style.color='#3fb950';ns.style.border='1px solid rgba(63,185,80,.2)';}
-  else if(t.status==='completed'){ns.style.background='rgba(88,166,255,.15)';ns.style.color='#58a6ff';ns.style.border='1px solid rgba(88,166,255,.2)';}
-  const p=t.primary_color||'#0b1f3a', s=t.secondary_color||'#c9a84c';
-  document.getElementById('heroBg').style.background=`linear-gradient(135deg,${p},${s})`;
-  if(t.logo_url){document.getElementById('heroLogoWrap').innerHTML=`<img class="hero-logo" src="${t.logo_url}" alt="">`;}
+  if(t.status){
+    ns.textContent=sl[t.status]||t.status;
+    ns.style.display='inline';
+    if(t.status==='active'){ns.style.background='rgba(63,185,80,.15)';ns.style.color='#3fb950';ns.style.border='1px solid rgba(63,185,80,.2)';}
+    else if(t.status==='completed'){ns.style.background='rgba(88,166,255,.15)';ns.style.color='#58a6ff';ns.style.border='1px solid rgba(88,166,255,.2)';}
+    else{ns.style.background='rgba(255,255,255,.08)';ns.style.color='#b7c6dc';}
+  }
+
+  // الخلفية — من GitHub مباشرة حسب الموسم
+  const bgEl=document.getElementById('heroBg');
+  const bgFile = season==='2027' ? 'bg_2027.jpg' : season==='2026' ? 'bg_2026.jpg' : '';
+  if(bgFile){
+    bgEl.style.backgroundImage=`url('https://gido70.github.io/football-championships/${bgFile}')`;
+    bgEl.style.backgroundSize='cover';
+    bgEl.style.backgroundPosition='center top';
+  } else if(t.bg_image_url && !t.bg_image_url.startsWith('data:')){
+    bgEl.style.backgroundImage=`url('${t.bg_image_url}')`;
+    bgEl.style.backgroundSize='cover';
+    bgEl.style.backgroundPosition='center top';
+  } else {
+    bgEl.style.background=`linear-gradient(135deg,${p},${s})`;
+  }
+
+  // شعار اللجنة (يسار) — من GitHub
+  document.getElementById('committeeLogoWrap').innerHTML=
+    `<img src="https://gido70.github.io/football-championships/logo_committee.png" class="hero-side-logo" alt="اللجنة"
+      style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.8)) brightness(1.2)"
+      onerror="this.style.display='none'">`;
+
+  // شعار الكأس (يمين) — من GitHub حسب الموسم
+  const cupFile = season==='2027' ? 'logo_cup_2027.png' : 'logo_cup_2026.png';
+  document.getElementById('cupLogoWrap').innerHTML=
+    `<img src="https://gido70.github.io/football-championships/${cupFile}" class="hero-side-logo" alt="${name}"
+      style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))"
+      onerror="this.style.display='none'">`;
 }
+
 
 async function loadStandings(){
   const {data:teams}=await sb.from('teams').select('*').eq('tournament_id',TID);
