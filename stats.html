@@ -157,7 +157,7 @@ async function init(){
     return;
   }
 
-  const {data:events}=await sb.from('match_events').select('event_type,player_id,team_id,player:players!player_id(name,full_name_ar,jersey_photo_url)').in('match_id',mids);
+  const {data:events}=await sb.from('match_events').select('event_type,player_id,team_id,manual_player_name,player:players!player_id(name,full_name_ar,jersey_photo_url)').in('match_id',mids);
 
   buildScorers(events,teamName);
   buildCards(events,teamName);
