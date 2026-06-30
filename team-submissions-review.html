@@ -81,6 +81,11 @@ async function loadTeam(){
       <code id="linkTxt">${link}</code>
       <button class="copy-btn" onclick="navigator.clipboard.writeText('${link}');this.textContent='✅ نُسخ'">نسخ</button>
     </div>
+    <div class="link-box">
+      🔑 كود التحقق الخماسي (أرسله مع الرابط):
+      <code style="font-size:18px;letter-spacing:4px">${team.access_code||'— لم يُحدَّد —'}</code>
+      ${team.access_code?`<button class="copy-btn" onclick="navigator.clipboard.writeText('${team.access_code}');this.textContent='✅ نُسخ'">نسخ</button>`:''}
+    </div>
 
     <div class="sec">
       <h2>🧑‍💼 الإداري</h2>
