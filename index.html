@@ -2,7 +2,12 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="البطولات">
 <title>منصة البطولات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -108,7 +113,7 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 const sb=supabase.createClient("https://npoowwdjpbvhyjrmeqkv.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY");
 async function loadStats(){
   const [t,tm,p,m]=await Promise.all([
-    sb.from("tournaments").select("id",{count:"exact",head:true}),
+    sb.from("tournaments").select("id",{count:"exact",head:true}).neq("status","draft"),
     sb.from("teams").select("id",{count:"exact",head:true}),
     sb.from("players").select("id",{count:"exact",head:true}),
     sb.from("matches").select("id",{count:"exact",head:true}),
@@ -119,7 +124,7 @@ async function loadStats(){
   document.getElementById("sM").textContent=m.count??0;
 }
 async function loadTournaments(){
-  const {data}=await sb.from("tournaments").select("*").order("created_at",{ascending:false});
+  const {data}=await sb.from("tournaments").select("*").neq("status","draft").order("created_at",{ascending:false});
   const g=document.getElementById("tGrid");
   if(!data||!data.length){g.innerHTML='<div class="empty"><span class="empty-icon">🏆</span><p>لا توجد بطولات بعد</p></div>';return;}
   const sl={draft:"مسودة",active:"نشطة",completed:"منتهية",archived:"مؤرشفة"};
