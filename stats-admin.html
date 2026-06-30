@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تصدير التقارير</title>
+<link rel="stylesheet" href="admin.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="supabase-config.js"></script>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <div class="page-head"><div class="page-icon">📊</div><div class="page-title"><h1>تصدير التقارير والإحصائيات</h1><p>حمّل أي إحصائية كملف إكسل جاهز للأرشفة أو الطباعة</p></div></div>
+  <div class="nav-actions"><a class="btn secondary" href="./admin-home.html">العودة إلى لوحة الأدمن</a><a class="btn secondary" href="./index.html" target="_blank">الموقع العام ↗</a></div>
+</div></header>
+
+<main class="container">
+  <section class="panel">
+    <h3>اختر البطولة</h3>
+    <div class="form-grid"><div class="field full"><label>البطولة</label><select id="tSel"></select></div></div>
+  </section>
+
+  <section class="panel" style="margin-top:24px">
+    <h3>📥 تصدير حسب الفئة</h3>
+    <div class="cards-row" style="grid-template-columns:repeat(3,1fr)">
+      <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportScorers()"><div class="feature-icon">⚽</div><h3>الهدافون</h3><p>قائمة كاملة بالأهداف لكل لاعب</p></button>
+      <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportCards()"><div class="feature-icon">🟨🟥</div><h3>البطاقات</h3><p>الصفراء والحمراء لكل لاعب</p></button>
+      <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportMotm()"><div class="feature-icon">⭐</div><h3>أفضل اللاعبين</h3><p>عدد مرات اختيار نجم المباراة</p></button>
+      <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportOfficials()"><div class="feature-icon">👨‍⚖️</div><h3>الحكام والمعلقون</h3><p>عدد المباريات لكل حكم/معلّق</p></button>
+      <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportInjuries()"><div class="feature-icon">🩹</div><h3>الإصابات</h3><p>قائمة اللاعبين المصابين حاليًا</p></button>
+      <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportMatches()"><div class="feature-icon">📅</div><h3>جدول المباريات والنتائج</h3><p>كل المباريات بتفاصيلها الكاملة</p></button>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:24px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.25)">
+    <h3>📦 تقرير شامل (كل الإحصائيات في ملف واحد)</h3>
+    <p class="note">ملف إكسل واحد بعدة أوراق (Sheets): الهدافون، البطاقات، نجوم المباريات، الحكام، المعلقون، الإصابات، جدول المباريات — كله دفعة واحدة.</p>
+    <div class="actions"><button class="btn" id="fullReportBtn" style="background:linear-gradient(135deg,#c9a84c,#a8842e)" onclick="exportFullReport()">📦 تحميل التقرير الشامل</button></div>
+  </section>
+
+  <div class="status" id="msg" style="margin-top:14px"></div>
+</main>
+
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+let TID=null,TNAME='';
+const teamName={};
+
+function setMsg(t,c=''){const e=document.getElementById('msg');e.className='status '+c;e.textContent=t;}
+
+async function initTournaments(){
+  const {data}=await sb.from('tournaments').select('id,name,name_ar,season_label').order('created_at',{ascending:false});
+  const sel=document.getElementById('tSel');
+  sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name} ${t.season_label?'- '+t.season_label:''}</option>`).join('');
+  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;loadTeamNames();};
+  if(data&&data.length){TID=data[0].id;TNAME=sel.options[0].text;await loadTeamNames();}
+}
+
+async function loadTeamNames(){
+  const {data}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
+  Object.keys(teamName).forEach(k=>delete teamName[k]);
+  (data||[]).forEach(t=>teamName[t.id]=t.name_ar||t.name||'');
+}
+
+async function getMatches(){
+  const {data}=await sb.from('matches').select('id,match_no,round_name,group_code,match_date,match_time,home_team_id,away_team_id,home_score,away_score,referee_1,referee_2,commentator,player_of_match_id,venue_name,status').eq('tournament_id',TID).order('match_no');
+  return data||[];
+}
+async function getEvents(mids){
+  if(!mids.length)return [];
+  const {data}=await sb.from('match_events').select('event_type,player_id,team_id,minute,player:players!player_id(name,full_name_ar,number)').in('match_id',mids);
+  return data||[];
+}
+function tally(events,type){
+  const map={};
+  events.filter(e=>e.event_type===type&&e.player_id).forEach(e=>{
+    if(!map[e.player_id])map[e.player_id]={name:e.player?.full_name_ar||e.player?.name||'—',number:e.player?.number||'',team:teamName[e.team_id]||'',count:0};
+    map[e.player_id].count++;
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+function dl(wb,filename){XLSX.writeFile(wb,filename);}
+function sheetFromRows(rows,headers){
+  const ws=XLSX.utils.json_to_sheet(rows,{header:headers});
+  ws['!cols']=headers.map(()=>({wch:20}));
+  return ws;
+}
+
+async function exportScorers(){
+  setMsg('⏳ جاري التجهيز...');
+  const matches=await getMatches();
+  const events=await getEvents(matches.map(m=>m.id));
+  const list=tally(events,'goal');
+  const rows=list.map((p,i)=>({الترتيب:i+1,اللاعب:p.name,الرقم:p.number,الفريق:p.team,الأهداف:p.count}));
+  const ws=sheetFromRows(rows,['الترتيب','اللاعب','الرقم','الفريق','الأهداف']);
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'الهدافون');
+  dl(wb,'هدافو '+TNAME+'.xlsx');
+  setMsg('✅ تم التحميل','ok');
+}
+
+async function exportCards(){
+  setMsg('⏳ جاري التجهيز...');
+  const matches=await getMatches();
+  const events=await getEvents(matches.map(m=>m.id));
+  const yellow=tally(events,'yellow_card'), red=tally(events,'red_card');
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(yellow.map((p,i)=>({الترتيب:i+1,اللاعب:p.name,الرقم:p.number,الفريق:p.team,'البطاقات الصفراء':p.count})),['الترتيب','اللاعب','الرقم','الفريق','البطاقات الصفراء']),'بطاقات صفراء');
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(red.map((p,i)=>({الترتيب:i+1,اللاعب:p.name,الرقم:p.number,الفريق:p.team,'البطاقات الحمراء':p.count})),['الترتيب','اللاعب','الرقم','الفريق','البطاقات الحمراء']),'بطاقات حمراء');
+  dl(wb,'بطاقات '+TNAME+'.xlsx');
+  setMsg('✅ تم التحميل','ok');
+}
+
+async function exportMotm(){
+  setMsg('⏳ جاري التجهيز...');
+  const matches=await getMatches();
+  const ids=matches.map(m=>m.player_of_match_id).filter(Boolean);
+  if(!ids.length){setMsg('⚠️ لا توجد بيانات نجوم مباريات بعد','warn');return;}
+  const {data:players}=await sb.from('players').select('id,name,full_name_ar,number').in('id',[...new Set(ids)]);
+  const pMap={};(players||[]).forEach(p=>pMap[p.id]=p);
+  const count={};ids.forEach(id=>count[id]=(count[id]||0)+1);
+  const rows=Object.entries(count).sort((a,b)=>b[1]-a[1]).map(([id,c],i)=>({الترتيب:i+1,اللاعب:pMap[id]?.full_name_ar||pMap[id]?.name||'—',الرقم:pMap[id]?.number||'','مرات الاختيار كنجم':c}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheetFromRows(rows,['الترتيب','اللاعب','الرقم','مرات الاختيار كنجم']),'أفضل اللاعبين');
+  dl(wb,'أفضل لاعبي '+TNAME+'.xlsx');
+  setMsg('✅ تم التحميل','ok');
+}
+
+async function exportOfficials(){
+  setMsg('⏳ جاري التجهيز...');
+  const matches=await getMatches();
+  const refCount={},comCount={};
+  matches.forEach(m=>{
+    [m.referee_1,m.referee_2].forEach(r=>{if(r&&r.trim())refCount[r.trim()]=(refCount[r.trim()]||0)+1;});
+    if(m.commentator&&m.commentator.trim())comCount[m.commentator.trim()]=(comCount[m.commentator.trim()]||0)+1;
+  });
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(Object.entries(refCount).sort((a,b)=>b[1]-a[1]).map(([n,c],i)=>({الترتيب:i+1,الحكم:n,'عدد المباريات':c})),['الترتيب','الحكم','عدد المباريات']),'الحكام');
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(Object.entries(comCount).sort((a,b)=>b[1]-a[1]).map(([n,c],i)=>({الترتيب:i+1,المعلق:n,'عدد المباريات':c})),['الترتيب','المعلق','عدد المباريات']),'المعلقون');
+  dl(wb,'الحكام والمعلقون - '+TNAME+'.xlsx');
+  setMsg('✅ تم التحميل','ok');
+}
+
+async function exportInjuries(){
+  setMsg('⏳ جاري التجهيز...');
+  const {data:players}=await sb.from('players').select('name,full_name_ar,number,team_id,injury_note').eq('tournament_id',TID).eq('is_injured',true);
+  if(!players||!players.length){setMsg('⚠️ لا توجد إصابات مسجلة حاليًا','warn');return;}
+  const rows=players.map(p=>({اللاعب:p.full_name_ar||p.name,الرقم:p.number,الفريق:teamName[p.team_id]||'',ملاحظة:p.injury_note||''}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheetFromRows(rows,['اللاعب','الرقم','الفريق','ملاحظة']),'الإصابات');
+  dl(wb,'إصابات '+TNAME+'.xlsx');
+  setMsg('✅ تم التحميل','ok');
+}
+
+async function exportMatches(){
+  setMsg('⏳ جاري التجهيز...');
+  const matches=await getMatches();
+  const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
+  const rows=matches.map(m=>({
+    'رقم المباراة':m.match_no,الجولة:rl[m.round_name]||m.round_name,المجموعة:m.group_code||'',
+    التاريخ:m.match_date||'',الوقت:m.match_time||'',
+    'الفريق الأول':teamName[m.home_team_id]||'',النتيجة:(m.home_score??'')+' - '+(m.away_score??''),'الفريق الثاني':teamName[m.away_team_id]||'',
+    الملعب:m.venue_name||'',الحكم1:m.referee_1||'',الحكم2:m.referee_2||'',المعلق:m.commentator||'',الحالة:m.status||''
+  }));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheetFromRows(rows,['رقم المباراة','الجولة','المجموعة','التاريخ','الوقت','الفريق الأول','النتيجة','الفريق الثاني','الملعب','الحكم1','الحكم2','المعلق','الحالة']),'المباريات');
+  dl(wb,'جدول مباريات '+TNAME+'.xlsx');
+  setMsg('✅ تم التحميل','ok');
+}
+
+async function exportFullReport(){
+  setMsg('⏳ جاري تجهيز التقرير الشامل (قد يستغرق ثوانٍ)...');
+  const matches=await getMatches();
+  const mids=matches.map(m=>m.id);
+  const events=await getEvents(mids);
+  const wb=XLSX.utils.book_new();
+
+  const scorers=tally(events,'goal');
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(scorers.map((p,i)=>({الترتيب:i+1,اللاعب:p.name,الرقم:p.number,الفريق:p.team,الأهداف:p.count})),['الترتيب','اللاعب','الرقم','الفريق','الأهداف']),'الهدافون');
+
+  const yellow=tally(events,'yellow_card'), red=tally(events,'red_card');
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(yellow.map((p,i)=>({الترتيب:i+1,اللاعب:p.name,الرقم:p.number,الفريق:p.team,العدد:p.count})),['الترتيب','اللاعب','الرقم','الفريق','العدد']),'بطاقات صفراء');
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(red.map((p,i)=>({الترتيب:i+1,اللاعب:p.name,الرقم:p.number,الفريق:p.team,العدد:p.count})),['الترتيب','اللاعب','الرقم','الفريق','العدد']),'بطاقات حمراء');
+
+  const motmIds=matches.map(m=>m.player_of_match_id).filter(Boolean);
+  if(motmIds.length){
+    const {data:mp}=await sb.from('players').select('id,name,full_name_ar,number').in('id',[...new Set(motmIds)]);
+    const pMap={};(mp||[]).forEach(p=>pMap[p.id]=p);
+    const cnt={};motmIds.forEach(id=>cnt[id]=(cnt[id]||0)+1);
+    const motmRows=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([id,c],i)=>({الترتيب:i+1,اللاعب:pMap[id]?.full_name_ar||pMap[id]?.name||'—',الرقم:pMap[id]?.number||'',العدد:c}));
+    XLSX.utils.book_append_sheet(wb,sheetFromRows(motmRows,['الترتيب','اللاعب','الرقم','العدد']),'أفضل اللاعبين');
+  }
+
+  const refCount={},comCount={};
+  matches.forEach(m=>{
+    [m.referee_1,m.referee_2].forEach(r=>{if(r&&r.trim())refCount[r.trim()]=(refCount[r.trim()]||0)+1;});
+    if(m.commentator&&m.commentator.trim())comCount[m.commentator.trim()]=(comCount[m.commentator.trim()]||0)+1;
+  });
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(Object.entries(refCount).sort((a,b)=>b[1]-a[1]).map(([n,c],i)=>({الترتيب:i+1,الحكم:n,العدد:c})),['الترتيب','الحكم','العدد']),'الحكام');
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(Object.entries(comCount).sort((a,b)=>b[1]-a[1]).map(([n,c],i)=>({الترتيب:i+1,المعلق:n,العدد:c})),['الترتيب','المعلق','العدد']),'المعلقون');
+
+  const {data:inj}=await sb.from('players').select('name,full_name_ar,number,team_id,injury_note').eq('tournament_id',TID).eq('is_injured',true);
+  XLSX.utils.book_append_sheet(wb,sheetFromRows((inj||[]).map(p=>({اللاعب:p.full_name_ar||p.name,الرقم:p.number,الفريق:teamName[p.team_id]||'',ملاحظة:p.injury_note||''})),['اللاعب','الرقم','الفريق','ملاحظة']),'الإصابات');
+
+  const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
+  const matchRows=matches.map(m=>({
+    'رقم المباراة':m.match_no,الجولة:rl[m.round_name]||m.round_name,المجموعة:m.group_code||'',
+    التاريخ:m.match_date||'',الوقت:m.match_time||'',
+    'الفريق الأول':teamName[m.home_team_id]||'',النتيجة:(m.home_score??'')+' - '+(m.away_score??''),'الفريق الثاني':teamName[m.away_team_id]||'',
+    الملعب:m.venue_name||'',الحكم1:m.referee_1||'',الحكم2:m.referee_2||'',المعلق:m.commentator||'',الحالة:m.status||''
+  }));
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(matchRows,['رقم المباراة','الجولة','المجموعة','التاريخ','الوقت','الفريق الأول','النتيجة','الفريق الثاني','الملعب','الحكم1','الحكم2','المعلق','الحالة']),'جدول المباريات');
+
+  dl(wb,'تقرير شامل - '+TNAME+'.xlsx');
+  setMsg('✅ تم تحميل التقرير الشامل بنجاح','ok');
+}
+
+window.exportScorers=exportScorers;window.exportCards=exportCards;window.exportMotm=exportMotm;
+window.exportOfficials=exportOfficials;window.exportInjuries=exportInjuries;window.exportMatches=exportMatches;window.exportFullReport=exportFullReport;
+
+initTournaments();
+</script>
+</body>
+</html>
