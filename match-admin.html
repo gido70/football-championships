@@ -216,11 +216,20 @@ select option{background:#0f2a45;color:#ffffff}
 
     <!-- التشكيلة والإصابات -->
     <div class="match-meta-panel" id="lineupPanel">
-      <div class="meta-title" style="display:flex;align-items:center;justify-content:space-between">
+      <div class="meta-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <span>👥 التشكيلة الأساسية</span>
-        <button type="button" onclick="openInjuryPicker()" style="background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.4);color:#f85149;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">🩹 سجّل إصابة</button>
+        <div style="position:relative">
+          <button type="button" id="injBtn" onclick="toggleInjDropdown()" style="background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.4);color:#f85149;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">🩹 تسجيل إصابة <span id="injCount" style="display:none;background:#f85149;color:#fff;border-radius:10px;padding:0 6px;font-size:10px"></span></button>
+          <div id="injDropdown" style="display:none;position:absolute;left:0;top:calc(100% + 6px);background:#161b22;border:1px solid #30363d;border-radius:14px;padding:8px;width:260px;max-height:280px;overflow-y:auto;z-index:200;box-shadow:0 8px 30px rgba(0,0,0,.6)">
+            <div style="font-size:11px;color:#6e7b8f;padding:4px 6px 8px;font-weight:700">اختر اللاعب المصاب</div>
+            <div id="injPlayerList"></div>
+          </div>
+        </div>
       </div>
-      <div id="injuredSummary" style="display:none;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:12px"></div>
+
+      <!-- شرائح اللاعبين المصابين -->
+      <div id="injuredChips" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px"></div>
+
       <div class="lu-admin-grid">
         <div>
           <div class="lu-admin-team-hd" id="luHName">الفريق الأول</div>
@@ -234,17 +243,6 @@ select option{background:#0f2a45;color:#ffffff}
       <div class="meta-save-row">
         <button class="btn-meta-save" onclick="saveLineups()">💾 حفظ التشكيلة</button>
         <span id="lineupStatus" style="font-size:12px;margin-right:10px;color:#34d399"></span>
-      </div>
-    </div>
-
-    <!-- نافذة الإصابة -->
-    <div id="injuryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center">
-      <div style="background:#161b22;border:1px solid #30363d;border-radius:18px;padding:22px;width:90%;max-width:480px;max-height:80vh;overflow-y:auto">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-          <span style="font-size:16px;font-weight:800;color:#f85149">🩹 تسجيل / إلغاء إصابة</span>
-          <button onclick="closeInjuryPicker()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6e7b8f">✕</button>
-        </div>
-        <div id="injuryPickerList" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
     </div>
 
@@ -698,60 +696,78 @@ async function loadLineupAdmin(m){
   const {data:lu}=await sb.from('match_lineups').select('player_id,is_starting').eq('match_id',m.id);
   const luMap={};(lu||[]).forEach(x=>luMap[x.player_id]=x.is_starting);
   const row=p=>`<div class="lu-row" data-pid="${p.id}">
-    <label><input type="checkbox" class="lu-start" ${luMap[p.id]!==undefined&&luMap[p.id]?'checked':''}>${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</label>
-    ${p.is_injured?'<span style="font-size:10px;background:rgba(248,81,73,.2);color:#f85149;padding:2px 7px;border-radius:8px;margin-right:4px">🩹 مصاب</span>':''}
+    <label><input type="checkbox" class="lu-start" ${luMap[p.id]?'checked':''}>${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</label>
   </div>`;
   document.getElementById('luHList').innerHTML=hPl.map(row).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
   document.getElementById('luAList').innerHTML=aPl.map(row).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
-  updateInjuredSummary();
+  renderInjuredChips();
 }
 
-function updateInjuredSummary(){
-  const injured=[...hPl,...aPl].filter(p=>p.is_injured);
-  const box=document.getElementById('injuredSummary');
-  if(!injured.length){box.style.display='none';return;}
-  box.style.display='block';
-  box.innerHTML='🩹 المصابون: '+injured.map(p=>`<b>${p.full_name_ar||p.name}</b>`).join('، ');
+function toggleInjDropdown(){
+  const dd=document.getElementById('injDropdown');
+  if(dd.style.display==='none'||!dd.style.display){
+    buildInjDropdown();
+    dd.style.display='block';
+    document.addEventListener('click',closeInjOnOutside,{once:true});
+  } else {
+    dd.style.display='none';
+  }
 }
 
-function openInjuryPicker(){
-  const all=[...hPl.map(p=>({...p,side:'h'})),...aPl.map(p=>({...p,side:'a'}))];
-  const hName=cur?.ht?.name_ar||cur?.ht?.name||'الفريق الأول';
-  const aName=cur?.at?.name_ar||cur?.at?.name||'الفريق الثاني';
-  document.getElementById('injuryPickerList').innerHTML=[
-    `<div style="font-size:11px;color:#c9a84c;font-weight:800;padding:4px 0">${hName}</div>`,
-    ...hPl.map(p=>playerInjuryRow(p)),
-    `<div style="font-size:11px;color:#58a6ff;font-weight:800;padding:10px 0 4px">${aName}</div>`,
-    ...aPl.map(p=>playerInjuryRow(p))
-  ].join('');
-  document.getElementById('injuryModal').style.display='flex';
+function closeInjOnOutside(e){
+  if(!document.getElementById('injBtn').contains(e.target))
+    document.getElementById('injDropdown').style.display='none';
 }
 
-function playerInjuryRow(p){
-  const inj=p.is_injured;
-  return `<div style="display:flex;align-items:center;gap:10px;background:${inj?'rgba(248,81,73,.08)':'rgba(255,255,255,.03)'};border:1px solid ${inj?'rgba(248,81,73,.3)':'#21262d'};border-radius:10px;padding:10px 12px;cursor:pointer" onclick="toggleInjury('${p.id}',this)">
-    <span style="flex:1;font-size:13px;font-weight:700">${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</span>
-    <span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;background:${inj?'rgba(248,81,73,.2)':'rgba(255,255,255,.06)'};color:${inj?'#f85149':'#6e7b8f'}">${inj?'🩹 مصاب':'سليم'}</span>
-  </div>`;
+function buildInjDropdown(){
+  const all=[
+    ...(hPl||[]).map(p=>({...p,_team:cur?.ht?.name_ar||cur?.ht?.name||''})),
+    ...(aPl||[]).map(p=>({...p,_team:cur?.at?.name_ar||cur?.at?.name||''}))
+  ];
+  document.getElementById('injPlayerList').innerHTML=all.map(p=>{
+    const inj=p.is_injured;
+    const ini=(p.full_name_ar||p.name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+    return `<div onclick="selectInjured('${p.id}')" style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer;background:${inj?'rgba(248,81,73,.1)':'transparent'};margin-bottom:2px" onmouseover="this.style.background='rgba(255,255,255,.05)'" onmouseout="this.style.background='${inj?'rgba(248,81,73,.1)':'transparent'}'">
+      ${p.jersey_photo_url?`<img src="${p.jersey_photo_url}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid #30363d;flex-shrink:0">`:`<div style="width:28px;height:28px;border-radius:50%;background:#21262d;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#6e7b8f;flex-shrink:0">${ini}</div>`}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.full_name_ar||p.name}</div>
+        <div style="font-size:10px;color:#6e7b8f">#${p.number||'—'} · ${p._team}</div>
+      </div>
+      ${inj?'<span style="font-size:10px;color:#f85149;font-weight:800">🩹</span>':''}
+    </div>`;
+  }).join('');
 }
 
-async function toggleInjury(pid,el){
+async function selectInjured(pid){
   const pl=[...hPl,...aPl].find(p=>p.id===pid);
   if(!pl)return;
   const newVal=!pl.is_injured;
-  const {error}=await sb.from('players').update({is_injured:newVal}).eq('id',pid);
+  const {error}=await sb.from('players').update({is_injured:newVal,injury_note:newVal?'إصابة':null}).eq('id',pid);
   if(error){alert('فشل: '+error.message);return;}
   pl.is_injured=newVal;
-  el.outerHTML=playerInjuryRow(pl);
-  updateInjuredSummary();
-  // تحديث شارة المصاب في قائمة التشكيلة
-  document.querySelectorAll(`#luHList .lu-row[data-pid="${pid}"] span, #luAList .lu-row[data-pid="${pid}"] span`).forEach(s=>s.remove());
-  const row=document.querySelector(`#luHList .lu-row[data-pid="${pid}"], #luAList .lu-row[data-pid="${pid}"]`);
-  if(row&&newVal)row.insertAdjacentHTML('beforeend','<span style="font-size:10px;background:rgba(248,81,73,.2);color:#f85149;padding:2px 7px;border-radius:8px;margin-right:4px">🩹 مصاب</span>');
+  document.getElementById('injDropdown').style.display='none';
+  renderInjuredChips();
+  buildInjDropdown();
 }
 
-function closeInjuryPicker(){document.getElementById('injuryModal').style.display='none';}
-window.openInjuryPicker=openInjuryPicker;window.closeInjuryPicker=closeInjuryPicker;window.toggleInjury=toggleInjury;
+function renderInjuredChips(){
+  const injured=[...hPl,...aPl].filter(p=>p.is_injured);
+  const cnt=document.getElementById('injCount');
+  cnt.style.display=injured.length?'inline':'none';
+  cnt.textContent=injured.length;
+  const ini=n=>(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+  document.getElementById('injuredChips').innerHTML=injured.map(p=>`
+    <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.35);border-radius:30px;padding:5px 12px 5px 6px;cursor:pointer" title="اضغط لإلغاء الإصابة" onclick="selectInjured('${p.id}')">
+      ${p.jersey_photo_url?`<img src="${p.jersey_photo_url}" style="width:26px;height:26px;border-radius:50%;object-fit:cover">`:`<div style="width:26px;height:26px;border-radius:50%;background:#21262d;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#f85149">${ini(p.full_name_ar||p.name)}</div>`}
+      <span style="font-size:10px;color:#c9a84c;font-weight:800">#${p.number||''}</span>
+      <span style="font-size:12px;font-weight:700;color:#e6edf3">${(p.full_name_ar||p.name||'').split(' ').slice(0,2).join(' ')}</span>
+      <span style="font-size:11px;color:#f85149">🩹</span>
+      <span style="font-size:10px;color:#6e7b8f">✕</span>
+    </div>`).join('');
+}
+
+window.toggleInjDropdown=toggleInjDropdown;
+window.selectInjured=selectInjured;
 
 async function saveLineups(){
   if(!cur)return;
