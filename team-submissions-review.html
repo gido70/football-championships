@@ -106,8 +106,7 @@ async function loadTeam(){
         <div>أُدخلت بواسطة: <b>${team.submitted_by_name||'—'}</b></div>
       </div>
       <div class="docs">
-        ${coachIdUrl?`<a class="doc-link" href="${coachIdUrl}" target="_blank">🪪 عرض الهوية</a>`:''}
-        ${coachPassUrl?`<a class="doc-link" href="${coachPassUrl}" target="_blank">📘 عرض الجواز</a>`:''}
+        ${coachIdUrl?`<a class="doc-link" href="${coachIdUrl}" target="_blank">🪪 عرض الهوية/الجواز</a>`:''}
       </div>
       ${team.coach_status!=='approved'?`<div class="actions"><button class="btn-app" onclick="approveCoach()">✓ اعتماد المدرب</button></div>`:''}
       `:`<div class="empty">لم تُدخل بيانات مدرب بعد</div>`}
@@ -123,7 +122,7 @@ async function loadTeam(){
             <div style="font-size:12px;color:#8b949e">${p.nationality||'—'}</div>
           </div>
           <span class="badge ${p.submission_status==='approved'?'b-approved':'b-pending'}">${p.submission_status==='approved'?'معتمد':'بانتظار'}</span>
-          <button class="doc-link" onclick="viewDocs('${p.id}','${p.id_photo_url||''}','${p.passport_photo_url||''}')">🪪 الوثائق</button>
+          <button class="doc-link" onclick="viewDocs('${p.id_photo_url||''}')">🪪 الهوية/الجواز</button>
           ${p.submission_status!=='approved'?`<button class="btn-app" onclick="approvePlayer('${p.id}')">✓ اعتماد</button>`:''}
           <button class="btn-rej" onclick="rejectPlayer('${p.id}')">✕ حذف</button>
         </div>
@@ -146,10 +145,10 @@ async function rejectPlayer(id){
   await sb.from('players').delete().eq('id',id);
   loadTeam();
 }
-async function viewDocs(pid,idPath,passPath){
-  if(idPath){const{data}=await sb.storage.from('team-docs').createSignedUrl(idPath,3600);if(data?.signedUrl)window.open(data.signedUrl,'_blank');}
-  if(passPath){const{data}=await sb.storage.from('team-docs').createSignedUrl(passPath,3600);if(data?.signedUrl)setTimeout(()=>window.open(data.signedUrl,'_blank'),300);}
-  if(!idPath&&!passPath)alert('لم تُرفع وثائق لهذا اللاعب');
+async function viewDocs(docPath){
+  if(!docPath){alert('لم تُرفع وثيقة هوية/جواز لهذا اللاعب');return;}
+  const{data}=await sb.storage.from('team-docs').createSignedUrl(docPath,3600);
+  if(data?.signedUrl)window.open(data.signedUrl,'_blank');
 }
 
 window.loadTeam=loadTeam;window.approveCoach=approveCoach;window.approvePlayer=approvePlayer;window.rejectPlayer=rejectPlayer;window.viewDocs=viewDocs;
