@@ -141,10 +141,10 @@ function addPlayer(isFirst){
     </div>
     <div class="field"><label>الجنسية</label><input type="text" id="p${n}_nat"></div>
     <div class="row2">
-      <div class="field"><label>صورة داخل القميص</label>${uploadBox('p'+n+'_jersey')}</div>
-      <div class="field"><label>صورة الهوية</label>${uploadBox('p'+n+'_id')}</div>
+      <div class="field"><label>صورة فوتوغرافية حديثة للاعب — هذه تظهر للجمهور</label>${uploadBox('p'+n+'_jersey')}</div>
+      <div class="field"><label>صورة الهوية (خاصة، لا تظهر للجمهور)</label>${uploadBox('p'+n+'_id')}</div>
     </div>
-    <div class="field"><label>صورة الجواز</label>${uploadBox('p'+n+'_pass')}</div>
+    <div class="field"><label>صورة الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('p'+n+'_pass')}</div>
   `;
   document.getElementById('playersWrap').appendChild(div);
 }
