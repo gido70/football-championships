@@ -409,13 +409,18 @@ function updateStatusUI(st){
 
 async function chScore(side,d){
   if(!cur)return;
+  if(d>0){
+    // لا نزيد النتيجة هنا — تُزاد تلقائيًا فقط بعد تأكيد اللاعب صاحب الهدف بالأسفل
+    openEvt(side==='home'?'h':'a','goal');
+    return;
+  }
   const f=side==='home'?'home_score':'away_score';
   const v=Math.max(0,(cur[f]||0)+d);
   const {error}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
   if(error){setMsg('فشل تحديث النتيجة: '+error.message,'err');return;}
   cur[f]=v;
   document.getElementById(side==='home'?'hScore':'aScore').textContent=v;
-  if(d>0)openEvt(side==='home'?'h':'a','goal');
+  setMsg('تم تنقيص النتيجة يدويًا — لو كان هذا لتصحيح هدف خاطئ، احذفه أيضًا من سجل الأحداث بالأسفل','ok');
 }
 
 let clockTimer=null;
@@ -494,12 +499,24 @@ function openEvt(side,type){
 function closeEvt(side){document.getElementById(side+'Form').classList.remove('show');}
 
 async function submitEvt(side){
-  const pid=document.getElementById(side+'Player').value;
+  const playerSel=document.getElementById(side+'Player');
+  const pid=playerSel.value;
+  const playerLabel=playerSel.options[playerSel.selectedIndex]?.text||'بدون تحديد لاعب';
   const min=parseInt(document.getElementById(side+'Min').value)||0;
   const tid=side==='h'?cur.home_team_id:cur.away_team_id;
-  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:pid||null,team_id:tid,event_type:evtType[side],minute:min});
-  if(!error){closeEvt(side);loadEvts();}
-  else setMsg('فشل تسجيل الحدث: '+error.message,'err');
+  const type=evtType[side];
+  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:pid||null,team_id:tid,event_type:type,minute:min});
+  if(error){setMsg('❌ فشل تسجيل الحدث: '+error.message,'err');return;}
+
+  if(type==='goal'){
+    const f=side==='h'?'home_score':'away_score';
+    const v=(cur[f]||0)+1;
+    const {error:e2}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
+    if(!e2){cur[f]=v;document.getElementById(side==='h'?'hScore':'aScore').textContent=v;}
+  }
+  closeEvt(side);
+  loadEvts();
+  setMsg('✅ تم تسجيل '+(EL[type]||type)+' — '+playerLabel,'ok');
 }
 
 async function loadEvts(){
@@ -511,11 +528,21 @@ async function loadEvts(){
       <span class="evt-mn">${e.minute||0}'</span>
       <span class="evt-ic">${EI[e.event_type]||'📌'}</span>
       <div class="evt-dt"><div class="evt-pl">${e.player?.full_name_ar||e.player?.name||'—'}</div><div>${e.team?.name_ar||e.team?.name||''} — ${EL[e.event_type]||e.event_type}</div></div>
-      <button class="evt-del" onclick="delEvt('${e.id}')">🗑</button>
+      <button class="evt-del" onclick="delEvt('${e.id}','${e.event_type}','${e.team_id}')">🗑</button>
     </div>`).join('');
 }
 
-async function delEvt(id){if(!confirm('حذف؟'))return;await sb.from('match_events').delete().eq('id',id);loadEvts();}
+async function delEvt(id,type,teamId){
+  if(!confirm('حذف؟'))return;
+  await sb.from('match_events').delete().eq('id',id);
+  if(type==='goal'&&cur){
+    const f=teamId===cur.home_team_id?'home_score':'away_score';
+    const v=Math.max(0,(cur[f]||0)-1);
+    const {error}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
+    if(!error){cur[f]=v;document.getElementById(f==='home_score'?'hScore':'aScore').textContent=v;}
+  }
+  loadEvts();
+}
 
 async function loadLineupAdmin(m){
   document.getElementById('luHName').textContent=m.ht?.name_ar||m.ht?.name||'الفريق الأول';
