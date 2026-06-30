@@ -520,7 +520,7 @@ async function submitEvt(side){
 }
 
 async function loadEvts(){
-  const {data}=await sb.from('match_events').select('*,player:players(name,full_name_ar,number),team:teams(name,name_ar)').eq('match_id',cur.id).order('minute');
+  const {data}=await sb.from('match_events').select('*,player:players!player_id(name,full_name_ar,number),team:teams(name,name_ar)').eq('match_id',cur.id).order('minute');
   const list=document.getElementById('evtsList');
   if(!data||!data.length){list.innerHTML='<div class="no-evts">لا توجد أحداث بعد</div>';return;}
   list.innerHTML=data.map(e=>`
