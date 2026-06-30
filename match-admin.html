@@ -29,6 +29,7 @@ select option{background:#0f2a45;color:#ffffff}
 .btn-start{background:linear-gradient(135deg,#34d399,#059669)!important}
 .btn-end{background:linear-gradient(135deg,#ff6b6b,#cc3333)!important}
 .btn:disabled{background:#3a4150!important;color:#7d8694!important;cursor:not-allowed;opacity:.55;box-shadow:none!important}
+.btn-quick{border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:800;color:#0d1117;cursor:pointer;font-family:inherit;white-space:nowrap}
 .lu-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
 .lu-admin-team-hd{font-size:13px;font-weight:800;color:#c9a84c;margin-bottom:8px}
 .lu-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;color:#e6edf3}
@@ -113,6 +114,31 @@ select option{background:#0f2a45;color:#ffffff}
     </div>
     <div id="selStatus" class="status"></div>
   </section>
+
+  <div id="quickBar" style="display:none;position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0d1f3a,#0a1830);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:10px 14px;margin-bottom:16px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px">
+        <span id="qbHName" style="color:#9ecbff"></span>
+        <span id="qbScore" style="font-size:20px;color:#fff">0 - 0</span>
+        <span id="qbAName" style="color:#9ecbff"></span>
+        <span id="qbMin" style="color:#ff6b6b;font-weight:900;margin-right:8px"></span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn-quick" style="background:#34d399" onclick="quickOpen('h','goal')">⚽ هدف للأول</button>
+        <button class="btn-quick" style="background:#ffd54f;color:#0d1117" onclick="quickOpen('h','yellow_card')">🟨</button>
+        <button class="btn-quick" style="background:#ff6b6b" onclick="quickOpen('h','red_card')">🟥</button>
+        <span style="width:1px;background:rgba(255,255,255,.2);margin:0 4px"></span>
+        <button class="btn-quick" style="background:#34d399" onclick="quickOpen('a','goal')">⚽ هدف للثاني</button>
+        <button class="btn-quick" style="background:#ffd54f;color:#0d1117" onclick="quickOpen('a','yellow_card')">🟨</button>
+        <button class="btn-quick" style="background:#ff6b6b" onclick="quickOpen('a','red_card')">🟥</button>
+      </div>
+    </div>
+    <div id="quickPicker" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1)">
+      <div id="quickPickerTitle" style="font-size:13px;color:#b7c6dc;margin-bottom:8px"></div>
+      <div id="quickPickerGrid" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      <button class="btn secondary" style="margin-top:8px;padding:6px 14px;font-size:12px" onclick="quickClose()">إلغاء</button>
+    </div>
+  </div>
 
   <div id="matchPanel" style="display:none">
     <!-- لوحة النتيجة -->
@@ -286,7 +312,7 @@ async function onTournChange(){
   const tid=document.getElementById('selT').value;
   const s=document.getElementById('selM');
   s.innerHTML='<option value="">— اختر المباراة —</option>';
-  document.getElementById('matchPanel').style.display='none';
+  document.getElementById('matchPanel').style.display='none';document.getElementById('quickBar').style.display='none';
   if(!tid)return;
   const {data}=await sb.from('matches').select('id,match_no,round_name,status,home_team_id,away_team_id').eq('tournament_id',tid).order('match_no');
   (data||[]).forEach(m=>{
@@ -297,7 +323,7 @@ async function onTournChange(){
 
 async function onMatchChange(){
   const mid=document.getElementById('selM').value;
-  if(!mid){document.getElementById('matchPanel').style.display='none';return;}
+  if(!mid){document.getElementById('matchPanel').style.display='none';document.getElementById('quickBar').style.display='none';return;}
   const {data:m,error}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(*),at:teams!matches_away_team_id_fkey(*)').eq('id',mid).single();
   if(error||!m){setMsg('تعذر تحميل المباراة: '+(error?.message||''),'err');return;}
   cur=m;
@@ -345,6 +371,10 @@ function renderMatch(m){
   document.getElementById('aScore').textContent=m.away_score??0;
   document.getElementById('mRound').textContent=m.round_name||'';
   updateStatusUI(m.status||'scheduled');
+  document.getElementById('quickBar').style.display='block';
+  document.getElementById('qbHName').textContent=m.ht?.name_ar||m.ht?.name||'';
+  document.getElementById('qbAName').textContent=m.at?.name_ar||m.at?.name||'';
+  document.getElementById('qbScore').textContent=(m.home_score??0)+' - '+(m.away_score??0);
 }
 
 function fillMeta(m){
@@ -483,7 +513,46 @@ function tickClock(){
   else label=(half*2)+"+'";
   document.getElementById('mMin').textContent=label;
   document.getElementById('minInput').value=Math.min(elapsedMin,half*2);
+  document.getElementById('qbMin').textContent=label;
 }
+
+function quickOpen(side,type){
+  const players=side==='h'?hPl:aPl;
+  const teamName=side==='h'?(cur.ht?.name_ar||cur.ht?.name||''):(cur.at?.name_ar||cur.at?.name||'');
+  const labels={goal:'⚽ من سجّل الهدف؟',yellow_card:'🟨 من أخذ البطاقة الصفراء؟',red_card:'🟥 من أخذ البطاقة الحمراء؟'};
+  document.getElementById('quickPickerTitle').textContent=(labels[type]||'')+' — '+teamName;
+  const grid=document.getElementById('quickPickerGrid');
+  if(!players||!players.length){grid.innerHTML='<span style="color:#7d8694;font-size:12px">لا يوجد لاعبون محمّلون لهذا الفريق</span>';}
+  else{
+    grid.innerHTML=players.map(p=>`<button class="btn-quick" style="background:#21262d;color:#e6edf3" onclick="quickLog('${side}','${type}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}')">${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</button>`).join('');
+  }
+  grid.innerHTML+=`<button class="btn-quick" style="background:#21262d;color:#7d8694" onclick="quickLog('${side}','${type}','','بدون تحديد لاعب')">بدون تحديد لاعب</button>`;
+  document.getElementById('quickPicker').style.display='block';
+}
+
+function quickClose(){document.getElementById('quickPicker').style.display='none';}
+
+async function quickLog(side,type,playerId,playerName){
+  const tid=side==='h'?cur.home_team_id:cur.away_team_id;
+  const min=parseInt(document.getElementById('minInput').value)||0;
+  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:playerId||null,team_id:tid,event_type:type,minute:min});
+  if(error){setMsg('❌ فشل: '+error.message,'err');return;}
+  if(type==='goal'){
+    const f=side==='h'?'home_score':'away_score';
+    const v=(cur[f]||0)+1;
+    const {error:e2}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
+    if(!e2){
+      cur[f]=v;
+      document.getElementById(side==='h'?'hScore':'aScore').textContent=v;
+      document.getElementById('qbScore').textContent=(cur.home_score??0)+' - '+(cur.away_score??0);
+    }
+  }
+  quickClose();
+  loadEvts();
+  setMsg('✅ تم تسجيل '+({goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء'}[type]||type)+' — '+playerName,'ok');
+}
+
+window.quickOpen=quickOpen;window.quickClose=quickClose;window.quickLog=quickLog;
 
 function stopClock(){if(clockTimer){clearInterval(clockTimer);clockTimer=null;}}
 
