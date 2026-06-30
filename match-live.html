@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المباراة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh}
+a{text-decoration:none;color:inherit}
+.nav{background:#161b22;border-bottom:1px solid #21262d;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-back{color:#8b949e;font-size:14px;font-weight:700;padding:7px 16px;border-radius:8px;border:1px solid #30363d;transition:.2s}
+.nav-back:hover{background:#21262d;color:#fff}
+.nav-tname{font-size:14px;font-weight:800;color:#c9a84c;display:flex;align-items:center;gap:8px}
+.nav-tname img{width:26px;height:26px;border-radius:50%;object-fit:contain}
+
+.scoreboard{position:relative;padding:28px 16px 22px;text-align:center;overflow:hidden}
+.sb-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.18),transparent 60%)}
+.sb-inner{position:relative;z-index:1;max-width:720px;margin:0 auto}
+.sb-meta{display:flex;justify-content:center;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+.sb-round{font-size:12px;font-weight:700;color:#8b949e;background:#161b22;border:1px solid #30363d;padding:4px 12px;border-radius:20px}
+.sb-status{font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px}
+.st-live{background:rgba(248,81,73,.15);color:#f85149;border:1px solid rgba(248,81,73,.35)}
+.st-live .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#f85149;margin-left:6px;animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.st-done{background:#21262d;color:#8b949e;border:1px solid #30363d}
+.st-sched{background:rgba(63,185,80,.1);color:#3fb950;border:1px solid rgba(63,185,80,.25)}
+
+.teams-row{display:flex;align-items:center;justify-content:center;gap:6px}
+.team-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0}
+.team-badge{width:74px;height:74px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#0d1117;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.team-name{font-size:16px;font-weight:800;text-align:center;max-width:140px}
+.score-mid{display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 12px;min-width:120px}
+.score-nums{font-size:48px;font-weight:900;display:flex;align-items:center;gap:10px;line-height:1}
+.score-sep{color:#3a4150;font-size:34px}
+.score-min{font-size:13px;font-weight:800;color:#f85149}
+.score-vs{font-size:13px;font-weight:700;color:#8b949e}
+
+.info-strip{max-width:900px;margin:24px auto 0;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:0 16px}
+.info-chip{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;color:#c9d1d9;display:flex;align-items:center;gap:7px}
+.info-chip b{color:#8b949e;font-weight:700}
+.var-banner{max-width:900px;margin:14px auto 0;text-align:center;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:#c9a84c;font-weight:800;font-size:13px;padding:9px;border-radius:10px}
+
+.stream-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#f85149,#cc3333);color:#fff;font-weight:800;font-size:14px;padding:10px 22px;border-radius:30px;margin-top:18px}
+
+.tabs-bar{background:#161b22;border-bottom:1px solid #21262d;border-top:1px solid #21262d;position:sticky;top:56px;z-index:99;overflow-x:auto;margin-top:26px}
+.tabs{max-width:900px;margin:0 auto;display:flex;padding:0 16px}
+.tab{padding:13px 18px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#8b949e;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
+.tab.active{color:#c9a84c;border-bottom-color:#c9a84c}
+
+.main{max-width:900px;margin:0 auto;padding:24px 16px 60px}
+.pane{display:none}.pane.active{display:block}
+.empty{text-align:center;padding:50px 0;color:#8b949e}
+.empty span{font-size:36px;display:block;margin-bottom:8px}
+
+/* events */
+.evt-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #21262d}
+.evt-row.away-side{flex-direction:row-reverse;text-align:left}
+.evt-ic{font-size:18px;width:30px;text-align:center}
+.evt-min{font-size:12px;font-weight:800;color:#8b949e;width:34px;text-align:center}
+.evt-name{font-size:14px;font-weight:700;flex:1}
+
+/* lineups */
+.lu-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.lu-team-hd{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid}
+.lu-dot{width:10px;height:10px;border-radius:50%}
+.lu-pl{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px}
+.lu-num{width:22px;height:22px;border-radius:6px;background:#21262d;color:#8b949e;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lu-injury{color:#f85149;font-size:12px}
+.lu-sub-hd{font-size:11px;color:#8b949e;font-weight:700;margin:12px 0 6px;letter-spacing:.5px}
+@media(max-width:600px){.lu-grid{grid-template-columns:1fr}}
+
+.motm{max-width:900px;margin:18px auto 0;background:linear-gradient(135deg,#1c2128,#161b22);border:1px solid #c9a84c;border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:14px}
+.motm-ic{font-size:30px}
+.motm-lbl{font-size:11px;color:#c9a84c;font-weight:800;letter-spacing:.5px}
+.motm-name{font-size:16px;font-weight:800}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a class="nav-back" id="backLink" href="index.html">← الرئيسية</a>
+  <div class="nav-tname" id="navTName"></div>
+</div>
+
+<div class="scoreboard">
+  <div class="sb-glow"></div>
+  <div class="sb-inner">
+    <div class="sb-meta">
+      <span class="sb-round" id="roundLbl"></span>
+      <span class="sb-status" id="statusLbl"></span>
+    </div>
+    <div class="teams-row">
+      <div class="team-col">
+        <div class="team-badge" id="hBadge"></div>
+        <div class="team-name" id="hName"></div>
+      </div>
+      <div class="score-mid">
+        <div class="score-nums"><span id="hScore">–</span><span class="score-sep">:</span><span id="aScore">–</span></div>
+        <div class="score-min" id="liveMin" style="display:none"></div>
+        <div class="score-vs" id="vsLbl" style="display:none">VS</div>
+      </div>
+      <div class="team-col">
+        <div class="team-badge" id="aBadge"></div>
+        <div class="team-name" id="aName"></div>
+      </div>
+    </div>
+    <div id="varBanner" class="var-banner" style="display:none"></div>
+    <div class="info-strip" id="infoStrip"></div>
+    <div id="streamWrap"></div>
+  </div>
+</div>
+
+<div id="motmWrap"></div>
+
+<div class="tabs-bar">
+  <div class="tabs">
+    <button class="tab active" data-p="events" onclick="showTab('events')">⚡ الأحداث</button>
+    <button class="tab" data-p="lineups" onclick="showTab('lineups')">👥 التشكيلة</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="pane active" id="p-events"><div id="eventsWrap"></div></div>
+  <div class="pane" id="p-lineups"><div id="lineupsWrap"></div></div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const qs=new URLSearchParams(location.search);
+const MID=qs.get('id');
+const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل'};
+const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
+
+function showTab(p){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.p===p));
+  document.querySelectorAll('.pane').forEach(el=>el.classList.toggle('active',el.id==='p-'+p));
+}
+window.showTab=showTab;
+
+function initials(name){return (name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
+
+async function init(){
+  if(!MID){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>لم يتم تحديد المباراة</p></div>';return;}
+  const {data:m,error}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(*),at:teams!matches_away_team_id_fkey(*)').eq('id',MID).single();
+  if(error||!m){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>تعذر تحميل بيانات المباراة</p></div>';return;}
+
+  document.getElementById('backLink').href='tournament.html?id='+m.tournament_id;
+
+  const {data:t}=await sb.from('tournaments').select('*').eq('id',m.tournament_id).single();
+  if(t){
+    document.getElementById('navTName').innerHTML=(t.logo_url?`<img src="${t.logo_url}">`:'🏆')+' '+(t.name_ar||t.name||'');
+    document.title=(m.ht?.name_ar||m.ht?.name||'')+' × '+(m.at?.name_ar||m.at?.name||'')+' — '+(t.name_ar||t.name||'');
+  }
+
+  const ht=m.ht||{},at=m.at||{};
+  const hColor=ht.primary_color||ht.color_primary||'#8b949e';
+  const aColor=at.primary_color||at.color_primary||'#8b949e';
+  document.getElementById('hName').textContent=ht.name_ar||ht.name||'؟';
+  document.getElementById('aName').textContent=at.name_ar||at.name||'؟';
+  const hB=document.getElementById('hBadge'),aB=document.getElementById('aBadge');
+  hB.style.background=hColor; aB.style.background=aColor;
+  if(ht.logo_url){hB.innerHTML=`<img src="${ht.logo_url}" style="width:100%;height:100%;object-fit:contain;border-radius:50%">`;}else{hB.textContent=initials(ht.name_ar||ht.name);}
+  if(at.logo_url){aB.innerHTML=`<img src="${at.logo_url}" style="width:100%;height:100%;object-fit:contain;border-radius:50%">`;}else{aB.textContent=initials(at.name_ar||at.name);}
+
+  const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مباراة المركز الثالث',final:'النهائي'};
+  document.getElementById('roundLbl').textContent=rl[m.round_name]||m.round_name||'';
+
+  const sl=document.getElementById('statusLbl');
+  if(m.status==='live'){
+    sl.className='sb-status st-live'; sl.innerHTML='<span class="dot"></span> مباشر الآن';
+    document.getElementById('hScore').textContent=m.home_score??0;
+    document.getElementById('aScore').textContent=m.away_score??0;
+    document.getElementById('liveMin').style.display='block';
+    document.getElementById('liveMin').textContent=(m.match_minute||'')+(m.match_minute?"'":'');
+  }else if(m.status==='completed'){
+    sl.className='sb-status st-done'; sl.textContent='انتهت المباراة';
+    document.getElementById('hScore').textContent=m.home_score??0;
+    document.getElementById('aScore').textContent=m.away_score??0;
+  }else{
+    sl.className='sb-status st-sched'; sl.textContent='لم تبدأ بعد';
+    document.getElementById('vsLbl').style.display='block';
+    document.getElementById('hScore').textContent='';
+    document.getElementById('aScore').textContent='';
+  }
+
+  if(m.live_status&&m.live_status!=='none'){
+    const vl={checking:'⏳ الفار يراجع الحدث الآن...',goal_confirmed:'✅ تم تأكيد الهدف بعد المراجعة',goal_disallowed:'❌ تم إلغاء الهدف بعد مراجعة الفار',penalty_review:'🎯 الفار يراجع ركلة جزاء',red_card_review:'🟥 الفار يراجع بطاقة حمراء'};
+    if(vl[m.live_status]){const vb=document.getElementById('varBanner');vb.style.display='block';vb.textContent=vl[m.live_status];}
+  }
+
+  const chips=[];
+  if(m.venue_name||m.venue) chips.push(`<div class="info-chip">🏟️ <b>الملعب</b> ${m.venue_name||m.venue}</div>`);
+  if(m.match_date) chips.push(`<div class="info-chip">📅 ${new Date(m.match_date).toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long'})} ${m.match_time?'— '+m.match_time:''}</div>`);
+  if(m.referee_1) chips.push(`<div class="info-chip">👨‍⚖️ <b>الحكم</b> ${m.referee_1}</div>`);
+  if(m.referee_2) chips.push(`<div class="info-chip">🚩 <b>مساعد</b> ${m.referee_2}</div>`);
+  if(m.commentator) chips.push(`<div class="info-chip">🎙️ <b>التعليق</b> ${m.commentator}</div>`);
+  document.getElementById('infoStrip').innerHTML=chips.join('');
+
+  if(m.stream_url&&(m.status==='live')){
+    document.getElementById('streamWrap').innerHTML=`<a class="stream-btn" href="${m.stream_url}" target="_blank">📺 شاهد البث المباشر</a>`;
+  }
+
+  if(m.player_of_match_id){
+    const {data:p}=await sb.from('players').select('name,full_name_ar,photo_url,team_id').eq('id',m.player_of_match_id).single();
+    if(p){
+      const tm=p.team_id===m.home_team_id?ht:at;
+      document.getElementById('motmWrap').innerHTML=`<div class="motm"><div class="motm-ic">⭐</div><div><div class="motm-lbl">رجل المباراة</div><div class="motm-name">${p.full_name_ar||p.name} — ${tm.name_ar||tm.name||''}</div></div></div>`;
+    }
+  }
+
+  loadEvents(m,ht,at);
+  loadLineups(m,ht,at,hColor,aColor);
+}
+
+async function loadEvents(m,ht,at){
+  const {data}=await sb.from('match_events').select('*,player:players(name,full_name_ar)').eq('match_id',m.id).order('minute');
+  const wrap=document.getElementById('eventsWrap');
+  if(!data||!data.length){wrap.innerHTML='<div class="empty"><span>⚡</span><p>لا توجد أحداث مسجلة بعد</p></div>';return;}
+  wrap.innerHTML=data.map(e=>{
+    const side=e.team_id===m.home_team_id?'home':'away';
+    return `<div class="evt-row ${side==='away'?'away-side':''}">
+      <span class="evt-min">${e.minute||0}'</span>
+      <span class="evt-ic">${EI[e.event_type]||'📌'}</span>
+      <span class="evt-name">${e.player?.full_name_ar||e.player?.name||'—'} <span style="color:#8b949e;font-weight:500">— ${EL[e.event_type]||e.event_type}</span></span>
+    </div>`;
+  }).join('');
+}
+
+async function loadLineups(m,ht,at,hColor,aColor){
+  const {data}=await sb.from('match_lineups').select('*,player:players(name,full_name_ar,number,is_injured,injury_note)').eq('match_id',m.id);
+  const wrap=document.getElementById('lineupsWrap');
+  if(!data||!data.length){wrap.innerHTML='<div class="empty"><span>👥</span><p>لم يتم نشر التشكيلة بعد</p></div>';return;}
+  const hAll=data.filter(x=>x.team_id===m.home_team_id);
+  const aAll=data.filter(x=>x.team_id===m.away_team_id);
+  const block=(list,name,color)=>{
+    const start=list.filter(x=>x.is_starting);
+    const subs=list.filter(x=>!x.is_starting);
+    const row=x=>`<div class="lu-pl"><span class="lu-num">${x.player?.number??''}</span><span>${x.player?.full_name_ar||x.player?.name||'—'}</span>${x.player?.is_injured?`<span class="lu-injury" title="${x.player.injury_note||'مصاب'}">🩹</span>`:''}</div>`;
+    return `<div><div class="lu-team-hd" style="border-color:${color}"><span class="lu-dot" style="background:${color}"></span>${name}</div>
+      ${start.map(row).join('')||'<div class="empty" style="padding:10px 0;font-size:12px">—</div>'}
+      ${subs.length?`<div class="lu-sub-hd">البدلاء</div>${subs.map(row).join('')}`:''}
+    </div>`;
+  };
+  wrap.innerHTML=`<div class="lu-grid">${block(hAll,ht.name_ar||ht.name||'الفريق الأول',hColor)}${block(aAll,at.name_ar||at.name||'الفريق الثاني',aColor)}</div>`;
+}
+
+init();
+setInterval(()=>{ if(MID) init(); }, 20000);
+</script>
+</body>
+</html>
