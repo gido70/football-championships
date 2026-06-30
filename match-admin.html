@@ -443,18 +443,23 @@ async function setMatchStatus(st){
 
 async function resetForTest(){
   if(!cur)return;
-  if(!confirm('سيتم إرجاع هذه المباراة إلى "مجدولة" وتصفير النتيجة والدقيقة — للاختبار فقط. متابعة؟'))return;
-  const payload={status:'scheduled',home_score:0,away_score:0,live_started_at:null,live_status:'none'};
+  if(!confirm('سيتم إرجاع هذه المباراة إلى "مجدولة" وتصفير النتيجة، الأحداث، التشكيلة، والحكام/المعلق/الملعب — للاختبار فقط. متابعة؟'))return;
+  const payload={status:'scheduled',home_score:0,away_score:0,live_started_at:null,live_status:'none',var_team_id:null,
+    referee_1:null,referee_2:null,commentator:null,venue_name:null,stream_url:null,player_of_match_id:null};
   const {error}=await sb.from('matches').update(payload).eq('id',cur.id);
   if(error){setMsg('❌ فشل: '+error.message,'err');return;}
   await sb.from('match_events').delete().eq('match_id',cur.id);
+  await sb.from('match_lineups').delete().eq('match_id',cur.id);
   Object.assign(cur,payload);
   document.getElementById('hScore').textContent=0;
   document.getElementById('aScore').textContent=0;
   updateStatusUI('scheduled');
   stopClock();
+  fillMeta(cur);
+  document.getElementById('varTeamSel').value='';
   loadEvts();
-  setMsg('✅ تمت إعادة فتح المباراة للاختبار','ok');
+  loadLineupAdmin(cur);
+  setMsg('✅ تمت إعادة فتح المباراة للاختبار — كل البيانات (نتيجة، أحداث، تشكيلة، حكام، معلق، ملعب) صُفّرت','ok');
 }
 
 function startStopClock(){
