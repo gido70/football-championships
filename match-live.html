@@ -90,7 +90,17 @@ a{text-decoration:none;color:inherit}
 .evt-min{font-size:12px;font-weight:800;color:#8b949e;width:34px;text-align:center}
 .evt-name{font-size:14px;font-weight:700;flex:1}
 
-/* lineups — بطاقات اللاعبين */
+/* ===== مكوّن بطاقة اللاعب الموحّد (يُستخدم في كل صفحة) ===== */
+.pchip{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid #21262d;border-radius:30px;padding:5px 12px 5px 6px;max-width:100%}
+.pchip-photo{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid #30363d}
+.pchip-av{width:30px;height:30px;border-radius:50%;background:#21262d;border:1.5px solid #30363d;font-size:11px;font-weight:800;color:#8b949e;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pchip-num{font-size:10px;font-weight:900;color:#c9a84c;flex-shrink:0}
+.pchip-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pchip-role{font-size:10px;font-weight:800;color:#6e7b8f;margin-right:4px;flex-shrink:0}
+.pchip.goal{border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.06)}
+.pchip.yellow{border-color:rgba(255,213,79,.4);background:rgba(255,213,79,.06)}
+.pchip.red{border-color:rgba(248,81,73,.4);background:rgba(248,81,73,.06)}
+.pchip.motm{border-color:rgba(201,168,76,.5);background:rgba(201,168,76,.1)}
 .team-section{padding:16px 16px 4px}
 .team-hd{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px}
 .lu-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
@@ -358,10 +368,10 @@ async function init(){
   }
 
   if(m.player_of_match_id){
-    const {data:p}=await sb.from('players').select('name,full_name_ar,photo_url,team_id').eq('id',m.player_of_match_id).single();
+    const {data:p}=await sb.from('players').select('name,full_name_ar,number,jersey_photo_url,team_id').eq('id',m.player_of_match_id).single();
     if(p){
       const tm=p.team_id===m.home_team_id?ht:at;
-      document.getElementById('motmWrap').innerHTML=`<div class="motm"><div class="motm-ic">⭐</div><div><div class="motm-lbl">رجل المباراة</div><div class="motm-name">${p.full_name_ar||p.name} — ${tm.name_ar||tm.name||''}</div></div></div>`;
+      document.getElementById('motmWrap').innerHTML=`<div class="motm"><div class="motm-ic">⭐</div><div><div class="motm-lbl">رجل المباراة</div><div style="margin-top:6px">${pchip(p.full_name_ar||p.name,p.jersey_photo_url,p.number,tm?.name_ar||tm?.name||'','motm')}</div></div></div>`;
     }
   }
 
@@ -369,16 +379,36 @@ async function init(){
   loadLineups(m,ht,at,hColor,aColor);
 }
 
+// ===== مكوّن بطاقة اللاعب الموحّد =====
+function pchip(name,photo,number,role,variant=''){
+  const ini=(name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+  const sn=(name||'—').split(' ').slice(0,2).join(' ');
+  return `<span class="pchip ${variant}">
+    ${photo?`<img class="pchip-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
+    <span class="pchip-av" style="${photo?'display:none':''}">${ini}</span>
+    ${number?`<span class="pchip-num">#${number}</span>`:''}
+    <span class="pchip-name">${sn}</span>
+    ${role?`<span class="pchip-role">${role}</span>`:''}
+  </span>`;
+}
+window.pchip=pchip;
+
 async function loadEvents(m,ht,at){
-  const {data}=await sb.from('match_events').select('*,player:players!player_id(name,full_name_ar)').eq('match_id',m.id).order('minute');
+  const {data}=await sb.from('match_events').select('*,player:players!player_id(name,full_name_ar,number,jersey_photo_url,is_goalkeeper)').eq('match_id',m.id).order('minute');
   const wrap=document.getElementById('eventsWrap');
   if(!data||!data.length){wrap.innerHTML='<div class="empty"><span>⚡</span><p>لا توجد أحداث مسجلة بعد</p></div>';return;}
+  const variantMap={goal:'goal',yellow_card:'yellow',red_card:'red'};
   wrap.innerHTML=data.map(e=>{
     const side=e.team_id===m.home_team_id?'home':'away';
+    const name=e.manual_player_name||e.player?.full_name_ar||e.player?.name||'';
+    const photo=e.player?.jersey_photo_url||null;
+    const num=e.player?.number||null;
+    const role=e.player?.is_goalkeeper?'حارس':null;
+    const v=variantMap[e.event_type]||'';
     return `<div class="evt-row ${side==='away'?'away-side':''}">
       <span class="evt-min">${e.minute||0}'</span>
       <span class="evt-ic">${EI[e.event_type]||'📌'}</span>
-      <span class="evt-name">${e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—'} <span style="color:#8b949e;font-weight:500">— ${EL[e.event_type]||e.event_type}</span></span>
+      <div style="flex:1">${name?pchip(name,photo,num,role,v):''} <span style="color:#6e7b8f;font-size:12px">${EL[e.event_type]||e.event_type}</span></div>
     </div>`;
   }).join('');
 }

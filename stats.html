@@ -55,6 +55,17 @@ a{text-decoration:none;color:inherit}
 
 .empty{text-align:center;padding:50px 0;color:#8b949e}
 .empty span{font-size:34px;display:block;margin-bottom:8px}
+/* pchip مشترك */
+.pchip{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid #21262d;border-radius:30px;padding:5px 12px 5px 6px;max-width:100%}
+.pchip-photo{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid #30363d}
+.pchip-av{width:32px;height:32px;border-radius:50%;background:#21262d;border:1.5px solid #30363d;font-size:11px;font-weight:800;color:#8b949e;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pchip-num{font-size:10px;font-weight:900;color:#c9a84c;flex-shrink:0}
+.pchip-name{font-size:13px;font-weight:700}
+.pchip-role{font-size:10px;color:#6e7b8f;margin-right:2px}
+.pchip.goal{border-color:rgba(63,185,80,.35);background:rgba(63,185,80,.06)}
+.pchip.yellow{border-color:rgba(255,213,79,.35);background:rgba(255,213,79,.06)}
+.pchip.red{border-color:rgba(248,81,73,.35);background:rgba(248,81,73,.06)}
+.pchip.motm{border-color:rgba(201,168,76,.5);background:rgba(201,168,76,.1)}
 
 .awards-wrap{padding:6px 16px 4px;max-width:760px;margin:0 auto}
 .awards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
@@ -123,13 +134,25 @@ window.showSec=showSec;
 
 function initials(name){return (name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
 
-function leadRow(rank,name,sub,val,unit,photo,extraClass){
+function pchip(name,photo,number,role,variant=''){
+  const ini=(name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+  const sn=(name||'—').split(' ').slice(0,2).join(' ');
+  return `<span class="pchip ${variant}">
+    ${photo?`<img class="pchip-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
+    <span class="pchip-av" style="${photo?'display:none':''}">${ini}</span>
+    ${number?`<span class="pchip-num">#${number}</span>`:''}
+    <span class="pchip-name">${sn}</span>
+    ${role?`<span class="pchip-role">${role}</span>`:''}
+  </span>`;
+}
+
+function leadRow(rank,name,sub,val,unit,photo,extraClass,number){
   const rClass=rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
+  const vClass=extraClass||'';
   return `<div class="lead-row ${rClass}">
     <div class="lead-rank">${rank}</div>
-    ${photo?`<img class="lead-photo" src="${photo}">`:`<div class="lead-photo" style="display:flex;align-items:center;justify-content:center;font-weight:800;color:#8b949e">${initials(name)}</div>`}
-    <div class="lead-info"><div class="lead-name">${name}</div><div class="lead-team">${sub||''}</div></div>
-    <div class="lead-val ${extraClass||''}">${val}<span class="u">${unit||''}</span></div>
+    ${pchip(name,photo,number,sub,vClass)}
+    <div class="lead-val ${vClass}">${val}<span class="u">${unit||''}</span></div>
   </div>`;
 }
 
@@ -157,7 +180,7 @@ async function init(){
     return;
   }
 
-  const {data:events}=await sb.from('match_events').select('event_type,player_id,team_id,manual_player_name,player:players!player_id(name,full_name_ar,jersey_photo_url)').in('match_id',mids);
+  const {data:events}=await sb.from('match_events').select('event_type,player_id,team_id,manual_player_name,player:players!player_id(name,full_name_ar,number,jersey_photo_url)').in('match_id',mids);
 
   buildScorers(events,teamName);
   buildCards(events,teamName);
@@ -188,7 +211,7 @@ function tally(events,type){
   const map={};
   (events||[]).filter(e=>e.event_type===type&&(e.player_id||e.manual_player_name)).forEach(e=>{
     const key=e.player_id||('m:'+e.manual_player_name+':'+e.team_id);
-    if(!map[key])map[key]={name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',photo:e.player?.jersey_photo_url,team:e.team_id,count:0};
+    if(!map[key])map[key]={name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',photo:e.player?.jersey_photo_url,number:e.player?.number,team:e.team_id,count:0};
     map[key].count++;
   });
   return Object.values(map).sort((a,b)=>b.count-a.count);
@@ -198,7 +221,7 @@ function buildScorers(events,teamName){
   const list=tally(events,'goal');
   const wrap=document.getElementById('scorersWrap');
   if(!list.length){wrap.innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف مسجلة بعد</p></div>';return;}
-  wrap.innerHTML=list.slice(0,20).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'هدف',p.photo)).join('');
+  wrap.innerHTML=list.slice(0,20).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'هدف',p.photo,'goal',p.number)).join('');
 }
 
 function buildCards(events,teamName){
@@ -206,9 +229,9 @@ function buildCards(events,teamName){
   const red=tally(events,'red_card');
   let html='';
   html+='<div class="sec-title">🟨 الأكثر حصولاً على بطاقات صفراء</div>';
-  html+=yellow.length?yellow.slice(0,15).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'بطاقة',p.photo,'yellow')).join(''):'<div class="empty" style="padding:20px 0"><span>🟨</span><p>لا توجد بطاقات صفراء بعد</p></div>';
+  html+=yellow.length?yellow.slice(0,15).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'بطاقة',p.photo,'yellow',p.number)).join(''):'<div class="empty" style="padding:20px 0"><span>🟨</span><p>لا توجد بطاقات صفراء بعد</p></div>';
   html+='<div class="sec-title">🟥 البطاقات الحمراء</div>';
-  html+=red.length?red.slice(0,15).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'بطاقة',p.photo,'red')).join(''):'<div class="empty" style="padding:20px 0"><span>🟥</span><p>لا توجد بطاقات حمراء — انضباط ممتاز</p></div>';
+  html+=red.length?red.slice(0,15).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'بطاقة',p.photo,'red',p.number)).join(''):'<div class="empty" style="padding:20px 0"><span>🟥</span><p>لا توجد بطاقات حمراء — انضباط ممتاز</p></div>';
   document.getElementById('cardsWrap').innerHTML=html;
 }
 
@@ -226,7 +249,7 @@ async function buildMotm(matches,teamName){
   const leaderboard=Object.entries(count).map(([id,c])=>({id,count:c,...pMap[id]})).sort((a,b)=>b.count-a.count);
 
   let html='<div class="sec-title">🏆 الأكثر اختيارًا كنجم مباراة</div>';
-  html+=leaderboard.map((p,i)=>leadRow(i+1,p.full_name_ar||p.name||'—',teamName[p.team_id]||'',p.count,'مرة',p.jersey_photo_url)).join('');
+  html+=leaderboard.map((p,i)=>leadRow(i+1,p.full_name_ar||p.name||'—',teamName[p.team_id]||'',p.count,'مرة',p.jersey_photo_url,'motm',p.number)).join('');
 
   html+='<div class="sec-title">📅 نجم كل مباراة</div>';
   html+=withStar.map(m=>{
