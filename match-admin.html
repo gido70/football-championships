@@ -147,10 +147,16 @@ select option{background:#0f2a45;color:#ffffff}
         <button class="btn btn-start" id="btnStart" onclick="setMatchStatus('live')">▶ بدء المباراة</button>
         <button class="btn btn-end" id="btnEnd" onclick="setMatchStatus('completed')" disabled>⏹ إنهاء المباراة</button>
       </div>
+      <div class="min-row" style="gap:10px;flex-wrap:wrap">
+        <label style="color:#b7c6dc;font-size:14px">مدة الشوط (دقيقة):</label>
+        <input type="number" id="halfLenInput" min="5" max="60" value="20" style="width:70px">
+        <button class="btn secondary" onclick="resetForTest()" style="padding:8px 16px;font-size:13px;background:#3a4150">🔄 إعادة فتح للاختبار</button>
+      </div>
       <div class="min-row">
         <label style="color:#b7c6dc;font-size:14px">الدقيقة:</label>
         <input type="number" id="minInput" min="1" max="120" value="1">
-        <button class="btn secondary" onclick="saveMin()" style="padding:8px 16px;font-size:14px">تحديث</button>
+        <button class="btn secondary" onclick="saveMin()" style="padding:8px 16px;font-size:14px">تحديث يدوي</button>
+        <span style="color:#7d8694;font-size:12px">(تُحسب تلقائيًا بعد البدء — استخدم هذا فقط للتصحيح)</span>
       </div>
       <div id="statusMsg" class="status" style="margin-top:10px"></div>
     </div>
@@ -301,6 +307,7 @@ async function onMatchChange(){
   renderMatch(m);
   fillMeta(m);
   fillVAR(m);
+  startStopClock();
   loadEvts();
   loadLineupAdmin(m);
   document.getElementById('matchPanel').style.display='block';
@@ -396,15 +403,64 @@ async function chScore(side,d){
   if(d>0)openEvt(side==='home'?'h':'a','goal');
 }
 
+let clockTimer=null;
+
 async function setMatchStatus(st){
   if(!cur)return;
   setMsg('جاري التحديث...');
-  const {error}=await sb.from('matches').update({status:st}).eq('id',cur.id);
+  const payload={status:st};
+  if(st==='live'){
+    payload.live_started_at=new Date().toISOString();
+    payload.half_length_minutes=parseInt(document.getElementById('halfLenInput').value)||20;
+  }
+  const {error}=await sb.from('matches').update(payload).eq('id',cur.id);
   if(error){setMsg('❌ فشل التحديث: '+error.message,'err');console.error(error);return;}
-  cur.status=st;
+  Object.assign(cur,payload);
   updateStatusUI(st);
-  setMsg(st==='live'?'✅ بدأت المباراة':'✅ انتهت المباراة','ok');
+  startStopClock();
+  setMsg(st==='live'?'✅ بدأت المباراة — العداد يعمل الآن':'✅ انتهت المباراة','ok');
 }
+
+async function resetForTest(){
+  if(!cur)return;
+  if(!confirm('سيتم إرجاع هذه المباراة إلى "مجدولة" وتصفير النتيجة والدقيقة — للاختبار فقط. متابعة؟'))return;
+  const payload={status:'scheduled',home_score:0,away_score:0,live_started_at:null,live_status:'none'};
+  const {error}=await sb.from('matches').update(payload).eq('id',cur.id);
+  if(error){setMsg('❌ فشل: '+error.message,'err');return;}
+  await sb.from('match_events').delete().eq('match_id',cur.id);
+  Object.assign(cur,payload);
+  document.getElementById('hScore').textContent=0;
+  document.getElementById('aScore').textContent=0;
+  updateStatusUI('scheduled');
+  stopClock();
+  loadEvts();
+  setMsg('✅ تمت إعادة فتح المباراة للاختبار','ok');
+}
+
+function startStopClock(){
+  stopClock();
+  if(cur.status==='live'&&cur.live_started_at){
+    tickClock();
+    clockTimer=setInterval(tickClock,1000);
+  }else{
+    document.getElementById('mMin').textContent='';
+  }
+}
+
+function tickClock(){
+  if(!cur.live_started_at)return;
+  const startedMs=new Date(cur.live_started_at).getTime();
+  const elapsedMin=Math.floor((Date.now()-startedMs)/60000)+1;
+  const half=cur.half_length_minutes||20;
+  let label;
+  if(elapsedMin<=half) label=elapsedMin+"'";
+  else if(elapsedMin<=half*2) label=elapsedMin+"'";
+  else label=(half*2)+"+'";
+  document.getElementById('mMin').textContent=label;
+  document.getElementById('minInput').value=Math.min(elapsedMin,half*2);
+}
+
+function stopClock(){if(clockTimer){clearInterval(clockTimer);clockTimer=null;}}
 
 async function saveMin(){
   const m=parseInt(document.getElementById('minInput').value)||1;
@@ -487,6 +543,7 @@ async function saveLineups(){
 
 window.openEvt=openEvt;window.closeEvt=closeEvt;window.submitEvt=submitEvt;window.delEvt=delEvt;
 window.saveMeta=saveMeta;window.setVAR=setVAR;
+window.chScore=chScore;window.setMatchStatus=setMatchStatus;window.saveMin=saveMin;window.resetForTest=resetForTest;window.saveLineups=saveLineups;
 
 document.getElementById('selT').addEventListener('change',onTournChange);
 document.getElementById('selM').addEventListener('change',onMatchChange);
