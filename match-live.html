@@ -143,6 +143,19 @@ window.showTab=showTab;
 
 function initials(name){return (name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
 
+let clockTimer=null;
+function startClock(startedAt,half){
+  stopClock();
+  if(!startedAt)return;
+  const tick=()=>{
+    const elapsedMin=Math.floor((Date.now()-new Date(startedAt).getTime())/60000)+1;
+    document.getElementById('liveMin').textContent=Math.min(elapsedMin,half*2)+"'"+(elapsedMin>half*2?'+':'');
+  };
+  tick();
+  clockTimer=setInterval(tick,1000);
+}
+function stopClock(){if(clockTimer){clearInterval(clockTimer);clockTimer=null;}}
+
 async function init(){
   if(!MID){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>لم يتم تحديد المباراة</p></div>';return;}
   const {data:m,error}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(*),at:teams!matches_away_team_id_fkey(*)').eq('id',MID).single();
@@ -175,12 +188,14 @@ async function init(){
     document.getElementById('hScore').textContent=m.home_score??0;
     document.getElementById('aScore').textContent=m.away_score??0;
     document.getElementById('liveMin').style.display='block';
-    document.getElementById('liveMin').textContent=(m.match_minute||'')+(m.match_minute?"'":'');
+    startClock(m.live_started_at,m.half_length_minutes||20);
   }else if(m.status==='completed'){
+    stopClock();
     sl.className='sb-status st-done'; sl.textContent='انتهت المباراة';
     document.getElementById('hScore').textContent=m.home_score??0;
     document.getElementById('aScore').textContent=m.away_score??0;
   }else{
+    stopClock();
     sl.className='sb-status st-sched'; sl.textContent='لم تبدأ بعد';
     document.getElementById('vsLbl').style.display='block';
     document.getElementById('hScore').textContent='';
@@ -249,7 +264,12 @@ async function loadLineups(m,ht,at,hColor,aColor){
 }
 
 init();
-setInterval(()=>{ if(MID) init(); }, 20000);
+sb.channel('match-live-'+MID)
+  .on('postgres_changes',{event:'*',schema:'public',table:'matches',filter:'id=eq.'+MID},()=>init())
+  .on('postgres_changes',{event:'*',schema:'public',table:'match_events',filter:'match_id=eq.'+MID},()=>init())
+  .subscribe();
+// شبكة أمان احتياطية لو تعطّل الاتصال اللحظي لأي سبب
+setInterval(()=>{ if(MID) init(); }, 30000);
 </script>
 </body>
 </html>
