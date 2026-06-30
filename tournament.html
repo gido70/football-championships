@@ -33,6 +33,15 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .hs-num{font-size:34px;font-weight:900;line-height:1}
 .hs-lbl{font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;letter-spacing:.5px}
 .tabs-bar{background:#161b22;border-bottom:1px solid #21262d;position:sticky;top:58px;z-index:99;overflow-x:auto}
+.news-banner{background:linear-gradient(135deg,rgba(88,166,255,.12),rgba(88,166,255,.06));border-bottom:1px solid rgba(88,166,255,.2);padding:0 18px}
+.news-banner-inner{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:0}
+.news-item-pub{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(88,166,255,.1)}
+.news-item-pub:last-child{border-bottom:none}
+.news-item-pub .n-dot{width:6px;height:6px;border-radius:50%;background:#58a6ff;margin-top:7px;flex-shrink:0}
+.news-item-pub .n-pin{width:6px;height:6px;border-radius:50%;background:#c9a84c;margin-top:7px;flex-shrink:0}
+.news-item-pub .n-txt{font-size:13px;line-height:1.6;color:#e6edf3}
+.news-item-pub .n-time{font-size:10px;color:#6e7b8f;margin-top:2px;display:block}
+.news-header{font-size:11px;font-weight:800;color:#58a6ff;padding:10px 0 2px;letter-spacing:1px}
 .tabs{max-width:1200px;margin:0 auto;display:flex;padding:0 20px}
 .tab{padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#8b949e;transition:.2s;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
 .tab.active{color:#c9a84c;border-bottom-color:#c9a84c}
@@ -143,6 +152,8 @@ img[src=""], img:not([src]) { display:none !important; }
   </div>
 </div>
 
+<div id="newsBanner"></div>
+
 <div class="tabs-bar">
   <div class="tabs">
     <button class="tab active" onclick="showTab(this,'st')">🏅 الترتيب</button>
@@ -164,6 +175,19 @@ img[src=""], img:not([src]) { display:none !important; }
 const sb=supabase.createClient("https://npoowwdjpbvhyjrmeqkv.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY");
 const TID=new URLSearchParams(location.search).get('id');
 document.getElementById('statsTabLink').href='stats.html?id='+TID;
+
+async function loadNews(){
+  if(!TID)return;
+  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('is_pinned',{ascending:false}).order('created_at',{ascending:false}).limit(5);
+  const banner=document.getElementById('newsBanner');
+  if(!data?.length){banner.innerHTML='';return;}
+  const fmt=d=>new Date(d).toLocaleString('ar-AE',{dateStyle:'short',timeStyle:'short'});
+  banner.innerHTML=`<div class="news-banner"><div class="news-banner-inner">
+    <div class="news-header">📰 آخر الأخبار</div>
+    ${data.map(n=>`<div class="news-item-pub"><div class="${n.is_pinned?'n-pin':'n-dot'}"></div><div><div class="n-txt">${n.content}</div><span class="n-time">${fmt(n.created_at)}</span></div></div>`).join('')}
+  </div></div>`;
+}
+loadNews();
 
 function showTab(btn,name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));

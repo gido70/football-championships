@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>النشرة السريعة</title>
+<link rel="stylesheet" href="admin.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<style>
+.news-list{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+.news-row{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px}
+.news-row.pinned{border-color:rgba(201,168,76,.4);background:rgba(201,168,76,.06)}
+.news-content{flex:1;font-size:14px;line-height:1.7}
+.news-meta{font-size:11px;color:#6e7b8f;margin-top:4px}
+.news-actions{display:flex;gap:6px;flex-shrink:0}
+.news-pin{background:none;border:1px solid #30363d;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;color:#8b949e}
+.news-pin.active{border-color:#c9a84c;color:#c9a84c}
+.news-del{background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;color:#f85149}
+.char-count{float:left;font-size:11px;color:#6e7b8f;margin-top:4px}
+textarea{resize:vertical;min-height:90px}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <div class="page-head">
+    <div class="page-icon">📰</div>
+    <div class="page-title"><h1>النشرة السريعة</h1><p>أخبار تظهر فورًا للجمهور في صفحة البطولة</p></div>
+  </div>
+  <div class="nav-actions">
+    <a class="btn secondary" href="./admin-home.html">← لوحة الأدمن</a>
+    <a class="btn secondary" href="./index.html" target="_blank">الموقع العام ↗</a>
+  </div>
+</div></header>
+
+<main class="container">
+  <section class="panel">
+    <h3>اختر البطولة</h3>
+    <div class="form-grid"><div class="field full"><label>البطولة</label>
+      <select id="tSel"></select>
+    </div></div>
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <h3>✍️ إضافة خبر جديد</h3>
+    <div class="field full">
+      <label>نص الخبر</label>
+      <textarea id="newsInput" maxlength="280" placeholder="مثال: تأهّل الأرشيف والمكتبة الوطنية لربع النهائي بفوز 3-0 على مكتب الأمين العام..." oninput="document.getElementById('charCount').textContent=this.value.length"></textarea>
+      <div><span class="char-count"><span id="charCount">0</span>/280 حرفًا</span></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="addBtn">📤 نشر الآن</button>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#8b949e">
+        <input type="checkbox" id="pinChk"> 📌 تثبيت هذا الخبر في الأعلى
+      </label>
+    </div>
+    <div class="status" id="addMsg"></div>
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <h3>📋 الأخبار المنشورة <span id="countBadge" style="font-size:12px;color:#8b949e;font-weight:400"></span></h3>
+    <div id="newsList" class="news-list"><div class="status">جاري التحميل...</div></div>
+  </section>
+</main>
+
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+let TID=null;
+
+function setMsg(t,c=''){const e=document.getElementById('addMsg');e.className='status '+c;e.textContent=t;}
+
+async function initTournaments(){
+  const {data}=await sb.from('tournaments').select('id,name,name_ar,season_label').order('created_at',{ascending:false});
+  const sel=document.getElementById('tSel');
+  sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
+  sel.onchange=()=>{TID=sel.value;loadNews();};
+  if(data?.length){TID=data[0].id;loadNews();}
+}
+
+async function loadNews(){
+  if(!TID)return;
+  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
+  const list=document.getElementById('newsList');
+  document.getElementById('countBadge').textContent='('+((data||[]).length)+' خبر)';
+  if(!data?.length){list.innerHTML='<div class="empty" style="padding:24px;text-align:center;color:#6e7b8f">لا توجد أخبار بعد — أضف أول خبر من الأعلى</div>';return;}
+  list.innerHTML=data.map(n=>`
+    <div class="news-row ${n.is_pinned?'pinned':''}" id="nr-${n.id}">
+      <div class="news-content">
+        ${n.is_pinned?'<span style="font-size:10px;color:#c9a84c;font-weight:800">📌 مثبّت &nbsp;</span>':''}${n.content}
+        <div class="news-meta">${new Date(n.created_at).toLocaleString('ar-AE',{dateStyle:'short',timeStyle:'short'})}</div>
+      </div>
+      <div class="news-actions">
+        <button class="news-pin ${n.is_pinned?'active':''}" onclick="togglePin('${n.id}',${!n.is_pinned})">${n.is_pinned?'📌 إلغاء التثبيت':'📌 تثبيت'}</button>
+        <button class="news-del" onclick="deleteNews('${n.id}')">حذف</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('addBtn').onclick=async()=>{
+  const content=document.getElementById('newsInput').value.trim();
+  if(!content){setMsg('⚠️ أدخل نص الخبر','warn');return;}
+  if(!TID){setMsg('⚠️ اختر بطولة أولاً','warn');return;}
+  const is_pinned=document.getElementById('pinChk').checked;
+  const {error}=await sb.from('news_items').insert({tournament_id:TID,content,is_pinned});
+  if(error){setMsg('❌ فشل النشر: '+error.message,'err');return;}
+  document.getElementById('newsInput').value='';
+  document.getElementById('charCount').textContent='0';
+  document.getElementById('pinChk').checked=false;
+  setMsg('✅ تم النشر فورًا','ok');
+  loadNews();
+};
+
+async function togglePin(id,pin){
+  const {error}=await sb.from('news_items').update({is_pinned:pin}).eq('id',id);
+  if(!error)loadNews();
+}
+
+async function deleteNews(id){
+  if(!confirm('حذف هذا الخبر نهائيًا؟'))return;
+  await sb.from('news_items').delete().eq('id',id);
+  loadNews();
+}
+
+window.togglePin=togglePin;window.deleteNews=deleteNews;
+initTournaments();
+</script>
+</body>
+</html>
