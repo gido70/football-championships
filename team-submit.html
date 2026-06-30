@@ -56,7 +56,32 @@ async function init(){
   const {data,error}=await sb.from('teams').select('*').eq('submit_token',TOKEN).single();
   if(error||!data){showErr('لم يتم العثور على فريق مرتبط بهذا الرابط.');return;}
   TEAM=data;
-  buildForm();
+  showCodeGate();
+}
+
+function showCodeGate(){
+  document.getElementById('app').innerHTML=`
+    <div class="hd">
+      <h1>🔐 تأكيد الهوية</h1>
+      <p>أدخل الكود المكوّن من 5 أرقام الذي أرسلته لك إدارة البطولة لفريق "${TEAM.name_ar||TEAM.name}"</p>
+    </div>
+    <div class="card">
+      <div class="field">
+        <label>كود الفريق (5 أرقام)</label>
+        <input type="text" id="codeInput" maxlength="5" inputmode="numeric" style="font-size:24px;text-align:center;letter-spacing:8px" placeholder="00000">
+      </div>
+      <button type="button" class="submit-btn" onclick="checkCode()">دخول</button>
+      <div id="codeMsg"></div>
+    </div>
+  `;
+}
+
+function checkCode(){
+  const v=document.getElementById('codeInput').value.trim();
+  const msg=document.getElementById('codeMsg');
+  if(!TEAM.access_code){msg.innerHTML='<div class="msg err">⚠️ لم يُحدَّد كود لهذا الفريق بعد — تواصل مع إدارة البطولة</div>';return;}
+  if(v===String(TEAM.access_code)){buildForm();}
+  else{msg.innerHTML='<div class="msg err">❌ الكود غير صحيح — تأكد منه مرة أخرى</div>';}
 }
 
 function showErr(msg){
