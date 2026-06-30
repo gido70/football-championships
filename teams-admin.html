@@ -4,10 +4,11 @@
 <main class="container">
 <section class="panel"><h3>اختر البطولة</h3><div class="form-grid"><div class="field full"><label>البطولة</label><select id="tournamentSelect"></select></div></div></section>
 <section class="panel" style="margin-top:24px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.25)"><h3>📋 نسخ فريق جاهز من بطولة أخرى (للتجربة)</h3><div class="form-grid"><div class="field"><label>انسخ من بطولة</label><select id="srcTournamentSelect"></select></div><div class="field"><label>الفريق</label><select id="srcTeamSelect"></select></div></div><div style="margin:10px 0"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="copyPlayersChk" checked> نسخ لاعبي الفريق أيضًا (بدون صورهم الخاصة، بحالة معتمدة مباشرة)</label></div><div class="actions"><button class="btn" id="copyBtn" style="background:#3fb950">نسخ هذا الفريق إلى البطولة الحالية</button></div><div class="status" id="copyMsg"></div></section>
+<section class="panel" style="margin-top:24px;background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.25)"><h3>📊 استيراد أسماء الفرق دفعة واحدة من إكسل</h3><p style="color:#9fb0c9;font-size:13px;margin-bottom:10px">ملف بعمود واحد "اسم الفريق" — يُنشئ كل الفرق دفعة واحدة في البطولة المختارة فوق، وكل فريق يحصل تلقائيًا على رابط إدخال خاص به (من صفحة "مراجعة بيانات الفرق")</p><div class="actions"><button class="btn secondary" id="dlTeamsTemplateBtn">⬇️ تحميل نموذج فارغ</button><button class="btn" id="importTeamsBtn" style="background:#58a6ff">📊 استيراد ملف إكسل</button><input type="file" id="teamsXlsxInput" accept=".xlsx,.xls,.csv" style="display:none"></div><div class="status" id="teamsImportMsg"></div></section>
 <section class="panel" style="margin-top:24px;"><h3>إضافة فريق</h3><div class="form-grid"><div class="field"><label>اسم الفريق</label><input id="teamName" placeholder="اسم الفريق"></div><div class="field"><label>الاسم المختصر</label><input id="shortName" placeholder="مثال: MJD"></div></div><div class="actions"><button class="btn" id="addBtn">إضافة فريق</button><button class="btn secondary" id="reloadBtn">تحديث القائمة</button></div><div class="counter" id="counter"></div><div class="status" id="statusBox"></div></section>
 <section class="panel" style="margin-top:24px;"><h3>الفرق الحالية</h3><div class="table-wrap"><table><thead><tr><th>اسم الفريق</th><th>الاختصار</th><th>إجراء</th></tr></thead><tbody id="teamsRows"></tbody></table></div></section>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="supabase-config.js"></script>
 <script>
 const client=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);let selectedTournament=null,maxTeams=0,tournaments=[];
 function setMsg(t,c=''){const box=document.getElementById('statusBox');box.className='status '+c;box.textContent=t}
@@ -17,6 +18,60 @@ async function removeTeam(id){if(!confirm('هل تريد حذف الفريق؟')
 function updateCounter(current){document.getElementById('counter').textContent=`المطلوب: ${maxTeams} | الحالي: ${current} | المتبقي: ${Math.max(maxTeams-current,0)}`}
 document.getElementById('addBtn').onclick=async()=>{const name=document.getElementById('teamName').value.trim();const short_name=document.getElementById('shortName').value.trim()||null;if(!selectedTournament){setMsg('اختر بطولة أولًا','warn');return}if(!name){setMsg('أدخل اسم الفريق','warn');return}const {data:existing}=await client.from('teams').select('id').eq('tournament_id',selectedTournament);if((existing||[]).length>=maxTeams){setMsg('تم الوصول إلى الحد الأقصى للفرق','warn');return}const {error}=await client.from('teams').insert([{name,short_name,tournament_id:selectedTournament,is_active:true}]);if(error){setMsg('فشل الإضافة: '+error.message,'err');return}document.getElementById('teamName').value='';document.getElementById('shortName').value='';setMsg('تمت إضافة الفريق بنجاح','ok');loadTeams()};
 document.getElementById('reloadBtn').onclick=loadTeams;loadTournaments();
+
+document.getElementById('dlTeamsTemplateBtn').onclick=function(){
+  const data=[['اسم الفريق','الاسم المختصر'],['نادي مدينة أبوظبي للجولف','MJD'],['دائرة القضاء','JUD']];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:30},{wch:14}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'الفرق');
+  XLSX.writeFile(wb,'نموذج-الفرق.xlsx');
+};
+
+document.getElementById('importTeamsBtn').onclick=()=>document.getElementById('teamsXlsxInput').click();
+
+document.getElementById('teamsXlsxInput').onchange=function(){
+  const f=this.files[0];
+  if(!f)return;
+  const msg=document.getElementById('teamsImportMsg');
+  if(!selectedTournament){msg.className='status warn';msg.textContent='اختر بطولة أولًا من الأعلى';return}
+  msg.className='status';msg.textContent='⏳ جاري القراءة...';
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const sheet=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(sheet,{defval:''});
+      if(!rows.length){msg.className='status err';msg.textContent='⚠️ الملف فارغ';return}
+      const headers=Object.keys(rows[0]);
+      const findCol=(...keys)=>headers.find(h=>keys.some(k=>h.toString().trim().toLowerCase().includes(k)));
+      const colName=findCol('اسم الفريق','اسم','name');
+      const colShort=findCol('مختصر','short');
+      if(!colName){msg.className='status err';msg.textContent='⚠️ لم يتم العثور على عمود "اسم الفريق"';return}
+
+      const {data:existing}=await client.from('teams').select('id').eq('tournament_id',selectedTournament);
+      let curCount=(existing||[]).length;
+      const toInsert=[];
+      rows.forEach(r=>{
+        const name=(r[colName]||'').toString().trim();
+        if(!name)return;
+        if(curCount+toInsert.length>=maxTeams)return;
+        toInsert.push({name,short_name:colShort?((r[colShort]||'').toString().trim()||null):null,tournament_id:selectedTournament,is_active:true});
+      });
+      if(!toInsert.length){msg.className='status err';msg.textContent='⚠️ لا يوجد أسماء صالحة للإضافة (أو وصلت للحد الأقصى للفرق)';return}
+
+      const {error}=await client.from('teams').insert(toInsert);
+      if(error){msg.className='status err';msg.textContent='❌ فشل الاستيراد: '+error.message;return}
+      msg.className='status ok';msg.textContent=`✅ تم إضافة ${toInsert.length} فريقًا بنجاح`;
+      loadTeams();
+    }catch(err){
+      console.error(err);
+      msg.className='status err';msg.textContent='❌ تعذرت قراءة الملف — تأكد أنه إكسل صحيح';
+    }
+  };
+  reader.readAsArrayBuffer(f);
+  this.value='';
+};
 
 function setCopyMsg(t,c=''){const box=document.getElementById('copyMsg');box.className='status '+c;box.textContent=t}
 
