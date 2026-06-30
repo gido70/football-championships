@@ -89,8 +89,7 @@ function buildForm(){
         <div class="field"><label>الجنسية</label><input type="text" id="coachNat"></div>
       </div>
       <div class="row2">
-        <div class="field"><label>صورة الهوية</label>${uploadBox('coachId')}</div>
-        <div class="field"><label>صورة الجواز</label>${uploadBox('coachPass')}</div>
+        <div class="field"><label>صورة الهوية أو الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('coachDoc')}</div>
       </div>
     </div>
 
@@ -142,9 +141,8 @@ function addPlayer(isFirst){
     <div class="field"><label>الجنسية</label><input type="text" id="p${n}_nat"></div>
     <div class="row2">
       <div class="field"><label>صورة فوتوغرافية حديثة للاعب — هذه تظهر للجمهور</label>${uploadBox('p'+n+'_jersey')}</div>
-      <div class="field"><label>صورة الهوية (خاصة، لا تظهر للجمهور)</label>${uploadBox('p'+n+'_id')}</div>
+      <div class="field"><label>صورة الهوية أو الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('p'+n+'_doc')}</div>
     </div>
-    <div class="field"><label>صورة الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('p'+n+'_pass')}</div>
   `;
   document.getElementById('playersWrap').appendChild(div);
 }
@@ -236,8 +234,7 @@ async function submitAll(){
 
   const adminDocPath=await uploadFile('adminDoc','team-docs',prefix);
   const adminPhotoPath=await uploadFile('adminPhoto','team-docs',prefix);
-  const coachIdPath=await uploadFile('coachId','team-docs',prefix);
-  const coachPassPath=await uploadFile('coachPass','team-docs',prefix);
+  const coachDocPath=await uploadFile('coachDoc','team-docs',prefix);
 
   const {error:teamErr}=await sb.from('teams').update({
     submitted_by_name:adminName,
@@ -246,8 +243,7 @@ async function submitAll(){
     admin_photo_url:adminPhotoPath,
     coach_name:document.getElementById('coachName').value.trim()||null,
     coach_nationality:document.getElementById('coachNat').value.trim()||null,
-    coach_id_url:coachIdPath,
-    coach_passport_url:coachPassPath,
+    coach_id_url:coachDocPath,
     coach_status:'pending'
   }).eq('id',TEAM.id);
 
@@ -259,8 +255,7 @@ async function submitAll(){
     const name=document.getElementById('p'+n+'_name').value.trim();
     if(!name)continue;
     const jerseyPath=await uploadFile('p'+n+'_jersey','team-public',prefix);
-    const idPath=await uploadFile('p'+n+'_id','team-docs',prefix);
-    const passPath=await uploadFile('p'+n+'_pass','team-docs',prefix);
+    const docPath=await uploadFile('p'+n+'_doc','team-docs',prefix);
     let jerseyUrl=null;
     if(jerseyPath){const {data}=sb.storage.from('team-public').getPublicUrl(jerseyPath);jerseyUrl=data?.publicUrl;}
     const {error}=await sb.from('players').insert({
@@ -272,8 +267,7 @@ async function submitAll(){
       nationality:document.getElementById('p'+n+'_nat').value.trim()||null,
       is_goalkeeper:document.getElementById('p'+n+'_gk').checked,
       jersey_photo_url:jerseyUrl,
-      id_photo_url:idPath,
-      passport_photo_url:passPath,
+      id_photo_url:docPath,
       submission_status:'pending'
     });
     if(error){fail++;console.error(error);}else ok++;
