@@ -6,6 +6,7 @@
 <title>إدخال بيانات الفريق</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:"Tajawal",sans-serif}
 body{background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh;padding:20px}
@@ -94,7 +95,15 @@ function buildForm(){
     </div>
 
     <div id="playersWrap"></div>
-    <button type="button" class="add-player-btn" onclick="addPlayer()">➕ إضافة لاعب</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button type="button" class="add-player-btn" onclick="addPlayer()">➕ إضافة لاعب يدويًا</button>
+      <button type="button" class="add-player-btn" style="border-color:#3fb950;color:#3fb950" onclick="document.getElementById('xlsxInput').click()">📊 استيراد من إكسل</button>
+    </div>
+    <div style="text-align:center;margin-top:8px">
+      <a href="#" onclick="downloadTemplate();return false" style="font-size:12px;color:#58a6ff">⬇️ تحميل نموذج الإكسل الفارغ أولاً</a>
+    </div>
+    <input type="file" id="xlsxInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(this)">
+    <div id="xlsxMsg" style="font-size:12px;color:#8b949e;margin-top:8px;text-align:center"></div>
 
     <button type="button" class="submit-btn" id="submitBtn" onclick="submitAll()">📤 إرسال البيانات للمراجعة</button>
     <div id="msg"></div>
@@ -139,7 +148,68 @@ function addPlayer(isFirst){
   `;
   document.getElementById('playersWrap').appendChild(div);
 }
+function downloadTemplate(){
+  const data=[
+    ['الاسم','الرقم','الجنسية','حارس مرمى'],
+    ['أحمد عبدالله سالم',10,'إماراتي','لا'],
+    ['محمد علي حسن',1,'مصري','نعم']
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:28},{wch:10},{wch:16},{wch:14}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'اللاعبون');
+  XLSX.writeFile(wb,'نموذج-اللاعبين.xlsx');
+}
+
 function removePlayer(n){document.getElementById('player_'+n)?.remove();}
+
+function importExcel(input){
+  const f=input.files[0];
+  if(!f)return;
+  const xMsg=document.getElementById('xlsxMsg');
+  xMsg.textContent='⏳ جاري القراءة...';
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const sheet=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(sheet,{defval:''});
+      if(!rows.length){xMsg.textContent='⚠️ الملف فارغ';return;}
+
+      const headers=Object.keys(rows[0]);
+      const findCol=(...keys)=>headers.find(h=>keys.some(k=>h.toString().trim().toLowerCase().includes(k)));
+      const colName=findCol('اسم','name');
+      const colNum=findCol('رقم','number','no');
+      const colNat=findCol('جنسي','nationality');
+      const colGK=findCol('حارس','goalkeeper','gk');
+
+      if(!colName){xMsg.textContent='⚠️ لم يتم العثور على عمود "الاسم" في الملف';return;}
+
+      let added=0;
+      rows.forEach(r=>{
+        const name=(r[colName]||'').toString().trim();
+        if(!name)return;
+        addPlayer(false);
+        const n=playerCount;
+        document.getElementById('p'+n+'_name').value=name;
+        if(colNum)document.getElementById('p'+n+'_num').value=(r[colNum]||'').toString().trim();
+        if(colNat)document.getElementById('p'+n+'_nat').value=(r[colNat]||'').toString().trim();
+        if(colGK){
+          const v=(r[colGK]||'').toString().trim().toLowerCase();
+          document.getElementById('p'+n+'_gk').checked=['نعم','yes','1','true','حارس'].includes(v);
+        }
+        added++;
+      });
+      xMsg.textContent=`✅ تم استيراد ${added} لاعبًا من الملف — راجع البيانات أدناه وأكمل الصور لكل لاعب`;
+      document.getElementById('playersWrap').scrollIntoView({behavior:'smooth'});
+    }catch(err){
+      console.error(err);
+      xMsg.textContent='❌ تعذرت قراءة الملف — تأكد أنه إكسل صحيح';
+    }
+  };
+  reader.readAsArrayBuffer(f);
+  input.value='';
+}
 
 async function uploadFile(key,bucket,pathPrefix){
   const f=files[key];
