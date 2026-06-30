@@ -202,6 +202,10 @@ select option{background:#0f2a45;color:#ffffff}
     <!-- VAR -->
     <div class="var-panel">
       <div class="var-title">📺 حالة الفار (VAR)</div>
+      <div class="meta-field" style="margin-bottom:12px">
+        <label style="color:#b7c6dc;font-size:13px">الفريق المعني بالمراجعة (اختياري)</label>
+        <select id="varTeamSel" style="width:100%"><option value="">— بدون تحديد فريق —</option></select>
+      </div>
       <div class="var-btns">
         <button class="var-btn" data-var="none" onclick="setVAR('none')">بدون مراجعة</button>
         <button class="var-btn" data-var="checking" onclick="setVAR('checking')">⏳ جاري المراجعة</button>
@@ -265,7 +269,7 @@ select option{background:#0f2a45;color:#ffffff}
 <script src="supabase-config.js"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-let cur=null,hPl=[],aPl=[],curEvtType=null,curEvtSide=null;
+let cur=null,hPl=[],aPl=[],evtType={h:null,a:null};
 const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل'};
 const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
 
@@ -307,6 +311,11 @@ async function onMatchChange(){
   renderMatch(m);
   fillMeta(m);
   fillVAR(m);
+  const vs=document.getElementById('varTeamSel');
+  vs.innerHTML='<option value="">— بدون تحديد فريق —</option>'+
+    `<option value="${m.home_team_id}">${m.ht?.name_ar||m.ht?.name||'الفريق الأول'}</option>`+
+    `<option value="${m.away_team_id}">${m.at?.name_ar||m.at?.name||'الفريق الثاني'}</option>`;
+  vs.value=m.var_team_id||'';
   startStopClock();
   loadEvts();
   loadLineupAdmin(m);
@@ -366,22 +375,28 @@ async function saveMeta(){
 function fillVAR(m){
   const status=m.live_status||'none';
   document.querySelectorAll('.var-btn').forEach(b=>b.classList.toggle('active',b.dataset.var===status));
-  updateVARDisplay(status);
+  updateVARDisplay(status,m.var_team_id);
 }
 
-function updateVARDisplay(status){
+function updateVARDisplay(status,teamId){
   const labels={none:'',checking:'⏳ الفار يراجع الحدث الآن...',goal_confirmed:'✅ تم تأكيد الهدف',goal_disallowed:'❌ تم إلغاء الهدف',penalty_review:'🎯 مراجعة ركلة جزاء',red_card_review:'🟥 مراجعة بطاقة حمراء'};
   const el=document.getElementById('varStatusDisplay');
-  if(status&&status!=='none'){el.style.display='block';el.textContent=labels[status]||status;}
+  let txt=labels[status]||status;
+  if(txt&&teamId&&cur){
+    const tn=teamId===cur.home_team_id?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name);
+    if(tn)txt+=' — '+tn;
+  }
+  if(status&&status!=='none'){el.style.display='block';el.textContent=txt;}
   else{el.style.display='none';}
 }
 
 async function setVAR(status){
   if(!cur)return;
   document.querySelectorAll('.var-btn').forEach(b=>b.classList.toggle('active',b.dataset.var===status));
-  updateVARDisplay(status);
-  const {error}=await sb.from('matches').update({live_status:status}).eq('id',cur.id);
-  if(!error)cur.live_status=status;
+  const teamId=document.getElementById('varTeamSel').value||null;
+  updateVARDisplay(status,teamId);
+  const {error}=await sb.from('matches').update({live_status:status,var_team_id:teamId}).eq('id',cur.id);
+  if(!error){cur.live_status=status;cur.var_team_id=teamId;}
 }
 
 function updateStatusUI(st){
@@ -469,7 +484,7 @@ async function saveMin(){
 }
 
 function openEvt(side,type){
-  curEvtSide=side;curEvtType=type;
+  evtType[side]=type;
   const teamName=side==='h'?(cur.ht?.name_ar||cur.ht?.name||''):(cur.at?.name_ar||cur.at?.name||'');
   document.getElementById(side+'FormLbl').textContent='تسجيل '+(EL[type]||type)+' — '+teamName;
   document.getElementById(side+'Min').value=document.getElementById('minInput').value||'';
@@ -482,7 +497,7 @@ async function submitEvt(side){
   const pid=document.getElementById(side+'Player').value;
   const min=parseInt(document.getElementById(side+'Min').value)||0;
   const tid=side==='h'?cur.home_team_id:cur.away_team_id;
-  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:pid||null,team_id:tid,event_type:curEvtType,minute:min});
+  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:pid||null,team_id:tid,event_type:evtType[side],minute:min});
   if(!error){closeEvt(side);loadEvts();}
   else setMsg('فشل تسجيل الحدث: '+error.message,'err');
 }
