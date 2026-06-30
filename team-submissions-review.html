@@ -49,10 +49,13 @@ const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_K
 let CUR=null;
 
 async function initTeams(){
-  const {data}=await sb.from('teams').select('id,name_ar,name,tournament_id,coach_status,tournaments(name_ar,name)').order('name_ar');
+  const {data:teams,error:e1}=await sb.from('teams').select('id,name_ar,name,tournament_id,coach_status').order('name_ar');
+  if(e1){document.getElementById('teamSel').outerHTML='<div class="empty">⚠️ فشل تحميل الفرق: '+e1.message+'</div>';return;}
+  const {data:tours}=await sb.from('tournaments').select('id,name_ar,name');
+  const tMap={};(tours||[]).forEach(t=>tMap[t.id]=t.name_ar||t.name||'');
   const sel=document.getElementById('teamSel');
-  sel.innerHTML='<option value="">اختر فريقًا...</option>'+(data||[]).map(t=>
-    `<option value="${t.id}">${t.tournaments?.name_ar||''} — ${t.name_ar||t.name} ${t.coach_status==='pending'?'🟡':''}</option>`
+  sel.innerHTML='<option value="">اختر فريقًا...</option>'+(teams||[]).map(t=>
+    `<option value="${t.id}">${tMap[t.tournament_id]||''} — ${t.name_ar||t.name} ${t.coach_status==='pending'?'🟡':''}</option>`
   ).join('');
 }
 
