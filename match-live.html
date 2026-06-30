@@ -261,7 +261,7 @@ async function loadEvents(m,ht,at){
     return `<div class="evt-row ${side==='away'?'away-side':''}">
       <span class="evt-min">${e.minute||0}'</span>
       <span class="evt-ic">${EI[e.event_type]||'📌'}</span>
-      <span class="evt-name">${e.player?.full_name_ar||e.player?.name||'—'} <span style="color:#8b949e;font-weight:500">— ${EL[e.event_type]||e.event_type}</span></span>
+      <span class="evt-name">${e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—'} <span style="color:#8b949e;font-weight:500">— ${EL[e.event_type]||e.event_type}</span></span>
     </div>`;
   }).join('');
 }
