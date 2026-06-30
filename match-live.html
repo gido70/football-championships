@@ -76,6 +76,26 @@ a{text-decoration:none;color:inherit}
 .vote-done{text-align:center;padding:24px 0;color:#8b949e;font-size:13px}
 .vote-total{text-align:center;font-size:11px;color:#6e7b8f;margin-top:12px}
 
+/* التوقعات */
+.pred-wrap{padding:20px 16px;max-width:500px;margin:0 auto;text-align:center}
+.pred-title{font-size:17px;font-weight:900;margin-bottom:6px}
+.pred-sub{font-size:12px;color:#8b949e;margin-bottom:22px;line-height:1.6}
+.pred-row{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:20px}
+.pred-team{font-size:13px;font-weight:800;width:100px;line-height:1.3}
+.pred-team.away{text-align:right}
+.pred-score-box{display:flex;align-items:center;gap:8px}
+.pred-inp{width:52px;height:52px;background:#161b22;border:2px solid #30363d;border-radius:12px;text-align:center;font-size:22px;font-weight:900;color:#e6edf3;font-family:inherit}
+.pred-inp:focus{outline:none;border-color:#c9a84c}
+.pred-sep{font-size:20px;color:#3a4150;font-weight:900}
+.pred-btn{display:block;width:100%;background:linear-gradient(135deg,#c9a84c,#a8842e);color:#0d1117;border:none;padding:12px;border-radius:12px;font-size:15px;font-weight:900;cursor:pointer;font-family:inherit}
+.pred-done{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);border-radius:14px;padding:16px;margin-bottom:18px;font-size:14px;font-weight:800;color:#3fb950}
+.pred-stats{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:14px;text-align:right}
+.pred-stats-title{font-size:12px;font-weight:800;color:#8b949e;margin-bottom:10px;text-align:center}
+.pred-stat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #21262d;font-size:13px}
+.pred-stat-row:last-child{border-bottom:none}
+.pred-stat-score{font-family:monospace;font-size:14px;font-weight:900;color:#c9a84c;letter-spacing:2px}
+.pred-stat-pct{font-size:11px;color:#8b949e}
+
 .main{max-width:900px;margin:0 auto;padding:18px 16px calc(84px + env(safe-area-inset-bottom,0px))}
 .pane{display:none;animation:fadeIn .25s ease}
 .pane.active{display:block}
@@ -178,6 +198,7 @@ a{text-decoration:none;color:inherit}
   <div class="pane active" id="p-events"><div id="eventsWrap"></div></div>
   <div class="pane" id="p-lineups"><div id="lineupsWrap"></div></div>
   <div class="pane" id="p-vote"><div id="voteWrap"></div></div>
+  <div class="pane" id="p-predict"><div id="predictWrap"></div></div>
 </div>
 
 <div class="tabbar">
@@ -185,6 +206,7 @@ a{text-decoration:none;color:inherit}
   <button class="tab active" data-p="events" onclick="showTab('events')"><span class="tab-ic">⚡</span>الأحداث</button>
   <button class="tab" data-p="lineups" onclick="showTab('lineups')"><span class="tab-ic">👥</span>التشكيلة</button>
   <button class="tab" data-p="vote" onclick="showTab('vote');loadVote()"><span class="tab-ic">⭐</span>صوّت</button>
+  <button class="tab" data-p="predict" onclick="showTab('predict');loadPredict()"><span class="tab-ic">🎯</span>توقّع</button>
 </div>
 
 <script src="supabase-config.js"></script>
@@ -276,6 +298,94 @@ async function castVote(playerId,matchId){
   if(!error){voteLoaded=false;await renderVote();}
 }
 window.castVote=castVote;
+
+// ---------- توقعات النتيجة ----------
+let predictLoaded=false;
+async function loadPredict(){
+  if(!cur){document.getElementById('predictWrap').innerHTML='<div class="pred-wrap"><div class="empty"><span>🎯</span><p>اختر مباراة للتوقع</p></div></div>';return;}
+  if(predictLoaded)return;
+  predictLoaded=true;
+  await renderPredict();
+}
+
+async function renderPredict(){
+  const wrap=document.getElementById('predictWrap');
+  const MID=cur.id;
+  const sk=getSessionKey();
+  const hName=cur.ht?.name_ar||cur.ht?.name||'الفريق الأول';
+  const aName=cur.at?.name_ar||cur.at?.name||'الفريق الثاني';
+
+  const {data:preds}=await sb.from('match_predictions').select('home_score_pred,away_score_pred,session_key').eq('match_id',MID);
+  const myPred=(preds||[]).find(p=>p.session_key===sk);
+  const total=(preds||[]).length;
+
+  // إحصاء النتائج المتوقعة
+  const scoreCount={};
+  (preds||[]).forEach(p=>{
+    const k=`${p.home_score_pred}-${p.away_score_pred}`;
+    scoreCount[k]=(scoreCount[k]||0)+1;
+  });
+  const topScores=Object.entries(scoreCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const statsHtml=total>0?`<div class="pred-stats">
+    <div class="pred-stats-title">📊 أكثر النتائج توقعًا (${total} مشارك)</div>
+    ${topScores.map(([sc,cnt])=>`<div class="pred-stat-row">
+      <span class="pred-stat-score">${sc.replace('-',' : ')}</span>
+      <span>${cnt} توقع</span>
+      <span class="pred-stat-pct">${Math.round(cnt/total*100)}%</span>
+    </div>`).join('')}
+  </div>`:'';
+
+  if(myPred){
+    wrap.innerHTML=`<div class="pred-wrap">
+      <div class="pred-title">🎯 توقعاتك</div>
+      <div class="pred-done">توقعت: ${hName} ${myPred.home_score_pred} - ${myPred.away_score_pred} ${aName}</div>
+      <div class="pred-sub" style="margin-bottom:12px">هل تريد تغيير توقعك؟</div>
+      <div class="pred-row">
+        <span class="pred-team">${hName}</span>
+        <div class="pred-score-box">
+          <input class="pred-inp" id="ph" type="number" min="0" max="20" value="${myPred.home_score_pred}">
+          <span class="pred-sep">:</span>
+          <input class="pred-inp" id="pa" type="number" min="0" max="20" value="${myPred.away_score_pred}">
+        </div>
+        <span class="pred-team away">${aName}</span>
+      </div>
+      <button class="pred-btn" onclick="submitPredict('${MID}')">تحديث التوقع</button>
+      <div style="margin-top:16px">${statsHtml}</div>
+    </div>`;
+  } else {
+    wrap.innerHTML=`<div class="pred-wrap">
+      <div class="pred-title">🎯 توقّع النتيجة</div>
+      <div class="pred-sub">ما هي نتيجة هذه المباراة في رأيك؟<br>يمكنك تغيير توقعك لاحقًا</div>
+      <div class="pred-row">
+        <span class="pred-team">${hName}</span>
+        <div class="pred-score-box">
+          <input class="pred-inp" id="ph" type="number" min="0" max="20" value="0">
+          <span class="pred-sep">:</span>
+          <input class="pred-inp" id="pa" type="number" min="0" max="20" value="0">
+        </div>
+        <span class="pred-team away">${aName}</span>
+      </div>
+      <button class="pred-btn" onclick="submitPredict('${MID}')">إرسال توقعي</button>
+      ${total>0?`<div style="margin-top:16px">${statsHtml}</div>`:''}
+    </div>`;
+  }
+}
+
+async function submitPredict(matchId){
+  const sk=getSessionKey();
+  const h=parseInt(document.getElementById('ph').value)||0;
+  const a=parseInt(document.getElementById('pa').value)||0;
+  const {error}=await sb.from('match_predictions').upsert({
+    match_id:matchId,
+    tournament_id:cur.tournament_id,
+    home_score_pred:h,
+    away_score_pred:a,
+    session_key:sk
+  },{onConflict:'match_id,session_key'});
+  if(!error){predictLoaded=false;await renderPredict();}
+}
+window.submitPredict=submitPredict;
 
 function initials(name){return (name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
 

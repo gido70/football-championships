@@ -204,6 +204,10 @@ select option{background:#0f2a45;color:#ffffff}
         <div style="font-size:12px;font-weight:800;color:#c9a84c;margin-bottom:8px">⭐ تصويت الجمهور على نجم المباراة</div>
         <div id="voteResultList" style="font-size:13px;color:#8b949e">جاري التحميل...</div>
       </div>
+      <div id="predictResultBox" style="display:none;margin:12px 0;background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.25);border-radius:12px;padding:12px 14px">
+        <div style="font-size:12px;font-weight:800;color:#58a6ff;margin-bottom:8px">🎯 توقعات الجمهور لهذه المباراة</div>
+        <div id="predictResultList" style="font-size:13px;color:#8b949e">جاري التحميل...</div>
+      </div>
       <div class="meta-save-row">
         <button class="btn-meta-save" onclick="saveMeta()">💾 حفظ المعلومات</button>
         <span id="metaStatus" style="font-size:12px;margin-right:10px;color:#34d399"></span>
@@ -364,7 +368,7 @@ function fillManOfMatch(players){
   players.forEach(p=>s.innerHTML+=`<option value="${p.id}">${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</option>`);
 }
 
-function renderMatch(m){
+async function renderMatch(m){
   document.getElementById('hName').textContent=m.ht?.name_ar||m.ht?.name||'الفريق الأول';
   document.getElementById('aName').textContent=m.at?.name_ar||m.at?.name||'الفريق الثاني';
   document.getElementById('hEvtTitle').textContent='⚽ '+(m.ht?.name_ar||m.ht?.name||'الفريق الأول');
@@ -379,7 +383,8 @@ function renderMatch(m){
   document.getElementById('qbHName').textContent=m.ht?.name_ar||m.ht?.name||'';
   document.getElementById('qbAName').textContent=m.at?.name_ar||m.at?.name||'';
   document.getElementById('qbScore').textContent=(m.home_score??0)+' - '+(m.away_score??0);
-  loadVoteResults(m.id);
+  await loadVoteResults(m.id);
+  await loadPredictResults(m.id);
 }
 
 function fillMeta(m){
@@ -565,7 +570,28 @@ async function quickLog(side,type,playerId,playerName){
   setMsg('✅ تم تسجيل '+({goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء'}[type]||type)+' — '+playerName,'ok');
 }
 
-window.quickOpen=quickOpen;window.quickClose=quickClose;window.quickLog=quickLog;
+async function loadPredictResults(matchId){
+  const box=document.getElementById('predictResultBox');
+  const list=document.getElementById('predictResultList');
+  if(!matchId){box.style.display='none';return;}
+  const {data:preds}=await sb.from('match_predictions').select('home_score_pred,away_score_pred').eq('match_id',matchId);
+  if(!preds?.length){box.style.display='none';return;}
+  const total=preds.length;
+  const cnt={};
+  preds.forEach(p=>{const k=`${p.home_score_pred} : ${p.away_score_pred}`;cnt[k]=(cnt[k]||0)+1;});
+  const sorted=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+  // مقارنة مع النتيجة الفعلية إن توفرت
+  const realScore=cur.home_score!=null?`${cur.home_score} : ${cur.away_score}`:null;
+  const correctCount=realScore?(cnt[realScore]||0):null;
+
+  box.style.display='block';
+  list.innerHTML=`<div style="color:#6e7b8f;font-size:11px;margin-bottom:8px">إجمالي المشاركين: ${total}${correctCount!=null?` — أصاب التوقع بالضبط: <b style="color:#3fb950">${correctCount}</b> (${Math.round(correctCount/total*100)}%)`:''}</div>`
+    +sorted.map(([sc,n])=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #21262d;font-size:12px${realScore&&sc===realScore?';color:#3fb950;font-weight:800':''}">
+      <span style="font-family:monospace;letter-spacing:2px">${sc}</span>
+      <span>${n} (${Math.round(n/total*100)}%)${realScore&&sc===realScore?' ✓':''}</span>
+    </div>`).join('');
+}
 
 async function loadVoteResults(matchId){
   const box=document.getElementById('voteResultBox');
