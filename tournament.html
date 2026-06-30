@@ -2,7 +2,11 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>البطولة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -145,6 +149,7 @@ img[src=""], img:not([src]) { display:none !important; }
     <button class="tab" onclick="showTab(this,'ma')">📅 المباريات</button>
     <button class="tab" onclick="showTab(this,'sc')">⚽ الهدافون</button>
     <button class="tab" onclick="showTab(this,'tm')">👥 الفرق</button>
+    <a class="tab" id="statsTabLink" href="#" style="text-decoration:none;display:inline-block">📊 إحصائيات</a>
   </div>
 </div>
 
@@ -158,6 +163,7 @@ img[src=""], img:not([src]) { display:none !important; }
 <script>
 const sb=supabase.createClient("https://npoowwdjpbvhyjrmeqkv.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY");
 const TID=new URLSearchParams(location.search).get('id');
+document.getElementById('statsTabLink').href='stats.html?id='+TID;
 
 function showTab(btn,name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
