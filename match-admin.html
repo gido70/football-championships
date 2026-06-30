@@ -302,8 +302,8 @@ async function onMatchChange(){
   if(error||!m){setMsg('تعذر تحميل المباراة: '+(error?.message||''),'err');return;}
   cur=m;
 
-  const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_injured').eq('team_id',m.home_team_id).order('number');
-  const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured').eq('team_id',m.away_team_id).order('number');
+  const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_injured').eq('team_id',m.home_team_id).or('submission_status.eq.approved,submission_status.is.null').order('number');
+  const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured').eq('team_id',m.away_team_id).or('submission_status.eq.approved,submission_status.is.null').order('number');
   hPl=hp||[];aPl=ap||[];
   fillSel('hPlayer',hPl);fillSel('aPlayer',aPl);
   fillManOfMatch([...hPl,...aPl]);
