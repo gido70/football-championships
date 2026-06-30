@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>الإحصائيات</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh}
+a{text-decoration:none;color:inherit}
+.nav{background:#161b22;border-bottom:1px solid #21262d;padding:0 18px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-back{color:#8b949e;font-size:14px;font-weight:700;padding:7px 14px;border-radius:8px;border:1px solid #30363d}
+.nav-title{font-size:15px;font-weight:800;color:#c9a84c;display:flex;align-items:center;gap:8px}
+
+.hero{text-align:center;padding:26px 16px 16px;background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.15),transparent 65%)}
+.hero h1{font-size:24px;font-weight:900;margin-bottom:4px}
+.hero p{font-size:13px;color:#8b949e}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding:14px 16px;position:sticky;top:56px;background:#0d1117;z-index:90;border-bottom:1px solid #21262d}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:9px 18px;border-radius:30px;background:#161b22;border:1px solid #30363d;color:#8b949e;font-size:13px;font-weight:800;white-space:nowrap;cursor:pointer;transition:.15s}
+.chip.active{background:linear-gradient(135deg,#c9a84c,#a8842e);color:#0d1117;border-color:transparent}
+
+.wrap{max-width:760px;margin:0 auto;padding:18px 16px 50px}
+.sec{display:none;animation:fadeIn .25s ease}
+.sec.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.lead-row{display:flex;align-items:center;gap:14px;background:#161b22;border:1px solid #30363d;border-radius:16px;padding:14px 16px;margin-bottom:10px;position:relative;overflow:hidden}
+.lead-rank{font-size:22px;font-weight:900;color:#3a4150;width:30px;text-align:center;flex-shrink:0}
+.lead-row.r1 .lead-rank{color:#ffd700}
+.lead-row.r2 .lead-rank{color:#c0c0c0}
+.lead-row.r3 .lead-rank{color:#cd7f32}
+.lead-row.r1{border-color:rgba(255,215,0,.4);background:linear-gradient(90deg,rgba(255,215,0,.08),#161b22)}
+.lead-photo{width:46px;height:46px;border-radius:50%;background:#21262d;object-fit:cover;flex-shrink:0;border:2px solid #30363d}
+.lead-info{flex:1;min-width:0}
+.lead-name{font-size:15px;font-weight:800}
+.lead-team{font-size:12px;color:#8b949e;margin-top:2px}
+.lead-val{font-size:20px;font-weight:900;color:#c9a84c;flex-shrink:0;display:flex;align-items:center;gap:6px}
+.lead-val .u{font-size:11px;color:#8b949e;font-weight:600}
+
+.lead-val.yellow{color:#ffd54f}
+.lead-val.red{color:#f85149}
+
+.info-card{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.info-ic{font-size:24px;width:40px;text-align:center;flex-shrink:0}
+.info-body b{display:block;font-size:14px;font-weight:800}
+.info-body span{font-size:12px;color:#8b949e}
+.info-count{margin-right:auto;background:rgba(201,168,76,.12);color:#c9a84c;font-size:12px;font-weight:800;padding:4px 10px;border-radius:10px}
+
+.empty{text-align:center;padding:50px 0;color:#8b949e}
+.empty span{font-size:34px;display:block;margin-bottom:8px}
+.sec-title{font-size:13px;color:#8b949e;font-weight:700;margin:18px 0 10px}
+.sec-title:first-child{margin-top:0}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a class="nav-back" id="backLink" href="index.html">← رجوع</a>
+  <div class="nav-title" id="navTitle">📊 الإحصائيات</div>
+</div>
+
+<div class="hero">
+  <h1 id="tName">إحصائيات البطولة</h1>
+  <p>كل الأرقام، الهدافون، البطاقات، والنجوم — في مكان واحد</p>
+</div>
+
+<div class="chips" id="chips">
+  <button class="chip active" data-s="scorers" onclick="showSec('scorers')">⚽ الهدافون</button>
+  <button class="chip" data-s="cards" onclick="showSec('cards')">🟨🟥 البطاقات</button>
+  <button class="chip" data-s="motm" onclick="showSec('motm')">⭐ نجوم المباريات</button>
+  <button class="chip" data-s="officials" onclick="showSec('officials')">👨‍⚖️ الحكام والمعلقون</button>
+  <button class="chip" data-s="injuries" onclick="showSec('injuries')">🩹 الإصابات</button>
+</div>
+
+<div class="wrap">
+  <div class="sec active" id="sec-scorers"><div id="scorersWrap" class="empty">⏳ جاري التحميل...</div></div>
+  <div class="sec" id="sec-cards"><div id="cardsWrap"></div></div>
+  <div class="sec" id="sec-motm"><div id="motmWrap"></div></div>
+  <div class="sec" id="sec-officials"><div id="officialsWrap"></div></div>
+  <div class="sec" id="sec-injuries"><div id="injuriesWrap"></div></div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const qs=new URLSearchParams(location.search);
+const TID=qs.get('id');
+
+function showSec(s){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.dataset.s===s));
+  document.querySelectorAll('.sec').forEach(el=>el.classList.toggle('active',el.id==='sec-'+s));
+}
+window.showSec=showSec;
+
+function initials(name){return (name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
+
+function leadRow(rank,name,sub,val,unit,photo,extraClass){
+  const rClass=rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
+  return `<div class="lead-row ${rClass}">
+    <div class="lead-rank">${rank}</div>
+    ${photo?`<img class="lead-photo" src="${photo}">`:`<div class="lead-photo" style="display:flex;align-items:center;justify-content:center;font-weight:800;color:#8b949e">${initials(name)}</div>`}
+    <div class="lead-info"><div class="lead-name">${name}</div><div class="lead-team">${sub||''}</div></div>
+    <div class="lead-val ${extraClass||''}">${val}<span class="u">${unit||''}</span></div>
+  </div>`;
+}
+
+async function init(){
+  if(!TID){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>لم يتم تحديد البطولة</p></div>';return;}
+  document.getElementById('backLink').href='tournament.html?id='+TID;
+
+  const {data:t}=await sb.from('tournaments').select('*').eq('id',TID).single();
+  if(t){
+    document.getElementById('tName').textContent=t.name_ar||t.name||'';
+    document.getElementById('navTitle').innerHTML='📊 إحصائيات '+(t.name_ar||t.name||'');
+    document.title='إحصائيات '+(t.name_ar||t.name||'');
+  }
+
+  const {data:teams}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
+  const teamName={}; (teams||[]).forEach(tm=>teamName[tm.id]=tm.name_ar||tm.name||'');
+
+  const {data:matches}=await sb.from('matches').select('id,referee_1,referee_2,commentator,player_of_match_id,home_team_id,away_team_id').eq('tournament_id',TID);
+  const mids=(matches||[]).map(m=>m.id);
+
+  if(!mids.length){
+    ['scorersWrap','cardsWrap','motmWrap','officialsWrap','injuriesWrap'].forEach(id=>{
+      document.getElementById(id).innerHTML='<div class="empty"><span>📭</span><p>لا توجد بيانات بعد لهذه البطولة</p></div>';
+    });
+    return;
+  }
+
+  const {data:events}=await sb.from('match_events').select('event_type,player_id,team_id,player:players!player_id(name,full_name_ar,jersey_photo_url)').in('match_id',mids);
+
+  buildScorers(events,teamName);
+  buildCards(events,teamName);
+  buildMotm(matches,teamName);
+  buildOfficials(matches);
+  buildInjuries(teamName);
+}
+
+function tally(events,type){
+  const map={};
+  (events||[]).filter(e=>e.event_type===type&&e.player_id).forEach(e=>{
+    if(!map[e.player_id])map[e.player_id]={name:e.player?.full_name_ar||e.player?.name||'—',photo:e.player?.jersey_photo_url,team:e.team_id,count:0};
+    map[e.player_id].count++;
+  });
+  return Object.values(map).sort((a,b)=>b.count-a.count);
+}
+
+function buildScorers(events,teamName){
+  const list=tally(events,'goal');
+  const wrap=document.getElementById('scorersWrap');
+  if(!list.length){wrap.innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف مسجلة بعد</p></div>';return;}
+  wrap.innerHTML=list.slice(0,20).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'هدف',p.photo)).join('');
+}
+
+function buildCards(events,teamName){
+  const yellow=tally(events,'yellow_card');
+  const red=tally(events,'red_card');
+  let html='';
+  html+='<div class="sec-title">🟨 الأكثر حصولاً على بطاقات صفراء</div>';
+  html+=yellow.length?yellow.slice(0,15).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'بطاقة',p.photo,'yellow')).join(''):'<div class="empty" style="padding:20px 0"><span>🟨</span><p>لا توجد بطاقات صفراء بعد</p></div>';
+  html+='<div class="sec-title">🟥 البطاقات الحمراء</div>';
+  html+=red.length?red.slice(0,15).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'بطاقة',p.photo,'red')).join(''):'<div class="empty" style="padding:20px 0"><span>🟥</span><p>لا توجد بطاقات حمراء — انضباط ممتاز</p></div>';
+  document.getElementById('cardsWrap').innerHTML=html;
+}
+
+async function buildMotm(matches,teamName){
+  const ids=(matches||[]).map(m=>m.player_of_match_id).filter(Boolean);
+  const wrap=document.getElementById('motmWrap');
+  if(!ids.length){wrap.innerHTML='<div class="empty"><span>⭐</span><p>لم يُختر نجم مباراة بعد</p></div>';return;}
+  const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url,team_id').in('id',[...new Set(ids)]);
+  const pMap={}; (players||[]).forEach(p=>pMap[p.id]=p);
+  const count={};
+  ids.forEach(id=>count[id]=(count[id]||0)+1);
+  const list=Object.entries(count).map(([id,c])=>({id,count:c,...pMap[id]})).sort((a,b)=>b.count-a.count);
+  wrap.innerHTML=list.map((p,i)=>leadRow(i+1,p.full_name_ar||p.name||'—',teamName[p.team_id]||'',p.count,'مرة',p.jersey_photo_url)).join('');
+}
+
+function buildOfficials(matches){
+  const refCount={},comCount={};
+  (matches||[]).forEach(m=>{
+    [m.referee_1,m.referee_2].forEach(r=>{if(r&&r.trim())refCount[r.trim()]=(refCount[r.trim()]||0)+1;});
+    if(m.commentator&&m.commentator.trim())comCount[m.commentator.trim()]=(comCount[m.commentator.trim()]||0)+1;
+  });
+  const refs=Object.entries(refCount).sort((a,b)=>b[1]-a[1]);
+  const coms=Object.entries(comCount).sort((a,b)=>b[1]-a[1]);
+  let html='<div class="sec-title">👨‍⚖️ الحكام (عدد المباريات)</div>';
+  html+=refs.length?refs.map(([n,c])=>`<div class="info-card"><div class="info-ic">👨‍⚖️</div><div class="info-body"><b>${n}</b><span>حكم مباراة</span></div><div class="info-count">${c} مباراة</div></div>`).join(''):'<div class="empty" style="padding:20px 0"><span>👨‍⚖️</span><p>لا توجد بيانات حكام بعد</p></div>';
+  html+='<div class="sec-title">🎙️ المعلقون</div>';
+  html+=coms.length?coms.map(([n,c])=>`<div class="info-card"><div class="info-ic">🎙️</div><div class="info-body"><b>${n}</b><span>تعليق</span></div><div class="info-count">${c} مباراة</div></div>`).join(''):'<div class="empty" style="padding:20px 0"><span>🎙️</span><p>لا توجد بيانات معلقين بعد</p></div>';
+  document.getElementById('officialsWrap').innerHTML=html;
+}
+
+async function buildInjuries(teamName){
+  const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url,team_id,injury_note').eq('tournament_id',TID).eq('is_injured',true);
+  const wrap=document.getElementById('injuriesWrap');
+  if(!players||!players.length){wrap.innerHTML='<div class="empty"><span>💪</span><p>لا توجد إصابات مسجلة — الجميع بصحة جيدة</p></div>';return;}
+  wrap.innerHTML=players.map(p=>`<div class="info-card">
+    ${p.jersey_photo_url?`<img class="lead-photo" src="${p.jersey_photo_url}">`:`<div class="info-ic">🩹</div>`}
+    <div class="info-body"><b>${p.full_name_ar||p.name}</b><span>${teamName[p.team_id]||''}${p.injury_note?' — '+p.injury_note:''}</span></div>
+  </div>`).join('');
+}
+
+init();
+</script>
+</body>
+</html>
