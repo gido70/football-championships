@@ -172,10 +172,13 @@ async function init(){
   const ht=m.ht||{},at=m.at||{};
   const hColor=ht.primary_color||ht.color_primary||'#8b949e';
   const aColor=at.primary_color||at.color_primary||'#8b949e';
+  const hColor2=ht.secondary_color||hColor;
+  const aColor2=at.secondary_color||aColor;
+  const teamBg=(c1,c2)=>c2&&c2!==c1?`linear-gradient(90deg, ${c1} 50%, ${c2} 50%)`:c1;
   document.getElementById('hName').textContent=ht.name_ar||ht.name||'؟';
   document.getElementById('aName').textContent=at.name_ar||at.name||'؟';
   const hB=document.getElementById('hBadge'),aB=document.getElementById('aBadge');
-  hB.style.background=hColor; aB.style.background=aColor;
+  hB.style.background=teamBg(hColor,hColor2); aB.style.background=teamBg(aColor,aColor2);
   if(ht.logo_url){hB.innerHTML=`<img src="${ht.logo_url}" style="width:100%;height:100%;object-fit:contain;border-radius:50%">`;}else{hB.textContent=initials(ht.name_ar||ht.name);}
   if(at.logo_url){aB.innerHTML=`<img src="${at.logo_url}" style="width:100%;height:100%;object-fit:contain;border-radius:50%">`;}else{aB.textContent=initials(at.name_ar||at.name);}
 
