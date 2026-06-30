@@ -58,6 +58,24 @@ a{text-decoration:none;color:inherit}
 .tab.active{color:#c9a84c}
 .tab:active{transform:scale(.92)}
 
+.vote-wrap{padding:18px 16px 24px;max-width:760px;margin:0 auto}
+.vote-title{font-size:16px;font-weight:900;text-align:center;margin-bottom:6px}
+.vote-sub{font-size:12px;color:#8b949e;text-align:center;margin-bottom:18px}
+.vote-grid{display:flex;flex-direction:column;gap:10px}
+.vote-card{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+.vote-card:active{transform:scale(.97)}
+.vote-card.voted{border-color:#c9a84c;background:rgba(201,168,76,.08)}
+.vote-card.winner{border-color:#ffd700}
+.vote-av{width:44px;height:44px;border-radius:50%;background:#21262d;object-fit:cover;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;color:#6e7b8f;font-size:14px}
+.vote-info{flex:1}
+.vote-name{font-size:14px;font-weight:800}
+.vote-team{font-size:11px;color:#8b949e;margin-top:1px}
+.vote-pct{font-size:16px;font-weight:900;color:#c9a84c;flex-shrink:0}
+.vote-bar-bg{position:absolute;bottom:0;left:0;height:3px;width:100%;background:#1c2330}
+.vote-bar-fill{position:absolute;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#c9a84c,#ffd700);transition:width .6s ease}
+.vote-done{text-align:center;padding:24px 0;color:#8b949e;font-size:13px}
+.vote-total{text-align:center;font-size:11px;color:#6e7b8f;margin-top:12px}
+
 .main{max-width:900px;margin:0 auto;padding:18px 16px calc(84px + env(safe-area-inset-bottom,0px))}
 .pane{display:none;animation:fadeIn .25s ease}
 .pane.active{display:block}
@@ -128,12 +146,14 @@ a{text-decoration:none;color:inherit}
 <div class="main">
   <div class="pane active" id="p-events"><div id="eventsWrap"></div></div>
   <div class="pane" id="p-lineups"><div id="lineupsWrap"></div></div>
+  <div class="pane" id="p-vote"><div id="voteWrap"></div></div>
 </div>
 
 <div class="tabbar">
   <a class="tab" href="index.html"><span class="tab-ic">🏠</span>الرئيسية</a>
   <button class="tab active" data-p="events" onclick="showTab('events')"><span class="tab-ic">⚡</span>الأحداث</button>
   <button class="tab" data-p="lineups" onclick="showTab('lineups')"><span class="tab-ic">👥</span>التشكيلة</button>
+  <button class="tab" data-p="vote" onclick="showTab('vote');loadVote()"><span class="tab-ic">⭐</span>صوّت</button>
 </div>
 
 <script src="supabase-config.js"></script>
@@ -149,6 +169,82 @@ function showTab(p){
   document.querySelectorAll('.pane').forEach(el=>el.classList.toggle('active',el.id==='p-'+p));
 }
 window.showTab=showTab;
+
+// ---------- تصويت نجم المباراة ----------
+function getSessionKey(){
+  let k=localStorage.getItem('vote_sk');
+  if(!k){k=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('vote_sk',k);}
+  return k;
+}
+
+let voteLoaded=false;
+async function loadVote(){
+  if(!cur){document.getElementById('voteWrap').innerHTML='<div class="vote-done">اختر مباراة أولاً لتصويت على نجمها</div>';return;}
+  if(voteLoaded)return;
+  voteLoaded=true;
+  await renderVote();
+}
+
+async function renderVote(){
+  const wrap=document.getElementById('voteWrap');
+  const MID=cur.id;
+  const sk=getSessionKey();
+
+  // اجلب اللاعبين من الفريقين
+  const {data:lineups}=await sb.from('match_lineups').select('player:players(id,name,full_name_ar,jersey_photo_url,team_id)').eq('match_id',MID);
+  const players=(lineups||[]).map(l=>l.player).filter(Boolean);
+
+  if(!players.length){
+    wrap.innerHTML='<div class="vote-wrap"><div class="vote-title">⭐ صوّت على نجم المباراة</div><div class="vote-done">لم تُحمَّل التشكيلة بعد — لا يمكن التصويت الآن</div></div>';
+    return;
+  }
+
+  // اجلب التصويتات الحالية
+  const {data:votes}=await sb.from('match_votes').select('player_id,session_key').eq('match_id',MID);
+  const myVote=(votes||[]).find(v=>v.session_key===sk)?.player_id||null;
+  const total=(votes||[]).length||1;
+  const countMap={};
+  (votes||[]).forEach(v=>{if(v.player_id)countMap[v.player_id]=(countMap[v.player_id]||0)+1;});
+  const topId=Object.entries(countMap).sort((a,b)=>b[1]-a[1])[0]?.[0];
+
+  function initials(n){return(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
+
+  const cards=players.map(p=>{
+    const cnt=countMap[p.id]||0;
+    const pct=Math.round(cnt/total*100);
+    const isMyVote=myVote===p.id;
+    const isWinner=p.id===topId&&total>1;
+    return `<div class="vote-card ${isMyVote?'voted':''} ${isWinner?'winner':''}" onclick="castVote('${p.id}','${MID}')">
+      ${p.jersey_photo_url?`<img class="vote-av" src="${p.jersey_photo_url}">`:`<div class="vote-av">${initials(p.full_name_ar||p.name)}</div>`}
+      <div class="vote-info">
+        <div class="vote-name">${p.full_name_ar||p.name}${isMyVote?' ✓':''}</div>
+        <div class="vote-team">${isWinner?'🏆 المتصدر الآن':''}</div>
+      </div>
+      <div class="vote-pct">${myVote?pct+'%':''}</div>
+      <div class="vote-bar-bg"></div>
+      <div class="vote-bar-fill" style="width:${myVote?pct:0}%"></div>
+    </div>`;
+  }).join('');
+
+  wrap.innerHTML=`<div class="vote-wrap">
+    <div class="vote-title">⭐ صوّت على نجم المباراة</div>
+    <div class="vote-sub">${myVote?'شكرًا — صوّتك سُجِّل. النتائج الآن:':'اختر اللاعب الأبرز في رأيك — صوت واحد فقط'}</div>
+    <div class="vote-grid">${cards}</div>
+    <div class="vote-total">${total>1?'إجمالي الأصوات: '+(total-1)+' صوت':''}</div>
+  </div>`;
+}
+
+async function castVote(playerId,matchId){
+  const sk=getSessionKey();
+  const {error}=await sb.from('match_votes').upsert({
+    match_id:matchId,
+    tournament_id:cur.tournament_id,
+    player_id:playerId,
+    session_key:sk
+  },{onConflict:'match_id,session_key'});
+  if(!error){voteLoaded=false;await renderVote();}
+}
+window.castVote=castVote;
 
 function initials(name){return (name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
 

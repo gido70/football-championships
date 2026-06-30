@@ -196,9 +196,13 @@ select option{background:#0f2a45;color:#ffffff}
         <div class="meta-field"><label>المعلق</label><input id="commentator" placeholder="اسم المعلق"></div>
         <div class="meta-field"><label>الملعب</label><input id="venueName" placeholder="اسم الملعب"></div>
         <div class="meta-field"><label>رابط البث (اختياري)</label><input id="streamUrl" placeholder="https://..."></div>
-        <div class="meta-field"><label>نجم المباراة</label>
+        <div class="meta-field"><label>نجم المباراة (اختيارك)</label>
           <select id="manOfMatch"><option value="">— لاعب —</option></select>
         </div>
+      </div>
+      <div id="voteResultBox" style="display:none;margin:12px 0;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:12px 14px">
+        <div style="font-size:12px;font-weight:800;color:#c9a84c;margin-bottom:8px">⭐ تصويت الجمهور على نجم المباراة</div>
+        <div id="voteResultList" style="font-size:13px;color:#8b949e">جاري التحميل...</div>
       </div>
       <div class="meta-save-row">
         <button class="btn-meta-save" onclick="saveMeta()">💾 حفظ المعلومات</button>
@@ -375,6 +379,7 @@ function renderMatch(m){
   document.getElementById('qbHName').textContent=m.ht?.name_ar||m.ht?.name||'';
   document.getElementById('qbAName').textContent=m.at?.name_ar||m.at?.name||'';
   document.getElementById('qbScore').textContent=(m.home_score??0)+' - '+(m.away_score??0);
+  loadVoteResults(m.id);
 }
 
 function fillMeta(m){
@@ -561,6 +566,26 @@ async function quickLog(side,type,playerId,playerName){
 }
 
 window.quickOpen=quickOpen;window.quickClose=quickClose;window.quickLog=quickLog;
+
+async function loadVoteResults(matchId){
+  const box=document.getElementById('voteResultBox');
+  const list=document.getElementById('voteResultList');
+  if(!matchId){box.style.display='none';return;}
+  const {data:votes}=await sb.from('match_votes').select('player_id,player:players!player_id(name,full_name_ar)').eq('match_id',matchId);
+  if(!votes?.length){box.style.display='block';list.textContent='لا توجد أصوات بعد';return;}
+  const total=votes.length;
+  const cnt={};
+  votes.forEach(v=>{const k=v.player_id;if(k){if(!cnt[k])cnt[k]={name:v.player?.full_name_ar||v.player?.name||'—',n:0};cnt[k].n++;}});
+  const sorted=Object.values(cnt).sort((a,b)=>b.n-a.n);
+  box.style.display='block';
+  list.innerHTML=sorted.map((p,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:12px;color:${i===0?'#ffd700':'#6e7b8f'};width:14px">${i===0?'🏆':i+1}</span>
+      <span style="flex:1;font-size:13px">${p.name}</span>
+      <span style="font-size:12px;font-weight:800;color:#c9a84c">${p.n} صوت (${Math.round(p.n/total*100)}%)</span>
+    </div>
+  `).join('')+'<div style="font-size:10px;color:#6e7b8f;margin-top:4px">إجمالي: '+total+' صوت</div>';
+}
 
 function stopClock(){if(clockTimer){clearInterval(clockTimer);clockTimer=null;}}
 
