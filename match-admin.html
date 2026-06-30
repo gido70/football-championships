@@ -216,7 +216,11 @@ select option{background:#0f2a45;color:#ffffff}
 
     <!-- التشكيلة والإصابات -->
     <div class="match-meta-panel" id="lineupPanel">
-      <div class="meta-title">👥 التشكيلة الأساسية والإصابات</div>
+      <div class="meta-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>👥 التشكيلة الأساسية</span>
+        <button type="button" onclick="openInjuryPicker()" style="background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.4);color:#f85149;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit">🩹 سجّل إصابة</button>
+      </div>
+      <div id="injuredSummary" style="display:none;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:12px"></div>
       <div class="lu-admin-grid">
         <div>
           <div class="lu-admin-team-hd" id="luHName">الفريق الأول</div>
@@ -230,6 +234,17 @@ select option{background:#0f2a45;color:#ffffff}
       <div class="meta-save-row">
         <button class="btn-meta-save" onclick="saveLineups()">💾 حفظ التشكيلة</button>
         <span id="lineupStatus" style="font-size:12px;margin-right:10px;color:#34d399"></span>
+      </div>
+    </div>
+
+    <!-- نافذة الإصابة -->
+    <div id="injuryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:999;align-items:center;justify-content:center">
+      <div style="background:#161b22;border:1px solid #30363d;border-radius:18px;padding:22px;width:90%;max-width:480px;max-height:80vh;overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <span style="font-size:16px;font-weight:800;color:#f85149">🩹 تسجيل / إلغاء إصابة</span>
+          <button onclick="closeInjuryPicker()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#6e7b8f">✕</button>
+        </div>
+        <div id="injuryPickerList" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
     </div>
 
@@ -682,39 +697,76 @@ async function loadLineupAdmin(m){
   document.getElementById('luAName').textContent=m.at?.name_ar||m.at?.name||'الفريق الثاني';
   const {data:lu}=await sb.from('match_lineups').select('player_id,is_starting').eq('match_id',m.id);
   const luMap={};(lu||[]).forEach(x=>luMap[x.player_id]=x.is_starting);
-  const row=p=>{
-    const checked=luMap[p.id]!==undefined?luMap[p.id]:false;
-    return `<div class="lu-row" data-pid="${p.id}">
-      <label><input type="checkbox" class="lu-start" ${checked?'checked':''}>${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</label>
-      <button type="button" class="inj-btn ${p.is_injured?'active':''}" onclick="this.classList.toggle('active')">🩹 مصاب</button>
-    </div>`;
-  };
+  const row=p=>`<div class="lu-row" data-pid="${p.id}">
+    <label><input type="checkbox" class="lu-start" ${luMap[p.id]!==undefined&&luMap[p.id]?'checked':''}>${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</label>
+    ${p.is_injured?'<span style="font-size:10px;background:rgba(248,81,73,.2);color:#f85149;padding:2px 7px;border-radius:8px;margin-right:4px">🩹 مصاب</span>':''}
+  </div>`;
   document.getElementById('luHList').innerHTML=hPl.map(row).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
   document.getElementById('luAList').innerHTML=aPl.map(row).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
+  updateInjuredSummary();
 }
+
+function updateInjuredSummary(){
+  const injured=[...hPl,...aPl].filter(p=>p.is_injured);
+  const box=document.getElementById('injuredSummary');
+  if(!injured.length){box.style.display='none';return;}
+  box.style.display='block';
+  box.innerHTML='🩹 المصابون: '+injured.map(p=>`<b>${p.full_name_ar||p.name}</b>`).join('، ');
+}
+
+function openInjuryPicker(){
+  const all=[...hPl.map(p=>({...p,side:'h'})),...aPl.map(p=>({...p,side:'a'}))];
+  const hName=cur?.ht?.name_ar||cur?.ht?.name||'الفريق الأول';
+  const aName=cur?.at?.name_ar||cur?.at?.name||'الفريق الثاني';
+  document.getElementById('injuryPickerList').innerHTML=[
+    `<div style="font-size:11px;color:#c9a84c;font-weight:800;padding:4px 0">${hName}</div>`,
+    ...hPl.map(p=>playerInjuryRow(p)),
+    `<div style="font-size:11px;color:#58a6ff;font-weight:800;padding:10px 0 4px">${aName}</div>`,
+    ...aPl.map(p=>playerInjuryRow(p))
+  ].join('');
+  document.getElementById('injuryModal').style.display='flex';
+}
+
+function playerInjuryRow(p){
+  const inj=p.is_injured;
+  return `<div style="display:flex;align-items:center;gap:10px;background:${inj?'rgba(248,81,73,.08)':'rgba(255,255,255,.03)'};border:1px solid ${inj?'rgba(248,81,73,.3)':'#21262d'};border-radius:10px;padding:10px 12px;cursor:pointer" onclick="toggleInjury('${p.id}',this)">
+    <span style="flex:1;font-size:13px;font-weight:700">${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</span>
+    <span style="font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;background:${inj?'rgba(248,81,73,.2)':'rgba(255,255,255,.06)'};color:${inj?'#f85149':'#6e7b8f'}">${inj?'🩹 مصاب':'سليم'}</span>
+  </div>`;
+}
+
+async function toggleInjury(pid,el){
+  const pl=[...hPl,...aPl].find(p=>p.id===pid);
+  if(!pl)return;
+  const newVal=!pl.is_injured;
+  const {error}=await sb.from('players').update({is_injured:newVal}).eq('id',pid);
+  if(error){alert('فشل: '+error.message);return;}
+  pl.is_injured=newVal;
+  el.outerHTML=playerInjuryRow(pl);
+  updateInjuredSummary();
+  // تحديث شارة المصاب في قائمة التشكيلة
+  document.querySelectorAll(`#luHList .lu-row[data-pid="${pid}"] span, #luAList .lu-row[data-pid="${pid}"] span`).forEach(s=>s.remove());
+  const row=document.querySelector(`#luHList .lu-row[data-pid="${pid}"], #luAList .lu-row[data-pid="${pid}"]`);
+  if(row&&newVal)row.insertAdjacentHTML('beforeend','<span style="font-size:10px;background:rgba(248,81,73,.2);color:#f85149;padding:2px 7px;border-radius:8px;margin-right:4px">🩹 مصاب</span>');
+}
+
+function closeInjuryPicker(){document.getElementById('injuryModal').style.display='none';}
+window.openInjuryPicker=openInjuryPicker;window.closeInjuryPicker=closeInjuryPicker;window.toggleInjury=toggleInjury;
 
 async function saveLineups(){
   if(!cur)return;
   const st=document.getElementById('lineupStatus');
   st.style.color='#b7c6dc';st.textContent='جاري الحفظ...';
   const rows=[];
-  const injuryUpdates=[];
   document.querySelectorAll('#luHList .lu-row, #luAList .lu-row').forEach(r=>{
     const pid=r.dataset.pid;
     const isStart=r.querySelector('.lu-start').checked;
-    const isInjured=r.querySelector('.inj-btn').classList.contains('active');
     const teamId=r.closest('#luHList')?cur.home_team_id:cur.away_team_id;
     rows.push({match_id:cur.id,team_id:teamId,player_id:pid,is_starting:isStart});
-    injuryUpdates.push({id:pid,is_injured:isInjured});
   });
   const {error:e1}=await sb.from('match_lineups').upsert(rows,{onConflict:'match_id,player_id'});
-  let failedInj=0;
-  for(const u of injuryUpdates){
-    const {error}=await sb.from('players').update({is_injured:u.is_injured}).eq('id',u.id);
-    if(error)failedInj++;
-  }
   if(e1){st.style.color='#ff6b6b';st.textContent='⚠️ فشل حفظ التشكيلة: '+e1.message;}
-  else{st.style.color='#34d399';st.textContent='✅ تم الحفظ'+(failedInj?' (تعذر تحديث '+failedInj+' حالة إصابة)':'');setTimeout(()=>st.textContent='',3000);}
+  else{st.style.color='#34d399';st.textContent='✅ تم الحفظ';setTimeout(()=>st.textContent='',3000);}
 }
 
 
