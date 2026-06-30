@@ -1,285 +1,158 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>المباراة</title>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh}
-a{text-decoration:none;color:inherit}
-.nav{background:#161b22;border-bottom:1px solid #21262d;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.nav-back{color:#8b949e;font-size:14px;font-weight:700;padding:7px 16px;border-radius:8px;border:1px solid #30363d;transition:.2s}
-.nav-back:hover{background:#21262d;color:#fff}
-.nav-tname{font-size:14px;font-weight:800;color:#c9a84c;display:flex;align-items:center;gap:8px}
-.nav-tname img{width:26px;height:26px;border-radius:50%;object-fit:contain}
 
-.scoreboard{position:relative;padding:28px 16px 22px;text-align:center;overflow:hidden}
-.sb-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.18),transparent 60%)}
-.sb-inner{position:relative;z-index:1;max-width:720px;margin:0 auto}
-.sb-meta{display:flex;justify-content:center;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
-.sb-round{font-size:12px;font-weight:700;color:#8b949e;background:#161b22;border:1px solid #30363d;padding:4px 12px;border-radius:20px}
-.sb-status{font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px}
-.st-live{background:rgba(248,81,73,.15);color:#f85149;border:1px solid rgba(248,81,73,.35)}
-.st-live .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#f85149;margin-left:6px;animation:pulse 1.2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-.st-done{background:#21262d;color:#8b949e;border:1px solid #30363d}
-.st-sched{background:rgba(63,185,80,.1);color:#3fb950;border:1px solid rgba(63,185,80,.25)}
-
-.teams-row{display:flex;align-items:center;justify-content:center;gap:6px}
-.team-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0}
-.team-badge{width:74px;height:74px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;color:#0d1117;box-shadow:0 8px 24px rgba(0,0,0,.4)}
-.team-name{font-size:16px;font-weight:800;text-align:center;max-width:140px}
-.score-mid{display:flex;flex-direction:column;align-items:center;gap:6px;padding:0 12px;min-width:120px}
-.score-nums{font-size:48px;font-weight:900;display:flex;align-items:center;gap:10px;line-height:1}
-.score-sep{color:#3a4150;font-size:34px}
-.score-min{font-size:13px;font-weight:800;color:#f85149}
-.score-vs{font-size:13px;font-weight:700;color:#8b949e}
-
-.info-strip{max-width:900px;margin:24px auto 0;display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:0 16px}
-.info-chip{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;color:#c9d1d9;display:flex;align-items:center;gap:7px}
-.info-chip b{color:#8b949e;font-weight:700}
-.var-banner{max-width:900px;margin:14px auto 0;text-align:center;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:#c9a84c;font-weight:800;font-size:13px;padding:9px;border-radius:10px}
-
-.stream-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#f85149,#cc3333);color:#fff;font-weight:800;font-size:14px;padding:10px 22px;border-radius:30px;margin-top:18px}
-
-.tabs-bar{background:#161b22;border-bottom:1px solid #21262d;border-top:1px solid #21262d;position:sticky;top:56px;z-index:99;overflow-x:auto;margin-top:26px}
-.tabs{max-width:900px;margin:0 auto;display:flex;padding:0 16px}
-.tab{padding:13px 18px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#8b949e;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
-.tab.active{color:#c9a84c;border-bottom-color:#c9a84c}
-
-.main{max-width:900px;margin:0 auto;padding:24px 16px 60px}
-.pane{display:none}.pane.active{display:block}
-.empty{text-align:center;padding:50px 0;color:#8b949e}
-.empty span{font-size:36px;display:block;margin-bottom:8px}
-
-/* events */
-.evt-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #21262d}
-.evt-row.away-side{flex-direction:row-reverse;text-align:left}
-.evt-ic{font-size:18px;width:30px;text-align:center}
-.evt-min{font-size:12px;font-weight:800;color:#8b949e;width:34px;text-align:center}
-.evt-name{font-size:14px;font-weight:700;flex:1}
-
-/* lineups */
-.lu-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.lu-team-hd{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid}
-.lu-dot{width:10px;height:10px;border-radius:50%}
-.lu-pl{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px}
-.lu-num{width:22px;height:22px;border-radius:6px;background:#21262d;color:#8b949e;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.lu-injury{color:#f85149;font-size:12px}
-.lu-sub-hd{font-size:11px;color:#8b949e;font-weight:700;margin:12px 0 6px;letter-spacing:.5px}
-@media(max-width:600px){.lu-grid{grid-template-columns:1fr}}
-
-.motm{max-width:900px;margin:18px auto 0;background:linear-gradient(135deg,#1c2128,#161b22);border:1px solid #c9a84c;border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:14px}
-.motm-ic{font-size:30px}
-.motm-lbl{font-size:11px;color:#c9a84c;font-weight:800;letter-spacing:.5px}
-.motm-name{font-size:16px;font-weight:800}
-</style>
-</head>
-<body>
-
-<div class="nav">
-  <a class="nav-back" id="backLink" href="index.html">← الرئيسية</a>
-  <div class="nav-tname" id="navTName"></div>
-</div>
-
-<div class="scoreboard">
-  <div class="sb-glow"></div>
-  <div class="sb-inner">
-    <div class="sb-meta">
-      <span class="sb-round" id="roundLbl"></span>
-      <span class="sb-status" id="statusLbl"></span>
-    </div>
-    <div class="teams-row">
-      <div class="team-col">
-        <div class="team-badge" id="hBadge"></div>
-        <div class="team-name" id="hName"></div>
-      </div>
-      <div class="score-mid">
-        <div class="score-nums"><span id="hScore">–</span><span class="score-sep">:</span><span id="aScore">–</span></div>
-        <div class="score-min" id="liveMin" style="display:none"></div>
-        <div class="score-vs" id="vsLbl" style="display:none">VS</div>
-      </div>
-      <div class="team-col">
-        <div class="team-badge" id="aBadge"></div>
-        <div class="team-name" id="aName"></div>
-      </div>
-    </div>
-    <div id="varBanner" class="var-banner" style="display:none"></div>
-    <div class="info-strip" id="infoStrip"></div>
-    <div id="streamWrap"></div>
-  </div>
-</div>
-
-<div id="motmWrap"></div>
-
-<div class="tabs-bar">
-  <div class="tabs">
-    <button class="tab active" data-p="events" onclick="showTab('events')">⚡ الأحداث</button>
-    <button class="tab" data-p="lineups" onclick="showTab('lineups')">👥 التشكيلة</button>
-  </div>
-</div>
-
-<div class="main">
-  <div class="pane active" id="p-events"><div id="eventsWrap"></div></div>
-  <div class="pane" id="p-lineups"><div id="lineupsWrap"></div></div>
-</div>
-
-<script src="supabase-config.js"></script>
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>إدارة الفرق</title><link rel="stylesheet" href="admin.css"></head><body>
+<header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">👥</div><div class="page-title"><h1>إدارة الفرق</h1><p>إضافة الفرق للبطولة المختارة فقط، مع عداد المطلوب والحالي والمتبقي</p></div></div><div class="nav-actions"><a class="btn secondary" href="./admin-home.html">العودة إلى لوحة الأدمن</a><a class="btn secondary" href="./index.html">العودة إلى الموقع العام</a></div></div></header>
+<main class="container">
+<section class="panel"><h3>اختر البطولة</h3><div class="form-grid"><div class="field full"><label>البطولة</label><select id="tournamentSelect"></select></div></div></section>
+<section class="panel" style="margin-top:24px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.25)"><h3>📋 نسخ فريق جاهز من بطولة أخرى (للتجربة)</h3><div class="form-grid"><div class="field"><label>انسخ من بطولة</label><select id="srcTournamentSelect"></select></div><div class="field"><label>الفريق</label><select id="srcTeamSelect"></select></div></div><div style="margin:10px 0"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="copyPlayersChk" checked> نسخ لاعبي الفريق أيضًا (بدون صورهم الخاصة، بحالة معتمدة مباشرة)</label></div><div class="actions"><button class="btn" id="copyBtn" style="background:#3fb950">نسخ هذا الفريق إلى البطولة الحالية</button></div><div class="status" id="copyMsg"></div></section>
+<section class="panel" style="margin-top:24px;background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.25)"><h3>📊 استيراد أسماء الفرق دفعة واحدة من إكسل</h3><p style="color:#9fb0c9;font-size:13px;margin-bottom:10px">ملف بعمود واحد "اسم الفريق" — يُنشئ كل الفرق دفعة واحدة في البطولة المختارة فوق، وكل فريق يحصل تلقائيًا على رابط إدخال خاص به (من صفحة "مراجعة بيانات الفرق")</p><div class="actions"><button class="btn secondary" id="dlTeamsTemplateBtn">⬇️ تحميل نموذج فارغ</button><button class="btn" id="importTeamsBtn" style="background:#58a6ff">📊 استيراد ملف إكسل</button><input type="file" id="teamsXlsxInput" accept=".xlsx,.xls,.csv" style="display:none"></div><div class="status" id="teamsImportMsg"></div></section>
+<section class="panel" style="margin-top:24px;"><h3>إضافة فريق</h3><div class="form-grid"><div class="field"><label>اسم الفريق</label><input id="teamName" placeholder="اسم الفريق"></div><div class="field"><label>اللون الأساسي</label><input id="teamColor1" type="color" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>اللون الثانوي (اختياري — لمزيج كقميصين)</label><input id="teamColor2" type="color" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>الاسم المختصر (اختياري)</label><input id="shortName" placeholder="مثال: MJD"></div></div><div class="actions"><button class="btn" id="addBtn">إضافة فريق</button><button class="btn secondary" id="reloadBtn">تحديث القائمة</button></div><div class="counter" id="counter"></div><div class="status" id="statusBox"></div></section>
+<section class="panel" style="margin-top:24px;"><h3>الفرق الحالية</h3><div class="table-wrap"><table><thead><tr><th>اسم الفريق</th><th>الألوان</th><th>إجراء</th></tr></thead><tbody id="teamsRows"></tbody></table></div></section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="supabase-config.js"></script>
 <script>
-const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-const qs=new URLSearchParams(location.search);
-const MID=qs.get('id');
-const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل'};
-const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
+const client=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);let selectedTournament=null,maxTeams=0,tournaments=[];
+function setMsg(t,c=''){const box=document.getElementById('statusBox');box.className='status '+c;box.textContent=t}
+async function loadTournaments(){const {data,error}=await client.from('tournaments').select('*').order('created_at',{ascending:false,nullsFirst:false});const select=document.getElementById('tournamentSelect');select.innerHTML='';tournaments=data||[];if(error||!data||!data.length){select.innerHTML='<option value="">لا توجد بطولات</option>';selectedTournament=null;maxTeams=0;updateCounter(0);return}data.forEach(t=>{const op=document.createElement('option');op.value=t.id;op.textContent=t.name+(t.season_label?' - '+t.season_label:'');select.appendChild(op)});selectedTournament=data[0].id;maxTeams=data[0].team_count||0;select.value=selectedTournament;select.onchange=()=>{selectedTournament=select.value;const t=tournaments.find(x=>x.id===selectedTournament);maxTeams=t?(t.team_count||0):0;loadTeams();populateSrcTournaments()};await loadTeams();populateSrcTournaments()}
+async function loadTeams(){if(!selectedTournament){document.getElementById('teamsRows').innerHTML='<tr><td colspan="3">اختر بطولة أولًا</td></tr>';updateCounter(0);return}const {data,error}=await client.from('teams').select('*').eq('tournament_id',selectedTournament).order('created_at',{ascending:true,nullsFirst:false});if(error){document.getElementById('teamsRows').innerHTML='<tr><td colspan="3">'+error.message+'</td></tr>';updateCounter(0);return}const rows=data||[];updateCounter(rows.length);if(!rows.length){document.getElementById('teamsRows').innerHTML='<tr><td colspan="3">لا توجد فرق في هذه البطولة</td></tr>';return}document.getElementById('teamsRows').innerHTML=rows.map(team=>`<tr><td>${team.name??''}</td><td style="display:flex;gap:6px;align-items:center"><input type="color" value="${team.primary_color||'#1f6feb'}" style="width:34px;height:30px;cursor:pointer;border:none;background:none" onchange="saveTeamColor('${team.id}','primary_color',this.value)"><input type="color" value="${team.secondary_color||team.primary_color||'#1f6feb'}" style="width:34px;height:30px;cursor:pointer;border:none;background:none" onchange="saveTeamColor('${team.id}','secondary_color',this.value)"></td><td><button class="btn secondary small-danger" onclick="removeTeam('${team.id}')">حذف</button></td></tr>`).join('')}
 
-function showTab(p){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.p===p));
-  document.querySelectorAll('.pane').forEach(el=>el.classList.toggle('active',el.id==='p-'+p));
+async function saveTeamColor(id,field,value){
+  const {error}=await client.from('teams').update({[field]:value}).eq('id',id);
+  if(error)alert('فشل حفظ اللون: '+error.message);
 }
-window.showTab=showTab;
+window.saveTeamColor=saveTeamColor;
+async function removeTeam(id){if(!confirm('هل تريد حذف الفريق؟'))return;const {error}=await client.from('teams').delete().eq('id',id);if(error){setMsg('فشل الحذف: '+error.message,'err');return}setMsg('تم حذف الفريق','ok');loadTeams()}
+function updateCounter(current){document.getElementById('counter').textContent=`المطلوب: ${maxTeams} | الحالي: ${current} | المتبقي: ${Math.max(maxTeams-current,0)}`}
+document.getElementById('addBtn').onclick=async()=>{const name=document.getElementById('teamName').value.trim();const short_name=document.getElementById('shortName').value.trim()||null;const primary_color=document.getElementById('teamColor1').value;const secondary_color=document.getElementById('teamColor2').value;if(!selectedTournament){setMsg('اختر بطولة أولًا','warn');return}if(!name){setMsg('أدخل اسم الفريق','warn');return}const {data:existing}=await client.from('teams').select('id').eq('tournament_id',selectedTournament);if((existing||[]).length>=maxTeams){setMsg('تم الوصول إلى الحد الأقصى للفرق','warn');return}const {error}=await client.from('teams').insert([{name,short_name,primary_color,secondary_color,tournament_id:selectedTournament,is_active:true}]);if(error){setMsg('فشل الإضافة: '+error.message,'err');return}document.getElementById('teamName').value='';document.getElementById('shortName').value='';setMsg('تمت إضافة الفريق بنجاح','ok');loadTeams()};
+document.getElementById('reloadBtn').onclick=loadTeams;loadTournaments();
 
-function initials(name){return (name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
+document.getElementById('dlTeamsTemplateBtn').onclick=function(){
+  const data=[['اسم الفريق','الاسم المختصر'],['نادي مدينة أبوظبي للجولف','MJD'],['دائرة القضاء','JUD']];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[{wch:30},{wch:14}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'الفرق');
+  XLSX.writeFile(wb,'نموذج-الفرق.xlsx');
+};
 
-let clockTimer=null;
-function startClock(startedAt,half){
-  stopClock();
-  if(!startedAt)return;
-  const tick=()=>{
-    const elapsedMin=Math.floor((Date.now()-new Date(startedAt).getTime())/60000)+1;
-    document.getElementById('liveMin').textContent=Math.min(elapsedMin,half*2)+"'"+(elapsedMin>half*2?'+':'');
+document.getElementById('importTeamsBtn').onclick=()=>document.getElementById('teamsXlsxInput').click();
+
+document.getElementById('teamsXlsxInput').onchange=function(){
+  const f=this.files[0];
+  if(!f)return;
+  const msg=document.getElementById('teamsImportMsg');
+  if(!selectedTournament){msg.className='status warn';msg.textContent='اختر بطولة أولًا من الأعلى';return}
+  msg.className='status';msg.textContent='⏳ جاري القراءة...';
+  const reader=new FileReader();
+  reader.onload=async function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const sheet=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(sheet,{defval:''});
+      if(!rows.length){msg.className='status err';msg.textContent='⚠️ الملف فارغ';return}
+      const headers=Object.keys(rows[0]);
+      const findCol=(...keys)=>headers.find(h=>keys.some(k=>h.toString().trim().toLowerCase().includes(k)));
+      const colName=findCol('اسم الفريق','اسم','name');
+      const colShort=findCol('مختصر','short');
+      if(!colName){msg.className='status err';msg.textContent='⚠️ لم يتم العثور على عمود "اسم الفريق"';return}
+
+      const {data:existing}=await client.from('teams').select('id').eq('tournament_id',selectedTournament);
+      let curCount=(existing||[]).length;
+      const toInsert=[];
+      rows.forEach(r=>{
+        const name=(r[colName]||'').toString().trim();
+        if(!name)return;
+        if(curCount+toInsert.length>=maxTeams)return;
+        toInsert.push({name,short_name:colShort?((r[colShort]||'').toString().trim()||null):null,tournament_id:selectedTournament,is_active:true});
+      });
+      if(!toInsert.length){msg.className='status err';msg.textContent='⚠️ لا يوجد أسماء صالحة للإضافة (أو وصلت للحد الأقصى للفرق)';return}
+
+      const {error}=await client.from('teams').insert(toInsert);
+      if(error){msg.className='status err';msg.textContent='❌ فشل الاستيراد: '+error.message;return}
+      msg.className='status ok';msg.textContent=`✅ تم إضافة ${toInsert.length} فريقًا بنجاح`;
+      loadTeams();
+    }catch(err){
+      console.error(err);
+      msg.className='status err';msg.textContent='❌ تعذرت قراءة الملف — تأكد أنه إكسل صحيح';
+    }
   };
-  tick();
-  clockTimer=setInterval(tick,1000);
+  reader.readAsArrayBuffer(f);
+  this.value='';
+};
+
+function setCopyMsg(t,c=''){const box=document.getElementById('copyMsg');box.className='status '+c;box.textContent=t}
+
+function populateSrcTournaments(){
+  const sel=document.getElementById('srcTournamentSelect');
+  const others=tournaments.filter(t=>t.id!==selectedTournament);
+  if(!others.length){sel.innerHTML='<option value="">لا توجد بطولات أخرى للنسخ منها</option>';document.getElementById('srcTeamSelect').innerHTML='<option value="">—</option>';return}
+  sel.innerHTML=others.map(t=>`<option value="${t.id}">${t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
+  sel.onchange=loadSrcTeams;
+  loadSrcTeams();
 }
-function stopClock(){if(clockTimer){clearInterval(clockTimer);clockTimer=null;}}
 
-async function init(){
-  if(!MID){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>لم يتم تحديد المباراة</p></div>';return;}
-  const {data:m,error}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(*),at:teams!matches_away_team_id_fkey(*)').eq('id',MID).single();
-  if(error||!m){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>تعذر تحميل بيانات المباراة</p></div>';return;}
+async function loadSrcTeams(){
+  const tid=document.getElementById('srcTournamentSelect').value;
+  const sel=document.getElementById('srcTeamSelect');
+  sel.innerHTML='<option>جاري التحميل...</option>';
+  const {data,error}=await client.from('teams').select('*').eq('tournament_id',tid).order('name');
+  if(error||!data||!data.length){sel.innerHTML='<option value="">لا توجد فرق في هذه البطولة</option>';return}
+  sel.innerHTML=data.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
+  sel._teams=data;
+}
 
-  document.getElementById('backLink').href='tournament.html?id='+m.tournament_id;
+document.getElementById('copyBtn').onclick=async()=>{
+  if(!selectedTournament){setCopyMsg('اختر البطولة الهدف أولًا من الأعلى','warn');return}
+  const srcTeamId=document.getElementById('srcTeamSelect').value;
+  if(!srcTeamId){setCopyMsg('اختر فريقًا للنسخ','warn');return}
+  const {data:existing}=await client.from('teams').select('id').eq('tournament_id',selectedTournament);
+  if((existing||[]).length>=maxTeams){setCopyMsg('تم الوصول إلى الحد الأقصى لعدد الفرق في هذه البطولة','warn');return}
 
-  const {data:t}=await sb.from('tournaments').select('*').eq('id',m.tournament_id).single();
-  if(t){
-    document.getElementById('navTName').innerHTML=(t.logo_url?`<img src="${t.logo_url}">`:'🏆')+' '+(t.name_ar||t.name||'');
-    document.title=(m.ht?.name_ar||m.ht?.name||'')+' × '+(m.at?.name_ar||m.at?.name||'')+' — '+(t.name_ar||t.name||'');
-  }
+  setCopyMsg('⏳ جاري النسخ...');
+  const {data:srcTeam,error:e1}=await client.from('teams').select('*').eq('id',srcTeamId).single();
+  if(e1||!srcTeam){setCopyMsg('فشل قراءة الفريق المصدر: '+(e1?.message||''),'err');return}
 
-  const ht=m.ht||{},at=m.at||{};
-  const hColor=ht.primary_color||ht.color_primary||'#8b949e';
-  const aColor=at.primary_color||at.color_primary||'#8b949e';
-  const hColor2=ht.secondary_color||hColor;
-  const aColor2=at.secondary_color||aColor;
-  const teamBg=(c1,c2)=>c2&&c2!==c1?`linear-gradient(90deg, ${c1} 50%, ${c2} 50%)`:c1;
-  document.getElementById('hName').textContent=ht.name_ar||ht.name||'؟';
-  document.getElementById('aName').textContent=at.name_ar||at.name||'؟';
-  const hB=document.getElementById('hBadge'),aB=document.getElementById('aBadge');
-  hB.style.background=teamBg(hColor,hColor2); aB.style.background=teamBg(aColor,aColor2);
-  if(ht.logo_url){hB.innerHTML=`<img src="${ht.logo_url}" style="width:100%;height:100%;object-fit:contain;border-radius:50%">`;}else{hB.textContent=initials(ht.name_ar||ht.name);}
-  if(at.logo_url){aB.innerHTML=`<img src="${at.logo_url}" style="width:100%;height:100%;object-fit:contain;border-radius:50%">`;}else{aB.textContent=initials(at.name_ar||at.name);}
+  const newTeam={...srcTeam};
+  delete newTeam.id;
+  delete newTeam.created_at;
+  delete newTeam.updated_at;
+  delete newTeam.submit_token;
+  delete newTeam.coach_name;
+  delete newTeam.coach_nationality;
+  delete newTeam.coach_id_url;
+  delete newTeam.coach_photo_url;
+  delete newTeam.coach_status;
+  delete newTeam.submitted_by_name;
+  delete newTeam.admin_nationality;
+  delete newTeam.admin_doc_url;
+  delete newTeam.admin_photo_url;
+  newTeam.tournament_id=selectedTournament;
+  newTeam.is_active=true;
+  const {data:inserted,error:e2}=await client.from('teams').insert([newTeam]).select().single();
+  if(e2){setCopyMsg('فشل إنشاء الفريق: '+e2.message,'err');return}
 
-  const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مباراة المركز الثالث',final:'النهائي'};
-  document.getElementById('roundLbl').textContent=rl[m.round_name]||m.round_name||'';
-
-  const sl=document.getElementById('statusLbl');
-  if(m.status==='live'){
-    sl.className='sb-status st-live'; sl.innerHTML='<span class="dot"></span> مباشر الآن';
-    document.getElementById('hScore').textContent=m.home_score??0;
-    document.getElementById('aScore').textContent=m.away_score??0;
-    document.getElementById('liveMin').style.display='block';
-    startClock(m.live_started_at,m.half_length_minutes||20);
-  }else if(m.status==='completed'){
-    stopClock();
-    sl.className='sb-status st-done'; sl.textContent='انتهت المباراة';
-    document.getElementById('hScore').textContent=m.home_score??0;
-    document.getElementById('aScore').textContent=m.away_score??0;
-  }else{
-    stopClock();
-    sl.className='sb-status st-sched'; sl.textContent='لم تبدأ بعد';
-    document.getElementById('vsLbl').style.display='block';
-    document.getElementById('hScore').textContent='';
-    document.getElementById('aScore').textContent='';
-  }
-
-  if(m.live_status&&m.live_status!=='none'){
-    const vl={checking:'⏳ الفار يراجع الحدث الآن...',goal_confirmed:'✅ تم تأكيد الهدف بعد المراجعة',goal_disallowed:'❌ تم إلغاء الهدف بعد مراجعة الفار',penalty_review:'🎯 الفار يراجع ركلة جزاء',red_card_review:'🟥 الفار يراجع بطاقة حمراء'};
-    if(vl[m.live_status]){
-      let txt=vl[m.live_status];
-      if(m.var_team_id){
-        const tn=m.var_team_id===m.home_team_id?(ht.name_ar||ht.name):(at.name_ar||at.name);
-        if(tn)txt+=' — '+tn;
-      }
-      const vb=document.getElementById('varBanner');vb.style.display='block';vb.textContent=txt;
+  let playersMsg='';
+  if(document.getElementById('copyPlayersChk').checked){
+    const {data:srcPlayers}=await client.from('players').select('*').eq('team_id',srcTeamId);
+    if(srcPlayers&&srcPlayers.length){
+      const newPlayers=srcPlayers.map(p=>{
+        const np={...p};
+        delete np.id;
+        delete np.created_at;
+        delete np.team_id;
+        delete np.tournament_id;
+        delete np.id_photo_url;
+        delete np.passport_photo_url;
+        np.team_id=inserted.id;
+        np.tournament_id=selectedTournament;
+        np.submission_status='approved';
+        return np;
+      });
+      const {error:e3}=await client.from('players').insert(newPlayers);
+      playersMsg=e3?(' — لكن فشل نسخ اللاعبين: '+e3.message):(' مع '+newPlayers.length+' لاعبًا');
     }
   }
+  setCopyMsg('✅ تم نسخ الفريق "'+srcTeam.name+'"'+playersMsg,'ok');
+  loadTeams();
+};
 
-  const chips=[];
-  if(m.venue_name||m.venue) chips.push(`<div class="info-chip">🏟️ <b>الملعب</b> ${m.venue_name||m.venue}</div>`);
-  if(m.match_date) chips.push(`<div class="info-chip">📅 ${new Date(m.match_date).toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long'})} ${m.match_time?'— '+m.match_time:''}</div>`);
-  if(m.referee_1) chips.push(`<div class="info-chip">👨‍⚖️ <b>الحكم</b> ${m.referee_1}</div>`);
-  if(m.referee_2) chips.push(`<div class="info-chip">🚩 <b>مساعد</b> ${m.referee_2}</div>`);
-  if(m.commentator) chips.push(`<div class="info-chip">🎙️ <b>التعليق</b> ${m.commentator}</div>`);
-  document.getElementById('infoStrip').innerHTML=chips.join('');
-
-  if(m.stream_url&&(m.status==='live')){
-    document.getElementById('streamWrap').innerHTML=`<a class="stream-btn" href="${m.stream_url}" target="_blank">📺 شاهد البث المباشر</a>`;
-  }
-
-  if(m.player_of_match_id){
-    const {data:p}=await sb.from('players').select('name,full_name_ar,photo_url,team_id').eq('id',m.player_of_match_id).single();
-    if(p){
-      const tm=p.team_id===m.home_team_id?ht:at;
-      document.getElementById('motmWrap').innerHTML=`<div class="motm"><div class="motm-ic">⭐</div><div><div class="motm-lbl">رجل المباراة</div><div class="motm-name">${p.full_name_ar||p.name} — ${tm.name_ar||tm.name||''}</div></div></div>`;
-    }
-  }
-
-  loadEvents(m,ht,at);
-  loadLineups(m,ht,at,hColor,aColor);
-}
-
-async function loadEvents(m,ht,at){
-  const {data}=await sb.from('match_events').select('*,player:players!player_id(name,full_name_ar)').eq('match_id',m.id).order('minute');
-  const wrap=document.getElementById('eventsWrap');
-  if(!data||!data.length){wrap.innerHTML='<div class="empty"><span>⚡</span><p>لا توجد أحداث مسجلة بعد</p></div>';return;}
-  wrap.innerHTML=data.map(e=>{
-    const side=e.team_id===m.home_team_id?'home':'away';
-    return `<div class="evt-row ${side==='away'?'away-side':''}">
-      <span class="evt-min">${e.minute||0}'</span>
-      <span class="evt-ic">${EI[e.event_type]||'📌'}</span>
-      <span class="evt-name">${e.player?.full_name_ar||e.player?.name||'—'} <span style="color:#8b949e;font-weight:500">— ${EL[e.event_type]||e.event_type}</span></span>
-    </div>`;
-  }).join('');
-}
-
-async function loadLineups(m,ht,at,hColor,aColor){
-  const {data}=await sb.from('match_lineups').select('*,player:players(name,full_name_ar,number,is_injured,injury_note)').eq('match_id',m.id);
-  const wrap=document.getElementById('lineupsWrap');
-  if(!data||!data.length){wrap.innerHTML='<div class="empty"><span>👥</span><p>لم يتم نشر التشكيلة بعد</p></div>';return;}
-  const hAll=data.filter(x=>x.team_id===m.home_team_id);
-  const aAll=data.filter(x=>x.team_id===m.away_team_id);
-  const block=(list,name,color)=>{
-    const start=list.filter(x=>x.is_starting);
-    const subs=list.filter(x=>!x.is_starting);
-    const row=x=>`<div class="lu-pl"><span class="lu-num">${x.player?.number??''}</span><span>${x.player?.full_name_ar||x.player?.name||'—'}</span>${x.player?.is_injured?`<span class="lu-injury" title="${x.player.injury_note||'مصاب'}">🩹</span>`:''}</div>`;
-    return `<div><div class="lu-team-hd" style="border-color:${color}"><span class="lu-dot" style="background:${color}"></span>${name}</div>
-      ${start.map(row).join('')||'<div class="empty" style="padding:10px 0;font-size:12px">—</div>'}
-      ${subs.length?`<div class="lu-sub-hd">البدلاء</div>${subs.map(row).join('')}`:''}
-    </div>`;
-  };
-  wrap.innerHTML=`<div class="lu-grid">${block(hAll,ht.name_ar||ht.name||'الفريق الأول',hColor)}${block(aAll,at.name_ar||at.name||'الفريق الثاني',aColor)}</div>`;
-}
-
-init();
-sb.channel('match-live-'+MID)
-  .on('postgres_changes',{event:'*',schema:'public',table:'matches',filter:'id=eq.'+MID},()=>init())
-  .on('postgres_changes',{event:'*',schema:'public',table:'match_events',filter:'match_id=eq.'+MID},()=>init())
-  .subscribe();
-// شبكة أمان احتياطية لو تعطّل الاتصال اللحظي لأي سبب
-setInterval(()=>{ if(MID) init(); }, 30000);
-</script>
-</body>
-</html>
+</script></body></html>
