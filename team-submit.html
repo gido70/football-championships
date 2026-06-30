@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إدخال بيانات الفريق</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:"Tajawal",sans-serif}
+body{background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh;padding:20px}
+.wrap{max-width:680px;margin:0 auto}
+.hd{text-align:center;padding:20px 0 30px}
+.hd h1{font-size:22px;color:#c9a84c;margin-bottom:6px}
+.hd p{font-size:13px;color:#8b949e}
+.card{background:#161b22;border:1px solid #30363d;border-radius:16px;padding:20px;margin-bottom:18px}
+.card h2{font-size:15px;color:#c9a84c;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;color:#b7c6dc;margin-bottom:5px}
+.field input[type=text],.field select{width:100%;padding:10px 12px;background:#0d1117;border:1px solid #30363d;border-radius:8px;color:#e6edf3;font-size:14px;font-family:inherit}
+.upload-box{border:2px dashed #30363d;border-radius:10px;padding:14px;text-align:center;cursor:pointer;font-size:13px;color:#8b949e;position:relative}
+.upload-box.has-file{border-color:#3fb950;color:#3fb950}
+.upload-box input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gk-check{display:flex;align-items:center;gap:8px;font-size:13px;color:#ffd700;margin-bottom:12px;cursor:pointer}
+.player-card{background:#0d1117;border:1px solid #21262d;border-radius:12px;padding:16px;margin-bottom:14px;position:relative}
+.player-card .pnum{position:absolute;top:-10px;right:14px;background:#c9a84c;color:#0d1117;font-size:11px;font-weight:800;padding:3px 10px;border-radius:10px}
+.rm-player{position:absolute;top:10px;left:10px;background:none;border:none;color:#ff6b6b;font-size:13px;cursor:pointer}
+.add-player-btn{width:100%;padding:12px;background:#21262d;border:1px dashed #3a4150;border-radius:10px;color:#c9a84c;font-weight:700;font-size:14px;cursor:pointer}
+.submit-btn{width:100%;padding:16px;background:linear-gradient(135deg,#c9a84c,#a8842e);border:none;border-radius:12px;color:#0d1117;font-weight:900;font-size:16px;cursor:pointer;margin-top:10px}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
+.msg{text-align:center;padding:12px;border-radius:10px;font-size:14px;font-weight:700;margin-top:14px}
+.msg.ok{background:rgba(63,185,80,.12);color:#3fb950;border:1px solid rgba(63,185,80,.3)}
+.msg.err{background:rgba(248,81,73,.12);color:#f85149;border:1px solid rgba(248,81,73,.3)}
+.loader{text-align:center;padding:60px 0;color:#8b949e}
+.progress{font-size:12px;color:#8b949e;text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="loader" id="loading">⏳ جاري التحقق من الرابط...</div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const qs=new URLSearchParams(location.search);
+const TOKEN=qs.get('token');
+let TEAM=null;
+let playerCount=0;
+const files={}; // key -> File
+
+async function init(){
+  if(!TOKEN){showErr('الرابط غير صحيح — تأكد من نسخ الرابط كاملًا.');return;}
+  const {data,error}=await sb.from('teams').select('*').eq('submit_token',TOKEN).single();
+  if(error||!data){showErr('لم يتم العثور على فريق مرتبط بهذا الرابط.');return;}
+  TEAM=data;
+  buildForm();
+}
+
+function showErr(msg){
+  document.getElementById('app').innerHTML=`<div class="loader">⚠️ ${msg}</div>`;
+}
+
+function buildForm(){
+  document.getElementById('app').innerHTML=`
+    <div class="hd">
+      <h1>📋 إدخال بيانات ${TEAM.name_ar||TEAM.name}</h1>
+      <p>املأ البيانات بدقة — ستراجَع من إدارة البطولة قبل النشر</p>
+    </div>
+
+    <div class="card">
+      <h2>👤 بيانات المُدخل</h2>
+      <div class="field">
+        <label>اسمك (الشخص الذي يملأ هذا الفورم)</label>
+        <input type="text" id="submitterName" placeholder="مثال: محمد أحمد">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🧑‍🏫 بيانات المدرب</h2>
+      <div class="row2">
+        <div class="field"><label>اسم المدرب</label><input type="text" id="coachName"></div>
+        <div class="field"><label>الجنسية</label><input type="text" id="coachNat"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>صورة الهوية</label>${uploadBox('coachId')}</div>
+        <div class="field"><label>صورة الجواز</label>${uploadBox('coachPass')}</div>
+      </div>
+    </div>
+
+    <div id="playersWrap"></div>
+    <button type="button" class="add-player-btn" onclick="addPlayer()">➕ إضافة لاعب</button>
+
+    <button type="button" class="submit-btn" id="submitBtn" onclick="submitAll()">📤 إرسال البيانات للمراجعة</button>
+    <div id="msg"></div>
+  `;
+  addPlayer(true); // حارس مرمى افتراضي أول لاعب
+}
+
+function uploadBox(key){
+  return `<div class="upload-box" id="${key}_box">📎 اضغط لرفع صورة
+    <input type="file" accept="image/*" onchange="onFile('${key}',this)">
+  </div>`;
+}
+
+function onFile(key,input){
+  const f=input.files[0];
+  if(!f)return;
+  files[key]=f;
+  document.getElementById(key+'_box').classList.add('has-file');
+  document.getElementById(key+'_box').firstChild.textContent='✅ '+f.name;
+}
+
+function addPlayer(isFirst){
+  playerCount++;
+  const n=playerCount;
+  const div=document.createElement('div');
+  div.className='player-card';
+  div.id='player_'+n;
+  div.innerHTML=`
+    <span class="pnum">لاعب ${n}</span>
+    ${n>1?`<button type="button" class="rm-player" onclick="removePlayer(${n})">✕ إزالة</button>`:''}
+    <label class="gk-check"><input type="checkbox" id="p${n}_gk" ${isFirst?'checked':''}> 🧤 حارس مرمى</label>
+    <div class="row2">
+      <div class="field"><label>الاسم الكامل</label><input type="text" id="p${n}_name"></div>
+      <div class="field"><label>الرقم</label><input type="text" id="p${n}_num"></div>
+    </div>
+    <div class="field"><label>الجنسية</label><input type="text" id="p${n}_nat"></div>
+    <div class="row2">
+      <div class="field"><label>صورة داخل القميص</label>${uploadBox('p'+n+'_jersey')}</div>
+      <div class="field"><label>صورة الهوية</label>${uploadBox('p'+n+'_id')}</div>
+    </div>
+    <div class="field"><label>صورة الجواز</label>${uploadBox('p'+n+'_pass')}</div>
+  `;
+  document.getElementById('playersWrap').appendChild(div);
+}
+function removePlayer(n){document.getElementById('player_'+n)?.remove();}
+
+async function uploadFile(key,bucket,pathPrefix){
+  const f=files[key];
+  if(!f)return null;
+  const ext=f.name.split('.').pop();
+  const path=`${pathPrefix}/${key}-${Date.now()}.${ext}`;
+  const {error}=await sb.storage.from(bucket).upload(path,f);
+  if(error){console.error(error);return null;}
+  return path;
+}
+
+async function submitAll(){
+  const btn=document.getElementById('submitBtn');
+  const msg=document.getElementById('msg');
+  const submitterName=document.getElementById('submitterName').value.trim();
+  if(!submitterName){msg.innerHTML='<div class="msg err">⚠️ يرجى كتابة اسمك أولاً</div>';return;}
+
+  const playerCards=[...document.querySelectorAll('.player-card')];
+  if(!playerCards.length){msg.innerHTML='<div class="msg err">⚠️ أضف لاعبًا واحدًا على الأقل</div>';return;}
+
+  btn.disabled=true;
+  const prefix='team-'+TEAM.id;
+  msg.innerHTML='<div class="progress">⏳ جاري رفع الملفات وحفظ البيانات...</div>';
+
+  const coachIdPath=await uploadFile('coachId','team-docs',prefix);
+  const coachPassPath=await uploadFile('coachPass','team-docs',prefix);
+
+  const {error:teamErr}=await sb.from('teams').update({
+    submitted_by_name:submitterName,
+    coach_name:document.getElementById('coachName').value.trim()||null,
+    coach_nationality:document.getElementById('coachNat').value.trim()||null,
+    coach_id_url:coachIdPath,
+    coach_passport_url:coachPassPath,
+    coach_status:'pending'
+  }).eq('id',TEAM.id);
+
+  if(teamErr){msg.innerHTML='<div class="msg err">❌ فشل حفظ بيانات المدرب: '+teamErr.message+'</div>';btn.disabled=false;return;}
+
+  let ok=0,fail=0;
+  for(const card of playerCards){
+    const n=card.id.split('_')[1];
+    const name=document.getElementById('p'+n+'_name').value.trim();
+    if(!name)continue;
+    const jerseyPath=await uploadFile('p'+n+'_jersey','team-public',prefix);
+    const idPath=await uploadFile('p'+n+'_id','team-docs',prefix);
+    const passPath=await uploadFile('p'+n+'_pass','team-docs',prefix);
+    let jerseyUrl=null;
+    if(jerseyPath){const {data}=sb.storage.from('team-public').getPublicUrl(jerseyPath);jerseyUrl=data?.publicUrl;}
+    const {error}=await sb.from('players').insert({
+      tournament_id:TEAM.tournament_id,
+      team_id:TEAM.id,
+      name,
+      full_name_ar:name,
+      number:parseInt(document.getElementById('p'+n+'_num').value)||null,
+      nationality:document.getElementById('p'+n+'_nat').value.trim()||null,
+      is_goalkeeper:document.getElementById('p'+n+'_gk').checked,
+      jersey_photo_url:jerseyUrl,
+      id_photo_url:idPath,
+      passport_photo_url:passPath,
+      submission_status:'pending'
+    });
+    if(error){fail++;console.error(error);}else ok++;
+  }
+
+  if(fail===0){
+    msg.innerHTML=`<div class="msg ok">✅ تم إرسال بيانات ${ok} لاعبًا والمدرب بنجاح — بانتظار مراجعة إدارة البطولة</div>`;
+  }else{
+    msg.innerHTML=`<div class="msg err">⚠️ تم حفظ ${ok} لاعبًا، وفشل ${fail} — أعد المحاولة لمن فشل</div>`;
+  }
+  btn.disabled=false;
+}
+
+init();
+</script>
+</body>
+</html>
