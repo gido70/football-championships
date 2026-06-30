@@ -365,7 +365,21 @@ async function loadEvents(m,ht,at){
 async function loadLineups(m,ht,at,hColor,aColor){
   const {data}=await sb.from('match_lineups').select('*,player:players(name,full_name_ar,number,is_injured,injury_note)').eq('match_id',m.id);
   const wrap=document.getElementById('lineupsWrap');
-  if(!data||!data.length){wrap.innerHTML='<div class="empty"><span>👥</span><p>لم يتم نشر التشكيلة بعد</p></div>';return;}
+
+  // إن لم توجد تشكيلة محمّلة، اعرض كل لاعبي الفريقين المعتمدين
+  if(!data||!data.length){
+    const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_goalkeeper,is_injured,injury_note,team_id,submission_status').eq('team_id',m.home_team_id).in('submission_status',['approved','معتمد']).order('is_goalkeeper',{ascending:false}).order('number');
+    const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_goalkeeper,is_injured,injury_note,team_id,submission_status').eq('team_id',m.away_team_id).in('submission_status',['approved','معتمد']).order('is_goalkeeper',{ascending:false}).order('number');
+    if((!hp||!hp.length)&&(!ap||!ap.length)){
+      wrap.innerHTML='<div class="empty"><span>👥</span><p>لم تُسجَّل بيانات اللاعبين بعد</p></div>';
+      return;
+    }
+    const row=x=>`<div class="lu-pl"><span class="lu-num">${x.number??''}</span><span>${x.full_name_ar||x.name||'—'}${x.is_goalkeeper?' 🧤':''}</span>${x.is_injured?`<span class="lu-injury">🩹</span>`:''}</div>`;
+    const block=(list,name,color)=>`<div><div class="lu-team-hd" style="border-color:${color}"><span class="lu-dot" style="background:${color}"></span>${name}</div>${(list||[]).map(row).join('')||'<div class="empty" style="padding:10px 0;font-size:12px;color:#6e7b8f">—</div>'}</div>`;
+    wrap.innerHTML=`<div style="font-size:11px;text-align:center;color:#6e7b8f;padding:10px 0 4px">قائمة اللاعبين المعتمدين — لم تُحمَّل تشكيلة رسمية</div><div class="lu-grid">${block(hp,ht?.name_ar||ht?.name||'',hColor)}${block(ap,at?.name_ar||at?.name||'',aColor)}</div>`;
+    return;
+  }
+
   const hAll=data.filter(x=>x.team_id===m.home_team_id);
   const aAll=data.filter(x=>x.team_id===m.away_team_id);
   const block=(list,name,color)=>{
