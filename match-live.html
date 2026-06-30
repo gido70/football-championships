@@ -90,10 +90,24 @@ a{text-decoration:none;color:inherit}
 .evt-min{font-size:12px;font-weight:800;color:#8b949e;width:34px;text-align:center}
 .evt-name{font-size:14px;font-weight:700;flex:1}
 
-/* lineups */
+/* lineups — بطاقات اللاعبين */
+.team-section{padding:16px 16px 4px}
+.team-hd{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px}
+.lu-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.pl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px 0 12px}
+@media(min-width:420px){.pl-grid{grid-template-columns:repeat(5,1fr)}}
+.pl-card{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}
+.pl-card.pl-sub{opacity:.6}
+.pl-num{font-size:11px;font-weight:900;color:#c9a84c}
+.pl-photo-wrap{width:54px;height:54px}
+.pl-photo{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #30363d}
+.pl-initials{width:54px;height:54px;border-radius:50%;background:#21262d;border:2px solid #30363d;font-size:14px;font-weight:800;color:#6e7b8f;display:flex;align-items:center;justify-content:center}
+.pl-name{font-size:10.5px;font-weight:700;line-height:1.3;color:#c9d1d9;width:66px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-badge{font-size:9px;font-weight:800;padding:1px 6px;border-radius:8px;background:rgba(201,168,76,.2);color:#c9a84c}
+.pl-badge.sub{background:rgba(139,148,158,.15);color:#8b949e}
+.pl-badge.injury{background:rgba(248,81,73,.15);color:#f85149}
 .lu-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .lu-team-hd{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid}
-.lu-dot{width:10px;height:10px;border-radius:50%}
 .lu-pl{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:13px}
 .lu-num{width:22px;height:22px;border-radius:6px;background:#21262d;color:#8b949e;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .lu-injury{color:#f85149;font-size:12px}
@@ -363,35 +377,77 @@ async function loadEvents(m,ht,at){
 }
 
 async function loadLineups(m,ht,at,hColor,aColor){
-  const {data}=await sb.from('match_lineups').select('*,player:players(name,full_name_ar,number,is_injured,injury_note)').eq('match_id',m.id);
+  const {data}=await sb.from('match_lineups').select('*,player:players(name,full_name_ar,number,jersey_photo_url,is_injured,injury_note,is_goalkeeper)').eq('match_id',m.id);
   const wrap=document.getElementById('lineupsWrap');
 
-  // إن لم توجد تشكيلة محمّلة، اعرض كل لاعبي الفريقين المعتمدين
+  // إن لم توجد تشكيلة → اعرض كل لاعبي الفريقين بغض النظر عن الحالة
   if(!data||!data.length){
-    const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_goalkeeper,is_injured,injury_note,team_id,submission_status').eq('team_id',m.home_team_id).in('submission_status',['approved','معتمد']).order('is_goalkeeper',{ascending:false}).order('number');
-    const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_goalkeeper,is_injured,injury_note,team_id,submission_status').eq('team_id',m.away_team_id).in('submission_status',['approved','معتمد']).order('is_goalkeeper',{ascending:false}).order('number');
-    if((!hp||!hp.length)&&(!ap||!ap.length)){
-      wrap.innerHTML='<div class="empty"><span>👥</span><p>لم تُسجَّل بيانات اللاعبين بعد</p></div>';
-      return;
-    }
-    const row=x=>`<div class="lu-pl"><span class="lu-num">${x.number??''}</span><span>${x.full_name_ar||x.name||'—'}${x.is_goalkeeper?' 🧤':''}</span>${x.is_injured?`<span class="lu-injury">🩹</span>`:''}</div>`;
-    const block=(list,name,color)=>`<div><div class="lu-team-hd" style="border-color:${color}"><span class="lu-dot" style="background:${color}"></span>${name}</div>${(list||[]).map(row).join('')||'<div class="empty" style="padding:10px 0;font-size:12px;color:#6e7b8f">—</div>'}</div>`;
-    wrap.innerHTML=`<div style="font-size:11px;text-align:center;color:#6e7b8f;padding:10px 0 4px">قائمة اللاعبين المعتمدين — لم تُحمَّل تشكيلة رسمية</div><div class="lu-grid">${block(hp,ht?.name_ar||ht?.name||'',hColor)}${block(ap,at?.name_ar||at?.name||'',aColor)}</div>`;
+    const fetchPlayers=async(teamId)=>{
+      const {data:p}=await sb.from('players').select('id,name,full_name_ar,number,jersey_photo_url,is_goalkeeper,is_injured,injury_note').eq('team_id',teamId).order('is_goalkeeper',{ascending:false}).order('number');
+      return p||[];
+    };
+    const [hp,ap]=await Promise.all([fetchPlayers(m.home_team_id),fetchPlayers(m.away_team_id)]);
+    if(!hp.length&&!ap.length){wrap.innerHTML='<div class="empty"><span>👥</span><p>لم تُسجَّل بيانات اللاعبين بعد</p></div>';return;}
+
+    const playerCard=p=>{
+      const num=p.number??'';
+      const name=p.full_name_ar||p.name||'—';
+      const shortName=name.split(' ').slice(0,2).join(' ');
+      const initials=name.trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+      return `<div class="pl-card">
+        <div class="pl-num">${num}</div>
+        <div class="pl-photo-wrap">
+          ${p.jersey_photo_url?`<img class="pl-photo" src="${p.jersey_photo_url}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
+          <div class="pl-initials" style="${p.jersey_photo_url?'display:none':'display:flex'}">${initials}</div>
+        </div>
+        <div class="pl-name">${shortName}</div>
+        ${p.is_goalkeeper?'<div class="pl-badge">حارس</div>':''}
+        ${p.is_injured?'<div class="pl-badge injury">🩹 مصاب</div>':''}
+      </div>`;
+    };
+
+    const teamBlock=(players,team,color)=>`
+      <div class="team-section">
+        <div class="team-hd" style="border-right:4px solid ${color};padding-right:10px;margin-bottom:12px">
+          <span class="team-dot" style="background:${color}"></span>${team}
+          <span style="font-size:11px;color:#6e7b8f;margin-right:6px">(${players.length} لاعب)</span>
+        </div>
+        <div class="pl-grid">${players.map(playerCard).join('')}</div>
+      </div>`;
+
+    wrap.innerHTML=`
+      <div style="font-size:11px;text-align:center;color:#6e7b8f;padding:8px 0 4px">قائمة لاعبي الفريقين</div>
+      ${teamBlock(hp,ht?.name_ar||ht?.name||'',hColor)}
+      <div style="height:1px;background:#21262d;margin:16px 0"></div>
+      ${teamBlock(ap,at?.name_ar||at?.name||'',aColor)}`;
     return;
   }
 
+  // تشكيلة رسمية موجودة
   const hAll=data.filter(x=>x.team_id===m.home_team_id);
   const aAll=data.filter(x=>x.team_id===m.away_team_id);
-  const block=(list,name,color)=>{
-    const start=list.filter(x=>x.is_starting);
-    const subs=list.filter(x=>!x.is_starting);
-    const row=x=>`<div class="lu-pl"><span class="lu-num">${x.player?.number??''}</span><span>${x.player?.full_name_ar||x.player?.name||'—'}</span>${x.player?.is_injured?`<span class="lu-injury" title="${x.player.injury_note||'مصاب'}">🩹</span>`:''}</div>`;
-    return `<div><div class="lu-team-hd" style="border-color:${color}"><span class="lu-dot" style="background:${color}"></span>${name}</div>
-      ${start.map(row).join('')||'<div class="empty" style="padding:10px 0;font-size:12px">—</div>'}
-      ${subs.length?`<div class="lu-sub-hd">البدلاء</div>${subs.map(row).join('')}`:''}
+  const playerCard=x=>{
+    const p=x.player||{};
+    const name=p.full_name_ar||p.name||'—';
+    const shortName=name.split(' ').slice(0,2).join(' ');
+    const initials=name.trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+    return `<div class="pl-card${!x.is_starting?' pl-sub':''}">
+      <div class="pl-num">${p.number??''}</div>
+      <div class="pl-photo-wrap">
+        ${p.jersey_photo_url?`<img class="pl-photo" src="${p.jersey_photo_url}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
+        <div class="pl-initials" style="${p.jersey_photo_url?'display:none':'display:flex'}">${initials}</div>
+      </div>
+      <div class="pl-name">${shortName}</div>
+      ${p.is_goalkeeper?'<div class="pl-badge">حارس</div>':''}
+      ${!x.is_starting?'<div class="pl-badge sub">بديل</div>':''}
+      ${p.is_injured?'<div class="pl-badge injury">🩹</div>':''}
     </div>`;
   };
-  wrap.innerHTML=`<div class="lu-grid">${block(hAll,ht.name_ar||ht.name||'الفريق الأول',hColor)}${block(aAll,at.name_ar||at.name||'الفريق الثاني',aColor)}</div>`;
+  const block=(list,name,color)=>`<div class="team-section">
+    <div class="team-hd" style="border-right:4px solid ${color};padding-right:10px;margin-bottom:12px"><span class="team-dot" style="background:${color}"></span>${name}</div>
+    <div class="pl-grid">${list.map(playerCard).join('')}</div>
+  </div>`;
+  wrap.innerHTML=`${block(hAll,ht.name_ar||ht.name||'',hColor)}<div style="height:1px;background:#21262d;margin:16px 0"></div>${block(aAll,at.name_ar||at.name||'',aColor)}`;
 }
 
 init();
