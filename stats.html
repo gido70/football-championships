@@ -186,9 +186,10 @@ async function buildAwards(teamName){
 
 function tally(events,type){
   const map={};
-  (events||[]).filter(e=>e.event_type===type&&e.player_id).forEach(e=>{
-    if(!map[e.player_id])map[e.player_id]={name:e.player?.full_name_ar||e.player?.name||'—',photo:e.player?.jersey_photo_url,team:e.team_id,count:0};
-    map[e.player_id].count++;
+  (events||[]).filter(e=>e.event_type===type&&(e.player_id||e.manual_player_name)).forEach(e=>{
+    const key=e.player_id||('m:'+e.manual_player_name+':'+e.team_id);
+    if(!map[key])map[key]={name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',photo:e.player?.jersey_photo_url,team:e.team_id,count:0};
+    map[key].count++;
   });
   return Object.values(map).sort((a,b)=>b.count-a.count);
 }
