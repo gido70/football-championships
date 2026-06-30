@@ -49,6 +49,8 @@ a{text-decoration:none;color:inherit}
 .var-banner{max-width:900px;margin:14px auto 0;text-align:center;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:#c9a84c;font-weight:800;font-size:13px;padding:9px;border-radius:10px}
 
 .stream-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#f85149,#cc3333);color:#fff;font-weight:800;font-size:14px;padding:10px 22px;border-radius:30px;margin-top:18px}
+.video-embed-wrap{position:relative;width:100%;max-width:760px;margin:18px auto 0;padding-bottom:56.25%;height:0;border-radius:14px;overflow:hidden;border:1px solid #30363d;background:#000}
+.video-embed-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 
 .tabbar{position:fixed;bottom:0;left:0;right:0;background:rgba(22,27,34,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid #21262d;display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
 .tab{flex:1;padding:10px 6px calc(8px + env(safe-area-inset-bottom,0px));font-size:11px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#6e7b8f;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:"Tajawal",sans-serif;transition:.15s}
@@ -232,8 +234,10 @@ async function init(){
   if(m.commentator) chips.push(`<div class="info-chip">🎙️ <b>التعليق</b> ${m.commentator}</div>`);
   document.getElementById('infoStrip').innerHTML=chips.join('');
 
-  if(m.stream_url&&(m.status==='live')){
-    document.getElementById('streamWrap').innerHTML=`<a class="stream-btn" href="${m.stream_url}" target="_blank">📺 شاهد البث المباشر</a>`;
+  if(m.stream_url){
+    document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap">
+      <iframe src="${m.stream_url}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+    </div>`;
   }
 
   if(m.player_of_match_id){
