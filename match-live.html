@@ -239,7 +239,7 @@ async function init(){
 }
 
 async function loadEvents(m,ht,at){
-  const {data}=await sb.from('match_events').select('*,player:players(name,full_name_ar)').eq('match_id',m.id).order('minute');
+  const {data}=await sb.from('match_events').select('*,player:players!player_id(name,full_name_ar)').eq('match_id',m.id).order('minute');
   const wrap=document.getElementById('eventsWrap');
   if(!data||!data.length){wrap.innerHTML='<div class="empty"><span>⚡</span><p>لا توجد أحداث مسجلة بعد</p></div>';return;}
   wrap.innerHTML=data.map(e=>{
