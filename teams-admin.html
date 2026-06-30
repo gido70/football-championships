@@ -50,16 +50,22 @@ document.getElementById('copyBtn').onclick=async()=>{
   const {data:srcTeam,error:e1}=await client.from('teams').select('*').eq('id',srcTeamId).single();
   if(e1||!srcTeam){setCopyMsg('فشل قراءة الفريق المصدر: '+(e1?.message||''),'err');return}
 
-  const newTeam={
-    name:srcTeam.name,
-    short_name:srcTeam.short_name,
-    name_ar:srcTeam.name_ar,
-    logo_url:srcTeam.logo_url,
-    primary_color:srcTeam.primary_color,
-    color_primary:srcTeam.color_primary,
-    is_active:true,
-    tournament_id:selectedTournament
-  };
+  const newTeam={...srcTeam};
+  delete newTeam.id;
+  delete newTeam.created_at;
+  delete newTeam.updated_at;
+  delete newTeam.submit_token;
+  delete newTeam.coach_name;
+  delete newTeam.coach_nationality;
+  delete newTeam.coach_id_url;
+  delete newTeam.coach_photo_url;
+  delete newTeam.coach_status;
+  delete newTeam.submitted_by_name;
+  delete newTeam.admin_nationality;
+  delete newTeam.admin_doc_url;
+  delete newTeam.admin_photo_url;
+  newTeam.tournament_id=selectedTournament;
+  newTeam.is_active=true;
   const {data:inserted,error:e2}=await client.from('teams').insert([newTeam]).select().single();
   if(e2){setCopyMsg('فشل إنشاء الفريق: '+e2.message,'err');return}
 
@@ -67,18 +73,19 @@ document.getElementById('copyBtn').onclick=async()=>{
   if(document.getElementById('copyPlayersChk').checked){
     const {data:srcPlayers}=await client.from('players').select('*').eq('team_id',srcTeamId);
     if(srcPlayers&&srcPlayers.length){
-      const newPlayers=srcPlayers.map(p=>({
-        tournament_id:selectedTournament,
-        team_id:inserted.id,
-        name:p.name,
-        full_name_ar:p.full_name_ar,
-        number:p.number,
-        nationality:p.nationality,
-        is_goalkeeper:p.is_goalkeeper,
-        position:p.position,
-        jersey_photo_url:p.jersey_photo_url,
-        submission_status:'approved'
-      }));
+      const newPlayers=srcPlayers.map(p=>{
+        const np={...p};
+        delete np.id;
+        delete np.created_at;
+        delete np.team_id;
+        delete np.tournament_id;
+        delete np.id_photo_url;
+        delete np.passport_photo_url;
+        np.team_id=inserted.id;
+        np.tournament_id=selectedTournament;
+        np.submission_status='approved';
+        return np;
+      });
       const {error:e3}=await client.from('players').insert(newPlayers);
       playersMsg=e3?(' — لكن فشل نسخ اللاعبين: '+e3.message):(' مع '+newPlayers.length+' لاعبًا');
     }
