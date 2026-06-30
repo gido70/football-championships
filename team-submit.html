@@ -77,8 +77,8 @@ function buildForm(){
         <div class="field"><label>الجنسية</label><input type="text" id="adminNat"></div>
       </div>
       <div class="row2">
-        <div class="field"><label>صورة الهوية أو الجواز</label>${uploadBox('adminDoc')}</div>
-        <div class="field"><label>الصورة الفوتوغرافية</label>${uploadBox('adminPhoto')}</div>
+        <div class="field"><label>صورة فوتوغرافية حديثة — تظهر للجمهور</label>${uploadBox('adminPhoto')}</div>
+        <div class="field"><label>صورة الهوية أو الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('adminDoc')}</div>
       </div>
     </div>
 
@@ -89,6 +89,7 @@ function buildForm(){
         <div class="field"><label>الجنسية</label><input type="text" id="coachNat"></div>
       </div>
       <div class="row2">
+        <div class="field"><label>صورة فوتوغرافية حديثة — تظهر للجمهور</label>${uploadBox('coachPhoto')}</div>
         <div class="field"><label>صورة الهوية أو الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('coachDoc')}</div>
       </div>
     </div>
@@ -140,7 +141,7 @@ function addPlayer(isFirst){
     </div>
     <div class="field"><label>الجنسية</label><input type="text" id="p${n}_nat"></div>
     <div class="row2">
-      <div class="field"><label>صورة فوتوغرافية حديثة للاعب — هذه تظهر للجمهور</label>${uploadBox('p'+n+'_jersey')}</div>
+      <div class="field"><label>صورة فوتوغرافية حديثة — تظهر للجمهور</label>${uploadBox('p'+n+'_jersey')}</div>
       <div class="field"><label>صورة الهوية أو الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('p'+n+'_doc')}</div>
     </div>
   `;
@@ -233,17 +234,23 @@ async function submitAll(){
   msg.innerHTML='<div class="progress">⏳ جاري رفع الملفات وحفظ البيانات...</div>';
 
   const adminDocPath=await uploadFile('adminDoc','team-docs',prefix);
-  const adminPhotoPath=await uploadFile('adminPhoto','team-docs',prefix);
+  const adminPhotoPath=await uploadFile('adminPhoto','team-public',prefix);
+  let adminPhotoUrl=null;
+  if(adminPhotoPath){const {data}=sb.storage.from('team-public').getPublicUrl(adminPhotoPath);adminPhotoUrl=data?.publicUrl;}
   const coachDocPath=await uploadFile('coachDoc','team-docs',prefix);
+  const coachPhotoPath=await uploadFile('coachPhoto','team-public',prefix);
+  let coachPhotoUrl=null;
+  if(coachPhotoPath){const {data}=sb.storage.from('team-public').getPublicUrl(coachPhotoPath);coachPhotoUrl=data?.publicUrl;}
 
   const {error:teamErr}=await sb.from('teams').update({
     submitted_by_name:adminName,
     admin_nationality:document.getElementById('adminNat').value.trim()||null,
     admin_doc_url:adminDocPath,
-    admin_photo_url:adminPhotoPath,
+    admin_photo_url:adminPhotoUrl,
     coach_name:document.getElementById('coachName').value.trim()||null,
     coach_nationality:document.getElementById('coachNat').value.trim()||null,
     coach_id_url:coachDocPath,
+    coach_photo_url:coachPhotoUrl,
     coach_status:'pending'
   }).eq('id',TEAM.id);
 
