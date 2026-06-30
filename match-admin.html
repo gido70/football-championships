@@ -470,9 +470,11 @@ async function saveMin(){
 
 function openEvt(side,type){
   curEvtSide=side;curEvtType=type;
-  document.getElementById(side+'FormLbl').textContent='تسجيل: '+(EL[type]||type);
+  const teamName=side==='h'?(cur.ht?.name_ar||cur.ht?.name||''):(cur.at?.name_ar||cur.at?.name||'');
+  document.getElementById(side+'FormLbl').textContent='تسجيل '+(EL[type]||type)+' — '+teamName;
   document.getElementById(side+'Min').value=document.getElementById('minInput').value||'';
   document.getElementById(side+'Form').classList.add('show');
+  document.getElementById(side+'Form').scrollIntoView({behavior:'smooth',block:'center'});
 }
 function closeEvt(side){document.getElementById(side+'Form').classList.remove('show');}
 
@@ -480,7 +482,7 @@ async function submitEvt(side){
   const pid=document.getElementById(side+'Player').value;
   const min=parseInt(document.getElementById(side+'Min').value)||0;
   const tid=side==='h'?cur.home_team_id:cur.away_team_id;
-  const {error}=await sb.from('match_events').insert({match_id:cur.id,player_id:pid||null,team_id:tid,event_type:curEvtType,minute:min});
+  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:pid||null,team_id:tid,event_type:curEvtType,minute:min});
   if(!error){closeEvt(side);loadEvts();}
   else setMsg('فشل تسجيل الحدث: '+error.message,'err');
 }
