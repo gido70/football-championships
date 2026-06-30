@@ -28,6 +28,14 @@ select option{background:#0f2a45;color:#ffffff}
 .status-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
 .btn-start{background:linear-gradient(135deg,#34d399,#059669)!important}
 .btn-end{background:linear-gradient(135deg,#ff6b6b,#cc3333)!important}
+.btn:disabled{background:#3a4150!important;color:#7d8694!important;cursor:not-allowed;opacity:.55;box-shadow:none!important}
+.lu-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
+.lu-admin-team-hd{font-size:13px;font-weight:800;color:#c9a84c;margin-bottom:8px}
+.lu-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;color:#e6edf3}
+.lu-row label{display:flex;align-items:center;gap:6px;flex:1;cursor:pointer}
+.lu-row .inj-btn{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #ff6b6b;background:transparent;color:#ff6b6b;cursor:pointer}
+.lu-row .inj-btn.active{background:#ff6b6b;color:#fff}
+@media(max-width:680px){.lu-admin-grid{grid-template-columns:1fr}}
 .min-row{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px}
 .min-row input{width:80px;text-align:center;padding:8px 12px;font-size:15px;border-radius:10px}
 
@@ -166,6 +174,25 @@ select option{background:#0f2a45;color:#ffffff}
       </div>
     </div>
 
+    <!-- التشكيلة والإصابات -->
+    <div class="match-meta-panel" id="lineupPanel">
+      <div class="meta-title">👥 التشكيلة الأساسية والإصابات</div>
+      <div class="lu-admin-grid">
+        <div>
+          <div class="lu-admin-team-hd" id="luHName">الفريق الأول</div>
+          <div id="luHList"></div>
+        </div>
+        <div>
+          <div class="lu-admin-team-hd" id="luAName">الفريق الثاني</div>
+          <div id="luAList"></div>
+        </div>
+      </div>
+      <div class="meta-save-row">
+        <button class="btn-meta-save" onclick="saveLineups()">💾 حفظ التشكيلة</button>
+        <span id="lineupStatus" style="font-size:12px;margin-right:10px;color:#34d399"></span>
+      </div>
+    </div>
+
     <!-- VAR -->
     <div class="var-panel">
       <div class="var-title">📺 حالة الفار (VAR)</div>
@@ -265,8 +292,8 @@ async function onMatchChange(){
   if(error||!m){setMsg('تعذر تحميل المباراة: '+(error?.message||''),'err');return;}
   cur=m;
 
-  const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number').eq('team_id',m.home_team_id).order('number');
-  const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number').eq('team_id',m.away_team_id).order('number');
+  const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_injured').eq('team_id',m.home_team_id).order('number');
+  const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured').eq('team_id',m.away_team_id).order('number');
   hPl=hp||[];aPl=ap||[];
   fillSel('hPlayer',hPl);fillSel('aPlayer',aPl);
   fillManOfMatch([...hPl,...aPl]);
@@ -275,6 +302,7 @@ async function onMatchChange(){
   fillMeta(m);
   fillVAR(m);
   loadEvts();
+  loadLineupAdmin(m);
   document.getElementById('matchPanel').style.display='block';
 }
 
@@ -416,7 +444,47 @@ async function loadEvts(){
 
 async function delEvt(id){if(!confirm('حذف؟'))return;await sb.from('match_events').delete().eq('id',id);loadEvts();}
 
-window.chScore=chScore;window.setMatchStatus=setMatchStatus;window.saveMin=saveMin;
+async function loadLineupAdmin(m){
+  document.getElementById('luHName').textContent=m.ht?.name_ar||m.ht?.name||'الفريق الأول';
+  document.getElementById('luAName').textContent=m.at?.name_ar||m.at?.name||'الفريق الثاني';
+  const {data:lu}=await sb.from('match_lineups').select('player_id,is_starting').eq('match_id',m.id);
+  const luMap={};(lu||[]).forEach(x=>luMap[x.player_id]=x.is_starting);
+  const row=p=>{
+    const checked=luMap[p.id]!==undefined?luMap[p.id]:false;
+    return `<div class="lu-row" data-pid="${p.id}">
+      <label><input type="checkbox" class="lu-start" ${checked?'checked':''}>${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</label>
+      <button type="button" class="inj-btn ${p.is_injured?'active':''}" onclick="this.classList.toggle('active')">🩹 مصاب</button>
+    </div>`;
+  };
+  document.getElementById('luHList').innerHTML=hPl.map(row).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
+  document.getElementById('luAList').innerHTML=aPl.map(row).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
+}
+
+async function saveLineups(){
+  if(!cur)return;
+  const st=document.getElementById('lineupStatus');
+  st.style.color='#b7c6dc';st.textContent='جاري الحفظ...';
+  const rows=[];
+  const injuryUpdates=[];
+  document.querySelectorAll('#luHList .lu-row, #luAList .lu-row').forEach(r=>{
+    const pid=r.dataset.pid;
+    const isStart=r.querySelector('.lu-start').checked;
+    const isInjured=r.querySelector('.inj-btn').classList.contains('active');
+    const teamId=r.closest('#luHList')?cur.home_team_id:cur.away_team_id;
+    rows.push({match_id:cur.id,team_id:teamId,player_id:pid,is_starting:isStart});
+    injuryUpdates.push({id:pid,is_injured:isInjured});
+  });
+  const {error:e1}=await sb.from('match_lineups').upsert(rows,{onConflict:'match_id,player_id'});
+  let failedInj=0;
+  for(const u of injuryUpdates){
+    const {error}=await sb.from('players').update({is_injured:u.is_injured}).eq('id',u.id);
+    if(error)failedInj++;
+  }
+  if(e1){st.style.color='#ff6b6b';st.textContent='⚠️ فشل حفظ التشكيلة: '+e1.message;}
+  else{st.style.color='#34d399';st.textContent='✅ تم الحفظ'+(failedInj?' (تعذر تحديث '+failedInj+' حالة إصابة)':'');setTimeout(()=>st.textContent='',3000);}
+}
+
+
 window.openEvt=openEvt;window.closeEvt=closeEvt;window.submitEvt=submitEvt;window.delEvt=delEvt;
 window.saveMeta=saveMeta;window.setVAR=setVAR;
 
