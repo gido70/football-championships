@@ -309,9 +309,15 @@ async function loadMatches(){
 async function loadScorers(){
   const {data:mids}=await sb.from('matches').select('id').eq('tournament_id',TID);
   if(!mids||!mids.length){document.getElementById('scWrap').innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف بعد</p></div>';return;}
-  const {data:evts}=await sb.from('match_events').select('player_id,player:players!player_id(name,full_name_ar,photo_url),team:teams(name,name_ar,primary_color,color_primary)').eq('event_type','goal').in('match_id',mids.map(m=>m.id));
+  const {data:evts}=await sb.from('match_events').select('player_id,manual_player_name,player:players!player_id(name,full_name_ar,photo_url),team:teams(name,name_ar,primary_color,color_primary)').eq('event_type','goal').in('match_id',mids.map(m=>m.id));
   let tot=0;const cnt={};
-  (evts||[]).forEach(e=>{if(!e.player_id)return;tot++;if(!cnt[e.player_id])cnt[e.player_id]={name:e.player?.name||'—',photo:e.player?.photo_url,team:e.team?.name||'',col:e.team?.color_primary,g:0};cnt[e.player_id].g++;});
+  (evts||[]).forEach(e=>{
+    if(!e.player_id&&!e.manual_player_name)return;
+    tot++;
+    const key=e.player_id||('m:'+e.manual_player_name);
+    if(!cnt[key])cnt[key]={name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',photo:e.player?.photo_url,team:e.team?.name_ar||e.team?.name||'',col:e.team?.primary_color||e.team?.color_primary,g:0};
+    cnt[key].g++;
+  });
   document.getElementById('hG').textContent=tot;
   const sorted=Object.values(cnt).sort((a,b)=>b.g-a.g).slice(0,20);
   if(!sorted.length){document.getElementById('scWrap').innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف بعد</p></div>';return;}
