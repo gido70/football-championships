@@ -21,6 +21,14 @@
     <div class="form-grid"><div class="field full"><label>البطولة</label><select id="tSel"></select></div></div>
   </section>
 
+  <section class="panel" style="margin-top:24px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.25)">
+    <h3>🏆 جوائز ختام البطولة</h3>
+    <p class="note">حدّد الفائزين، ستظهر تلقائيًا في أعلى صفحة الإحصائيات للجمهور</p>
+    <div id="awardsForm" class="form-grid"></div>
+    <div class="actions"><button class="btn" style="background:#c9a84c;color:#0d1117" onclick="saveAwards()">💾 حفظ الجوائز</button></div>
+    <div class="status" id="awardsMsg"></div>
+  </section>
+
   <section class="panel" style="margin-top:24px">
     <h3>📥 تصدير حسب الفئة</h3>
     <div class="cards-row" style="grid-template-columns:repeat(3,1fr)">
@@ -53,9 +61,52 @@ async function initTournaments(){
   const {data}=await sb.from('tournaments').select('id,name,name_ar,season_label').order('created_at',{ascending:false});
   const sel=document.getElementById('tSel');
   sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name} ${t.season_label?'- '+t.season_label:''}</option>`).join('');
-  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;loadTeamNames();};
-  if(data&&data.length){TID=data[0].id;TNAME=sel.options[0].text;await loadTeamNames();}
+  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;loadTeamNames();loadAwards();};
+  if(data&&data.length){TID=data[0].id;TNAME=sel.options[0].text;await loadTeamNames();await loadAwards();}
 }
+
+const AWARD_DEFS=[
+  {key:'top_scorer',title:'👟 هداف البطولة'},
+  {key:'best_goalkeeper',title:'🧤 أفضل حارس مرمى'},
+  {key:'best_player',title:'🏅 أفضل لاعب في البطولة'},
+  {key:'best_admin',title:'🧑‍💼 أفضل إداري'},
+  {key:'best_management',title:'🏆 أفضل إدارة فريق'},
+];
+
+function buildAwardsForm(){
+  document.getElementById('awardsForm').innerHTML=AWARD_DEFS.map(a=>`
+    <div class="field full">
+      <label>${a.title}</label>
+      <input type="text" id="award_${a.key}_name" placeholder="اسم الفائز">
+    </div>
+  `).join('');
+}
+
+async function loadAwards(){
+  buildAwardsForm();
+  const {data}=await sb.from('tournament_awards').select('*').eq('tournament_id',TID);
+  (data||[]).forEach(a=>{
+    const el=document.getElementById('award_'+a.award_key+'_name');
+    if(el)el.value=a.winner_name||'';
+  });
+}
+
+async function saveAwards(){
+  const msg=document.getElementById('awardsMsg');
+  msg.className='status';msg.textContent='⏳ جاري الحفظ...';
+  let ok=0,fail=0;
+  for(const a of AWARD_DEFS){
+    const name=document.getElementById('award_'+a.key+'_name').value.trim();
+    if(!name)continue;
+    const {error}=await sb.from('tournament_awards').upsert({
+      tournament_id:TID,award_key:a.key,title:a.title,winner_name:name
+    },{onConflict:'tournament_id,award_key'});
+    if(error)fail++;else ok++;
+  }
+  if(fail){msg.className='status err';msg.textContent='⚠️ تم حفظ '+ok+'، وفشل '+fail;}
+  else{msg.className='status ok';msg.textContent='✅ تم حفظ الجوائز بنجاح';}
+}
+window.saveAwards=saveAwards;
 
 async function loadTeamNames(){
   const {data}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);

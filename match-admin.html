@@ -427,6 +427,14 @@ async function setVAR(status){
   updateVARDisplay(status,teamId);
   const {error}=await sb.from('matches').update({live_status:status,var_team_id:teamId}).eq('id',cur.id);
   if(!error){cur.live_status=status;cur.var_team_id=teamId;}
+  // تسجيل دائم لقرار الفار في سجل الأحداث (لإحصائيات الفار لاحقًا) — فقط للحالات النهائية وليس "جاري المراجعة"
+  if(status!=='checking'&&status!=='none'){
+    const min=parseInt(document.getElementById('minInput').value)||0;
+    await sb.from('match_events').insert({
+      match_id:cur.id,tournament_id:cur.tournament_id,team_id:teamId,
+      event_type:'var_'+status,minute:min,event_subtype:status
+    });
+  }
 }
 
 function updateStatusUI(st){

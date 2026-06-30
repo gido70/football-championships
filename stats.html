@@ -55,6 +55,24 @@ a{text-decoration:none;color:inherit}
 
 .empty{text-align:center;padding:50px 0;color:#8b949e}
 .empty span{font-size:34px;display:block;margin-bottom:8px}
+
+.awards-wrap{padding:6px 16px 4px;max-width:760px;margin:0 auto}
+.awards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.award-card{background:linear-gradient(160deg,#1c2128,#161b22);border:1px solid #c9a84c;border-radius:16px;padding:16px 12px;text-align:center}
+.award-ic{font-size:30px;margin-bottom:6px}
+.award-title{font-size:11px;color:#c9a84c;font-weight:800;margin-bottom:6px}
+.award-name{font-size:14px;font-weight:900}
+.award-team{font-size:11px;color:#8b949e;margin-top:2px}
+
+.match-star-row{display:flex;align-items:center;gap:10px;background:#161b22;border:1px solid #21262d;border-radius:10px;padding:9px 12px;margin-bottom:7px;font-size:13px}
+.match-star-no{background:#21262d;color:#8b949e;font-weight:800;font-size:11px;padding:3px 9px;border-radius:8px;flex-shrink:0}
+.match-star-vs{color:#8b949e;flex:1}
+.match-star-name{color:#ffd700;font-weight:800;display:flex;align-items:center;gap:5px}
+
+.var-team-card{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.var-team-card .vt-name{font-size:14px;font-weight:800;margin-bottom:10px}
+.var-stats-row{display:flex;flex-wrap:wrap;gap:8px}
+.var-pill{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:#c9a84c;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px}
 .sec-title{font-size:13px;color:#8b949e;font-weight:700;margin:18px 0 10px}
 .sec-title:first-child{margin-top:0}
 </style>
@@ -71,10 +89,13 @@ a{text-decoration:none;color:inherit}
   <p>كل الأرقام، الهدافون، البطاقات، والنجوم — في مكان واحد</p>
 </div>
 
+<div id="awardsHero"></div>
+
 <div class="chips" id="chips">
   <button class="chip active" data-s="scorers" onclick="showSec('scorers')">⚽ الهدافون</button>
   <button class="chip" data-s="cards" onclick="showSec('cards')">🟨🟥 البطاقات</button>
   <button class="chip" data-s="motm" onclick="showSec('motm')">⭐ نجوم المباريات</button>
+  <button class="chip" data-s="var" onclick="showSec('var')">🎯 الفار</button>
   <button class="chip" data-s="officials" onclick="showSec('officials')">👨‍⚖️ الحكام والمعلقون</button>
   <button class="chip" data-s="injuries" onclick="showSec('injuries')">🩹 الإصابات</button>
 </div>
@@ -83,6 +104,7 @@ a{text-decoration:none;color:inherit}
   <div class="sec active" id="sec-scorers"><div id="scorersWrap" class="empty">⏳ جاري التحميل...</div></div>
   <div class="sec" id="sec-cards"><div id="cardsWrap"></div></div>
   <div class="sec" id="sec-motm"><div id="motmWrap"></div></div>
+  <div class="sec" id="sec-var"><div id="varWrap"></div></div>
   <div class="sec" id="sec-officials"><div id="officialsWrap"></div></div>
   <div class="sec" id="sec-injuries"><div id="injuriesWrap"></div></div>
 </div>
@@ -125,7 +147,7 @@ async function init(){
   const {data:teams}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
   const teamName={}; (teams||[]).forEach(tm=>teamName[tm.id]=tm.name_ar||tm.name||'');
 
-  const {data:matches}=await sb.from('matches').select('id,referee_1,referee_2,commentator,player_of_match_id,home_team_id,away_team_id').eq('tournament_id',TID);
+  const {data:matches}=await sb.from('matches').select('id,match_no,referee_1,referee_2,commentator,player_of_match_id,home_team_id,away_team_id').eq('tournament_id',TID).order('match_no');
   const mids=(matches||[]).map(m=>m.id);
 
   if(!mids.length){
@@ -140,8 +162,26 @@ async function init(){
   buildScorers(events,teamName);
   buildCards(events,teamName);
   buildMotm(matches,teamName);
+  buildVar(events,teamName);
   buildOfficials(matches);
   buildInjuries(teamName);
+  buildAwards(teamName);
+}
+
+async function buildAwards(teamName){
+  const {data}=await sb.from('tournament_awards').select('*').eq('tournament_id',TID);
+  const wrap=document.getElementById('awardsHero');
+  if(!data||!data.length){wrap.innerHTML='';return;}
+  const icons={top_scorer:'👟',best_goalkeeper:'🧤',best_player:'🏅',best_admin:'🧑‍💼',best_management:'🏆'};
+  wrap.innerHTML=`<div class="awards-wrap"><div class="sec-title" style="text-align:center">🏆 جوائز ختام البطولة</div>
+    <div class="awards-grid">${data.map(a=>`
+      <div class="award-card">
+        <div class="award-ic">${icons[a.award_key]||'🏆'}</div>
+        <div class="award-title">${a.title}</div>
+        <div class="award-name">${a.winner_name||'—'}</div>
+        ${a.winner_team_id&&teamName[a.winner_team_id]?`<div class="award-team">${teamName[a.winner_team_id]}</div>`:''}
+      </div>
+    `).join('')}</div></div>`;
 }
 
 function tally(events,type){
@@ -172,15 +212,62 @@ function buildCards(events,teamName){
 }
 
 async function buildMotm(matches,teamName){
-  const ids=(matches||[]).map(m=>m.player_of_match_id).filter(Boolean);
+  const withStar=(matches||[]).filter(m=>m.player_of_match_id);
   const wrap=document.getElementById('motmWrap');
-  if(!ids.length){wrap.innerHTML='<div class="empty"><span>⭐</span><p>لم يُختر نجم مباراة بعد</p></div>';return;}
+  if(!withStar.length){wrap.innerHTML='<div class="empty"><span>⭐</span><p>لم يُختر نجم مباراة بعد</p></div>';return;}
+
+  const ids=withStar.map(m=>m.player_of_match_id);
   const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url,team_id').in('id',[...new Set(ids)]);
   const pMap={}; (players||[]).forEach(p=>pMap[p.id]=p);
+
   const count={};
   ids.forEach(id=>count[id]=(count[id]||0)+1);
-  const list=Object.entries(count).map(([id,c])=>({id,count:c,...pMap[id]})).sort((a,b)=>b.count-a.count);
-  wrap.innerHTML=list.map((p,i)=>leadRow(i+1,p.full_name_ar||p.name||'—',teamName[p.team_id]||'',p.count,'مرة',p.jersey_photo_url)).join('');
+  const leaderboard=Object.entries(count).map(([id,c])=>({id,count:c,...pMap[id]})).sort((a,b)=>b.count-a.count);
+
+  let html='<div class="sec-title">🏆 الأكثر اختيارًا كنجم مباراة</div>';
+  html+=leaderboard.map((p,i)=>leadRow(i+1,p.full_name_ar||p.name||'—',teamName[p.team_id]||'',p.count,'مرة',p.jersey_photo_url)).join('');
+
+  html+='<div class="sec-title">📅 نجم كل مباراة</div>';
+  html+=withStar.map(m=>{
+    const p=pMap[m.player_of_match_id];
+    return `<div class="match-star-row">
+      <span class="match-star-no">${m.match_no?'م'+m.match_no:''}</span>
+      <span class="match-star-vs">${teamName[m.home_team_id]||''} × ${teamName[m.away_team_id]||''}</span>
+      <span class="match-star-name">⭐ ${p?.full_name_ar||p?.name||'—'}</span>
+    </div>`;
+  }).join('');
+
+  wrap.innerHTML=html;
+}
+
+function buildVar(events,teamName){
+  const wrap=document.getElementById('varWrap');
+  const varEvents=(events||[]).filter(e=>e.event_type&&e.event_type.startsWith('var_'));
+  if(!varEvents.length){wrap.innerHTML='<div class="empty"><span>🎯</span><p>لم تُستخدم تقنية الفار بعد في هذه البطولة</p></div>';return;}
+
+  const labels={var_goal_confirmed:'✅ أهداف مؤكدة',var_goal_disallowed:'❌ أهداف ملغاة',var_penalty_review:'🎯 ركلات جزاء',var_red_card_review:'🟥 بطاقات حمراء مراجَعة'};
+  const byTeam={};
+  varEvents.forEach(e=>{
+    const t=e.team_id?(teamName[e.team_id]||'—'):'بدون تحديد فريق';
+    if(!byTeam[t])byTeam[t]={};
+    byTeam[t][e.event_type]=(byTeam[t][e.event_type]||0)+1;
+  });
+
+  const totalByType={};
+  varEvents.forEach(e=>{totalByType[e.event_type]=(totalByType[e.event_type]||0)+1;});
+
+  let html='<div class="sec-title">📊 الإجمالي العام</div>';
+  html+=`<div class="var-stats-row" style="padding:0 0 16px">${Object.entries(totalByType).map(([k,v])=>`<span class="var-pill">${labels[k]||k}: ${v}</span>`).join('')}</div>`;
+
+  html+='<div class="sec-title">🏟️ حسب الفريق</div>';
+  html+=Object.entries(byTeam).map(([t,stats])=>`
+    <div class="var-team-card">
+      <div class="vt-name">${t}</div>
+      <div class="var-stats-row">${Object.entries(stats).map(([k,v])=>`<span class="var-pill">${labels[k]||k}: ${v}</span>`).join('')}</div>
+    </div>
+  `).join('');
+
+  wrap.innerHTML=html;
 }
 
 function buildOfficials(matches){
