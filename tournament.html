@@ -280,7 +280,7 @@ async function loadMatches(){
       const aName=at.name_ar||at.name||'؟';
       const hColor=ht.primary_color||ht.color_primary||'#8b949e';
       const aColor=at.primary_color||at.color_primary||'#8b949e';
-      html+=`<div class="m-card ${lv?'live':''}">
+      html+=`<a class="m-card ${lv?'live':''}" href="match-live.html?id=${m.id}" style="display:block;cursor:pointer">
         <div class="m-top">
           <span class="m-info">${m.match_date?new Date(m.match_date).toLocaleDateString('ar-SA',{weekday:'short',month:'short',day:'numeric'}):''} ${m.match_time||''}</span>
           <span class="m-badge ${sm[m.status]||'b-sched'}">${sl[m.status]||m.status}</span>
@@ -293,7 +293,7 @@ async function loadMatches(){
           </div>
           <div class="mt away">${aName}<div class="mt-dot" style="background:${aColor}"></div></div>
         </div>
-      </div>`;
+      </a>`;
     });
     html+='</div>';
   });
