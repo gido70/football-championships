@@ -2,13 +2,18 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="البطولة">
 <title>المباراة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh;overscroll-behavior-y:contain}
 a{text-decoration:none;color:inherit}
 .nav{background:#161b22;border-bottom:1px solid #21262d;padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .nav-back{color:#8b949e;font-size:14px;font-weight:700;padding:7px 16px;border-radius:8px;border:1px solid #30363d;transition:.2s}
@@ -45,13 +50,16 @@ a{text-decoration:none;color:inherit}
 
 .stream-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#f85149,#cc3333);color:#fff;font-weight:800;font-size:14px;padding:10px 22px;border-radius:30px;margin-top:18px}
 
-.tabs-bar{background:#161b22;border-bottom:1px solid #21262d;border-top:1px solid #21262d;position:sticky;top:56px;z-index:99;overflow-x:auto;margin-top:26px}
-.tabs{max-width:900px;margin:0 auto;display:flex;padding:0 16px}
-.tab{padding:13px 18px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#8b949e;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
-.tab.active{color:#c9a84c;border-bottom-color:#c9a84c}
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:rgba(22,27,34,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid #21262d;display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
+.tab{flex:1;padding:10px 6px calc(8px + env(safe-area-inset-bottom,0px));font-size:11px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#6e7b8f;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:"Tajawal",sans-serif;transition:.15s}
+.tab .tab-ic{font-size:21px;line-height:1}
+.tab.active{color:#c9a84c}
+.tab:active{transform:scale(.92)}
 
-.main{max-width:900px;margin:0 auto;padding:24px 16px 60px}
-.pane{display:none}.pane.active{display:block}
+.main{max-width:900px;margin:0 auto;padding:18px 16px calc(84px + env(safe-area-inset-bottom,0px))}
+.pane{display:none;animation:fadeIn .25s ease}
+.pane.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .empty{text-align:center;padding:50px 0;color:#8b949e}
 .empty span{font-size:36px;display:block;margin-bottom:8px}
 
@@ -115,16 +123,15 @@ a{text-decoration:none;color:inherit}
 
 <div id="motmWrap"></div>
 
-<div class="tabs-bar">
-  <div class="tabs">
-    <button class="tab active" data-p="events" onclick="showTab('events')">⚡ الأحداث</button>
-    <button class="tab" data-p="lineups" onclick="showTab('lineups')">👥 التشكيلة</button>
-  </div>
-</div>
-
 <div class="main">
   <div class="pane active" id="p-events"><div id="eventsWrap"></div></div>
   <div class="pane" id="p-lineups"><div id="lineupsWrap"></div></div>
+</div>
+
+<div class="tabbar">
+  <a class="tab" href="index.html"><span class="tab-ic">🏠</span>الرئيسية</a>
+  <button class="tab active" data-p="events" onclick="showTab('events')"><span class="tab-ic">⚡</span>الأحداث</button>
+  <button class="tab" data-p="lineups" onclick="showTab('lineups')"><span class="tab-ic">👥</span>التشكيلة</button>
 </div>
 
 <script src="supabase-config.js"></script>
