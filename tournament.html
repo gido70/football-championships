@@ -91,18 +91,21 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .ms-sep{color:#30363d;font-size:20px}
 .ms-sub{font-size:12px;color:#8b949e;margin-top:4px}
 /* SCORERS */
-.sc-item{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:13px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:.2s}
+.sc-item{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:9px 12px;margin-bottom:7px;display:flex;align-items:center;gap:9px;transition:.2s}
 .sc-item:hover{background:#1c2128}
-.sc-rank{font-size:20px;font-weight:900;color:#c9a84c;min-width:28px;text-align:center}
-.sc-photo{width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #30363d;flex-shrink:0}
+.sc-rank{font-size:13px;font-weight:900;color:#c9a84c;width:20px;text-align:center;flex-shrink:0}
+.sc-av-wrap{position:relative;flex-shrink:0}
+.sc-photo{width:34px;height:34px;border-radius:50%;object-fit:cover;border:1.5px solid #30363d}
+.sc-ph{width:34px;height:34px;border-radius:50%;background:#21262d;border:1.5px solid #30363d;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#6e7b8f}
+.sc-num{font-size:10px;font-weight:900;color:#c9a84c;flex-shrink:0}
 .sc-ph{width:44px;height:44px;border-radius:50%;background:#21262d;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid #30363d;flex-shrink:0}
 .sc-info{flex:1}
-.sc-name{font-size:15px;font-weight:800;color:#e6edf3}
+.sc-name{font-size:12px;font-weight:800;color:#e6edf3}
 .sc-team{font-size:12px;color:#8b949e;margin-top:2px;display:flex;align-items:center;gap:5px}
 .sc-tdot{width:8px;height:8px;border-radius:50%}
 .sc-g{text-align:center}
 .sc-gn{font-size:26px;font-weight:900;color:#e6edf3;line-height:1}
-.sc-gl{font-size:11px;color:#8b949e;margin-top:2px}
+.sc-gl{font-size:10px;color:#8b949e}
 /* TEAMS */
 .tm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
 .tm-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:18px 14px;text-align:center;text-decoration:none;display:block;transition:.2s;position:relative;overflow:hidden}
@@ -337,27 +340,56 @@ async function loadMatches(){
 }
 
 async function loadScorers(){
-  const {data:mids}=await sb.from('matches').select('id').eq('tournament_id',TID);
-  if(!mids||!mids.length){document.getElementById('scWrap').innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف بعد</p></div>';return;}
-  const {data:evts}=await sb.from('match_events').select('player_id,manual_player_name,player:players!player_id(name,full_name_ar,photo_url),team:teams(name,name_ar,primary_color,color_primary)').eq('event_type','goal').in('match_id',mids.map(m=>m.id));
+  // جلب مباشر بـ tournament_id — أسرع وأكثر موثوقية
+  const {data:evts}=await sb.from('match_events')
+    .select('player_id,manual_player_name,team_id,player:players!player_id(name,full_name_ar,jersey_photo_url,number)')
+    .eq('tournament_id',TID)
+    .eq('event_type','goal');
+  
+  // جلب بيانات الفرق منفصلة
+  const {data:teams}=await sb.from('teams').select('id,name,name_ar,primary_color,secondary_color').eq('tournament_id',TID);
+  const teamMap={};(teams||[]).forEach(t=>teamMap[t.id]=t);
+  
   let tot=0;const cnt={};
   (evts||[]).forEach(e=>{
     if(!e.player_id&&!e.manual_player_name)return;
     tot++;
-    const key=e.player_id||('m:'+e.manual_player_name);
-    if(!cnt[key])cnt[key]={name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',photo:e.player?.photo_url,team:e.team?.name_ar||e.team?.name||'',col:e.team?.primary_color||e.team?.color_primary,g:0};
+    const key=e.player_id||('m:'+e.manual_player_name+':'+e.team_id);
+    const tm=teamMap[e.team_id]||{};
+    if(!cnt[key])cnt[key]={
+      name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',
+      photo:e.player?.jersey_photo_url,
+      number:e.player?.number,
+      team:tm.name_ar||tm.name||'',
+      col:tm.primary_color||'#8b949e',
+      g:0
+    };
     cnt[key].g++;
   });
   document.getElementById('hG').textContent=tot;
-  const sorted=Object.values(cnt).sort((a,b)=>b.g-a.g).slice(0,20);
+  const sorted=Object.values(cnt).sort((a,b)=>b.g-a.g).slice(0,25);
   if(!sorted.length){document.getElementById('scWrap').innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف بعد</p></div>';return;}
-  document.getElementById('scWrap').innerHTML='<div class="sec-hd">⚽ الهدافون</div>'+sorted.map((p,i)=>`
-    <div class="sc-item">
-      <div class="sc-rank">${i+1}</div>
-      ${p.photo?`<img class="sc-photo" src="${p.photo}" alt="" onerror="this.outerHTML='<div class=sc-ph>👤</div>'">`:'<div class="sc-ph">👤</div>'}
-      <div class="sc-info"><div class="sc-name">${p.name}</div><div class="sc-team"><div class="sc-tdot" style="background:${p.col||'#8b949e'}"></div>${p.team}</div></div>
+  
+  const ini=n=>(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+  const rColor={1:'#ffd700',2:'#c0c0c0',3:'#cd7f32'};
+  
+  document.getElementById('scWrap').innerHTML='<div class="sec-hd">⚽ الهدافون</div>'+sorted.map((p,i)=>{
+    const rank=i+1;
+    const rc=rColor[rank]||'#3a4150';
+    const sn=(p.name||'').split(' ').slice(0,2).join(' ');
+    return `<div class="sc-item" style="${rank<=3?'border-color:'+rc+'44;background:'+rc+'08':''}">
+      <div class="sc-rank" style="color:${rc}">${rank}</div>
+      <div class="sc-av-wrap">
+        ${p.photo
+          ?`<img class="sc-photo" src="${p.photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
+          :''}
+        <div class="sc-ph" style="${p.photo?'display:none':''}">${ini(p.name)}</div>
+      </div>
+      ${p.number?`<span class="sc-num">#${p.number}</span>`:''}
+      <div class="sc-info"><div class="sc-name">${sn}</div><div class="sc-team"><div class="sc-tdot" style="background:${p.col}"></div>${p.team}</div></div>
       <div class="sc-g"><div class="sc-gn">${p.g}</div><div class="sc-gl">هدف</div></div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function loadTeams(){
