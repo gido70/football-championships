@@ -208,6 +208,10 @@ select option{background:#0f2a45;color:#ffffff}
         <div style="font-size:12px;font-weight:800;color:#58a6ff;margin-bottom:8px">🎯 توقعات الجمهور لهذه المباراة</div>
         <div id="predictResultList" style="font-size:13px;color:#8b949e">جاري التحميل...</div>
       </div>
+      <div id="reactResultBox" style="display:none;margin:12px 0;background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.2);border-radius:12px;padding:12px 14px">
+        <div style="font-size:12px;font-weight:800;color:#f85149;margin-bottom:8px">⚡ ردود فعل الجمهور</div>
+        <div id="reactResultList" style="font-size:13px;color:#8b949e;display:flex;gap:16px;flex-wrap:wrap"></div>
+      </div>
       <div class="meta-save-row">
         <button class="btn-meta-save" onclick="saveMeta()">💾 حفظ المعلومات</button>
         <span id="metaStatus" style="font-size:12px;margin-right:10px;color:#34d399"></span>
@@ -398,6 +402,7 @@ async function renderMatch(m){
   document.getElementById('qbScore').textContent=(m.home_score??0)+' - '+(m.away_score??0);
   await loadVoteResults(m.id);
   await loadPredictResults(m.id);
+  await loadReactResults(m.id);
 }
 
 function fillMeta(m){
@@ -792,6 +797,25 @@ window.chScore=chScore;window.setMatchStatus=setMatchStatus;window.saveMin=saveM
 
 document.getElementById('selT').addEventListener('change',onTournChange);
 document.getElementById('selM').addEventListener('change',onMatchChange);
+async function loadReactResults(matchId){
+  const box=document.getElementById('reactResultBox');
+  const list=document.getElementById('reactResultList');
+  if(!matchId){box.style.display='none';return;}
+  const {data}=await sb.from('match_reactions').select('reaction').eq('match_id',matchId);
+  if(!data?.length){box.style.display='none';return;}
+  const total=data.length;
+  const cnt={fire:0,wow:0,clap:0,sad:0};
+  data.forEach(r=>cnt[r.reaction]=(cnt[r.reaction]||0)+1);
+  const ics={fire:'🔥',wow:'😱',clap:'👏',sad:'😔'};
+  box.style.display='block';
+  list.innerHTML=Object.entries(cnt).map(([k,n])=>`
+    <div style="text-align:center">
+      <div style="font-size:22px">${ics[k]}</div>
+      <div style="font-size:15px;font-weight:900;color:#c9a84c">${n}</div>
+      <div style="font-size:10px;color:#6e7b8f">${Math.round(n/total*100)}%</div>
+    </div>`).join('')+`<div style="margin-right:auto;font-size:11px;color:#6e7b8f;align-self:center">إجمالي: ${total}</div>`;
+}
+
 init();
 </script>
 </body>

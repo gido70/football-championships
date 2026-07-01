@@ -78,7 +78,31 @@ a{text-decoration:none;color:inherit}
 .vote-done{text-align:center;padding:24px 0;color:#8b949e;font-size:13px}
 .vote-total{text-align:center;font-size:11px;color:#6e7b8f;margin-top:12px}
 
-/* التوقعات */
+/* ردود الفعل الحية */
+.react-wrap{padding:24px 16px;max-width:500px;margin:0 auto;text-align:center}
+.react-title{font-size:17px;font-weight:900;margin-bottom:6px}
+.react-sub{font-size:12px;color:#8b949e;margin-bottom:28px;line-height:1.6}
+.react-btns{display:flex;justify-content:center;gap:14px;margin-bottom:28px}
+.react-btn{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  background:#161b22;border:1.5px solid #30363d;
+  border-radius:18px;padding:16px 20px;
+  cursor:pointer;transition:.15s;font-family:inherit;min-width:72px;
+}
+.react-btn:active{transform:scale(.92)}
+.react-btn.fired{border-color:#c9a84c;background:rgba(201,168,76,.1)}
+.react-ic{font-size:32px;line-height:1;transition:.2s}
+.react-btn:active .react-ic{transform:scale(1.4)}
+.react-cnt{font-size:13px;font-weight:900;color:#c9a84c}
+.react-bar-wrap{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:16px 18px}
+.react-bar-title{font-size:12px;color:#8b949e;font-weight:700;margin-bottom:12px;text-align:right}
+.react-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.react-bar-row:last-child{margin-bottom:0}
+.react-bar-ic{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+.react-bar-bg{flex:1;height:8px;background:#21262d;border-radius:10px;overflow:hidden}
+.react-bar-fill{height:100%;border-radius:10px;transition:width .6s ease}
+.react-bar-pct{font-size:11px;color:#8b949e;font-weight:700;width:30px;text-align:left;flex-shrink:0}
+.react-total{font-size:11px;color:#6e7b8f;margin-top:12px;text-align:center}
 .pred-wrap{padding:20px 16px;max-width:500px;margin:0 auto;text-align:center}
 .pred-title{font-size:17px;font-weight:900;margin-bottom:6px}
 .pred-sub{font-size:12px;color:#8b949e;margin-bottom:22px;line-height:1.6}
@@ -201,6 +225,7 @@ a{text-decoration:none;color:inherit}
   <div class="pane" id="p-lineups"><div id="lineupsWrap"></div></div>
   <div class="pane" id="p-vote"><div id="voteWrap"></div></div>
   <div class="pane" id="p-predict"><div id="predictWrap"></div></div>
+  <div class="pane" id="p-react"><div id="reactWrap"></div></div>
 </div>
 
 <div class="tabbar">
@@ -209,6 +234,7 @@ a{text-decoration:none;color:inherit}
   <button class="tab" data-p="lineups" onclick="showTab('lineups')"><span class="tab-ic">👥</span>التشكيلة</button>
   <button class="tab" data-p="vote" onclick="showTab('vote');loadVote()"><span class="tab-ic">⭐</span>صوّت</button>
   <button class="tab" data-p="predict" onclick="showTab('predict');loadPredict()"><span class="tab-ic">🎯</span>توقّع</button>
+  <button class="tab" data-p="react" onclick="showTab('react');loadReact()"><span class="tab-ic">⚡</span>تفاعل</button>
 </div>
 
 <script src="supabase-config.js"></script>
@@ -388,6 +414,86 @@ async function submitPredict(matchId){
   if(!error){predictLoaded=false;await renderPredict();}
 }
 window.submitPredict=submitPredict;
+
+// ---------- ردود الفعل الحية ----------
+const REACTIONS=[
+  {key:'fire', ic:'🔥', label:'ملتهب'},
+  {key:'wow',  ic:'😱', label:'رائع'},
+  {key:'clap', ic:'👏', label:'تصفيق'},
+  {key:'sad',  ic:'😔', label:'محبط'},
+];
+const REACT_COLORS={fire:'#f85149',wow:'#c9a84c',clap:'#3fb950',sad:'#58a6ff'};
+
+let reactLoaded=false;
+let reactChannel=null;
+
+async function loadReact(){
+  if(!cur){document.getElementById('reactWrap').innerHTML='<div class="react-wrap"><div class="empty"><span>⚡</span><p>اختر مباراة</p></div></div>';return;}
+  if(!reactLoaded){
+    reactLoaded=true;
+    // اشتراك Realtime لتحديث فوري
+    if(reactChannel)reactChannel.unsubscribe();
+    reactChannel=sb.channel('react-'+cur.id)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'match_reactions',filter:'match_id=eq.'+cur.id},
+        ()=>renderReact())
+      .subscribe();
+  }
+  await renderReact();
+}
+
+async function renderReact(){
+  const MID=cur?.id;
+  if(!MID)return;
+  const {data}=await sb.from('match_reactions').select('reaction').eq('match_id',MID);
+  const total=(data||[]).length;
+  const counts={fire:0,wow:0,clap:0,sad:0};
+  (data||[]).forEach(r=>counts[r.reaction]=(counts[r.reaction]||0)+1);
+  const max=Math.max(...Object.values(counts),1);
+
+  document.getElementById('reactWrap').innerHTML=`
+    <div class="react-wrap">
+      <div class="react-title">⚡ تفاعل مع المباراة</div>
+      <div class="react-sub">اضغط أي رد فعل — تظهر للجمهور كله فورًا</div>
+      <div class="react-btns">
+        ${REACTIONS.map(r=>`
+          <button class="react-btn" onclick="sendReact('${r.key}',this)" data-key="${r.key}">
+            <span class="react-ic">${r.ic}</span>
+            <span class="react-cnt">${counts[r.key]||0}</span>
+          </button>`).join('')}
+      </div>
+      ${total>0?`
+      <div class="react-bar-wrap">
+        <div class="react-bar-title">توزيع ردود الفعل</div>
+        ${REACTIONS.map(r=>`
+          <div class="react-bar-row">
+            <span class="react-bar-ic">${r.ic}</span>
+            <div class="react-bar-bg">
+              <div class="react-bar-fill" style="width:${Math.round((counts[r.key]||0)/max*100)}%;background:${REACT_COLORS[r.key]}"></div>
+            </div>
+            <span class="react-bar-pct">${Math.round((counts[r.key]||0)/total*100)}%</span>
+          </div>`).join('')}
+        <div class="react-total">إجمالي التفاعلات: ${total}</div>
+      </div>`:''}
+    </div>`;
+}
+
+async function sendReact(type,btn){
+  if(!cur)return;
+  btn.classList.add('fired');
+  btn.querySelector('.react-ic').style.transform='scale(1.5)';
+  setTimeout(()=>{
+    btn.querySelector('.react-ic').style.transform='';
+  },300);
+  await sb.from('match_reactions').insert({
+    match_id:cur.id,
+    tournament_id:cur.tournament_id,
+    reaction:type
+  });
+  // تحديث العداد فوراً بدون انتظار Realtime
+  const cnt=btn.querySelector('.react-cnt');
+  cnt.textContent=parseInt(cnt.textContent||0)+1;
+}
+window.sendReact=sendReact;
 
 function initials(name){return (name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
 
