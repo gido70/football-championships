@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#0d1117">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-app.png">
 <title>الإحصائيات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -31,17 +33,17 @@ a{text-decoration:none;color:inherit}
 .sec.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-.lead-row{display:flex;align-items:center;gap:14px;background:#161b22;border:1px solid #30363d;border-radius:16px;padding:14px 16px;margin-bottom:10px;position:relative;overflow:hidden}
-.lead-rank{font-size:22px;font-weight:900;color:#3a4150;width:30px;text-align:center;flex-shrink:0}
+.lead-row{display:flex;align-items:center;gap:10px;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.lead-rank{font-size:14px;font-weight:900;color:#3a4150;width:22px;text-align:center;flex-shrink:0}
 .lead-row.r1 .lead-rank{color:#ffd700}
 .lead-row.r2 .lead-rank{color:#c0c0c0}
 .lead-row.r3 .lead-rank{color:#cd7f32}
-.lead-row.r1{border-color:rgba(255,215,0,.4);background:linear-gradient(90deg,rgba(255,215,0,.08),#161b22)}
-.lead-photo{width:46px;height:46px;border-radius:50%;background:#21262d;object-fit:cover;flex-shrink:0;border:2px solid #30363d}
+.lead-row.r1{border-color:rgba(255,215,0,.3);background:rgba(255,215,0,.04)}
+.lead-photo{width:36px;height:36px;border-radius:50%;background:#21262d;object-fit:cover;flex-shrink:0;border:1.5px solid #30363d}
 .lead-info{flex:1;min-width:0}
-.lead-name{font-size:15px;font-weight:800}
-.lead-team{font-size:12px;color:#8b949e;margin-top:2px}
-.lead-val{font-size:20px;font-weight:900;color:#c9a84c;flex-shrink:0;display:flex;align-items:center;gap:6px}
+.lead-name{font-size:13px;font-weight:800}
+.lead-team{font-size:11px;color:#8b949e;margin-top:1px}
+.lead-val{font-size:15px;font-weight:900;color:#c9a84c;flex-shrink:0;display:flex;align-items:center;gap:4px}
 .lead-val .u{font-size:11px;color:#8b949e;font-weight:600}
 
 .lead-val.yellow{color:#ffd54f}
@@ -195,8 +197,9 @@ async function buildAwards(teamName){
   const {data}=await sb.from('tournament_awards').select('*').eq('tournament_id',TID);
   const wrap=document.getElementById('awardsHero');
   if(!data||!data.length){wrap.innerHTML='';return;}
-  const icons={top_scorer:'👟',best_goalkeeper:'🧤',best_player:'🏅',best_admin:'🧑‍💼',best_management:'🏆'};
-  wrap.innerHTML=`<div class="awards-wrap"><div class="sec-title" style="text-align:center">🏆 جوائز ختام البطولة</div>
+  const icons={top_scorer:'⚽',best_goalkeeper:'🧤',best_player:'🏅',best_admin:'🧑‍💼',best_management:'🏆'};
+  wrap.innerHTML=`<div class="awards-wrap">
+    <div class="sec-title" style="text-align:center;justify-content:center">🏆 جوائز ختام البطولة</div>
     <div class="awards-grid">${data.map(a=>`
       <div class="award-card">
         <div class="award-ic">${icons[a.award_key]||'🏆'}</div>
@@ -204,7 +207,13 @@ async function buildAwards(teamName){
         <div class="award-name">${a.winner_name||'—'}</div>
         ${a.winner_team_id&&teamName[a.winner_team_id]?`<div class="award-team">${teamName[a.winner_team_id]}</div>`:''}
       </div>
-    `).join('')}</div></div>`;
+    `).join('')}</div>
+    <div style="text-align:center;margin-top:14px">
+      <a href="awards.html?id=${TID}" style="display:inline-flex;align-items:center;gap:6px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:#c9a84c;font-size:13px;font-weight:800;padding:10px 20px;border-radius:20px;text-decoration:none">
+        🏆 صفحة الجوائز كاملة ←
+      </a>
+    </div>
+  </div>`;
 }
 
 function tally(events,type){

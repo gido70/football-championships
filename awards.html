@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#060e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>جوائز البطولة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:"Tajawal",sans-serif;background:#060e1a;color:#e8f0ff;direction:rtl;min-height:100vh;
+  background-image:radial-gradient(ellipse 800px 500px at 50% 0%,rgba(201,168,76,.15),transparent 65%);}
+a{text-decoration:none;color:inherit}
+
+.nav{position:sticky;top:0;z-index:100;background:rgba(6,14,26,.85);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.07);padding:env(safe-area-inset-top,0) 0 0}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;max-width:900px;margin:0 auto}
+.nav-back{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#8b949e;padding:8px 14px;border:1px solid #30363d;border-radius:20px}
+.nav-title{font-size:15px;font-weight:900;color:#c9a84c}
+
+.hero{text-align:center;padding:40px 20px 20px;max-width:700px;margin:0 auto}
+.hero-trophy{font-size:56px;margin-bottom:12px;display:block;filter:drop-shadow(0 0 20px rgba(201,168,76,.4))}
+.hero h1{font-size:clamp(22px,5vw,34px);font-weight:900;color:#fff;margin-bottom:8px}
+.hero p{font-size:13px;color:#8b949e;line-height:1.7}
+
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px calc(40px + env(safe-area-inset-bottom,0px))}
+.award-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+
+.award-card{
+  background:linear-gradient(160deg,#0f1f35,#091624);
+  border:1px solid rgba(201,168,76,.2);
+  border-radius:20px;overflow:hidden;
+  position:relative;
+}
+.award-card.top{border-color:rgba(201,168,76,.5);background:linear-gradient(160deg,#1a2d10,#0f1f07)}
+
+.award-banner{
+  height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+  background:linear-gradient(180deg,rgba(201,168,76,.12),rgba(201,168,76,.04));
+  border-bottom:1px solid rgba(201,168,76,.15);
+}
+.award-photo{
+  width:80px;height:80px;border-radius:50%;object-fit:cover;
+  border:3px solid rgba(201,168,76,.5);
+  box-shadow:0 0 20px rgba(201,168,76,.2);
+}
+.award-photo-ph{
+  width:80px;height:80px;border-radius:50%;
+  background:rgba(201,168,76,.08);
+  border:3px dashed rgba(201,168,76,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:rgba(201,168,76,.4);
+  cursor:pointer;transition:.2s;
+}
+.award-photo-ph:hover{background:rgba(201,168,76,.14);border-color:rgba(201,168,76,.5)}
+.award-ic{font-size:44px;position:absolute;top:10px;right:12px;opacity:.25}
+
+.award-body{padding:16px}
+.award-type{font-size:11px;font-weight:800;color:#c9a84c;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.award-name{font-size:17px;font-weight:900;color:#fff;margin-bottom:4px;line-height:1.3}
+.award-team{font-size:12px;color:#8b949e;display:flex;align-items:center;gap:4px}
+
+/* حقل رفع صورة مخفي */
+.upload-input{display:none}
+
+/* بطاقة فارغة (placeholder) */
+.award-empty{
+  background:rgba(255,255,255,.02);
+  border:1px dashed rgba(255,255,255,.1);
+  border-radius:20px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:30px;text-align:center;color:#6e7b8f;font-size:13px;
+  min-height:200px;
+}
+
+.sec-title{font-size:12px;font-weight:800;color:#c9a84c;letter-spacing:1.5px;margin:28px 0 14px;display:flex;align-items:center;gap:8px}
+.sec-title::before{content:"";width:3px;height:14px;background:#c9a84c;border-radius:2px}
+.sec-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(201,168,76,.2),transparent)}
+
+@media(max-width:480px){
+  .award-grid{grid-template-columns:1fr}
+  .hero{padding:28px 14px 14px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-back" id="backLink" href="index.html">← رجوع</a>
+    <span class="nav-title">🏆 جوائز البطولة</span>
+    <div></div>
+  </div>
+</nav>
+
+<div class="hero">
+  <span class="hero-trophy">🏆</span>
+  <h1 id="tName">جوائز ختام البطولة</h1>
+  <p>تكريم أبرز اللاعبين والمدربين والإداريين في البطولة</p>
+</div>
+
+<div class="wrap">
+  <div class="sec-title">جوائز فردية</div>
+  <div class="award-grid" id="awardsGrid">
+    <div class="award-empty"><span style="font-size:32px;margin-bottom:10px">⏳</span><p>جاري تحميل الجوائز...</p></div>
+  </div>
+</div>
+
+<script src="supabase-config.js"></script>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const TID=new URLSearchParams(location.search).get('id');
+
+const AWARD_DEFS=[
+  {key:'top_scorer',     title:'هداف البطولة',        ic:'⚽', color:'#f85149'},
+  {key:'best_player',    title:'أفضل لاعب',            ic:'🏅', color:'#c9a84c'},
+  {key:'best_goalkeeper',title:'أفضل حارس مرمى',      ic:'🧤', color:'#58a6ff'},
+  {key:'best_admin',     title:'أفضل إداري',           ic:'🧑‍💼', color:'#3fb950'},
+  {key:'best_management',title:'أفضل إدارة فريق',     ic:'🏆', color:'#a855f7'},
+];
+
+async function init(){
+  if(!TID){document.getElementById('awardsGrid').innerHTML='<div class="award-empty"><p>لم يتم تحديد البطولة</p></div>';return;}
+  document.getElementById('backLink').href='tournament.html?id='+TID;
+
+  const {data:t}=await sb.from('tournaments').select('name,name_ar').eq('id',TID).single();
+  if(t)document.getElementById('tName').textContent='جوائز '+(t.name_ar||t.name||'');
+
+  const {data:awards}=await sb.from('tournament_awards').select('*').eq('tournament_id',TID);
+  const {data:teams}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
+  const teamName={};(teams||[]).forEach(tm=>teamName[tm.id]=tm.name_ar||tm.name||'');
+
+  const aMap={};(awards||[]).forEach(a=>aMap[a.award_key]=a);
+
+  document.getElementById('awardsGrid').innerHTML=AWARD_DEFS.map(def=>{
+    const a=aMap[def.key];
+    const photo=a?.winner_photo_url||null;
+    const name=a?.winner_name||null;
+    const team=a?.winner_team_id?teamName[a.winner_team_id]:'';
+    return `<div class="award-card${def.key==='top_scorer'||def.key==='best_player'?' top':''}">
+      <div class="award-banner">
+        <span class="award-ic">${def.ic}</span>
+        ${photo
+          ?`<img class="award-photo" src="${photo}" alt="${name||''}">`
+          :`<div class="award-photo-ph" title="ارفع صورة من stats-admin.html">${def.ic}</div>`}
+      </div>
+      <div class="award-body">
+        <div class="award-type">${def.ic} ${def.title}</div>
+        <div class="award-name">${name||'—'}</div>
+        ${team?`<div class="award-team">👥 ${team}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+init();
+</script>
+</body>
+</html>
