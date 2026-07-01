@@ -8,6 +8,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="البطولات">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>منصة البطولات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -44,12 +46,11 @@ img{display:block}
   max-width:1100px;margin:0 auto;
   gap:12px;
 }
-.tb-brand{display:flex;align-items:center;gap:10px}
-.tb-logo{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(201,168,76,.4))}
-.tb-logo-ph{font-size:22px}
-.tb-name{font-size:17px;font-weight:900;color:#fff;line-height:1.1}
+.tb-brand{display:flex;align-items:center;justify-content:center;gap:10px;flex:1}
+.tb-logo-ph{font-size:28px;line-height:1}
+.tb-name{font-size:20px;font-weight:900;color:#fff;line-height:1.1;text-align:center}
 .tb-name span{color:#c9a84c}
-.tb-admin{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;color:rgba(255,255,255,.7)}
+.tb-admin{display:none}
 
 /* ===== HERO ===== */
 .hero{
@@ -263,13 +264,9 @@ img{display:block}
 <header class="topbar">
   <div class="topbar-inner">
     <div class="tb-brand">
-      <img class="tb-logo" src="https://gido70.github.io/football-championships/logo_cup_2026.png" onerror="this.style.display='none';this.nextSibling.style.display='block'" alt="">
-      <span class="tb-logo-ph" style="display:none">🏆</span>
-      <div>
-        <div class="tb-name">منصة <span>البطولات</span></div>
-      </div>
+      <span class="tb-logo-ph">⚽</span>
+      <div class="tb-name">منصة <span>البطولات</span></div>
     </div>
-    <a class="tb-admin" href="admin-home.html">⚙️ الإدارة</a>
   </div>
 </header>
 
