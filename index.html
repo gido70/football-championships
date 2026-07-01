@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#0d1117">
+<meta name="theme-color" content="#060e1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,153 +12,393 @@
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh}
-/* NAV */
-.nav{background:#161b22;border-bottom:3px solid #c9a84c;padding:0 28px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.nav-logo{font-size:20px;font-weight:900;color:white;display:flex;align-items:center;gap:10px}
-.nav-logo em{color:#c9a84c;font-style:normal}
-.nav-links{display:flex;gap:6px}
-.nav-links a{color:rgba(255,255,255,.75);text-decoration:none;font-size:15px;font-weight:600;padding:7px 16px;border-radius:8px;transition:.2s}
-.nav-links a:hover{background:rgba(255,255,255,.1);color:white}
+/* ===== RESET & BASE ===== */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  font-family:"Tajawal",sans-serif;
+  background:#060e1a;
+  color:#e8f0ff;
+  direction:rtl;
+  min-height:100vh;
+  overscroll-behavior-y:contain;
+  background-image:
+    radial-gradient(ellipse 900px 500px at 80% 0%, rgba(74,130,255,.18), transparent 65%),
+    radial-gradient(ellipse 700px 400px at 10% 70%, rgba(201,168,76,.10), transparent 60%);
+}
+a{text-decoration:none;color:inherit}
+img{display:block}
 
-/* HERO */
-.hero{background:linear-gradient(135deg,#0b1f3a,#16213e,#0f3460);padding:72px 24px 52px;text-align:center;border-bottom:1px solid #21262d}
-.hero-badge{display:inline-block;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:#c9a84c;font-size:13px;font-weight:700;padding:6px 18px;border-radius:30px;margin-bottom:22px}
-.hero h1{font-size:clamp(32px,5vw,56px);font-weight:900;color:white;margin-bottom:14px;line-height:1.2}
+/* ===== TOPBAR ===== */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:rgba(6,14,26,.85);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  padding:env(safe-area-inset-top, 0) 0 0;
+}
+.topbar-inner{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;
+  max-width:1100px;margin:0 auto;
+  gap:12px;
+}
+.tb-brand{display:flex;align-items:center;gap:10px}
+.tb-logo{width:32px;height:32px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(201,168,76,.4))}
+.tb-logo-ph{font-size:22px}
+.tb-name{font-size:17px;font-weight:900;color:#fff;line-height:1.1}
+.tb-name span{color:#c9a84c}
+.tb-admin{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;color:rgba(255,255,255,.7)}
+
+/* ===== HERO ===== */
+.hero{
+  position:relative;overflow:hidden;
+  padding:calc(env(safe-area-inset-top,0px) + 40px) 20px 48px;
+  text-align:center;
+}
+.hero::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(0,0,0,.3),transparent 60%,rgba(6,14,26,.8));
+  z-index:1;
+}
+.hero-bg-art{
+  position:absolute;inset:0;z-index:0;overflow:hidden;
+}
+.hero-bg-art::before{
+  content:"";position:absolute;
+  width:500px;height:500px;
+  top:-150px;left:50%;transform:translateX(-50%);
+  background:radial-gradient(circle, rgba(74,130,255,.2), transparent 65%);
+  border-radius:50%;
+}
+.hero-bg-art::after{
+  content:"";position:absolute;
+  width:200px;height:200px;
+  bottom:-50px;right:-40px;
+  background:radial-gradient(circle, rgba(201,168,76,.25), transparent 65%);
+  border-radius:50%;
+}
+.hero-content{position:relative;z-index:2;max-width:600px;margin:0 auto}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(201,168,76,.12);
+  border:1px solid rgba(201,168,76,.3);
+  color:#c9a84c;font-size:12px;font-weight:800;
+  padding:5px 14px;border-radius:30px;margin-bottom:20px;
+  letter-spacing:.3px;
+}
+.hero h1{
+  font-size:clamp(26px,7vw,50px);
+  font-weight:900;color:#fff;
+  line-height:1.2;margin-bottom:10px;
+}
 .hero h1 em{color:#c9a84c;font-style:normal}
-.hero p{font-size:17px;color:rgba(255,255,255,.6);margin-bottom:44px;font-weight:500}
-.hero-stats{display:flex;gap:0;justify-content:center;flex-wrap:wrap}
-.hs{text-align:center;padding:0 36px;border-left:1px solid rgba(255,255,255,.1)}
+.hero-sub{font-size:14px;color:rgba(255,255,255,.5);margin-bottom:32px;line-height:1.7}
+
+/* إحصائيات Hero */
+.hero-stats{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:0;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;overflow:hidden;
+}
+.hs{padding:14px 8px;text-align:center;border-left:1px solid rgba(255,255,255,.07)}
 .hs:last-child{border-left:none}
-.hs-num{font-size:40px;font-weight:900;color:#c9a84c;line-height:1}
-.hs-lbl{font-size:13px;color:rgba(255,255,255,.45);margin-top:6px}
-/* LIVE */
-.live-sec{max-width:1200px;margin:32px auto 0;padding:0 20px}
-.sec-hd{font-size:13px;font-weight:700;color:#c9a84c;text-transform:uppercase;letter-spacing:2px;margin-bottom:18px;display:flex;align-items:center;gap:10px}
-.sec-hd::before{content:"";width:4px;height:18px;background:#c9a84c;border-radius:2px}
-.sec-hd::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(201,168,76,.2),transparent)}
-.live-card{background:linear-gradient(135deg,#1c0a0a,#2a1010);border:2px solid rgba(248,81,73,.3);border-radius:14px;padding:20px 24px;margin-bottom:12px;cursor:pointer;transition:.2s}
-.live-card:hover{border-color:#f85149;box-shadow:0 8px 24px rgba(248,81,73,.15)}
-.live-top{display:flex;justify-content:space-between;margin-bottom:16px}
-.live-tourn{font-size:13px;color:rgba(255,255,255,.45)}
-.live-badge{background:#f85149;color:white;font-size:12px;padding:3px 12px;border-radius:20px;font-weight:700;display:flex;align-items:center;gap:6px}
-.live-dot{width:7px;height:7px;border-radius:50%;background:white;animation:blink 1s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.sb{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center}
+.hs-n{font-size:clamp(22px,5vw,34px);font-weight:900;color:#c9a84c;line-height:1}
+.hs-l{font-size:11px;color:rgba(255,255,255,.4);margin-top:4px;font-weight:600}
+
+/* ===== مباريات مباشرة ===== */
+.section{max-width:1100px;margin:0 auto;padding:28px 16px 0}
+.sec-title{
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;font-weight:800;color:#c9a84c;
+  letter-spacing:1.5px;text-transform:uppercase;
+  margin-bottom:16px;
+}
+.sec-title::before{content:"";width:3px;height:16px;background:#c9a84c;border-radius:2px;flex-shrink:0}
+.sec-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(201,168,76,.25),transparent)}
+
+.live-card{
+  background:linear-gradient(135deg,rgba(40,8,8,.9),rgba(30,10,10,.8));
+  border:1.5px solid rgba(248,81,73,.3);
+  border-radius:16px;padding:16px 18px;margin-bottom:10px;
+  cursor:pointer;transition:.2s;
+  display:block;text-decoration:none;
+}
+.live-card:active{transform:scale(.98)}
+.live-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.live-tourn{font-size:12px;color:rgba(255,255,255,.4);font-weight:600}
+.live-badge{
+  display:flex;align-items:center;gap:5px;
+  background:#f85149;color:#fff;
+  font-size:11px;font-weight:800;
+  padding:4px 10px;border-radius:20px;
+}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#fff;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.scoreboard{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
 .sb-team{text-align:center}
-.sb-name{font-size:16px;font-weight:800;color:white;margin-bottom:6px}
-.sb-bar{height:4px;border-radius:2px;width:44px;margin:0 auto}
-.sb-score{text-align:center}
-.sb-nums{font-size:44px;font-weight:900;color:white;display:flex;align-items:center;gap:10px;justify-content:center}
-.sb-sep{font-size:28px;color:rgba(255,255,255,.2)}
-.sb-min{font-size:13px;color:#f85149;font-weight:700;margin-top:6px}
-/* TOURNAMENTS */
-.main{max-width:1200px;margin:0 auto;padding:36px 20px}
-.t-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;margin-bottom:48px}
-.t-card{background:#161b22;border:1px solid #30363d;border-radius:16px;overflow:hidden;cursor:pointer;transition:.3s;text-decoration:none;display:block}
-.t-card:hover{transform:translateY(-5px);border-color:rgba(201,168,76,.4);box-shadow:0 16px 40px rgba(0,0,0,.4)}
-.t-banner{height:116px;display:flex;align-items:center;justify-content:center;position:relative}
-.t-logo{width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}
-.t-logo-ph{display:none}
-.t-body{padding:18px}
-.t-name{font-size:17px;font-weight:800;color:#e6edf3;margin-bottom:4px}
-.t-season{font-size:16px;font-weight:700;color:#c9a84c;margin-bottom:12px;letter-spacing:1px}
-.t-meta{display:flex;gap:14px}
-.t-meta span{font-size:13px;color:#8b949e}
-.pill{position:absolute;top:10px;right:10px;font-size:11px;padding:3px 12px;border-radius:20px;font-weight:700}
+.sb-circle{
+  width:44px;height:44px;border-radius:50%;margin:0 auto 8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:#fff;
+  border:2px solid rgba(255,255,255,.15);
+}
+.sb-name{font-size:13px;font-weight:800;color:#e8f0ff;line-height:1.3}
+.sb-score-wrap{text-align:center}
+.sb-score{
+  font-size:42px;font-weight:900;color:#fff;
+  display:flex;align-items:center;gap:8px;justify-content:center;
+  line-height:1;
+}
+.sb-sep{font-size:24px;color:rgba(255,255,255,.2)}
+.sb-min{font-size:12px;color:#f85149;font-weight:700;margin-top:6px}
+
+/* ===== بطاقات البطولات ===== */
+.t-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+  gap:16px;margin-bottom:40px;
+}
+.t-card{
+  background:linear-gradient(160deg,#0f1f35,#091624);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;overflow:hidden;
+  cursor:pointer;transition:.25s;
+  display:block;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+}
+.t-card:active{transform:scale(.97)}
+@media(hover:hover){
+  .t-card:hover{
+    transform:translateY(-4px);
+    border-color:rgba(201,168,76,.35);
+    box-shadow:0 12px 36px rgba(0,0,0,.4);
+  }
+}
+.t-banner{
+  height:120px;display:flex;align-items:center;
+  justify-content:center;position:relative;overflow:hidden;
+}
+.t-banner::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(0deg,rgba(9,22,36,.8),transparent 50%);
+}
+.t-logo{width:72px;height:72px;object-fit:contain;z-index:1;filter:drop-shadow(0 4px 14px rgba(0,0,0,.5))}
+.t-logo-ph{font-size:40px;z-index:1;opacity:.7}
+.t-pill{
+  position:absolute;top:10px;left:10px;z-index:2;
+  font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;
+}
 .pill-active{background:rgba(63,185,80,.2);color:#3fb950;border:1px solid rgba(63,185,80,.3)}
 .pill-completed{background:rgba(88,166,255,.15);color:#58a6ff;border:1px solid rgba(88,166,255,.2)}
-.pill-draft{background:#21262d;color:#8b949e;border:1px solid #30363d}
-.empty{text-align:center;padding:72px 20px;color:#8b949e}
-.empty-icon{font-size:56px;margin-bottom:16px;opacity:.35;display:block}
-.skeleton{background:linear-gradient(90deg,#161b22 25%,#1c2128 50%,#161b22 75%);background-size:200% 100%;animation:sh 1.5s infinite;border-radius:16px;height:196px}
-@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.footer{background:#161b22;border-top:1px solid #21262d;padding:28px;text-align:center;color:#8b949e;font-size:13px;margin-top:20px}
+.t-body{padding:16px 18px}
+.t-name{font-size:16px;font-weight:800;color:#e8f0ff;margin-bottom:2px;line-height:1.3}
+.t-season{font-size:18px;font-weight:900;color:#c9a84c;margin-bottom:12px;letter-spacing:1px}
+.t-divider{height:1px;background:rgba(255,255,255,.06);margin-bottom:12px}
+.t-meta{display:flex;gap:0;flex-wrap:wrap}
+.t-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:8px;padding:5px 10px;
+  font-size:12px;color:rgba(255,255,255,.6);
+  font-weight:600;margin-left:6px;margin-bottom:4px;
+}
+.t-actions{
+  display:flex;gap:8px;margin-top:14px;
+}
+.t-btn{
+  flex:1;text-align:center;
+  background:rgba(201,168,76,.1);
+  border:1px solid rgba(201,168,76,.25);
+  color:#c9a84c;font-size:12px;font-weight:800;
+  padding:9px 6px;border-radius:10px;
+  cursor:pointer;transition:.15s;
+}
+.t-btn.primary{background:linear-gradient(135deg,#c9a84c,#a8842e);color:#0d1117;border:none}
+.t-btn:active{opacity:.8}
+
+/* ===== Skeleton ===== */
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel{
+  border-radius:20px;height:200px;
+  background:linear-gradient(90deg,#0f1f35 25%,#152234 50%,#0f1f35 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.5s infinite;
+}
+
+/* ===== Empty ===== */
+.empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,.3)}
+.empty-ic{font-size:52px;margin-bottom:14px;display:block;opacity:.4}
+
+/* ===== Footer ===== */
+.footer{
+  text-align:center;padding:28px 20px calc(28px + env(safe-area-inset-bottom,0px));
+  color:rgba(255,255,255,.2);font-size:12px;
+  border-top:1px solid rgba(255,255,255,.06);
+  margin-top:24px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:480px){
+  .topbar-inner{padding:12px 14px}
+  .hero{padding:36px 14px 40px}
+  .hero h1{font-size:26px}
+  .section{padding:22px 12px 0}
+  .t-grid{grid-template-columns:1fr;gap:12px}
+  .tb-admin{display:none}
+}
+@media(max-width:360px){
+  .hs-n{font-size:20px}
+  .sb-score{font-size:34px}
+}
 </style>
 </head>
 <body>
 
-<nav class="nav">
-  <div class="nav-logo">🏆 <em>منصة البطولات</em></div>
-</nav>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="tb-brand">
+      <img class="tb-logo" src="https://gido70.github.io/football-championships/logo_cup_2026.png" onerror="this.style.display='none';this.nextSibling.style.display='block'" alt="">
+      <span class="tb-logo-ph" style="display:none">🏆</span>
+      <div>
+        <div class="tb-name">منصة <span>البطولات</span></div>
+      </div>
+    </div>
+    <a class="tb-admin" href="admin-home.html">⚙️ الإدارة</a>
+  </div>
+</header>
 
-<div class="hero">
-  <div class="hero-badge">⚽ نتائج مباشرة · إحصائيات · ترتيب تلقائي</div>
-  <h1>بطولات <em>احترافية</em><br>نتائج فورية</h1>
-  <p>كل البطولات في مكان واحد — ترتيب تلقائي ونتائج لحظية</p>
-  <div class="hero-stats">
-    <div class="hs"><div class="hs-num" id="sT">—</div><div class="hs-lbl">بطولة</div></div>
-    <div class="hs"><div class="hs-num" id="sTm">—</div><div class="hs-lbl">فريق</div></div>
-    <div class="hs"><div class="hs-num" id="sP">—</div><div class="hs-lbl">لاعب</div></div>
-    <div class="hs"><div class="hs-num" id="sM">—</div><div class="hs-lbl">مباراة</div></div>
+<section class="hero">
+  <div class="hero-bg-art"></div>
+  <div class="hero-content">
+    <div class="hero-badge">⚽ نتائج مباشرة · إحصائيات · ترتيب تلقائي</div>
+    <h1>بطولات <em>احترافية</em><br>نتائج فورية</h1>
+    <p class="hero-sub">كل البطولات في مكان واحد — ترتيب تلقائي ونتائج لحظية</p>
+    <div class="hero-stats">
+      <div class="hs"><div class="hs-n" id="sT">—</div><div class="hs-l">بطولة</div></div>
+      <div class="hs"><div class="hs-n" id="sTm">—</div><div class="hs-l">فريق</div></div>
+      <div class="hs"><div class="hs-n" id="sP">—</div><div class="hs-l">لاعب</div></div>
+      <div class="hs"><div class="hs-n" id="sM">—</div><div class="hs-l">مباراة</div></div>
+    </div>
+  </div>
+</section>
+
+<div id="liveSec" style="display:none">
+  <div class="section">
+    <div class="sec-title">🔴 مباشر الآن</div>
+    <div id="liveWrap"></div>
   </div>
 </div>
 
-<div class="live-sec" id="liveSec" style="display:none">
-  <div class="sec-hd">🔴 مباريات مباشرة الآن</div>
-  <div id="liveWrap"></div>
-</div>
-
-<div class="main">
-  <div class="sec-hd">🏆 البطولات</div>
+<div class="section" style="padding-top:28px;padding-bottom:40px">
+  <div class="sec-title">🏆 البطولات</div>
   <div class="t-grid" id="tGrid">
-    <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+    <div class="skel"></div><div class="skel"></div>
   </div>
 </div>
 
 <div class="footer">منصة إدارة البطولات · جميع الحقوق محفوظة</div>
 
+<script src="supabase-config.js"></script>
 <script>
-const sb=supabase.createClient("https://npoowwdjpbvhyjrmeqkv.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY");
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+
+function ini(n){return(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
+function teamBg(c1,c2){return c2&&c2!==c1?`linear-gradient(135deg,${c1} 50%,${c2} 50%)`:c1;}
+
 async function loadStats(){
   const [t,tm,p,m]=await Promise.all([
-    sb.from("tournaments").select("id",{count:"exact",head:true}).neq("status","draft"),
-    sb.from("teams").select("id",{count:"exact",head:true}),
-    sb.from("players").select("id",{count:"exact",head:true}),
-    sb.from("matches").select("id",{count:"exact",head:true}),
+    sb.from('tournaments').select('id',{count:'exact',head:true}).neq('status','draft'),
+    sb.from('teams').select('id',{count:'exact',head:true}),
+    sb.from('players').select('id',{count:'exact',head:true}),
+    sb.from('matches').select('id',{count:'exact',head:true}),
   ]);
-  document.getElementById("sT").textContent=t.count??0;
-  document.getElementById("sTm").textContent=tm.count??0;
-  document.getElementById("sP").textContent=p.count??0;
-  document.getElementById("sM").textContent=m.count??0;
+  document.getElementById('sT').textContent=t.count??0;
+  document.getElementById('sTm').textContent=tm.count??0;
+  document.getElementById('sP').textContent=p.count??0;
+  document.getElementById('sM').textContent=m.count??0;
 }
+
+async function loadLive(){
+  const {data}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(name,name_ar,primary_color,secondary_color),tr:tournaments(name,name_ar)').eq('status','live');
+  const sec=document.getElementById('liveSec');
+  if(!data?.length){sec.style.display='none';return;}
+  sec.style.display='block';
+  document.getElementById('liveWrap').innerHTML=data.map(m=>{
+    const hc=m.ht?.primary_color||'#4ea1ff';
+    const ac=m.at?.primary_color||'#f85149';
+    const hc2=m.ht?.secondary_color||hc;
+    const ac2=m.at?.secondary_color||ac;
+    const hn=m.ht?.name_ar||m.ht?.name||'؟';
+    const an=m.at?.name_ar||m.at?.name||'؟';
+    return `<a class="live-card" href="match-live.html?id=${m.id}">
+      <div class="live-top">
+        <span class="live-tourn">${m.tr?.name_ar||m.tr?.name||''}</span>
+        <span class="live-badge"><span class="live-dot"></span> مباشر</span>
+      </div>
+      <div class="scoreboard">
+        <div class="sb-team">
+          <div class="sb-circle" style="background:${teamBg(hc,hc2)}">${ini(hn)}</div>
+          <div class="sb-name">${hn}</div>
+        </div>
+        <div class="sb-score-wrap">
+          <div class="sb-score"><span>${m.home_score??0}</span><span class="sb-sep">:</span><span>${m.away_score??0}</span></div>
+          <div class="sb-min">${m.match_minute?m.match_minute+"'":'مباشر'}</div>
+        </div>
+        <div class="sb-team">
+          <div class="sb-circle" style="background:${teamBg(ac,ac2)}">${ini(an)}</div>
+          <div class="sb-name">${an}</div>
+        </div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
 async function loadTournaments(){
-  const {data}=await sb.from("tournaments").select("*").neq("status","draft").order("created_at",{ascending:false});
-  const g=document.getElementById("tGrid");
-  if(!data||!data.length){g.innerHTML='<div class="empty"><span class="empty-icon">🏆</span><p>لا توجد بطولات بعد</p></div>';return;}
-  const sl={draft:"مسودة",active:"نشطة",completed:"منتهية",archived:"مؤرشفة"};
-  const sc={active:"pill-active",completed:"pill-completed"};
-  const tp={groups_knockout:"مجموعات + إقصاء",league:"دوري",knockout:"إقصاء"};
+  const {data}=await sb.from('tournaments').select('*').neq('status','draft').order('created_at',{ascending:false});
+  const g=document.getElementById('tGrid');
+  if(!data?.length){g.innerHTML='<div class="empty"><span class="empty-ic">🏆</span><p>لا توجد بطولات بعد</p></div>';return;}
+  const sl={draft:'مسودة',active:'نشطة',completed:'منتهية',archived:'مؤرشفة'};
+  const pc={active:'pill-active',completed:'pill-completed'};
+  const tp={groups_knockout:'مجموعات + إقصاء',league:'دوري',knockout:'إقصاء'};
+  const base='https://gido70.github.io/football-championships/';
   g.innerHTML=data.map(t=>{
-    const bg=`linear-gradient(135deg,${t.primary_color||"#0b1f3a"},${t.secondary_color||"#c9a84c"})`;
+    const bg=`linear-gradient(135deg,${t.primary_color||'#0b1f3a'} 0%,${t.secondary_color||'#1a3a6e'} 100%)`;
+    const s=t.season_label||'';
+    const logo=s.includes('2027')?base+'logo_cup_2027.png':s.includes('2026')?base+'logo_cup_2026.png':(t.logo_url||'');
     return `<a class="t-card" href="tournament.html?id=${t.id}">
       <div class="t-banner" style="background:${bg}">
-        ${(()=>{const s=t.season_label||'';const gh='https://gido70.github.io/football-championships/';const f=s.includes('2027')?'logo_cup_2027.png':s.includes('2026')?'logo_cup_2026.png':(t.logo_url||'');return f?`<img class="t-logo" src="${gh+f}" alt="${t.name}" onerror="this.style.display='none'">`:'<div class="t-logo-ph">🏆</div>';})()}
-        <span class="pill ${sc[t.status]||"pill-draft"}">${sl[t.status]||""}</span>
+        ${logo?`<img class="t-logo" src="${logo}" alt="" onerror="this.style.display='none';this.nextSibling.style.display='block'">`:''}
+        <span class="t-logo-ph" style="${logo?'display:none':''}">🏆</span>
+        ${t.status!=='draft'?`<span class="t-pill ${pc[t.status]||''}">${sl[t.status]||''}</span>`:''}
       </div>
       <div class="t-body">
-        <div class="t-name">${t.name}</div>
-        <div class="t-season">${t.season_label||""}</div>
-        <div class="t-meta"><span>👥 ${t.team_count||0} فريق</span><span>📋 ${tp[t.tournament_type]||""}</span></div>
-      </div></a>`;
-  }).join("");
+        <div class="t-name">${t.name_ar||t.name||''}</div>
+        <div class="t-season">${s}</div>
+        <div class="t-divider"></div>
+        <div class="t-meta">
+          <span class="t-chip">👥 ${t.team_count||0} فريق</span>
+          <span class="t-chip">📋 ${tp[t.tournament_type]||'—'}</span>
+        </div>
+        <div class="t-actions">
+          <span class="t-btn">📊 الترتيب</span>
+          <span class="t-btn">📅 المباريات</span>
+          <span class="t-btn primary">متابعة ←</span>
+        </div>
+      </div>
+    </a>`;
+  }).join('');
 }
-async function loadLive(){
-  const {data}=await sb.from("matches").select("*,ht:teams!matches_home_team_id_fkey(name,color_primary),at:teams!matches_away_team_id_fkey(name,color_primary),tr:tournaments(name)").eq("status","live");
-  const sec=document.getElementById("liveSec");
-  if(!data||!data.length){sec.style.display="none";return;}
-  sec.style.display="block";
-  document.getElementById("liveWrap").innerHTML=data.map(m=>`
-    <div class="live-card" onclick="location.href='tournament.html?id=${m.tournament_id}'">
-      <div class="live-top"><span class="live-tourn">${m.tr?.name||""} — ${m.round_name||""}</span><span class="live-badge"><span class="live-dot"></span> مباشر</span></div>
-      <div class="sb">
-        <div class="sb-team"><div class="sb-name">${m.ht?.name||"؟"}</div><div class="sb-bar" style="background:${m.ht?.color_primary||"#c9a84c"}"></div></div>
-        <div class="sb-score"><div class="sb-nums"><span>${m.home_score??0}</span><span class="sb-sep">—</span><span>${m.away_score??0}</span></div><div class="sb-min">${m.match_minute?m.match_minute+"'":""}</div></div>
-        <div class="sb-team"><div class="sb-name">${m.at?.name||"؟"}</div><div class="sb-bar" style="background:${m.at?.color_primary||"#4ea1ff"}"></div></div>
-      </div></div>`).join("");
-}
-sb.channel("rt").on("postgres_changes",{event:"*",schema:"public",table:"matches"},()=>{loadLive();loadStats();}).subscribe();
+
+sb.channel('idx-rt')
+  .on('postgres_changes',{event:'*',schema:'public',table:'matches'},()=>{loadLive();loadStats();})
+  .subscribe();
+
 loadStats();loadTournaments();loadLive();
 setInterval(loadLive,30000);
 </script>
