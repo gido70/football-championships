@@ -178,7 +178,7 @@ function leadRow(rank,name,sub,val,unit,photo,extraClass,number){
 async function init(){
   if(!TID){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>لم يتم تحديد البطولة</p></div>';return;}
   document.getElementById('backLink').href='tournament.html?id='+TID;
-  document.getElementById('floatBack').href='tournament.html?id='+TID;
+  const fb=document.getElementById('floatBack');if(fb)fb.href='tournament.html?id='+TID;
 
   const {data:t}=await sb.from('tournaments').select('*').eq('id',TID).single();
   if(t){
@@ -335,7 +335,10 @@ async function buildInjuries(teamName){
   </div>`).join('');
 }
 
-init();
+init().catch(err=>{
+  console.error('Stats init error:', err);
+  document.getElementById('scorersWrap').innerHTML='<div class="empty"><span>⚠️</span><p>خطأ في التحميل: '+err.message+'</p></div>';
+});
 </script>
 <a class="float-back" id="floatBack" href="index.html">← رجوع</a>
 </body>
