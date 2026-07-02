@@ -16,19 +16,57 @@
 <div class="form-grid">
   <div class="field full"><label>اختر فريقًا</label><select id="colorTeamSelect"><option value="">— اختر فريقًا —</option></select></div>
 </div>
-<div style="margin:14px 0;padding:12px;background:rgba(255,255,255,.03);border-radius:12px;border:1px solid rgba(255,255,255,.08)">
-  <div style="font-size:12px;font-weight:800;color:#8b949e;margin-bottom:10px;letter-spacing:1px">خيار الهوية البصرية — اختر واحداً:</div>
-  <div class="form-grid">
-    <div class="field">
-      <label>🖼️ رابط لوغو (صورة URL)</label>
-      <input id="logoUrlInput" placeholder="https://... أو اتركه فارغاً" style="font-size:12px">
+<div style="margin:14px 0;padding:14px;background:rgba(255,255,255,.03);border-radius:14px;border:1px solid rgba(255,255,255,.08)">
+  <div style="font-size:12px;font-weight:800;color:#8b949e;margin-bottom:14px;letter-spacing:1px">🎨 هوية الفريق البصرية — اختر واحداً:</div>
+  
+  <!-- لوغو من الجهاز -->
+  <div style="margin-bottom:14px">
+    <div style="font-size:12px;color:#8b949e;margin-bottom:8px;font-weight:700">الخيار 1: رفع لوغو من جهازك</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <label style="display:inline-flex;align-items:center;gap:8px;background:rgba(78,161,255,.15);border:1px solid rgba(78,161,255,.3);color:#58a6ff;padding:9px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700">
+        📁 اختر صورة
+        <input type="file" id="logoFileInput" accept="image/*" style="display:none">
+      </label>
+      <div id="logoPreview" style="width:48px;height:48px;border-radius:50%;background:#21262d;border:2px solid #30363d;display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden">🏆</div>
+      <button class="btn secondary" id="clearLogoBtn" style="font-size:12px;padding:8px 12px">🗑️ مسح</button>
     </div>
-    <div class="field">
-      <label>🔡 رمز emoji أو نص</label>
-      <input id="teamEmojiInput" placeholder="مثال: 👑 أو ⚽ أو RMA" maxlength="10" style="font-size:20px;text-align:center">
+    <input type="hidden" id="logoUrlInput">
+  </div>
+  
+  <div style="text-align:center;color:#6e7b8f;font-size:11px;margin-bottom:12px">— أو —</div>
+  
+  <!-- اختيار رمز -->
+  <div>
+    <div style="font-size:12px;color:#8b949e;margin-bottom:8px;font-weight:700">الخيار 2: اختر رمزاً (اضغط عليه)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+      <span onclick="selectEmoji(this)" data-emoji="👑" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="تاج">👑</span>
+      <span onclick="selectEmoji(this)" data-emoji="⭐" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="نجمة">⭐</span>
+      <span onclick="selectEmoji(this)" data-emoji="🦅" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="نسر">🦅</span>
+      <span onclick="selectEmoji(this)" data-emoji="🦁" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="أسد">🦁</span>
+      <span onclick="selectEmoji(this)" data-emoji="🐉" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="تنين">🐉</span>
+      <span onclick="selectEmoji(this)" data-emoji="⚡" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="برق">⚡</span>
+      <span onclick="selectEmoji(this)" data-emoji="🔥" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="نار">🔥</span>
+      <span onclick="selectEmoji(this)" data-emoji="💎" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="ماسة">💎</span>
+      <span onclick="selectEmoji(this)" data-emoji="🗼" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="برج">🗼</span>
+      <span onclick="selectEmoji(this)" data-emoji="⚔️" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="سيوف">⚔️</span>
+      <span onclick="selectEmoji(this)" data-emoji="🛡️" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="درع">🛡️</span>
+      <span onclick="selectEmoji(this)" data-emoji="🌙" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="هلال">🌙</span>
+      <span onclick="selectEmoji(this)" data-emoji="☀️" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="شمس">☀️</span>
+      <span onclick="selectEmoji(this)" data-emoji="🦊" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="ثعلب">🦊</span>
+      <span onclick="selectEmoji(this)" data-emoji="🐺" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="ذئب">🐺</span>
+      <span onclick="selectEmoji(this)" data-emoji="🦈" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="قرش">🦈</span>
+      <span onclick="selectEmoji(this)" data-emoji="🐯" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="نمر">🐯</span>
+      <span onclick="selectEmoji(this)" data-emoji="🦬" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="ثور">🦬</span>
+      <span onclick="selectEmoji(this)" data-emoji="😈" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="شيطان">😈</span>
+      <span onclick="selectEmoji(this)" data-emoji="🤖" style="cursor:pointer;font-size:24px;padding:6px;border-radius:8px;border:2px solid transparent;transition:.15s" title="روبوت">🤖</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="emojiSelected" style="font-size:28px;width:40px;text-align:center">—</span>
+      <input id="teamEmojiInput" placeholder="أو اكتب رمزاً مخصصاً..." maxlength="8" style="font-size:16px;text-align:center;flex:1" oninput="document.getElementById('emojiSelected').textContent=this.value||'—'">
     </div>
   </div>
-  <div style="font-size:11px;color:#6e7b8f;margin-top:6px">الأولوية: لوغو → رمز → أحرف ملوّنة تلقائياً</div>
+  
+  <div style="font-size:11px;color:#6e7b8f;margin-top:10px">⚡ الأولوية: لوغو → رمز → أحرف ملوّنة بألوان الفريق</div>
 </div>
 <div class="form-grid">
   <div class="field"><label>اللون الأساسي</label><input id="colorPick1" type="color" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div>
