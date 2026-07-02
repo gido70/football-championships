@@ -1,5 +1,13 @@
 
-<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>إدارة الفرق</title><link rel="stylesheet" href="admin.css"></head><body>
+<!DOCTYPE html><html lang="ar" dir="rtl"><head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#071426">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet"><meta charset="UTF-8"><title>إدارة الفرق</title><link rel="stylesheet" href="admin.css"></head><body>
 <header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">👥</div><div class="page-title"><h1>إدارة الفرق</h1><p>إضافة الفرق للبطولة المختارة فقط، مع عداد المطلوب والحالي والمتبقي</p></div></div><div class="nav-actions"><a class="btn secondary" href="./admin-home.html">العودة إلى لوحة الأدمن</a><a class="btn secondary" href="./index.html">العودة إلى الموقع العام</a></div></div></header>
 <main class="container">
 <section class="panel"><h3>اختر البطولة</h3><div class="form-grid"><div class="field full"><label>البطولة</label><select id="tournamentSelect"></select></div></div></section>
@@ -16,7 +24,18 @@ function setMsg(t,c=''){const box=document.getElementById('statusBox');box.class
 async function loadTournaments(){const {data,error}=await client.from('tournaments').select('*').order('created_at',{ascending:false,nullsFirst:false});const select=document.getElementById('tournamentSelect');select.innerHTML='';tournaments=data||[];if(error||!data||!data.length){select.innerHTML='<option value="">لا توجد بطولات</option>';selectedTournament=null;maxTeams=0;updateCounter(0);return}data.forEach(t=>{const op=document.createElement('option');op.value=t.id;op.textContent=t.name+(t.season_label?' - '+t.season_label:'');select.appendChild(op)});selectedTournament=data[0].id;maxTeams=data[0].team_count||0;select.value=selectedTournament;select.onchange=()=>{selectedTournament=select.value;const t=tournaments.find(x=>x.id===selectedTournament);maxTeams=t?(t.team_count||0):0;loadTeams();populateSrcTournaments()};await loadTeams();populateSrcTournaments()}
 function genCode(){return String(Math.floor(10000+Math.random()*90000));}
 
-async function loadTeams(){if(!selectedTournament){document.getElementById('teamsRows').innerHTML='<tr><td colspan="4">اختر بطولة أولًا</td></tr>';updateCounter(0);return}const {data,error}=await client.from('teams').select('*').eq('tournament_id',selectedTournament).order('created_at',{ascending:true,nullsFirst:false});if(error){document.getElementById('teamsRows').innerHTML='<tr><td colspan="4">'+error.message+'</td></tr>';updateCounter(0);return}const rows=data||[];updateCounter(rows.length);if(!rows.length){document.getElementById('teamsRows').innerHTML='<tr><td colspan="4">لا توجد فرق في هذه البطولة</td></tr>';populateColorTeams([]);return}document.getElementById('teamsRows').innerHTML=rows.map(team=>`<tr><td>${team.name??''}</td><td style="display:flex;gap:6px;align-items:center"><input type="color" value="${team.primary_color||'#1f6feb'}" style="width:34px;height:30px;cursor:pointer;border:none;background:none" onchange="saveTeamColor('${team.id}','primary_color',this.value)"><input type="color" value="${team.secondary_color||team.primary_color||'#1f6feb'}" style="width:34px;height:30px;cursor:pointer;border:none;background:none" onchange="saveTeamColor('${team.id}','secondary_color',this.value)"></td><td style="font-family:monospace;font-size:16px;letter-spacing:2px;color:#ffd54f">${team.access_code||'—'}</td><td><button class="btn secondary small-danger" onclick="removeTeam('${team.id}')">حذف</button></td></tr>`).join('');populateColorTeams(rows)}
+async function loadTeams(){if(!selectedTournament){document.getElementById('teamsRows').innerHTML='<tr><td colspan="4">اختر بطولة أولًا</td></tr>';updateCounter(0);return}const {data,error}=await client.from('teams').select('*').eq('tournament_id',selectedTournament).order('created_at',{ascending:true,nullsFirst:false});if(error){document.getElementById('teamsRows').innerHTML='<tr><td colspan="4">'+error.message+'</td></tr>';updateCounter(0);return}const rows=data||[];updateCounter(rows.length);if(!rows.length){document.getElementById('teamsRows').innerHTML='<tr><td colspan="4">لا توجد فرق في هذه البطولة</td></tr>';populateColorTeams([]);return}document.getElementById('teamsRows').innerHTML=rows.map(team=>`<tr>
+  <td id="tname-${team.id}">${team.name??''}</td>
+  <td style="display:flex;gap:6px;align-items:center">
+    <input type="color" value="${team.primary_color||'#1f6feb'}" style="width:34px;height:30px;cursor:pointer;border:none;background:none" onchange="saveTeamColor('${team.id}','primary_color',this.value)">
+    <input type="color" value="${team.secondary_color||team.primary_color||'#1f6feb'}" style="width:34px;height:30px;cursor:pointer;border:none;background:none" onchange="saveTeamColor('${team.id}','secondary_color',this.value)">
+  </td>
+  <td style="font-family:monospace;font-size:16px;letter-spacing:2px;color:#ffd54f">${team.access_code||'—'}</td>
+  <td style="display:flex;gap:6px">
+    <button class="btn secondary" style="font-size:12px;padding:6px 10px" onclick="editTeam('${team.id}',this.closest('tr').querySelector('td').textContent)">✏️</button>
+    <button class="btn secondary small-danger" style="font-size:12px;padding:6px 10px" onclick="removeTeam('${team.id}')">🗑️</button>
+  </td>
+</tr>`).join('');populateColorTeams(rows)}
 
 function populateColorTeams(rows){
   const sel=document.getElementById('colorTeamSelect');
@@ -47,9 +66,22 @@ async function saveTeamColor(id,field,value){
   if(error)alert('فشل حفظ اللون: '+error.message);
 }
 window.saveTeamColor=saveTeamColor;
+
+async function editTeam(id,currentName){
+  const newName=prompt('اسم الفريق الجديد:',currentName);
+  if(!newName||newName.trim()===currentName)return;
+  const {error}=await client.from('teams').update({name:newName.trim()}).eq('id',id);
+  if(error){setMsg('فشل التعديل: '+error.message,'err');return;}
+  const el=document.getElementById('tname-'+id);
+  if(el)el.textContent=newName.trim();
+  setMsg('✅ تم تعديل الاسم','ok');
+  loadTeams();
+}
+window.editTeam=editTeam;
+
 async function removeTeam(id){if(!confirm('هل تريد حذف الفريق؟'))return;const {error}=await client.from('teams').delete().eq('id',id);if(error){setMsg('فشل الحذف: '+error.message,'err');return}setMsg('تم حذف الفريق','ok');loadTeams()}
 function updateCounter(current){document.getElementById('counter').textContent=`المطلوب: ${maxTeams} | الحالي: ${current} | المتبقي: ${Math.max(maxTeams-current,0)}`}
-document.getElementById('addBtn').onclick=async()=>{const name=document.getElementById('teamName').value.trim();const short_name=document.getElementById('shortName').value.trim()||null;const primary_color=document.getElementById('teamColor1').value;const secondary_color=document.getElementById('teamColor2').value;if(!selectedTournament){setMsg('اختر بطولة أولًا','warn');return}if(!name){setMsg('أدخل اسم الفريق','warn');return}const {data:existing}=await client.from('teams').select('id').eq('tournament_id',selectedTournament);if((existing||[]).length>=maxTeams){setMsg('تم الوصول إلى الحد الأقصى للفرق','warn');return}const {error}=await client.from('teams').insert([{name,short_name,primary_color,secondary_color,access_code:genCode(),tournament_id:selectedTournament,is_active:true}]);if(error){setMsg('فشل الإضافة: '+error.message,'err');return}document.getElementById('teamName').value='';document.getElementById('shortName').value='';setMsg('تمت إضافة الفريق بنجاح','ok');loadTeams()};
+document.getElementById('addBtn').onclick=async()=>{const name=document.getElementById('teamName').value.trim();const short_name=document.getElementById('shortName').value.trim()||null;const primary_color=document.getElementById('teamColor1').value;const secondary_color=document.getElementById('teamColor2').value;if(!selectedTournament){setMsg('اختر بطولة أولًا','warn');return}if(!name){setMsg('أدخل اسم الفريق','warn');return}const {data:existing}=await client.from('teams').select('id').eq('tournament_id',selectedTournament);if((existing||[]).length>=maxTeams){setMsg('تم الوصول إلى الحد الأقصى للفرق','warn');return}const {error}=await client.from('teams').insert([{name, name_ar: name, short_name,primary_color,secondary_color,access_code:genCode(),tournament_id:selectedTournament,is_active:true}]);if(error){setMsg('فشل الإضافة: '+error.message,'err');return}document.getElementById('teamName').value='';document.getElementById('shortName').value='';setMsg('تمت إضافة الفريق بنجاح','ok');loadTeams()};
 document.getElementById('reloadBtn').onclick=loadTeams;loadTournaments();
 
 document.getElementById('dlTeamsTemplateBtn').onclick=function(){
@@ -89,7 +121,7 @@ document.getElementById('teamsXlsxInput').onchange=function(){
         const name=(r[colName]||'').toString().trim();
         if(!name)return;
         if(curCount+toInsert.length>=maxTeams)return;
-        toInsert.push({name,short_name:colShort?((r[colShort]||'').toString().trim()||null):null,access_code:genCode(),tournament_id:selectedTournament,is_active:true});
+        toInsert.push({name, name_ar: name, short_name:colShort?((r[colShort]||'').toString().trim()||null):null,access_code:genCode(),tournament_id:selectedTournament,is_active:true});
       });
       if(!toInsert.length){msg.className='status err';msg.textContent='⚠️ لا يوجد أسماء صالحة للإضافة (أو وصلت للحد الأقصى للفرق)';return}
 
