@@ -223,26 +223,29 @@ function buildAwards(){
   </div>`;
 }
 
-function tally(events,type){
+function tally(events,type,teamName={}){
   const map={};
   (events||[]).filter(e=>e.event_type===type&&(e.player_id||e.manual_player_name)).forEach(e=>{
-    const key=e.player_id||('m:'+e.manual_player_name+':'+e.team_id);
-    if(!map[key])map[key]={name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',photo:e.player?.jersey_photo_url,number:e.player?.number,team:e.team_id,count:0};
+    // مفتاح موحّد بالاسم فقط — يمنع تكرار نفس اللاعب من فرق مختلفة
+    const key=e.player_id||('m:'+e.manual_player_name);
+    const tm=teamName[e.team_id]||'';
+    if(!map[key])map[key]={name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',photo:e.player?.jersey_photo_url,number:e.player?.number,team:tm,count:0};
+    if(!map[key].team&&tm)map[key].team=tm;
     map[key].count++;
   });
   return Object.values(map).sort((a,b)=>b.count-a.count);
 }
 
 function buildScorers(events,teamName){
-  const list=tally(events,'goal');
+  const list=tally(events,'goal',teamName);
   const wrap=document.getElementById('scorersWrap');
   if(!list.length){wrap.innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف مسجلة بعد</p></div>';return;}
   wrap.innerHTML=list.slice(0,20).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'هدف',p.photo,'goal',p.number)).join('');
 }
 
 function buildCards(events,teamName){
-  const yellow=tally(events,'yellow_card');
-  const red=tally(events,'red_card');
+  const yellow=tally(events,'yellow_card',teamName);
+  const red=tally(events,'red_card',teamName);
   let html='';
   html+='<div class="sec-title">🟨 الأكثر حصولاً على بطاقات صفراء</div>';
   html+=yellow.length?yellow.slice(0,15).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'بطاقة',p.photo,'yellow',p.number)).join(''):'<div class="empty" style="padding:20px 0"><span>🟨</span><p>لا توجد بطاقات صفراء بعد</p></div>';
