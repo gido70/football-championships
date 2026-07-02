@@ -273,10 +273,11 @@ async function loadTournament(){
       style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.8)) brightness(1.2)"
       onerror="this.style.display='none'">`;
 
-  // شعار الكأس (يمين) — من GitHub حسب الموسم
-  const cupFile = season==='2027' ? 'logo_cup_2027.png' : 'logo_cup_2026.png';
+  // شعار الكأس — من قاعدة البيانات أولاً، ثم الملف الافتراضي
+  const cupLogoUrl = t.cup_logo_url || t.logo_url ||
+    `https://gido70.github.io/football-championships/logo_cup_${season||'2026'}.png`;
   document.getElementById('cupLogoWrap').innerHTML=
-    `<img src="https://gido70.github.io/football-championships/${cupFile}" class="hero-side-logo" alt="${name}"
+    `<img src="${cupLogoUrl}" class="hero-side-logo" alt="${name}"
       style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))"
       onerror="this.style.display='none'">`;
 }

@@ -365,9 +365,11 @@ async function loadTournaments(){
   const tp={groups_knockout:'مجموعات + إقصاء',league:'دوري',knockout:'إقصاء'};
   const base='https://gido70.github.io/football-championships/';
   g.innerHTML=data.map(t=>{
-    const bg=`linear-gradient(135deg,${t.primary_color||'#0b1f3a'} 0%,${t.secondary_color||'#1a3a6e'} 100%)`;
+    const bg=t.bg_image_url
+      ?`linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url('${t.bg_image_url}') center/cover`
+      :`linear-gradient(135deg,${t.primary_color||'#0b1f3a'} 0%,${t.secondary_color||'#1a3a6e'} 100%)`;
     const s=t.season_label||'';
-    const logo=s.includes('2027')?base+'logo_cup_2027.png':s.includes('2026')?base+'logo_cup_2026.png':(t.logo_url||'');
+    const logo=t.cup_logo_url||t.logo_url||(s.includes('2027')?base+'logo_cup_2027.png':s.includes('2026')?base+'logo_cup_2026.png':'');
     return `<a class="t-card" href="tournament.html?id=${t.id}">
       <div class="t-banner" style="background:${bg}">
         ${logo?`<img class="t-logo" src="${logo}" alt="" onerror="this.style.display='none';this.nextSibling.style.display='block'">`:''}
