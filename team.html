@@ -48,10 +48,7 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .player-ph{width:72px;height:72px;border-radius:50%;background:#21262d;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;border:2px solid #30363d}
 .player-number{position:absolute;top:10px;left:10px;background:var(--tc,#c9a84c);color:#0d1117;font-size:12px;font-weight:900;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .player-name{font-size:14px;font-weight:700;color:#e6edf3;margin-bottom:4px;line-height:1.3}
-.player-role{font-size:11px;padding:2px 8px;border-radius:20px;display:inline-block;margin-top:4px}
-.role-player{background:rgba(63,185,80,.15);color:#3fb950}
-.role-coach{background:rgba(201,168,76,.15);color:#c9a84c}
-.role-admin{background:rgba(88,166,255,.15);color:#58a6ff}
+.player-nat{font-size:12px;color:#8b949e;margin-top:2px}
 
 /* إحصائيات اللاعبين */
 .stats-table{background:#161b22;border:1px solid #30363d;border-radius:14px;overflow:hidden}
@@ -190,21 +187,21 @@ async function loadSquad(){
     return;
   }
 
-  const roleLabel={admin:'إداري',coach:'مدرب',player_resident:'مقيم',player_visitor:'زائر',player_sub:'بديل',player_replaced:'مستبدل'};
-  const roleClass={admin:'role-admin',coach:'role-coach',player_resident:'role-player',player_visitor:'role-player',player_sub:'role-player'};
+  const roleLabel={admin:'إداري',coach:'مدرب'};
 
   document.getElementById('squadGrid').innerHTML=players.map(p=>{
     const name=p.full_name_ar||p.name||'—';
     const num=p.number||p.shirt_number||'';
     const role=p.role||'player_resident';
     const photo=p.jersey_photo_url||null;
+    const subtitle=roleLabel[role]||[p.nationality,num?('#'+num):''].filter(Boolean).join(' — ');
     return `<div class="player-card" style="--tc:${teamColor}">
       ${num?`<div class="player-number">${num}</div>`:''}
       ${photo
         ? `<img class="player-photo" src="${photo}" alt="${name}" onerror="this.outerHTML='<div class=player-ph>👤</div>'">`
         : '<div class="player-ph">👤</div>'}
       <div class="player-name">${name}</div>
-      <span class="player-role ${roleClass[role]||'role-player'}">${roleLabel[role]||role}</span>
+      <div class="player-nat">${subtitle}</div>
     </div>`;
   }).join('');
 }
