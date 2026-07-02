@@ -344,6 +344,11 @@ select option{background:#0f2a45;color:#ffffff}
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 let cur=null,hPl=[],aPl=[],evtType={h:null,a:null};
+
+async function pushNews(text){
+  if(!cur||!cur.tournament_id)return;
+  await sb.from('news_items').insert({tournament_id:cur.tournament_id,content:text,is_pinned:false});
+}
 const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل'};
 const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
 
@@ -485,6 +490,9 @@ async function setVAR(status){
       match_id:cur.id,tournament_id:cur.tournament_id,team_id:teamId,
       event_type:'var_'+status,minute:min,event_subtype:status
     });
+    const varLabels={goal_confirmed:'✅ هدف مؤكد',goal_disallowed:'❌ هدف ملغي',penalty_review:'🎯 مراجعة ركلة جزاء',red_card_review:'🟥 مراجعة طرد'};
+    const tn=teamId?(teamId===cur.home_team_id?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name)):'';
+    pushNews('📺 فار: '+(varLabels[status]||status)+(tn?' — '+tn:''));
   }
 }
 
@@ -528,6 +536,17 @@ async function setMatchStatus(st){
   updateStatusUI(st);
   startStopClock();
   setMsg(st==='live'?'✅ بدأت المباراة — العداد يعمل الآن':'✅ انتهت المباراة','ok');
+
+  const hn=cur.ht?.name_ar||cur.ht?.name||'الفريق الأول';
+  const an=cur.at?.name_ar||cur.at?.name||'الفريق الثاني';
+  if(st==='live'){
+    pushNews('🟢 بدأت مباراة '+hn+' × '+an);
+  }else if(st==='completed'){
+    const hs=cur.home_score??0,as=cur.away_score??0;
+    const winner=hs>as?hn:(as>hs?an:null);
+    let txt='🏁 انتهت المباراة: '+hn+' '+hs+' - '+as+' '+an+(winner?' — الفائز: '+winner:' — تعادل');
+    pushNews(txt);
+  }
 }
 
 async function resetForTest(){
@@ -609,6 +628,12 @@ async function quickLog(side,type,playerId,playerName){
   quickClose();
   loadEvts();
   setMsg('✅ تم تسجيل '+({goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء'}[type]||type)+' — '+playerName,'ok');
+
+  const tn=side==='h'?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name);
+  const min2=parseInt(document.getElementById('minInput').value)||0;
+  if(type==='goal')pushNews('⚽ هدف! '+(playerName||'لاعب')+' يسجل لـ'+tn+' في الدقيقة '+min2+' — '+(cur.home_score??0)+' - '+(cur.away_score??0));
+  else if(type==='yellow_card')pushNews('🟨 بطاقة صفراء لـ '+(playerName||'لاعب')+' ('+tn+')');
+  else if(type==='red_card')pushNews('🟥 بطاقة حمراء لـ '+(playerName||'لاعب')+' ('+tn+')');
 }
 
 async function loadPredictResults(matchId){
@@ -691,6 +716,11 @@ async function submitEvt(side){
   closeEvt(side);
   loadEvts();
   setMsg('✅ تم تسجيل '+(EL[type]||type)+' — '+playerLabel,'ok');
+
+  const tn2=side==='h'?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name);
+  if(type==='goal')pushNews('⚽ هدف! '+playerLabel+' يسجل لـ'+tn2+' في الدقيقة '+min+' — '+(cur.home_score??0)+' - '+(cur.away_score??0));
+  else if(type==='yellow_card')pushNews('🟨 بطاقة صفراء لـ '+playerLabel+' ('+tn2+')');
+  else if(type==='red_card')pushNews('🟥 بطاقة حمراء لـ '+playerLabel+' ('+tn2+')');
 }
 
 async function loadEvts(){
