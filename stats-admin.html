@@ -43,14 +43,15 @@
       <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportCards()"><div class="feature-icon">🟨🟥</div><h3>البطاقات</h3><p>الصفراء والحمراء لكل لاعب</p></button>
       <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportMotm()"><div class="feature-icon">⭐</div><h3>أفضل اللاعبين</h3><p>عدد مرات اختيار نجم المباراة</p></button>
       <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportOfficials()"><div class="feature-icon">👨‍⚖️</div><h3>الحكام والمعلقون</h3><p>عدد المباريات لكل حكم/معلّق</p></button>
-      <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportInjuries()"><div class="feature-icon">🩹</div><h3>الإصابات</h3><p>قائمة اللاعبين المصابين حاليًا</p></button>
+      <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportVAR()"><div class="feature-icon">📺</div><h3>إحصائيات الـ VAR</h3><p>سجل قرارات الفار وعدد كل نوع لكل فريق</p></button>
+      <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportMotmByMatch()"><div class="feature-icon">🏅</div><h3>أفضل لاعب في كل مباراة</h3><p>سجل رجل المباراة لكل مباراة على حدة</p></button>
       <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportMatches()"><div class="feature-icon">📅</div><h3>جدول المباريات والنتائج</h3><p>كل المباريات بتفاصيلها الكاملة</p></button>
     </div>
   </section>
 
   <section class="panel" style="margin-top:24px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.25)">
     <h3>📦 تقرير شامل (كل الإحصائيات في ملف واحد)</h3>
-    <p class="note">ملف إكسل واحد بعدة أوراق (Sheets): الهدافون، البطاقات، نجوم المباريات، الحكام، المعلقون، الإصابات، جدول المباريات — كله دفعة واحدة.</p>
+    <p class="note">ملف إكسل واحد بعدة أوراق (Sheets): الهدافون، البطاقات، نجوم المباريات، الحكام، المعلقون، الـ VAR، جدول المباريات — كله دفعة واحدة.</p>
     <div class="actions"><button class="btn" id="fullReportBtn" style="background:linear-gradient(135deg,#c9a84c,#a8842e)" onclick="exportFullReport()">📦 تحميل التقرير الشامل</button></div>
   </section>
 
@@ -129,7 +130,7 @@ async function getMatches(){
 }
 async function getEvents(mids){
   if(!mids.length)return [];
-  const {data}=await sb.from('match_events').select('event_type,player_id,team_id,minute,manual_player_name,player:players!player_id(name,full_name_ar,number)').in('match_id',mids);
+  const {data}=await sb.from('match_events').select('match_id,event_type,player_id,team_id,minute,manual_player_name,player:players!player_id(name,full_name_ar,number)').in('match_id',mids);
   return data||[];
 }
 function tally(events,type){
@@ -201,13 +202,62 @@ async function exportOfficials(){
   setMsg('✅ تم التحميل','ok');
 }
 
-async function exportInjuries(){
+async function exportVAR(){
   setMsg('⏳ جاري التجهيز...');
-  const {data:players}=await sb.from('players').select('name,full_name_ar,number,team_id,injury_note').eq('tournament_id',TID).eq('is_injured',true);
-  if(!players||!players.length){setMsg('⚠️ لا توجد إصابات مسجلة حاليًا','warn');return;}
-  const rows=players.map(p=>({اللاعب:p.full_name_ar||p.name,الرقم:p.number,الفريق:teamName[p.team_id]||'',ملاحظة:p.injury_note||''}));
-  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheetFromRows(rows,['اللاعب','الرقم','الفريق','ملاحظة']),'الإصابات');
-  dl(wb,'إصابات '+TNAME+'.xlsx');
+  const matches=await getMatches();
+  const events=await getEvents(matches.map(m=>m.id));
+  const varEvents=(events||[]).filter(e=>e.event_type&&e.event_type.startsWith('var_'));
+  if(!varEvents.length){setMsg('⚠️ لا توجد قرارات فار مسجلة بعد لهذه البطولة','warn');return;}
+  const labels={var_goal_confirmed:'✅ هدف مؤكد',var_goal_disallowed:'❌ هدف ملغي',var_penalty_review:'🎯 مراجعة ركلة جزاء',var_red_card_review:'🟥 مراجعة طرد'};
+  const mByI={};matches.forEach(m=>mByI[m.id]=m);
+
+  const logRows=varEvents.map(e=>({
+    'رقم المباراة':mByI[e.match_id]?.match_no||'',
+    الدقيقة:e.minute||'',
+    الفريق:teamName[e.team_id]||'بدون تحديد فريق',
+    القرار:labels[e.event_type]||e.event_type
+  }));
+
+  const totalByType={};varEvents.forEach(e=>{totalByType[e.event_type]=(totalByType[e.event_type]||0)+1;});
+  const summaryRows=Object.entries(totalByType).map(([k,v])=>({القرار:labels[k]||k,العدد:v}));
+
+  const byTeam={};
+  varEvents.forEach(e=>{
+    const t=teamName[e.team_id]||'بدون تحديد فريق';
+    if(!byTeam[t])byTeam[t]={};
+    byTeam[t][e.event_type]=(byTeam[t][e.event_type]||0)+1;
+  });
+  const teamRows=Object.entries(byTeam).map(([t,stats])=>{
+    const row={الفريق:t};
+    Object.entries(labels).forEach(([k,lbl])=>row[lbl]=stats[k]||0);
+    return row;
+  });
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(summaryRows,['القرار','العدد']),'إجمالي VAR');
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(teamRows,['الفريق',...Object.values(labels)]),'VAR حسب الفريق');
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(logRows,['رقم المباراة','الدقيقة','الفريق','القرار']),'سجل VAR');
+  dl(wb,'VAR '+TNAME+'.xlsx');
+  setMsg('✅ تم التحميل','ok');
+}
+
+async function exportMotmByMatch(){
+  setMsg('⏳ جاري التجهيز...');
+  const matches=await getMatches();
+  const ids=matches.map(m=>m.player_of_match_id).filter(Boolean);
+  const {data:players}=ids.length?await sb.from('players').select('id,name,full_name_ar,number,team_id').in('id',[...new Set(ids)]):{data:[]};
+  const pMap={};(players||[]).forEach(p=>pMap[p.id]=p);
+  const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
+  const rows=matches.map(m=>{
+    const p=pMap[m.player_of_match_id];
+    return{
+      'رقم المباراة':m.match_no,الجولة:rl[m.round_name]||m.round_name,
+      'الفريق الأول':teamName[m.home_team_id]||'',النتيجة:(m.home_score??'')+' - '+(m.away_score??''),'الفريق الثاني':teamName[m.away_team_id]||'',
+      'رجل المباراة':p?(p.full_name_ar||p.name):'— لم يُحدَّد —',الرقم:p?.number||''
+    };
+  });
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheetFromRows(rows,['رقم المباراة','الجولة','الفريق الأول','النتيجة','الفريق الثاني','رجل المباراة','الرقم']),'أفضل لاعب لكل مباراة');
+  dl(wb,'أفضل لاعب لكل مباراة - '+TNAME+'.xlsx');
   setMsg('✅ تم التحميل','ok');
 }
 
@@ -241,9 +291,10 @@ async function exportFullReport(){
   XLSX.utils.book_append_sheet(wb,sheetFromRows(red.map((p,i)=>({الترتيب:i+1,اللاعب:p.name,الرقم:p.number,الفريق:p.team,العدد:p.count})),['الترتيب','اللاعب','الرقم','الفريق','العدد']),'بطاقات حمراء');
 
   const motmIds=matches.map(m=>m.player_of_match_id).filter(Boolean);
+  const pMap={};
   if(motmIds.length){
     const {data:mp}=await sb.from('players').select('id,name,full_name_ar,number').in('id',[...new Set(motmIds)]);
-    const pMap={};(mp||[]).forEach(p=>pMap[p.id]=p);
+    (mp||[]).forEach(p=>pMap[p.id]=p);
     const cnt={};motmIds.forEach(id=>cnt[id]=(cnt[id]||0)+1);
     const motmRows=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([id,c],i)=>({الترتيب:i+1,اللاعب:pMap[id]?.full_name_ar||pMap[id]?.name||'—',الرقم:pMap[id]?.number||'',العدد:c}));
     XLSX.utils.book_append_sheet(wb,sheetFromRows(motmRows,['الترتيب','اللاعب','الرقم','العدد']),'أفضل اللاعبين');
@@ -257,8 +308,19 @@ async function exportFullReport(){
   XLSX.utils.book_append_sheet(wb,sheetFromRows(Object.entries(refCount).sort((a,b)=>b[1]-a[1]).map(([n,c],i)=>({الترتيب:i+1,الحكم:n,العدد:c})),['الترتيب','الحكم','العدد']),'الحكام');
   XLSX.utils.book_append_sheet(wb,sheetFromRows(Object.entries(comCount).sort((a,b)=>b[1]-a[1]).map(([n,c],i)=>({الترتيب:i+1,المعلق:n,العدد:c})),['الترتيب','المعلق','العدد']),'المعلقون');
 
-  const {data:inj}=await sb.from('players').select('name,full_name_ar,number,team_id,injury_note').eq('tournament_id',TID).eq('is_injured',true);
-  XLSX.utils.book_append_sheet(wb,sheetFromRows((inj||[]).map(p=>({اللاعب:p.full_name_ar||p.name,الرقم:p.number,الفريق:teamName[p.team_id]||'',ملاحظة:p.injury_note||''})),['اللاعب','الرقم','الفريق','ملاحظة']),'الإصابات');
+  const varEvents=(events||[]).filter(e=>e.event_type&&e.event_type.startsWith('var_'));
+  if(varEvents.length){
+    const varLabels={var_goal_confirmed:'✅ هدف مؤكد',var_goal_disallowed:'❌ هدف ملغي',var_penalty_review:'🎯 مراجعة ركلة جزاء',var_red_card_review:'🟥 مراجعة طرد'};
+    const mByI={};matches.forEach(m=>mByI[m.id]=m);
+    const varLog=varEvents.map(e=>({'رقم المباراة':mByI[e.match_id]?.match_no||'',الدقيقة:e.minute||'',الفريق:teamName[e.team_id]||'بدون تحديد فريق',القرار:varLabels[e.event_type]||e.event_type}));
+    XLSX.utils.book_append_sheet(wb,sheetFromRows(varLog,['رقم المباراة','الدقيقة','الفريق','القرار']),'VAR');
+  }
+
+  const motmByMatch=matches.map(m=>{
+    const p=pMap[m.player_of_match_id];
+    return{'رقم المباراة':m.match_no,'الفريق الأول':teamName[m.home_team_id]||'',النتيجة:(m.home_score??'')+' - '+(m.away_score??''),'الفريق الثاني':teamName[m.away_team_id]||'','رجل المباراة':p?(p.full_name_ar||p.name):'— لم يُحدَّد —'};
+  });
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(motmByMatch,['رقم المباراة','الفريق الأول','النتيجة','الفريق الثاني','رجل المباراة']),'أفضل لاعب لكل مباراة');
 
   const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
   const matchRows=matches.map(m=>({
@@ -274,7 +336,7 @@ async function exportFullReport(){
 }
 
 window.exportScorers=exportScorers;window.exportCards=exportCards;window.exportMotm=exportMotm;
-window.exportOfficials=exportOfficials;window.exportInjuries=exportInjuries;window.exportMatches=exportMatches;window.exportFullReport=exportFullReport;
+window.exportOfficials=exportOfficials;window.exportVAR=exportVAR;window.exportMotmByMatch=exportMotmByMatch;window.exportMatches=exportMatches;window.exportFullReport=exportFullReport;
 
 initTournaments();
 </script>
