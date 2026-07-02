@@ -312,7 +312,7 @@ async function loadStandings(){
 
 async function loadMatches(){
   // نحمل المباريات والفرق بشكل منفصل لتجنب مشاكل FK
-  const {data:matches}=await sb.from('matches').select('*').eq('tournament_id',TID).order('match_no');
+  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color,secondary_color)').eq('tournament_id',TID).order('match_no');
   const {data:teams}=await sb.from('teams').select('id,name,name_ar,primary_color,color_primary').eq('tournament_id',TID);
   document.getElementById('hM').textContent=matches?.length||0;
   if(!matches||!matches.length){document.getElementById('maWrap').innerHTML='<div class="empty"><span>📅</span><p>لا توجد مباريات بعد</p></div>';return;}
@@ -333,13 +333,14 @@ async function loadMatches(){
   sortedRounds.forEach(rnd=>{const ms=rounds[rnd];if(!ms)return;
     html+=`<div class="m-group"><div class="m-round">${rl[rnd]||rnd}</div>`;
     ms.forEach(m=>{
-      const ht=tm[m.home_team_id]||{};
-      const at=tm[m.away_team_id]||{};
+      const htE=m.ht||{}; const atE=m.at||{};
+      const ht=tm[m.home_team_id]||htE;
+      const at=tm[m.away_team_id]||atE;
       const d=m.status==='completed', lv=m.status==='live';
-      const hName=ht.name_ar||ht.name||m.home_team_name||'—';
-      const aName=at.name_ar||at.name||m.away_team_name||'—';
-      const hColor=ht.primary_color||ht.color_primary||'#8b949e';
-      const aColor=at.primary_color||at.color_primary||'#8b949e';
+      const hName=ht.name_ar||ht.name||htE.name_ar||htE.name||'—';
+      const aName=at.name_ar||at.name||atE.name_ar||atE.name||'—';
+      const hColor=ht.primary_color||ht.secondary_color||htE.primary_color||'#8b949e';
+      const aColor=at.primary_color||at.secondary_color||atE.primary_color||'#8b949e';
       html+=`<a class="m-card ${lv?'live':''}" href="match-live.html?id=${m.id}" style="display:block;cursor:pointer">
         <div class="m-top">
           <span class="m-info">${m.match_date?new Date(m.match_date).toLocaleDateString('ar-SA',{weekday:'short',month:'short',day:'numeric'}):''} ${m.match_time||''}</span>
