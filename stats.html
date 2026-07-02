@@ -200,7 +200,10 @@ async function init(){
     return;
   }
 
-  const {data:events}=await sb.from('match_events').select('event_type,player_id,team_id,manual_player_name,player:players!player_id(name,full_name_ar,number,jersey_photo_url)').in('match_id',mids);
+  // جلب مباشر بـ tournament_id — أسرع وأكثر موثوقية
+  const {data:events}=await sb.from('match_events')
+    .select('event_type,player_id,team_id,manual_player_name,var_result,player:players!player_id(name,full_name_ar,number,jersey_photo_url)')
+    .eq('tournament_id',TID);
 
   buildScorers(events,teamName);
   buildCards(events,teamName);

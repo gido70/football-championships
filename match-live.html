@@ -584,7 +584,8 @@ async function init(){
   document.getElementById('infoStrip').innerHTML=chips.join('');
 
   if(m.stream_url){
-    document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap">
+    if(document.getElementById('floatBack'))document.getElementById('floatBack').href='tournament.html?id='+(m.tournament_id||'');
+  document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap">
       <iframe src="${m.stream_url}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
     </div>`;
   }
@@ -706,6 +707,6 @@ sb.channel('match-live-'+MID)
 // شبكة أمان احتياطية لو تعطّل الاتصال اللحظي لأي سبب
 setInterval(()=>{ if(MID) init(); }, 30000);
 </script>
-<a class="float-back" id="floatBack" href="index.html">← رجوع</a>
+<a class="float-back" id="floatBack" href="index.html">← رجوع للبطولة</a>
 </body>
 </html>
