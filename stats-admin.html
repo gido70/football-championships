@@ -65,7 +65,7 @@ const teamName={};
 function setMsg(t,c=''){const e=document.getElementById('msg');e.className='status '+c;e.textContent=t;}
 
 async function initTournaments(){
-  const {data,error}=await sb.from('tournaments').select('id,name,name_ar,season_label').order('created_at',{ascending:false});
+  const {data,error}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});
   const sel=document.getElementById('tSel');
   if(error){sel.innerHTML=`<option value="">⚠️ خطأ: ${error.message}</option>`;setMsg('فشل تحميل البطولات: '+error.message,'err');return;}
   if(!data||!data.length){sel.innerHTML='<option value="">لا توجد بطولات</option>';return;}
