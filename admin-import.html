@@ -602,7 +602,7 @@ async function startImport() {
       number: r.number || null,
       nationality: r.nationality || null,
       role: roleMap[r.role] || 'player_resident',
-      photo_url: r.photo_url || null,
+      jersey_photo_url: r.photo_url || null,
     }));
 
     const { error } = await sb.from('players').insert(batch);
