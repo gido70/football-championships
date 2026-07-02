@@ -708,5 +708,27 @@ sb.channel('match-live-'+MID)
 setInterval(()=>{ if(MID) init(); }, 30000);
 </script>
 <a class="float-back" id="floatBack" href="index.html">← رجوع للبطولة</a>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js')
+    .then(reg=>{
+      // تحقق من تحديثات فورياً
+      reg.update();
+      // إن وجد service worker جديد، فعّله وأعد التحميل
+      reg.addEventListener('updatefound',()=>{
+        const nw=reg.installing;
+        nw.addEventListener('statechange',()=>{
+          if(nw.state==='installed'&&navigator.serviceWorker.controller){
+            // إعادة تحميل تلقائية لتطبيق التحديث
+            window.location.reload();
+          }
+        });
+      });
+    });
+  // استمع لرسائل التحديث
+  navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
+}
+</script>
 </body>
 </html>
