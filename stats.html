@@ -34,18 +34,21 @@ a{text-decoration:none;color:inherit}
 .sec.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-.lead-row{display:flex;align-items:center;gap:10px;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:10px 12px;margin-bottom:8px}
-.lead-rank{font-size:14px;font-weight:900;color:#3a4150;width:22px;text-align:center;flex-shrink:0}
+.lead-row{display:flex;align-items:center;gap:9px;background:#161b22;border:1px solid #30363d;border-radius:10px;padding:9px 12px;margin-bottom:7px}
+.lead-rank{font-size:13px;font-weight:900;color:#3a4150;width:20px;text-align:center;flex-shrink:0}
 .lead-row.r1 .lead-rank{color:#ffd700}
 .lead-row.r2 .lead-rank{color:#c0c0c0}
 .lead-row.r3 .lead-rank{color:#cd7f32}
-.lead-row.r1{border-color:rgba(255,215,0,.3);background:rgba(255,215,0,.04)}
-.lead-photo{width:36px;height:36px;border-radius:50%;background:#21262d;object-fit:cover;flex-shrink:0;border:1.5px solid #30363d}
+.lead-row.r1{border-color:rgba(255,215,0,.25);background:rgba(255,215,0,.03)}
+.lead-av{position:relative;flex-shrink:0}
+.lead-photo{width:32px;height:32px;border-radius:50%;object-fit:cover;border:1.5px solid #30363d;display:block}
+.lead-ph{width:32px;height:32px;border-radius:50%;background:#21262d;border:1.5px solid #30363d;font-size:11px;font-weight:800;color:#6e7b8f;align-items:center;justify-content:center}
+.lead-num{font-size:10px;font-weight:900;color:#c9a84c;flex-shrink:0}
 .lead-info{flex:1;min-width:0}
-.lead-name{font-size:13px;font-weight:800}
-.lead-team{font-size:11px;color:#8b949e;margin-top:1px}
-.lead-val{font-size:15px;font-weight:900;color:#c9a84c;flex-shrink:0;display:flex;align-items:center;gap:4px}
-.lead-val .u{font-size:11px;color:#8b949e;font-weight:600}
+.lead-name{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lead-team{font-size:11px;color:#8b949e;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lead-val{font-size:14px;font-weight:900;color:#c9a84c;flex-shrink:0;display:flex;align-items:center;gap:4px}
+.lead-val .u{font-size:10px;color:#8b949e;font-weight:600}
 
 .lead-val.yellow{color:#ffd54f}
 .lead-val.red{color:#f85149}
@@ -149,10 +152,21 @@ function pchip(name,photo,number,role,variant=''){
 
 function leadRow(rank,name,sub,val,unit,photo,extraClass,number){
   const rClass=rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
+  const rc=rank===1?'#ffd700':rank===2?'#c0c0c0':rank===3?'#cd7f32':'#3a4150';
   const vClass=extraClass||'';
+  const sn=(name||'').split(' ').slice(0,2).join(' ');
+  const ini=(name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
   return `<div class="lead-row ${rClass}">
-    <div class="lead-rank">${rank}</div>
-    ${pchip(name,photo,number,sub,vClass)}
+    <div class="lead-rank" style="color:${rc}">${rank}</div>
+    <div class="lead-av">
+      ${photo?`<img class="lead-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
+      <div class="lead-ph" style="${photo?'display:none':'display:flex'}">${ini}</div>
+    </div>
+    ${number?`<span class="lead-num">#${number}</span>`:''}
+    <div class="lead-info">
+      <div class="lead-name">${sn}</div>
+      ${sub?`<div class="lead-team">${sub}</div>`:''}
+    </div>
     <div class="lead-val ${vClass}">${val}<span class="u">${unit||''}</span></div>
   </div>`;
 }
