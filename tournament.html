@@ -124,6 +124,21 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 /* إخفاء الصور المكسورة */
 img[src=""], img:not([src]) { display:none !important; }
 .hero-side-logo-ph { display:none !important; }
+/* زر الرجوع المتحرك في الموبايل */
+.float-back{
+  display:none;
+  position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:16px;
+  z-index:199;
+  background:rgba(22,27,34,.9);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:30px;padding:10px 18px;
+  font-size:13px;font-weight:800;color:#c9a84c;
+  text-decoration:none;
+  box-shadow:0 4px 18px rgba(0,0,0,.4);
+}
+@media(max-width:760px){.float-back{display:flex;align-items:center;gap:6px}}
 </style>
 </head>
 <body>
@@ -303,20 +318,23 @@ async function loadMatches(){
   const tm={};
   (teams||[]).forEach(t=>{tm[t.id]=t;});
   
-  const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'المركز الثالث',final:'النهائي'};
+  const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'المركز الثالث والرابع',final:'النهائي'};
+  const roundOrder=['group','quarter_final','semi_final','third_place','final'];
   const rounds={};
-  matches.forEach(m=>{const r=m.round_name||'عام';if(!rounds[r])rounds[r]=[];rounds[r].push(m);});
+  matches.forEach(m=>{const r=m.round_name||'group';if(!rounds[r])rounds[r]=[];rounds[r].push(m);});
+  // ترتيب الأدوار منطقياً
+  const sortedRounds=[...roundOrder.filter(r=>rounds[r]),...Object.keys(rounds).filter(r=>!roundOrder.includes(r))];
   const sm={scheduled:'b-sched',live:'b-live',completed:'b-done'};
   const sl={scheduled:'مجدولة',live:'🔴 مباشر',completed:'منتهية'};
   let html='';
-  Object.entries(rounds).forEach(([rnd,ms])=>{
+  sortedRounds.forEach(rnd=>{const ms=rounds[rnd];if(!ms)return;
     html+=`<div class="m-group"><div class="m-round">${rl[rnd]||rnd}</div>`;
     ms.forEach(m=>{
       const ht=tm[m.home_team_id]||{};
       const at=tm[m.away_team_id]||{};
       const d=m.status==='completed', lv=m.status==='live';
-      const hName=ht.name_ar||ht.name||'؟';
-      const aName=at.name_ar||at.name||'؟';
+      const hName=ht.name_ar||ht.name||m.home_team_name||'—';
+      const aName=at.name_ar||at.name||m.away_team_name||'—';
       const hColor=ht.primary_color||ht.color_primary||'#8b949e';
       const aColor=at.primary_color||at.color_primary||'#8b949e';
       html+=`<a class="m-card ${lv?'live':''}" href="match-live.html?id=${m.id}" style="display:block;cursor:pointer">
@@ -410,5 +428,6 @@ sb.channel('rt-t').on('postgres_changes',{event:'*',schema:'public',table:'match
 if(TID){loadTournament();loadStandings();loadMatches();loadScorers();loadTeams();}
 else document.getElementById('heroTitle').textContent='لم يتم تحديد البطولة — ارجع للصفحة الرئيسية';
 </script>
+<a class="float-back" href="index.html">← جميع البطولات</a>
 </body>
 </html>

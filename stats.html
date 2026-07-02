@@ -90,6 +90,10 @@ a{text-decoration:none;color:inherit}
 .var-pill{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:#c9a84c;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px}
 .sec-title{font-size:13px;color:#8b949e;font-weight:700;margin:18px 0 10px}
 .sec-title:first-child{margin-top:0}
+
+/* زر الرجوع العائم في الموبايل */
+.float-back{display:none;position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:16px;z-index:199;background:rgba(6,14,26,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(201,168,76,.3);border-radius:30px;padding:10px 18px;font-size:13px;font-weight:800;color:#c9a84c;text-decoration:none;box-shadow:0 4px 18px rgba(0,0,0,.4)}
+@media(max-width:760px){.float-back{display:flex;align-items:center;gap:6px}}
 </style>
 </head>
 <body>
@@ -174,6 +178,7 @@ function leadRow(rank,name,sub,val,unit,photo,extraClass,number){
 async function init(){
   if(!TID){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>لم يتم تحديد البطولة</p></div>';return;}
   document.getElementById('backLink').href='tournament.html?id='+TID;
+  document.getElementById('floatBack').href='tournament.html?id='+TID;
 
   const {data:t}=await sb.from('tournaments').select('*').eq('id',TID).single();
   if(t){
@@ -329,5 +334,6 @@ async function buildInjuries(teamName){
 
 init();
 </script>
+<a class="float-back" id="floatBack" href="index.html">← رجوع</a>
 </body>
 </html>
