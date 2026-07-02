@@ -78,7 +78,7 @@ let TID=null;
 function setMsg(t,c=''){const e=document.getElementById('addMsg');e.className='status '+c;e.textContent=t;}
 
 async function initTournaments(){
-  const {data}=await sb.from('tournaments').select('id,name,name_ar,season_label').order('created_at',{ascending:false});
+  const {data}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});
   const sel=document.getElementById('tSel');
   sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
   sel.onchange=()=>{TID=sel.value;loadNews();};
