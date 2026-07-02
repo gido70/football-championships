@@ -16,10 +16,6 @@
 <link rel="stylesheet" href="admin.css">
 <style>
 body { font-family: "Tajawal", sans-serif !important; }
-.topbar-inner { flex-direction: row; }
-.page-head { flex-direction: row; }
-.nav-actions { flex-direction: row; }
-.actions { flex-direction: row; }
 
 /* بطاقات الإحصائيات */
 .stats-row {
@@ -179,9 +175,34 @@ body { font-family: "Tajawal", sans-serif !important; }
   border-radius: 20px;
   font-family: "Tajawal", sans-serif;
 }
+
+/* شعار المنصة */
+.brand-mark{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 18px;margin-bottom:14px;
+}
+.brand-mark .brand-emoji{font-size:22px}
+.brand-mark .brand-text{font-size:15px;font-weight:800;color:#c9a84c;font-family:"Tajawal",sans-serif}
+
+/* استجابة الموبايل */
+@media (max-width:900px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .admin-cards{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:520px){
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat-card{padding:16px 10px}
+  .stat-card-num{font-size:30px}
+  .admin-cards{grid-template-columns:1fr;gap:12px}
+  .admin-card{padding:18px 16px}
+  .active-tournament{padding:16px 18px}
+  .active-tournament-info h3{font-size:17px}
+}
 </style>
 </head>
 <body>
+
+<div class="brand-mark"><span class="brand-emoji">⚽</span><span class="brand-text">منصة البطولات — لوحة التحكم</span></div>
 
 <header class="topbar">
   <div class="topbar-inner">
@@ -270,8 +291,8 @@ body { font-family: "Tajawal", sans-serif !important; }
     </a>
     <a class="admin-card" href="./team-submissions-review.html" style="--card-color:#ffc107">
       <div class="admin-card-icon">✅</div>
-      <h3>مراجعة بيانات الفرق</h3>
-      <p>اعتمد بيانات المدربين واللاعبين المُدخلة من إداريي الفرق</p>
+      <h3>مراجعة وتعديل بيانات الفرق</h3>
+      <p>اعتمد أو عدّل بيانات المدربين واللاعبين وصورهم لأي فريق</p>
     </a>
     <a class="admin-card" href="./news-admin.html" style="--card-color:#58a6ff">
       <div class="admin-card-icon">📰</div>
@@ -286,7 +307,7 @@ body { font-family: "Tajawal", sans-serif !important; }
   </div>
 
   <!-- روابط إضافية -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="admin-cards">
     <a class="admin-card" href="./admin-import.html" style="--card-color:#fbbf24">
       <div class="admin-card-icon">📥</div>
       <h3>استيراد لاعبين من Excel</h3>
