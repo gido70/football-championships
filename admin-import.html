@@ -598,6 +598,7 @@ async function startImport() {
       tournament_id: tournId,
       team_id: teamIdMap[r.team] || null,
       name: r.name,
+      full_name_ar: r.name,
       number: r.number || null,
       nationality: r.nationality || null,
       role: roleMap[r.role] || 'player_resident',
