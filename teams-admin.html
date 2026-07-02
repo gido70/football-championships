@@ -11,7 +11,32 @@
 <header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">👥</div><div class="page-title"><h1>إدارة الفرق</h1><p>إضافة الفرق للبطولة المختارة فقط، مع عداد المطلوب والحالي والمتبقي</p></div></div><div class="nav-actions"><a class="btn secondary" href="./admin-home.html">العودة إلى لوحة الأدمن</a><a class="btn secondary" href="./index.html">العودة إلى الموقع العام</a></div></div></header>
 <main class="container">
 <section class="panel"><h3>اختر البطولة</h3><div class="form-grid"><div class="field full"><label>البطولة</label><select id="tournamentSelect"></select></div></div></section>
-<section class="panel" style="margin-top:24px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.25)"><h3>🎨 تلوين فريق</h3><div class="form-grid"><div class="field full"><label>اختر فريقًا من البطولة المختارة فوق</label><select id="colorTeamSelect"><option value="">— اختر فريقًا —</option></select></div></div><div class="form-grid" style="margin-top:10px"><div class="field"><label>اللون الأساسي</label><input id="colorPick1" type="color" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>اللون الثانوي (اختياري)</label><input id="colorPick2" type="color" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div></div><div class="actions"><button class="btn" id="saveColorBtn" style="background:#a855f7">حفظ ألوان هذا الفريق</button></div><div class="status" id="colorMsg"></div></section>
+<section class="panel" style="margin-top:24px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.25)">
+<h3>🎨 هوية الفريق البصرية</h3>
+<div class="form-grid">
+  <div class="field full"><label>اختر فريقًا</label><select id="colorTeamSelect"><option value="">— اختر فريقًا —</option></select></div>
+</div>
+<div style="margin:14px 0;padding:12px;background:rgba(255,255,255,.03);border-radius:12px;border:1px solid rgba(255,255,255,.08)">
+  <div style="font-size:12px;font-weight:800;color:#8b949e;margin-bottom:10px;letter-spacing:1px">خيار الهوية البصرية — اختر واحداً:</div>
+  <div class="form-grid">
+    <div class="field">
+      <label>🖼️ رابط لوغو (صورة URL)</label>
+      <input id="logoUrlInput" placeholder="https://... أو اتركه فارغاً" style="font-size:12px">
+    </div>
+    <div class="field">
+      <label>🔡 رمز emoji أو نص</label>
+      <input id="teamEmojiInput" placeholder="مثال: 👑 أو ⚽ أو RMA" maxlength="10" style="font-size:20px;text-align:center">
+    </div>
+  </div>
+  <div style="font-size:11px;color:#6e7b8f;margin-top:6px">الأولوية: لوغو → رمز → أحرف ملوّنة تلقائياً</div>
+</div>
+<div class="form-grid">
+  <div class="field"><label>اللون الأساسي</label><input id="colorPick1" type="color" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div>
+  <div class="field"><label>اللون الثانوي (اختياري)</label><input id="colorPick2" type="color" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div>
+</div>
+<div class="actions"><button class="btn" id="saveColorBtn" style="background:#a855f7">💾 حفظ الهوية البصرية</button></div>
+<div class="status" id="colorMsg"></div>
+</section>
 <section class="panel" style="margin-top:24px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.25)"><h3>📋 نسخ فريق جاهز من بطولة أخرى (للتجربة)</h3><div class="form-grid"><div class="field"><label>انسخ من بطولة</label><select id="srcTournamentSelect"></select></div><div class="field"><label>الفريق</label><select id="srcTeamSelect"></select></div></div><div style="margin:10px 0"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="copyPlayersChk" checked> نسخ لاعبي الفريق أيضًا (بدون صورهم الخاصة، بحالة معتمدة مباشرة)</label></div><div class="actions"><button class="btn" id="copyBtn" style="background:#3fb950">نسخ هذا الفريق إلى البطولة الحالية</button></div><div class="status" id="copyMsg"></div></section>
 <section class="panel" style="margin-top:24px;background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.25)"><h3>📊 استيراد أسماء الفرق دفعة واحدة من إكسل</h3><p style="color:#9fb0c9;font-size:13px;margin-bottom:10px">ملف بعمود واحد "اسم الفريق" — يُنشئ كل الفرق دفعة واحدة في البطولة المختارة فوق، وكل فريق يحصل تلقائيًا على رابط إدخال خاص به (من صفحة "مراجعة بيانات الفرق")</p><div class="actions"><button class="btn secondary" id="dlTeamsTemplateBtn">⬇️ تحميل نموذج فارغ</button><button class="btn" id="importTeamsBtn" style="background:#58a6ff">📊 استيراد ملف إكسل</button><input type="file" id="teamsXlsxInput" accept=".xlsx,.xls,.csv" style="display:none"></div><div class="status" id="teamsImportMsg"></div></section>
 <section class="panel" style="margin-top:24px;"><h3>إضافة فريق</h3><div class="form-grid"><div class="field"><label>اسم الفريق</label><input id="teamName" placeholder="اسم الفريق"></div><div class="field"><label>اللون الأساسي</label><input id="teamColor1" type="color" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>اللون الثانوي (اختياري — لمزيج كقميصين)</label><input id="teamColor2" type="color" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>الاسم المختصر (اختياري)</label><input id="shortName" placeholder="مثال: MJD"></div></div><div class="actions"><button class="btn" id="addBtn">إضافة فريق</button><button class="btn secondary" id="reloadBtn">تحديث القائمة</button></div><div class="counter" id="counter"></div><div class="status" id="statusBox"></div></section>
