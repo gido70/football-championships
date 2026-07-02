@@ -1,245 +1,654 @@
-(function () {
-  const form = document.getElementById('group-form');
-  const statusEl = document.getElementById('form-status');
-  const bodyEl = document.getElementById('groups-body');
-  const connectionEl = document.getElementById('groups-connection');
-  const activeTournamentEl = document.getElementById('active-tournament-name');
-  const totalCountEl = document.getElementById('teams-total-count');
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#071426">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  
+  <title>المجموعات والتوزيع</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="page-head">
+        <div class="page-icon">🧩</div>
+        <div class="page-title">
+          <h1>المجموعات والتوزيع</h1>
+          <p>توزيع الفرق على المجموعات وربطها بالبطولة المختارة</p>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <a class="btn secondary" href="./admin-home.html">العودة إلى لوحة الأدمن</a>
+        <a class="btn secondary" href="./index.html">العودة إلى الموقع العام</a>
+      </div>
+    </div>
+  </header>
 
-  const tournamentSelect = document.getElementById('tournament-select');
-  const teamSelect = document.getElementById('team-select');
-  const clearBtn = document.getElementById('clear-group');
-  const refreshBtn = document.getElementById('refresh-page');
+  <main class="container">
+    <section class="card note">
+      هذه الصفحة تعمل على جدول <strong>teams</strong>، وتحفظ التوزيع داخل العمودين:
+      <strong>group_code</strong> و <strong>group_seed</strong>.
+      إذا ظهر خطأ أن الأعمدة غير موجودة، نفذ كود SQL الموجود أسفل الرسالة.
+    </section>
 
-  const teamsTable = 'teams';
-  const tournamentsTable = 'tournaments';
-  let client = null;
-  let tournaments = [];
-  let teams = [];
+    <section class="grid-2">
+      <section class="panel">
+        <h3>اختيار البطولة</h3>
+        <div class="form-grid">
+          <div class="field full">
+            <label>البطولة</label>
+            <select id="tournamentSelect"></select>
+          </div>
+        </div>
 
-  function msg(text, cls = '') {
-    statusEl.className = 'status-line ' + cls;
-    statusEl.textContent = text;
-  }
+        <ul class="quick-list" style="margin-top:18px;">
+          <li><span>حالة الاتصال</span><strong id="conn">جاري الفحص...</strong></li>
+          <li><span>عدد الفرق في البطولة</span><strong id="teamsCount">0</strong></li>
+          <li><span>عدد المجموعات المطلوب</span><strong id="groupsCount">0</strong></li>
+        </ul>
 
-  function teamName(row) {
-    return row.name || row.team_name || row.title || '';
-  }
+        <div id="pageStatus" class="status"></div>
+      </section>
 
-  async function loadTournaments() {
-    const { data, error } = await client
-      .from(tournamentsTable)
-      .select('id, name, season_label, is_active')
-      .order('created_at', { ascending: false, nullsFirst: false });
+      <section class="panel">
+        <h3>توزيع فريق</h3>
 
-    if (error) {
-      msg('تعذر قراءة البطولات: ' + error.message, 'error');
-      return;
+        <div class="form-grid">
+          <div class="field">
+            <label>الفريق</label>
+            <select id="teamSelect"></select>
+          </div>
+
+          <div class="field">
+            <label>المجموعة</label>
+            <select id="groupCode">
+              <option value="">اختر المجموعة</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>ترتيب الفريق داخل المجموعة</label>
+            <input id="groupSeed" type="number" min="1" placeholder="مثال: 1" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="saveBtn">حفظ التوزيع</button>
+          <button class="btn secondary" id="clearBtn">إزالة التوزيع</button>
+          <button class="btn secondary" id="reloadBtn">تحديث القائمة</button>
+        </div>
+
+        <div id="formStatus" class="status"></div>
+      </section>
+    </section>
+
+
+
+    <section class="panel" style="margin-top:24px;background:linear-gradient(135deg,rgba(74,130,255,.08),rgba(74,130,255,.03));border:1px solid rgba(74,130,255,.3)">
+      <h3>🤖 استيراد الجدول بالذكاء الاصطناعي</h3>
+      <p style="color:#9fb0c9;font-size:13px;margin-bottom:16px">
+        ارفع أي ملف يحتوي جدول البطولة (PDF أو Excel أو Word أو صورة) 
+        وسيستخرج الذكاء الاصطناعي الفرق والمجموعات والمباريات تلقائياً
+      </p>
+      <div class="actions">
+        <label class="btn" style="background:rgba(74,130,255,.2);border:1px solid rgba(74,130,255,.4);color:#58a6ff;cursor:pointer">
+          📎 اختر ملف (PDF / Excel / Word / صورة)
+          <input type="file" id="aiFileInput" accept=".pdf,.xlsx,.xls,.docx,.doc,.png,.jpg,.jpeg" style="display:none">
+        </label>
+        <button class="btn" id="aiImportBtn" style="background:linear-gradient(135deg,#4a82ff,#2e5fd4);display:none">
+          🤖 استخراج وتحليل بالذكاء الاصطناعي
+        </button>
+      </div>
+      <div id="aiFileName" style="font-size:13px;color:#58a6ff;margin-top:8px"></div>
+      <div class="status" id="aiStatus"></div>
+      
+      <!-- معاينة النتائج -->
+      <div id="aiPreview" style="display:none;margin-top:18px">
+        <div style="font-size:14px;font-weight:800;color:#c9a84c;margin-bottom:12px">📋 نتيجة التحليل — راجع وأكّد:</div>
+        <div id="aiPreviewContent" style="background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:16px;font-size:13px;white-space:pre-wrap;max-height:300px;overflow-y:auto;direction:rtl;text-align:right"></div>
+        <div class="actions" style="margin-top:14px">
+          <button class="btn" id="aiConfirmBtn" style="background:linear-gradient(135deg,#3fb950,#2d8f3c)">✅ تأكيد وإدراج في قاعدة البيانات</button>
+          <button class="btn secondary" id="aiCancelBtn">❌ إلغاء</button>
+        </div>
+      </div>
+    </section>
+    <section class="panel" style="margin-top:24px;background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.05));border:1px solid rgba(201,168,76,.3)">
+      <h3>🎲 إعداد البطولة تلقائياً — بضغطة واحدة</h3>
+      <p style="color:#9fb0c9;font-size:13px;margin-bottom:16px">يقسّم الفرق على المجموعات بالقرعة العشوائية ويولّد جدول كل المباريات فوراً</p>
+      <div class="actions">
+        <button class="btn" id="autoSetupBtn" style="background:linear-gradient(135deg,#c9a84c,#a8842e);color:#0d1117;font-size:15px;padding:14px 28px">
+          🎲 قرعة تلقائية + توليد الجدول كاملاً
+        </button>
+      </div>
+      <div class="status" id="autoStatus"></div>
+    </section>
+
+    <section class="panel" style="margin-top:24px;">
+      <h3>التوزيع الحالي</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>الفريق</th>
+              <th>الاختصار</th>
+              <th>المجموعة</th>
+              <th>الترتيب</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    const client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+    let tournaments = [];
+    let teams = [];
+    let selectedTournament = null;
+    let selectedTournamentGroupsCount = 0;
+
+    const tournamentSelect = document.getElementById('tournamentSelect');
+    const teamSelect = document.getElementById('teamSelect');
+    const groupCode = document.getElementById('groupCode');
+    const groupSeed = document.getElementById('groupSeed');
+    const rows = document.getElementById('rows');
+    const conn = document.getElementById('conn');
+    const teamsCount = document.getElementById('teamsCount');
+    const groupsCount = document.getElementById('groupsCount');
+    const pageStatus = document.getElementById('pageStatus');
+    const formStatus = document.getElementById('formStatus');
+
+    function setPageStatus(text, cls = '') {
+      pageStatus.className = 'status ' + cls;
+      pageStatus.textContent = text;
     }
 
-    tournaments = data || [];
-    tournamentSelect.innerHTML = '';
-
-    if (!tournaments.length) {
-      tournamentSelect.innerHTML = '<option value="">لا توجد بطولة</option>';
-      activeTournamentEl.textContent = 'لا توجد بطولة';
-      return;
+    function setFormStatus(text, cls = '') {
+      formStatus.className = 'status ' + cls;
+      formStatus.textContent = text;
     }
 
-    let selectedId = null;
-
-    tournaments.forEach((row) => {
-      const label = row.name + (row.season_label ? ' - ' + row.season_label : '');
-      const op = document.createElement('option');
-      op.value = String(row.id); // UUID-safe
-      op.textContent = label;
-      if (row.is_active && selectedId === null) selectedId = String(row.id);
-      tournamentSelect.appendChild(op);
-    });
-
-    if (!selectedId) selectedId = String(tournaments[0].id);
-    tournamentSelect.value = selectedId;
-
-    const active = tournaments.find(x => String(x.id) === selectedId);
-    activeTournamentEl.textContent = active ? (active.name + (active.season_label ? ' - ' + active.season_label : '')) : 'غير محددة';
-  }
-
-  async function loadTeamsForTournament() {
-    const tid = tournamentSelect.value; // keep as string for UUID compatibility
-    teamSelect.innerHTML = '<option value="">اختر الفريق</option>';
-
-    if (!tid) {
-      teams = [];
-      bodyEl.innerHTML = '<tr><td colspan="5">لا توجد بطولة محددة</td></tr>';
-      totalCountEl.textContent = '0';
-      return;
+    function buildGroupOptions(count) {
+      groupCode.innerHTML = '<option value="">اختر المجموعة</option>';
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      for (let i = 0; i < count; i++) {
+        const option = document.createElement('option');
+        option.value = letters[i];
+        option.textContent = letters[i];
+        groupCode.appendChild(option);
+      }
     }
 
-    const { data, error } = await client
-      .from(teamsTable)
-      .select('id, name, short_name, tournament_id, group_code, group_seed, is_active')
-      .eq('tournament_id', tid) // UUID-safe
-      .order('created_at', { ascending: true, nullsFirst: false });
+    async function loadTournaments() {
+      const { data, error } = await client
+        .from('tournaments')
+        .select('*')
+        .order('created_at', { ascending: false, nullsFirst: false });
 
-    if (error) {
-      bodyEl.innerHTML = `<tr><td colspan="5">تعذر قراءة الفرق: ${error.message}</td></tr>`;
-      totalCountEl.textContent = '0';
-      return;
-    }
-
-    teams = data || [];
-    totalCountEl.textContent = String(teams.length);
-
-    teams.forEach(row => {
-      const op = document.createElement('option');
-      op.value = String(row.id); // UUID-safe
-      op.textContent = teamName(row);
-      teamSelect.appendChild(op);
-    });
-
-    renderRows();
-  }
-
-  function renderRows() {
-    if (!teams.length) {
-      bodyEl.innerHTML = '<tr><td colspan="5">لا توجد فرق في هذه البطولة</td></tr>';
-      return;
-    }
-
-    const sorted = [...teams].sort((a, b) => {
-      const g1 = a.group_code || 'Z';
-      const g2 = b.group_code || 'Z';
-      if (g1 !== g2) return g1.localeCompare(g2);
-      return (a.group_seed || 999) - (b.group_seed || 999);
-    });
-
-    bodyEl.innerHTML = sorted.map(row => `
-      <tr>
-        <td>${teamName(row)}</td>
-        <td>${row.short_name ?? ''}</td>
-        <td>${row.group_code ?? '-'}</td>
-        <td>${row.group_seed ?? '-'}</td>
-        <td><button class="small-btn delete" data-id="${String(row.id)}">إزالة</button></td>
-      </tr>
-    `).join('');
-
-    bodyEl.querySelectorAll('[data-id]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-id');
-        const { error } = await client
-          .from(teamsTable)
-          .update({ group_code: null, group_seed: null })
-          .eq('id', id); // UUID-safe
-
-        if (error) {
-          msg('فشل إزالة التوزيع: ' + error.message, 'error');
-          return;
-        }
-
-        msg('تمت إزالة التوزيع بنجاح', 'success');
-        await loadTeamsForTournament();
-      });
-    });
-  }
-
-  async function init() {
-    try {
-      client = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-
-      const test = await client
-        .from(teamsTable)
-        .select('id, tournament_id, group_code, group_seed', { count: 'exact', head: true });
-
-      if (test.error) {
-        connectionEl.textContent = 'متصل لكن أعمدة التوزيع غير جاهزة';
-        bodyEl.innerHTML = `<tr><td colspan="5">تعذر بدء الصفحة: ${test.error.message}</td></tr>`;
+      if (error) {
+        conn.textContent = 'خطأ';
+        setPageStatus('تعذر قراءة البطولات: ' + error.message, 'err');
         return;
       }
 
-      connectionEl.textContent = 'متصل';
+      tournaments = data || [];
+      tournamentSelect.innerHTML = '';
+
+      if (!tournaments.length) {
+        tournamentSelect.innerHTML = '<option value="">لا توجد بطولات</option>';
+        conn.textContent = 'متصل';
+        setPageStatus('لا توجد بطولات حالياً', 'warn');
+        return;
+      }
+
+      tournaments.forEach(t => {
+        const option = document.createElement('option');
+        option.value = t.id;
+        option.textContent = t.name + (t.season_label ? ' - ' + t.season_label : '');
+        tournamentSelect.appendChild(option);
+      });
+
+      selectedTournament = tournaments[0].id;
+      tournamentSelect.value = selectedTournament;
+      selectedTournamentGroupsCount = tournaments[0].group_count || 0;
+      groupsCount.textContent = selectedTournamentGroupsCount;
+      buildGroupOptions(selectedTournamentGroupsCount);
+      conn.textContent = 'متصل';
+
+      await loadTeams();
+    }
+
+    async function loadTeams() {
+      if (!selectedTournament) {
+        rows.innerHTML = '<tr><td colspan="5">اختر بطولة أولاً</td></tr>';
+        teamSelect.innerHTML = '<option value="">اختر الفريق</option>';
+        teamsCount.textContent = '0';
+        return;
+      }
+
+      const { data, error } = await client
+        .from('teams')
+        .select('*')
+        .eq('tournament_id', selectedTournament)
+        .order('created_at', { ascending: true, nullsFirst: false });
+
+      if (error) {
+        rows.innerHTML = '<tr><td colspan="5">' + error.message + '</td></tr>';
+        teamSelect.innerHTML = '<option value="">اختر الفريق</option>';
+        teamsCount.textContent = '0';
+        setPageStatus('تعذر قراءة الفرق: ' + error.message, 'err');
+        return;
+      }
+
+      teams = data || [];
+      teamsCount.textContent = teams.length;
+
+      teamSelect.innerHTML = '<option value="">اختر الفريق</option>';
+      teams.forEach(team => {
+        const option = document.createElement('option');
+        option.value = team.id;
+        option.textContent = team.name;
+        teamSelect.appendChild(option);
+      });
+
+      if (!teams.length) {
+        rows.innerHTML = '<tr><td colspan="5">لا توجد فرق في هذه البطولة</td></tr>';
+        return;
+      }
+
+      const sortedTeams = [...teams].sort((a, b) => {
+        const aGroup = a.group_code || 'ZZ';
+        const bGroup = b.group_code || 'ZZ';
+        if (aGroup < bGroup) return -1;
+        if (aGroup > bGroup) return 1;
+        return (a.group_seed || 999) - (b.group_seed || 999);
+      });
+
+      rows.innerHTML = sortedTeams.map(team => `
+        <tr>
+          <td>${team.name ?? ''}</td>
+          <td>${team.short_name ?? ''}</td>
+          <td>${team.group_code ?? '-'}</td>
+          <td>${team.group_seed ?? '-'}</td>
+          <td>
+            <button class="btn secondary small-danger" onclick="removeAssignment('${team.id}')">إزالة</button>
+          </td>
+        </tr>
+      `).join('');
+
+      setPageStatus('تم تحميل الفرق بنجاح', 'ok');
+    }
+
+    tournamentSelect.addEventListener('change', async () => {
+      selectedTournament = tournamentSelect.value;
+      const tournament = tournaments.find(t => t.id === selectedTournament);
+      selectedTournamentGroupsCount = tournament ? (tournament.group_count || 0) : 0;
+      groupsCount.textContent = selectedTournamentGroupsCount;
+      buildGroupOptions(selectedTournamentGroupsCount);
+      await loadTeams();
+    });
+
+    teamSelect.addEventListener('change', () => {
+      const team = teams.find(t => t.id === teamSelect.value);
+      if (!team) {
+        groupCode.value = '';
+        groupSeed.value = '';
+        return;
+      }
+      groupCode.value = team.group_code || '';
+      groupSeed.value = team.group_seed || '';
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const teamId = teamSelect.value;
+      const code = groupCode.value;
+      const seed = groupSeed.value ? Number(groupSeed.value) : null;
+
+      if (!teamId) {
+        setFormStatus('اختر الفريق أولاً', 'warn');
+        return;
+      }
+
+      if (!code) {
+        setFormStatus('اختر المجموعة أولاً', 'warn');
+        return;
+      }
+
+      const { error } = await client
+        .from('teams')
+        .update({
+          group_code: code,
+          group_seed: seed
+        })
+        .eq('id', teamId);
+
+      if (error) {
+        setFormStatus('فشل الحفظ: ' + error.message, 'err');
+        return;
+      }
+
+      setFormStatus('تم حفظ التوزيع بنجاح', 'ok');
+      await loadTeams();
+    });
+
+    document.getElementById('clearBtn').addEventListener('click', async () => {
+      const teamId = teamSelect.value;
+
+      if (!teamId) {
+        setFormStatus('اختر الفريق أولاً', 'warn');
+        return;
+      }
+
+      const { error } = await client
+        .from('teams')
+        .update({
+          group_code: null,
+          group_seed: null
+        })
+        .eq('id', teamId);
+
+      if (error) {
+        setFormStatus('فشل إزالة التوزيع: ' + error.message, 'err');
+        return;
+      }
+
+      groupCode.value = '';
+      groupSeed.value = '';
+      setFormStatus('تمت إزالة التوزيع بنجاح', 'ok');
+      await loadTeams();
+    });
+
+    document.getElementById('reloadBtn').addEventListener('click', async () => {
       await loadTournaments();
-      await loadTeamsForTournament();
-    } catch (e) {
-      connectionEl.textContent = 'خطأ في الربط';
-      bodyEl.innerHTML = '<tr><td colspan="5">تعذر بدء الصفحة</td></tr>';
-      console.error(e);
-    }
-  }
+      setFormStatus('تم تحديث البيانات', 'ok');
+    });
 
-  tournamentSelect.addEventListener('change', async () => {
-    const active = tournaments.find(x => String(x.id) === tournamentSelect.value);
-    activeTournamentEl.textContent = active ? (active.name + (active.season_label ? ' - ' + active.season_label : '')) : 'غير محددة';
-    await loadTeamsForTournament();
-  });
+    async function removeAssignment(teamId) {
+      const { error } = await client
+        .from('teams')
+        .update({
+          group_code: null,
+          group_seed: null
+        })
+        .eq('id', teamId);
 
-  teamSelect.addEventListener('change', () => {
-    const selected = teams.find(x => String(x.id) === teamSelect.value);
-    document.getElementById('group-code').value = selected?.group_code || '';
-    document.getElementById('seed-order').value = selected?.group_seed ?? '';
-  });
+      if (error) {
+        setFormStatus('فشل إزالة التوزيع: ' + error.message, 'err');
+        return;
+      }
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const teamId = teamSelect.value;
-    const groupCode = document.getElementById('group-code').value;
-    const groupSeed = document.getElementById('seed-order').value;
-
-    if (!teamId) {
-      msg('اختر الفريق أولاً', 'warning');
-      return;
-    }
-    if (!groupCode) {
-      msg('اختر المجموعة أولاً', 'warning');
-      return;
+      setFormStatus('تمت إزالة التوزيع بنجاح', 'ok');
+      await loadTeams();
     }
 
-    msg('جاري الحفظ...');
-    const { error } = await client
-      .from(teamsTable)
-      .update({
-        group_code: groupCode,
-        group_seed: groupSeed ? Number(groupSeed) : null
-      })
-      .eq('id', teamId); // UUID-safe
+    window.removeAssignment = removeAssignment;
 
-    if (error) {
-      msg('فشل الحفظ: ' + error.message, 'error');
-      return;
-    }
+    // ===== استيراد بالذكاء الاصطناعي =====
+    let aiExtractedData = null;
+    let aiFileData = null;
+    let aiFileType = null;
 
-    msg('تم حفظ التوزيع بنجاح', 'success');
-    await loadTeamsForTournament();
-  });
+    document.getElementById('aiFileInput').addEventListener('change', function() {
+      const file = this.files[0];
+      if (!file) return;
+      document.getElementById('aiFileName').textContent = '📄 ' + file.name;
+      document.getElementById('aiImportBtn').style.display = 'inline-flex';
+      document.getElementById('aiPreview').style.display = 'none';
+      document.getElementById('aiStatus').textContent = '';
+      aiFileType = file.name.split('.').pop().toLowerCase();
+      
+      const reader = new FileReader();
+      reader.onload = e => { aiFileData = e.target.result; };
+      if (['png','jpg','jpeg'].includes(aiFileType)) reader.readAsDataURL(file);
+      else reader.readAsDataURL(file);
+    });
 
-  clearBtn.addEventListener('click', async () => {
-    const teamId = teamSelect.value;
-    if (!teamId) {
-      msg('اختر الفريق أولاً', 'warning');
-      return;
-    }
+    document.getElementById('aiImportBtn').addEventListener('click', async () => {
+      if (!selectedTournament) { alert('اختر بطولة أولاً'); return; }
+      if (!aiFileData) { alert('اختر ملفاً أولاً'); return; }
+      
+      const statusEl = document.getElementById('aiStatus');
+      const btn = document.getElementById('aiImportBtn');
+      btn.disabled = true;
+      statusEl.className = 'status';
+      statusEl.textContent = '⏳ الذكاء الاصطناعي يقرأ ويحلل الملف...';
 
-    const { error } = await client
-      .from(teamsTable)
-      .update({ group_code: null, group_seed: null })
-      .eq('id', teamId); // UUID-safe
+      try {
+        const base64 = aiFileData.split(',')[1];
+        const mimeType = aiFileData.split(';')[0].split(':')[1];
+        
+        const prompt = `أنت مساعد لإدارة البطولات الرياضية. حلّل هذا الملف المرفق واستخرج منه:
+1. أسماء الفرق المشاركة
+2. تقسيم الفرق على المجموعات (A, B, C, D...)
+3. جدول المباريات (الفريق الأول، الفريق الثاني، رقم المباراة)
 
-    if (error) {
-      msg('فشل إزالة التوزيع: ' + error.message, 'error');
-      return;
-    }
+أجب بـ JSON فقط بهذا الشكل بالضبط:
+{
+  "groups": {
+    "A": ["اسم الفريق 1", "اسم الفريق 2", "اسم الفريق 3", "اسم الفريق 4"],
+    "B": ["اسم الفريق 5", ...]
+  },
+  "matches": [
+    {"match_no": 1, "group": "A", "home": "اسم الفريق 1", "away": "اسم الفريق 2"},
+    ...
+  ]
+}
+إن لم تجد مباريات محددة، استنتجها من المجموعات (كل فريق يلعب مع كل فريق مرة واحدة).`;
 
-    document.getElementById('group-code').value = '';
-    document.getElementById('seed-order').value = '';
-    msg('تمت إزالة التوزيع', 'success');
-    await loadTeamsForTournament();
-  });
+        const body = {
+          model: 'claude-sonnet-4-6',
+          max_tokens: 4000,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64 } }
+            ]
+          }]
+        };
 
-  refreshBtn.addEventListener('click', async () => {
-    await loadTournaments();
-    await loadTeamsForTournament();
-    msg('تم تحديث الصفحة');
-  });
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
 
-  init();
-})();
+        const result = await resp.json();
+        const text = result.content?.[0]?.text || '';
+        
+        // استخراج JSON
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('لم يتمكن الذكاء الاصطناعي من استخراج البيانات — تأكد أن الملف يحتوي جدولاً واضحاً');
+        
+        aiExtractedData = JSON.parse(jsonMatch[0]);
+        
+        // عرض معاينة
+        let preview = '🏆 المجموعات والفرق:\n';
+        for (const [grp, teams] of Object.entries(aiExtractedData.groups || {})) {
+          preview += `\nالمجموعة ${grp}:\n`;
+          teams.forEach((t,i) => preview += `  ${i+1}. ${t}\n`);
+        }
+        preview += `\n⚽ المباريات (${(aiExtractedData.matches||[]).length} مباراة):\n`;
+        (aiExtractedData.matches||[]).slice(0,10).forEach(m => {
+          preview += `  مباراة ${m.match_no}: ${m.home} ضد ${m.away} [${m.group}]\n`;
+        });
+        if ((aiExtractedData.matches||[]).length > 10) preview += `  ... و${aiExtractedData.matches.length-10} مباراة أخرى`;
+        
+        document.getElementById('aiPreviewContent').textContent = preview;
+        document.getElementById('aiPreview').style.display = 'block';
+        statusEl.className = 'status ok';
+        statusEl.textContent = '✅ اكتمل التحليل — راجع النتائج وأكّد';
+        
+      } catch(err) {
+        statusEl.className = 'status err';
+        statusEl.textContent = '❌ ' + err.message;
+      }
+      btn.disabled = false;
+    });
+
+    document.getElementById('aiConfirmBtn')?.addEventListener('click', async () => {
+      if (!aiExtractedData || !selectedTournament) return;
+      const statusEl = document.getElementById('aiStatus');
+      statusEl.className = 'status'; statusEl.textContent = '⏳ جاري الإدراج في قاعدة البيانات...';
+      
+      try {
+        // جلب الفرق الموجودة
+        const {data:existingTeams} = await client.from('teams').select('id,name,name_ar').eq('tournament_id', selectedTournament);
+        const teamMap = {};
+        (existingTeams||[]).forEach(t => {
+          teamMap[t.name] = t.id;
+          if (t.name_ar) teamMap[t.name_ar] = t.id;
+        });
+        
+        // إضافة الفرق غير الموجودة + تعيين المجموعة
+        const letters = 'ABCDEFGHIJKLMNOP';
+        let seed = {};
+        for (const [grp, teams] of Object.entries(aiExtractedData.groups||{})) {
+          seed[grp] = 1;
+          for (const teamName of teams) {
+            if (!teamMap[teamName]) {
+              const {data:newT} = await client.from('teams').insert({
+                name: teamName, name_ar: teamName,
+                tournament_id: selectedTournament,
+                access_code: String(Math.floor(Math.random()*90000+10000)),
+                group_code: grp, group_seed: seed[grp]++,
+                is_active: true
+              }).select('id').single();
+              if (newT) teamMap[teamName] = newT.id;
+            } else {
+              await client.from('teams').update({group_code: grp, group_seed: seed[grp]++}).eq('id', teamMap[teamName]);
+            }
+          }
+        }
+        
+        // إدراج المباريات
+        if (aiExtractedData.matches?.length) {
+          await client.from('matches').delete().eq('tournament_id', selectedTournament).eq('round_name','group');
+          const matchRows = aiExtractedData.matches.map(m => ({
+            tournament_id: selectedTournament,
+            home_team_id: teamMap[m.home] || null,
+            away_team_id: teamMap[m.away] || null,
+            round_name: 'group', stage_code: m.group||'A',
+            match_no: m.match_no, status: 'scheduled'
+          }));
+          const {error:mErr} = await client.from('matches').insert(matchRows);
+          if (mErr) throw new Error('خطأ في المباريات: ' + mErr.message);
+        }
+        
+        statusEl.className = 'status ok';
+        statusEl.textContent = `🎉 تم! ${Object.values(aiExtractedData.groups||{}).flat().length} فريق و${aiExtractedData.matches?.length||0} مباراة أُدرجت بنجاح`;
+        document.getElementById('aiPreview').style.display = 'none';
+        aiExtractedData = null;
+        await loadTeams();
+        
+      } catch(err) {
+        statusEl.className = 'status err';
+        statusEl.textContent = '❌ ' + err.message;
+      }
+    });
+
+    document.getElementById('aiCancelBtn')?.addEventListener('click', () => {
+      document.getElementById('aiPreview').style.display = 'none';
+      aiExtractedData = null;
+    });
+
+
+    // ===== قرعة تلقائية + توليد الجدول =====
+    document.getElementById('autoSetupBtn').addEventListener('click', async () => {
+      if (!selectedTournament) { alert('اختر بطولة أولاً'); return; }
+      const status = document.getElementById('autoStatus');
+      const btn = document.getElementById('autoSetupBtn');
+      btn.disabled = true;
+      
+      try {
+        // 1. جلب الفرق
+        const {data:allTeams, error:tErr} = await client.from('teams').select('id,name').eq('tournament_id', selectedTournament);
+        if (tErr || !allTeams?.length) throw new Error('لا توجد فرق — أضف الفرق أولاً');
+        
+        const n = allTeams.length;
+        const groupCount = n <= 8 ? 2 : n <= 12 ? 3 : 4;
+        const letters = ['A','B','C','D'];
+        
+        // 2. خلط عشوائي
+        const shuffled = [...allTeams].sort(() => Math.random() - 0.5);
+        
+        // 3. توزيع على المجموعات
+        status.className = 'status'; status.textContent = '⏳ توزيع الفرق على المجموعات...';
+        const groupAssign = [];
+        shuffled.forEach((team, i) => {
+          groupAssign.push({
+            id: team.id,
+            group_code: letters[i % groupCount],
+            group_seed: Math.floor(i / groupCount) + 1
+          });
+        });
+        
+        for (const g of groupAssign) {
+          await client.from('teams').update({group_code: g.group_code, group_seed: g.group_seed}).eq('id', g.id);
+        }
+        status.textContent = `✅ وُزّع ${n} فريق على ${groupCount} مجموعات`;
+        
+        // 4. توليد المباريات
+        status.textContent = '⏳ توليد جدول المباريات...';
+        const matches = [];
+        let matchNo = 1;
+        
+        for (let g = 0; g < groupCount; g++) {
+          const groupTeams = groupAssign.filter(t => t.group_code === letters[g]).map(t => t.id);
+          // كل فريق يلعب مع كل فريق مرة واحدة
+          for (let i = 0; i < groupTeams.length; i++) {
+            for (let j = i+1; j < groupTeams.length; j++) {
+              matches.push({
+                tournament_id: selectedTournament,
+                home_team_id: groupTeams[i],
+                away_team_id: groupTeams[j],
+                round_name: 'group',
+                stage_code: letters[g],
+                match_no: matchNo++,
+                status: 'scheduled',
+                home_score: null,
+                away_score: null
+              });
+            }
+          }
+        }
+        
+        // حذف المباريات القديمة لدور المجموعات
+        await client.from('matches').delete()
+          .eq('tournament_id', selectedTournament)
+          .eq('round_name', 'group');
+        
+        // إدراج دفعات
+        const batchSize = 20;
+        for (let i = 0; i < matches.length; i += batchSize) {
+          const {error: mErr} = await client.from('matches').insert(matches.slice(i, i+batchSize));
+          if (mErr) throw new Error('فشل توليد المباريات: ' + mErr.message);
+        }
+        
+        status.className = 'status ok';
+        status.textContent = `🎉 تم! ${groupCount} مجموعات × ${matches.length} مباراة جاهزة — اذهب لصفحة المباريات`;
+        await loadTeams();
+        
+      } catch (err) {
+        status.className = 'status err';
+        status.textContent = '❌ ' + err.message;
+      }
+      btn.disabled = false;
+    });
+
+    loadTournaments();
+  </script>
+</body>
+</html>
