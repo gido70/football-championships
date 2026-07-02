@@ -88,34 +88,42 @@ function showErr(msg){
   document.getElementById('app').innerHTML=`<div class="loader">⚠️ ${msg}</div>`;
 }
 
-function buildForm(){
+function esc(s){return (s??'').toString().replace(/"/g,'&quot;');}
+
+let EXISTING_PLAYERS=[];
+
+async function buildForm(){
+  document.getElementById('app').innerHTML='<div class="loader">⏳ جاري تحميل بيانات الفريق الحالية...</div>';
+  const {data:players}=await sb.from('players').select('*').eq('team_id',TEAM.id).order('created_at',{ascending:true});
+  EXISTING_PLAYERS=players||[];
+
   document.getElementById('app').innerHTML=`
     <div class="hd">
       <h1>📋 إدخال بيانات ${TEAM.name_ar||TEAM.name}</h1>
-      <p>املأ البيانات بدقة — ستراجَع من إدارة البطولة قبل النشر</p>
+      <p>يمكنك التعديل أو إضافة لاعبين في أي وقت قبل بداية البطولة</p>
     </div>
 
     <div class="card">
       <h2>🧑‍💼 بيانات الإداري</h2>
       <div class="row2">
-        <div class="field"><label>اسم الإداري</label><input type="text" id="adminName" placeholder="مثال: محمد أحمد"></div>
-        <div class="field"><label>الجنسية</label><input type="text" id="adminNat"></div>
+        <div class="field"><label>اسم الإداري</label><input type="text" id="adminName" value="${esc(TEAM.submitted_by_name)}" placeholder="مثال: محمد أحمد"></div>
+        <div class="field"><label>الجنسية</label><input type="text" id="adminNat" value="${esc(TEAM.admin_nationality)}"></div>
       </div>
       <div class="row2">
-        <div class="field"><label>صورة فوتوغرافية حديثة — تظهر للجمهور</label>${uploadBox('adminPhoto')}</div>
-        <div class="field"><label>صورة الهوية أو الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('adminDoc')}</div>
+        <div class="field"><label>صورة فوتوغرافية حديثة — تظهر للجمهور</label>${uploadBox('adminPhoto',TEAM.admin_photo_url)}</div>
+        <div class="field"><label>صورة الهوية أو الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('adminDoc',null,!!TEAM.admin_doc_url)}</div>
       </div>
     </div>
 
     <div class="card">
       <h2>🧑‍🏫 بيانات المدرب</h2>
       <div class="row2">
-        <div class="field"><label>اسم المدرب</label><input type="text" id="coachName"></div>
-        <div class="field"><label>الجنسية</label><input type="text" id="coachNat"></div>
+        <div class="field"><label>اسم المدرب</label><input type="text" id="coachName" value="${esc(TEAM.coach_name)}"></div>
+        <div class="field"><label>الجنسية</label><input type="text" id="coachNat" value="${esc(TEAM.coach_nationality)}"></div>
       </div>
       <div class="row2">
-        <div class="field"><label>صورة فوتوغرافية حديثة — تظهر للجمهور</label>${uploadBox('coachPhoto')}</div>
-        <div class="field"><label>صورة الهوية أو الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('coachDoc')}</div>
+        <div class="field"><label>صورة فوتوغرافية حديثة — تظهر للجمهور</label>${uploadBox('coachPhoto',TEAM.coach_photo_url)}</div>
+        <div class="field"><label>صورة الهوية أو الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('coachDoc',null,!!TEAM.coach_id_url)}</div>
       </div>
     </div>
 
@@ -130,14 +138,23 @@ function buildForm(){
     <input type="file" id="xlsxInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(this)">
     <div id="xlsxMsg" style="font-size:12px;color:#8b949e;margin-top:8px;text-align:center"></div>
 
-    <button type="button" class="submit-btn" id="submitBtn" onclick="submitAll()">📤 إرسال البيانات للمراجعة</button>
+    <button type="button" class="submit-btn" id="submitBtn" onclick="submitAll()">💾 حفظ البيانات</button>
     <div id="msg"></div>
   `;
-  addPlayer(true); // حارس مرمى افتراضي أول لاعب
+  playerCount=0;
+  if(EXISTING_PLAYERS.length){
+    EXISTING_PLAYERS.forEach(p=>addPlayer(false,p));
+  }else{
+    addPlayer(true);
+  }
 }
 
-function uploadBox(key){
-  return `<div class="upload-box" id="${key}_box">📎 اضغط لرفع صورة
+function uploadBox(key,previewUrl,uploadedFlag){
+  const inner=previewUrl
+    ? `<img src="${previewUrl}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;display:block;margin:0 auto 6px">📎 استبدال الصورة`
+    : (uploadedFlag ? '✅ تم الرفع سابقاً — اضغط للاستبدال' : '📎 اضغط لرفع صورة');
+  const cls=(previewUrl||uploadedFlag)?'upload-box has-file':'upload-box';
+  return `<div class="${cls}" id="${key}_box">${inner}
     <input type="file" accept="image/*" onchange="onFile('${key}',this)">
   </div>`;
 }
@@ -150,27 +167,39 @@ function onFile(key,input){
   document.getElementById(key+'_box').firstChild.textContent='✅ '+f.name;
 }
 
-function addPlayer(isFirst){
+function addPlayer(isFirst,existing){
   playerCount++;
   const n=playerCount;
   const div=document.createElement('div');
   div.className='player-card';
   div.id='player_'+n;
+  if(existing&&existing.id)div.setAttribute('data-id',existing.id);
+  const gkChecked=existing?existing.is_goalkeeper:isFirst;
+  const removeBtn=existing&&existing.id
+    ? `<button type="button" class="rm-player" onclick="deleteExistingPlayer(${n},'${existing.id}')">🗑️ حذف نهائي</button>`
+    : (n>1?`<button type="button" class="rm-player" onclick="removePlayer(${n})">✕ إزالة</button>`:'');
   div.innerHTML=`
     <span class="pnum">لاعب ${n}</span>
-    ${n>1?`<button type="button" class="rm-player" onclick="removePlayer(${n})">✕ إزالة</button>`:''}
-    <label class="gk-check"><input type="checkbox" id="p${n}_gk" ${isFirst?'checked':''}> 🧤 حارس مرمى</label>
+    ${removeBtn}
+    <label class="gk-check"><input type="checkbox" id="p${n}_gk" ${gkChecked?'checked':''}> 🧤 حارس مرمى</label>
     <div class="row2">
-      <div class="field"><label>الاسم الكامل</label><input type="text" id="p${n}_name"></div>
-      <div class="field"><label>الرقم</label><input type="text" id="p${n}_num"></div>
+      <div class="field"><label>الاسم الكامل</label><input type="text" id="p${n}_name" value="${esc(existing?.name)}"></div>
+      <div class="field"><label>الرقم</label><input type="text" id="p${n}_num" value="${esc(existing?.number)}"></div>
     </div>
-    <div class="field"><label>الجنسية</label><input type="text" id="p${n}_nat"></div>
+    <div class="field"><label>الجنسية</label><input type="text" id="p${n}_nat" value="${esc(existing?.nationality)}"></div>
     <div class="row2">
-      <div class="field"><label>صورة فوتوغرافية حديثة — تظهر للجمهور</label>${uploadBox('p'+n+'_jersey')}</div>
-      <div class="field"><label>صورة الهوية أو الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('p'+n+'_doc')}</div>
+      <div class="field"><label>صورة فوتوغرافية حديثة — تظهر للجمهور</label>${uploadBox('p'+n+'_jersey',existing?.jersey_photo_url)}</div>
+      <div class="field"><label>صورة الهوية أو الجواز (خاصة، لا تظهر للجمهور)</label>${uploadBox('p'+n+'_doc',null,!!existing?.id_photo_url)}</div>
     </div>
   `;
   document.getElementById('playersWrap').appendChild(div);
+}
+
+async function deleteExistingPlayer(n,id){
+  if(!confirm('حذف هذا اللاعب نهائيًا من قاعدة البيانات؟'))return;
+  const {error}=await sb.from('players').delete().eq('id',id);
+  if(error){alert('فشل الحذف: '+error.message);return;}
+  document.getElementById('player_'+n)?.remove();
 }
 function downloadTemplate(){
   const data=[
@@ -258,55 +287,71 @@ async function submitAll(){
   const prefix='team-'+TEAM.id;
   msg.innerHTML='<div class="progress">⏳ جاري رفع الملفات وحفظ البيانات...</div>';
 
-  const adminDocPath=await uploadFile('adminDoc','team-docs',prefix);
-  const adminPhotoPath=await uploadFile('adminPhoto','team-public',prefix);
-  let adminPhotoUrl=null;
-  if(adminPhotoPath){const {data}=sb.storage.from('team-public').getPublicUrl(adminPhotoPath);adminPhotoUrl=data?.publicUrl;}
-  const coachDocPath=await uploadFile('coachDoc','team-docs',prefix);
-  const coachPhotoPath=await uploadFile('coachPhoto','team-public',prefix);
-  let coachPhotoUrl=null;
-  if(coachPhotoPath){const {data}=sb.storage.from('team-public').getPublicUrl(coachPhotoPath);coachPhotoUrl=data?.publicUrl;}
-
-  const {error:teamErr}=await sb.from('teams').update({
+  const teamUpdate={
     submitted_by_name:adminName,
     admin_nationality:document.getElementById('adminNat').value.trim()||null,
-    admin_doc_url:adminDocPath,
-    admin_photo_url:adminPhotoUrl,
     coach_name:document.getElementById('coachName').value.trim()||null,
     coach_nationality:document.getElementById('coachNat').value.trim()||null,
-    coach_id_url:coachDocPath,
-    coach_photo_url:coachPhotoUrl,
     coach_status:'pending'
-  }).eq('id',TEAM.id);
+  };
+  if(files['adminDoc']){
+    const p=await uploadFile('adminDoc','team-docs',prefix);
+    if(p)teamUpdate.admin_doc_url=p;
+  }
+  if(files['adminPhoto']){
+    const p=await uploadFile('adminPhoto','team-public',prefix);
+    if(p){const {data}=sb.storage.from('team-public').getPublicUrl(p);teamUpdate.admin_photo_url=data?.publicUrl;}
+  }
+  if(files['coachDoc']){
+    const p=await uploadFile('coachDoc','team-docs',prefix);
+    if(p)teamUpdate.coach_id_url=p;
+  }
+  if(files['coachPhoto']){
+    const p=await uploadFile('coachPhoto','team-public',prefix);
+    if(p){const {data}=sb.storage.from('team-public').getPublicUrl(p);teamUpdate.coach_photo_url=data?.publicUrl;}
+  }
 
+  const {error:teamErr}=await sb.from('teams').update(teamUpdate).eq('id',TEAM.id);
   if(teamErr){msg.innerHTML='<div class="msg err">❌ فشل حفظ بيانات المدرب: '+teamErr.message+'</div>';btn.disabled=false;return;}
 
   let ok=0,fail=0;
   for(const card of playerCards){
     const n=card.id.split('_')[1];
+    const existingId=card.getAttribute('data-id');
     const name=document.getElementById('p'+n+'_name').value.trim();
     if(!name)continue;
-    const jerseyPath=await uploadFile('p'+n+'_jersey','team-public',prefix);
-    const docPath=await uploadFile('p'+n+'_doc','team-docs',prefix);
-    let jerseyUrl=null;
-    if(jerseyPath){const {data}=sb.storage.from('team-public').getPublicUrl(jerseyPath);jerseyUrl=data?.publicUrl;}
-    const {error}=await sb.from('players').insert({
-      tournament_id:TEAM.tournament_id,
-      team_id:TEAM.id,
+
+    const payload={
       name,
       full_name_ar:name,
       number:parseInt(document.getElementById('p'+n+'_num').value)||null,
       nationality:document.getElementById('p'+n+'_nat').value.trim()||null,
-      is_goalkeeper:document.getElementById('p'+n+'_gk').checked,
-      jersey_photo_url:jerseyUrl,
-      id_photo_url:docPath,
-      submission_status:'pending'
-    });
+      is_goalkeeper:document.getElementById('p'+n+'_gk').checked
+    };
+    if(files['p'+n+'_jersey']){
+      const jp=await uploadFile('p'+n+'_jersey','team-public',prefix);
+      if(jp){const {data}=sb.storage.from('team-public').getPublicUrl(jp);payload.jersey_photo_url=data?.publicUrl;}
+    }
+    if(files['p'+n+'_doc']){
+      const dp=await uploadFile('p'+n+'_doc','team-docs',prefix);
+      if(dp)payload.id_photo_url=dp;
+    }
+
+    let error;
+    if(existingId){
+      payload.submission_status='pending';
+      ({error}=await sb.from('players').update(payload).eq('id',existingId));
+    }else{
+      payload.tournament_id=TEAM.tournament_id;
+      payload.team_id=TEAM.id;
+      payload.submission_status='pending';
+      ({error}=await sb.from('players').insert(payload));
+    }
     if(error){fail++;console.error(error);}else ok++;
   }
 
   if(fail===0){
-    msg.innerHTML=`<div class="msg ok">✅ تم إرسال بيانات ${ok} لاعبًا والمدرب بنجاح — بانتظار مراجعة إدارة البطولة</div>`;
+    msg.innerHTML=`<div class="msg ok">✅ تم حفظ بيانات ${ok} لاعبًا والإداري/المدرب بنجاح — يمكنك العودة والتعديل في أي وقت بنفس الرابط</div>`;
   }else{
     msg.innerHTML=`<div class="msg err">⚠️ تم حفظ ${ok} لاعبًا، وفشل ${fail} — أعد المحاولة لمن فشل</div>`;
   }
