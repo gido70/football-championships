@@ -357,7 +357,7 @@ async function loadLive(){
 }
 
 async function loadTournaments(){
-  const {data}=await sb.from('tournaments').select('*').neq('status','draft').order('created_at',{ascending:false});
+  const {data}=await sb.from('tournaments').select('*').neq('status','draft').order('status',{ascending:true}).order('created_at',{ascending:false});
   const g=document.getElementById('tGrid');
   if(!data?.length){g.innerHTML='<div class="empty"><span class="empty-ic">🏆</span><p>لا توجد بطولات بعد</p></div>';return;}
   const sl={draft:'مسودة',active:'نشطة',completed:'منتهية',archived:'مؤرشفة'};
