@@ -43,7 +43,7 @@ select{width:100%;padding:10px;background:#161b22;border:1px solid #30363d;borde
 </head>
 <body>
 <div class="wrap">
-  <h1>✅ مراجعة بيانات الفرق المُدخلة</h1>
+  <h1>✅ مراجعة وتعديل بيانات الفرق</h1>
   <div class="team-sel">
     <select id="teamSel" onchange="loadTeam()"><option>اختر بطولة وفريق...</option></select>
   </div>
@@ -98,12 +98,13 @@ async function loadTeam(){
       <h2>🧑‍💼 الإداري</h2>
       ${team.submitted_by_name?`
       <div class="kv">
-        <div>الاسم: <b>${team.submitted_by_name}</b></div>
-        <div>الجنسية: <b>${team.admin_nationality||'—'}</b></div>
+        <div>الاسم: <input id="adminNameEdit" value="${(team.submitted_by_name||'').replace(/"/g,'&quot;')}" style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit"></div>
+        <div>الجنسية: <input id="adminNatEdit" value="${(team.admin_nationality||'').replace(/"/g,'&quot;')}" style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit"></div>
       </div>
       <div class="docs">
         ${adminDocUrl?`<a class="doc-link" href="${adminDocUrl}" target="_blank">🪪 الهوية/الجواز</a>`:''}
         ${adminPhotoUrl?`<a class="doc-link" href="${adminPhotoUrl}" target="_blank">📷 الصورة الفوتوغرافية</a>`:''}
+        <button class="btn-app" onclick="saveAdmin()">💾 حفظ التعديل</button>
       </div>
       `:'<div class="empty">لم تُدخل بيانات إداري بعد</div>'}
     </div>
@@ -112,13 +113,14 @@ async function loadTeam(){
       <h2>🧑‍🏫 المدرب <span class="badge ${team.coach_status==='approved'?'b-approved':'b-pending'}">${team.coach_status==='approved'?'معتمد':'بانتظار المراجعة'}</span></h2>
       ${team.coach_name?`
       <div class="kv">
-        <div>الاسم: <b>${team.coach_name||'—'}</b></div>
-        <div>الجنسية: <b>${team.coach_nationality||'—'}</b></div>
+        <div>الاسم: <input id="coachNameEdit" value="${(team.coach_name||'').replace(/"/g,'&quot;')}" style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit"></div>
+        <div>الجنسية: <input id="coachNatEdit" value="${(team.coach_nationality||'').replace(/"/g,'&quot;')}" style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit"></div>
         <div>أُدخلت بواسطة: <b>${team.submitted_by_name||'—'}</b></div>
       </div>
       <div class="docs">
         ${coachIdUrl?`<a class="doc-link" href="${coachIdUrl}" target="_blank">🪪 عرض الهوية/الجواز</a>`:''}
         ${coachPhotoUrl?`<a class="doc-link" href="${coachPhotoUrl}" target="_blank">📷 الصورة الفوتوغرافية</a>`:''}
+        <button class="btn-app" onclick="saveCoach()">💾 حفظ التعديل</button>
       </div>
       ${team.coach_status!=='approved'?`<div class="actions"><button class="btn-app" onclick="approveCoach()">✓ اعتماد المدرب</button></div>`:''}
       `:`<div class="empty">لم تُدخل بيانات مدرب بعد</div>`}
@@ -127,14 +129,20 @@ async function loadTeam(){
     <div class="sec">
       <h2>⚽ اللاعبون (${(players||[]).length})</h2>
       ${!players||!players.length?'<div class="empty">لا يوجد لاعبون مُدخلون بعد</div>':players.map(p=>`
-        <div class="player-row">
-          ${p.jersey_photo_url?`<img class="jersey" src="${p.jersey_photo_url}">`:'<div class="jersey"></div>'}
-          <div style="flex:1">
-            <b>${p.is_goalkeeper?'🧤 ':''}#${p.number??'—'} ${p.full_name_ar||p.name}</b>
-            <div style="font-size:12px;color:#8b949e">${p.nationality||'—'}</div>
+        <div class="player-row" style="flex-wrap:wrap">
+          <label style="cursor:pointer" title="اضغط لاستبدال الصورة">
+            ${p.jersey_photo_url?`<img class="jersey" id="jimg-${p.id}" src="${p.jersey_photo_url}">`:`<div class="jersey" id="jimg-${p.id}" style="display:flex;align-items:center;justify-content:center">👤</div>`}
+            <input type="file" accept="image/*" style="display:none" onchange="replacePhoto('${p.id}',this)">
+          </label>
+          <div style="flex:1;min-width:220px;display:flex;gap:8px;flex-wrap:wrap">
+            <input id="pname-${p.id}" value="${(p.full_name_ar||p.name||'').replace(/"/g,'&quot;')}" placeholder="الاسم" style="flex:2;min-width:120px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit">
+            <input id="pnum-${p.id}" value="${p.number??''}" placeholder="#" style="width:50px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit;text-align:center">
+            <input id="pnat-${p.id}" value="${(p.nationality||'').replace(/"/g,'&quot;')}" placeholder="الجنسية" style="flex:1;min-width:90px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit">
+            <label style="font-size:12px;color:#ffd700;display:flex;align-items:center;gap:4px"><input type="checkbox" id="pgk-${p.id}" ${p.is_goalkeeper?'checked':''}> 🧤</label>
           </div>
           <span class="badge ${p.submission_status==='approved'?'b-approved':'b-pending'}">${p.submission_status==='approved'?'معتمد':'بانتظار'}</span>
           <button class="doc-link" onclick="viewDocs('${p.id_photo_url||''}')">🪪 الهوية/الجواز</button>
+          <button class="btn-app" onclick="savePlayer('${p.id}')">💾 حفظ</button>
           ${p.submission_status!=='approved'?`<button class="btn-app" onclick="approvePlayer('${p.id}')">✓ اعتماد</button>`:''}
           <button class="btn-rej" onclick="rejectPlayer('${p.id}')">✕ حذف</button>
         </div>
@@ -144,6 +152,63 @@ async function loadTeam(){
   document.getElementById('content').innerHTML=html;
 }
 
+async function saveAdmin(){
+  const name=document.getElementById('adminNameEdit').value.trim();
+  const nat=document.getElementById('adminNatEdit').value.trim();
+  const {error}=await sb.from('teams').update({submitted_by_name:name||null,admin_nationality:nat||null}).eq('id',CUR.id);
+  if(error){alert('فشل الحفظ: '+error.message);return;}
+  loadTeam();
+}
+async function saveCoach(){
+  const name=document.getElementById('coachNameEdit').value.trim();
+  const nat=document.getElementById('coachNatEdit').value.trim();
+  const {error}=await sb.from('teams').update({coach_name:name||null,coach_nationality:nat||null}).eq('id',CUR.id);
+  if(error){alert('فشل الحفظ: '+error.message);return;}
+  loadTeam();
+}
+async function savePlayer(id){
+  const name=document.getElementById('pname-'+id).value.trim();
+  const num=document.getElementById('pnum-'+id).value.trim();
+  const nat=document.getElementById('pnat-'+id).value.trim();
+  const gk=document.getElementById('pgk-'+id).checked;
+  if(!name){alert('أدخل اسم اللاعب');return;}
+  const {error}=await sb.from('players').update({
+    name,full_name_ar:name,
+    number:num?parseInt(num):null,
+    nationality:nat||null,
+    is_goalkeeper:gk
+  }).eq('id',id);
+  if(error){alert('فشل الحفظ: '+error.message);return;}
+  loadTeam();
+}
+function resizeImageToDataUrl(file,maxSize){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const reader=new FileReader();
+    reader.onload=e=>{img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>h){if(w>maxSize){h=Math.round(h*maxSize/w);w=maxSize}}else{if(h>maxSize){w=Math.round(w*maxSize/h);h=maxSize}}
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL('image/png',0.85));
+    };img.onerror=reject;img.src=e.target.result};
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function replacePhoto(id,input){
+  const f=input.files[0];
+  if(!f)return;
+  const el=document.getElementById('jimg-'+id);
+  try{
+    const dataUrl=await resizeImageToDataUrl(f,200);
+    const {error}=await sb.from('players').update({jersey_photo_url:dataUrl}).eq('id',id);
+    if(error){alert('فشل حفظ الصورة: '+error.message);return;}
+    if(el.tagName==='IMG')el.src=dataUrl;else el.outerHTML=`<img class="jersey" id="jimg-${id}" src="${dataUrl}">`;
+  }catch(err){alert('تعذرت قراءة الصورة');}
+  input.value='';
+}
 async function approveCoach(){
   await sb.from('teams').update({coach_status:'approved'}).eq('id',CUR.id);
   loadTeam();
@@ -164,6 +229,7 @@ async function viewDocs(docPath){
 }
 
 window.loadTeam=loadTeam;window.approveCoach=approveCoach;window.approvePlayer=approvePlayer;window.rejectPlayer=rejectPlayer;window.viewDocs=viewDocs;
+window.saveAdmin=saveAdmin;window.saveCoach=saveCoach;window.savePlayer=savePlayer;window.replacePhoto=replacePhoto;
 initTeams();
 </script>
 
