@@ -197,7 +197,7 @@ async function loadSquad(){
     const name=p.full_name_ar||p.name||'—';
     const num=p.number||p.shirt_number||'';
     const role=p.role||'player_resident';
-    const photo=p.photo_url||p.image||null;
+    const photo=p.jersey_photo_url||null;
     return `<div class="player-card" style="--tc:${teamColor}">
       ${num?`<div class="player-number">${num}</div>`:''}
       ${photo
@@ -237,7 +237,7 @@ async function loadStats(){
     <thead><tr><th>#</th><th>اللاعب</th><th>⚽ أهداف</th><th>🟨 صفراء</th><th>🟥 حمراء</th></tr></thead>
     <tbody>${sorted.map(p=>{
       const name=p.full_name_ar||p.name||'—';
-      const photo=p.photo_url||p.image||null;
+      const photo=p.jersey_photo_url||null;
       return `<tr>
         <td style="color:#8b949e">${p.number||p.shirt_number||'—'}</td>
         <td><div class="player-cell">
