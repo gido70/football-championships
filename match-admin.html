@@ -16,7 +16,6 @@
 <link rel="stylesheet" href="admin.css">
 <style>
 body{font-family:"Tajawal",sans-serif!important}
-.topbar-inner,.page-head,.nav-actions,.actions{flex-direction:row}
 select,input,textarea{background:#0f2a45!important;color:#ffffff!important;font-family:"Tajawal",sans-serif!important}
 select option{background:#0f2a45;color:#ffffff}
 
@@ -96,7 +95,23 @@ select option{background:#0f2a45;color:#ffffff}
 .evt-del{background:none;border:none;cursor:pointer;color:#b7c6dc;padding:4px 8px;border-radius:6px;font-size:14px}
 .evt-del:hover{color:#ff6b6b}
 .no-evts{padding:24px;text-align:center;color:#b7c6dc;font-size:14px}
-@media(max-width:640px){.evt-grid,.meta-grid{grid-template-columns:1fr}.sb{grid-template-columns:1fr;text-align:center}.sb-nums{font-size:44px}}
+@media(max-width:640px){
+  .evt-grid,.meta-grid{grid-template-columns:1fr}
+  .sb{grid-template-columns:1fr;text-align:center}
+  .sb-nums{font-size:40px}
+  .match-board{padding:14px;border-radius:16px;position:sticky;top:0;z-index:50;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+  .sb-team{display:flex;align-items:center;gap:8px;justify-content:center}
+  .sb-tname{font-size:15px;margin-bottom:0}
+  .sb-tbar{display:none}
+  .sb-btns{gap:16px}
+  .sb-btn{width:52px;height:52px;font-size:26px}
+  .status-row .btn,.status-row button{flex:1;min-width:120px;padding:12px 10px;font-size:13px}
+  .btn-quick{padding:12px 10px;font-size:13.5px;min-height:44px}
+  .evt-btns button,.evt-btns .btn-quick{min-height:46px}
+  .lu-row{padding:9px 0;font-size:14px}
+  .lu-row .inj-btn{padding:6px 10px;font-size:12px}
+  .var-btns button{min-height:42px;padding:9px 12px}
+}
 </style>
 </head>
 <body>
