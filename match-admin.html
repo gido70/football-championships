@@ -262,6 +262,7 @@ select option{background:#0f2a45;color:#ffffff}
         <span>👥 التشكيلة الأساسية</span>
         <div style="position:relative">
           <button type="button" id="injBtn" onclick="toggleInjDropdown()" style="background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.4);color:#f85149;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">🩹 تسجيل إصابة <span id="injCount" style="display:none;background:#f85149;color:#fff;border-radius:10px;padding:0 6px;font-size:10px"></span></button>
+          <button type="button" onclick="clearAllInjuries()" style="background:transparent;border:1px solid #30363d;color:#8b949e;border-radius:20px;padding:6px 14px;font-size:11px;cursor:pointer;font-family:inherit">🧹 مسح الإصابات القديمة</button>
           <div id="injDropdown" style="display:none;position:absolute;left:0;top:calc(100% + 6px);background:#161b22;border:1px solid #30363d;border-radius:14px;padding:8px;width:260px;max-height:280px;overflow-y:auto;z-index:200;box-shadow:0 8px 30px rgba(0,0,0,.6)">
             <div style="font-size:11px;color:#6e7b8f;padding:4px 6px 8px;font-weight:700">اختر اللاعب المصاب</div>
             <div id="injPlayerList"></div>
@@ -861,7 +862,30 @@ async function selectInjured(pid){
   document.getElementById('injDropdown').style.display='none';
   renderInjuredChips();
   buildInjDropdown();
+
+  if(newVal&&cur){
+    const isHome=hPl.some(p=>p.id===pid);
+    const teamId=isHome?cur.home_team_id:cur.away_team_id;
+    const tn=isHome?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name);
+    const min=parseInt(document.getElementById('minInput')?.value)||0;
+    await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:pid,team_id:teamId,event_type:'injury',minute:min});
+    pushNews('🩹 إصابة: '+(pl.full_name_ar||pl.name)+' ('+tn+') — الدقيقة '+min);
+  }
 }
+
+async function clearAllInjuries(){
+  if(!cur)return;
+  const injured=[...hPl,...aPl].filter(p=>p.is_injured);
+  if(!injured.length){alert('لا توجد إصابات مسجلة لمسحها');return;}
+  if(!confirm('مسح كل الإصابات القديمة ('+injured.length+') لفريقي هذه المباراة؟ استخدمه إن كانت إصابات من مباراة سابقة لم تعد قائمة.'))return;
+  const ids=injured.map(p=>p.id);
+  const {error}=await sb.from('players').update({is_injured:false,injury_note:null}).in('id',ids);
+  if(error){alert('فشل: '+error.message);return;}
+  injured.forEach(p=>{p.is_injured=false;p.injury_note=null;});
+  renderInjuredChips();
+  buildInjDropdown();
+}
+window.clearAllInjuries=clearAllInjuries;
 
 function renderInjuredChips(){
   const injured=[...hPl,...aPl].filter(p=>p.is_injured);
