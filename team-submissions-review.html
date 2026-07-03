@@ -103,7 +103,7 @@ async function loadTeam(){
       </div>
       <div class="docs">
         ${adminDocUrl?`<a class="doc-link" href="${adminDocUrl}" target="_blank">🪪 الهوية/الجواز</a>`:''}
-        ${adminPhotoUrl?`<a class="doc-link" href="${adminPhotoUrl}" target="_blank">📷 الصورة الفوتوغرافية</a>`:''}
+        ${adminPhotoUrl?`<a class="doc-link" href="${adminPhotoUrl}" target="_blank">📷 الصورة الفوتوغرافية</a><button class="btn-rej" onclick="clearAdminPhoto()">🗑️ حذف الصورة</button>`:''}
         <button class="btn-app" onclick="saveAdmin()">💾 حفظ التعديل</button>
       </div>
       `:'<div class="empty">لم تُدخل بيانات إداري بعد</div>'}
@@ -152,6 +152,12 @@ async function loadTeam(){
   document.getElementById('content').innerHTML=html;
 }
 
+async function clearAdminPhoto(){
+  if(!confirm('حذف الصورة الفوتوغرافية للإداري؟'))return;
+  const {error}=await sb.from('teams').update({admin_photo_url:null}).eq('id',CUR.id);
+  if(error){alert('فشل: '+error.message);return;}
+  loadTeam();
+}
 async function saveAdmin(){
   const name=document.getElementById('adminNameEdit').value.trim();
   const nat=document.getElementById('adminNatEdit').value.trim();
@@ -229,7 +235,7 @@ async function viewDocs(docPath){
 }
 
 window.loadTeam=loadTeam;window.approveCoach=approveCoach;window.approvePlayer=approvePlayer;window.rejectPlayer=rejectPlayer;window.viewDocs=viewDocs;
-window.saveAdmin=saveAdmin;window.saveCoach=saveCoach;window.savePlayer=savePlayer;window.replacePhoto=replacePhoto;
+window.saveAdmin=saveAdmin;window.clearAdminPhoto=clearAdminPhoto;window.saveCoach=saveCoach;window.savePlayer=savePlayer;window.replacePhoto=replacePhoto;
 initTeams();
 </script>
 
