@@ -578,16 +578,17 @@ async function init(){
     document.getElementById('aScore').textContent='';
   }
 
-  if(m.live_status&&m.live_status!=='none'){
+  if(m.status==='live'&&m.live_status&&m.live_status!=='none'&&{checking:1,goal_confirmed:1,goal_disallowed:1,penalty_review:1,red_card_review:1}[m.live_status]){
     const vl={checking:'⏳ الفار يراجع الحدث الآن...',goal_confirmed:'✅ تم تأكيد الهدف بعد المراجعة',goal_disallowed:'❌ تم إلغاء الهدف بعد مراجعة الفار',penalty_review:'🎯 الفار يراجع ركلة جزاء',red_card_review:'🟥 الفار يراجع بطاقة حمراء'};
-    if(vl[m.live_status]){
-      let txt=vl[m.live_status];
-      if(m.var_team_id){
-        const tn=m.var_team_id===m.home_team_id?(ht.name_ar||ht.name):(at.name_ar||at.name);
-        if(tn)txt+=' — '+tn;
-      }
-      const vb=document.getElementById('varBanner');vb.style.display='block';vb.textContent=txt;
+    let txt=vl[m.live_status];
+    if(m.var_team_id){
+      const tn=m.var_team_id===m.home_team_id?(ht.name_ar||ht.name):(at.name_ar||at.name);
+      if(tn)txt+=' — '+tn;
     }
+    document.getElementById('varBanner').style.display='block';
+    document.getElementById('varBanner').textContent=txt;
+  }else{
+    document.getElementById('varBanner').style.display='none';
   }
 
   const chips=[];
