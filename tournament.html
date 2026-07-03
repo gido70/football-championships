@@ -45,6 +45,7 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .news-item-pub .n-time{font-size:10px;color:#6e7b8f;margin-top:2px;display:block}
 .news-header{font-size:11px;font-weight:800;color:#58a6ff;padding:10px 0 2px;letter-spacing:1px}
 .tabs{max-width:1200px;margin:0 auto;display:flex;padding:0 20px}
+@keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,59,59,.6)}70%{box-shadow:0 0 0 8px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
 .tab{padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#8b949e;transition:.2s;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
 .tab.active{color:#c9a84c;border-bottom-color:#c9a84c}
 .tab:hover:not(.active){color:#e6edf3}
@@ -149,6 +150,10 @@ img[src=""], img:not([src]) { display:none !important; }
   <div class="nav-title">
     <span id="navName">البطولة</span>
     <span class="nav-status" id="navStatus"></span>
+    <span id="liveHeaderBadge" onclick="document.getElementById('matchesTabBtn').click();window.scrollTo({top:document.querySelector('.tabs-bar').offsetTop,behavior:'smooth'})" style="display:none;cursor:pointer;align-items:center;gap:6px;background:rgba(255,59,59,.15);border:1px solid rgba(255,59,59,.4);color:#ff5c5c;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800;margin-right:8px">
+      <span style="width:8px;height:8px;border-radius:50%;background:#ff3b3b;display:inline-block;animation:livepulse 1.5s infinite"></span>
+      🔴 مباشر الآن
+    </span>
   </div>
   <a href="index.html" class="nav-back">← جميع البطولات</a>
 </nav>
@@ -182,7 +187,7 @@ img[src=""], img:not([src]) { display:none !important; }
 <div class="tabs-bar">
   <div class="tabs">
     <button class="tab active" onclick="showTab(this,'st')">🏅 الترتيب</button>
-    <button class="tab" onclick="showTab(this,'ma')">📅 المباريات</button>
+    <button class="tab" id="matchesTabBtn" onclick="showTab(this,'ma')">📅 المباريات<span id="liveDotTab" style="display:none;width:8px;height:8px;border-radius:50%;background:#ff3b3b;margin-right:6px;box-shadow:0 0 0 rgba(255,59,59,.6);animation:livepulse 1.5s infinite"></span></button>
     <button class="tab" onclick="showTab(this,'sc')">⚽ الهدافون</button>
     <button class="tab" onclick="showTab(this,'tm')">👥 الفرق</button>
     <a class="tab" id="statsTabLink" href="#" style="text-decoration:none;display:inline-block">📊 إحصائيات</a>
@@ -250,6 +255,13 @@ async function loadTournament(){
     if(t.status==='active'){ns.style.background='rgba(63,185,80,.15)';ns.style.color='#3fb950';ns.style.border='1px solid rgba(63,185,80,.2)';}
     else if(t.status==='completed'){ns.style.background='rgba(88,166,255,.15)';ns.style.color='#58a6ff';ns.style.border='1px solid rgba(88,166,255,.2)';}
     else{ns.style.background='rgba(255,255,255,.08)';ns.style.color='#b7c6dc';}
+  }
+
+  // مؤشر البث المباشر
+  const {count:liveCount}=await sb.from('matches').select('id',{count:'exact',head:true}).eq('tournament_id',TID).eq('status','live');
+  if(liveCount>0){
+    document.getElementById('liveHeaderBadge').style.display='inline-flex';
+    document.getElementById('liveDotTab').style.display='inline-block';
   }
 
   // الخلفية — من GitHub مباشرة حسب الموسم
@@ -413,7 +425,7 @@ async function loadScorers(){
         ${p.photo
           ?`<img class="sc-photo" src="${p.photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
           :''}
-        <div class="sc-ph" style="${p.photo?'display:none':''}">${ini(p.name)}</div>
+        <div class="sc-ph" style="${p.photo?'display:none':''}background:${p.col}22;border-color:${p.col}55;color:${p.col}">${ini(p.name)}</div>
       </div>
       ${p.number?`<span class="sc-num">#${p.number}</span>`:''}
       <div class="sc-info"><div class="sc-name">${sn}</div><div class="sc-team"><div class="sc-tdot" style="background:${p.col}"></div>${p.team}</div></div>
