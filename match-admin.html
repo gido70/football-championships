@@ -606,6 +606,10 @@ async function setMatchStatus(st){
     payload.is_paused=false;
     payload.half_length_minutes=parseInt(document.getElementById('halfLenInput').value)||20;
   }
+  if(st==='completed'){
+    payload.live_status='none';
+    payload.var_team_id=null;
+  }
   const {error}=await sb.from('matches').update(payload).eq('id',cur.id);
   if(error){setMsg('❌ فشل التحديث: '+error.message,'err');console.error(error);return;}
   Object.assign(cur,payload);
