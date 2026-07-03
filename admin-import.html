@@ -318,6 +318,7 @@ section.active { display: block; }
       <div class="drop-icon">📊</div>
       <div class="drop-text">اسحب ملف Excel هنا أو اضغط للاختيار</div>
       <div class="drop-sub">الأعمدة المدعومة: الفريق، الأسم، الجنسية، الصفة، الرقم، رابط الصور</div>
+      <a href="#" onclick="downloadImportTemplate();return false" style="display:inline-block;margin-top:10px;font-size:13px;color:#2563eb">⬇️ تحميل نموذج Excel فارغ</a>
     </div>
 
     <div class="progress-wrap" id="progressWrap">
@@ -417,12 +418,25 @@ async function checkConnection() {
   }
 }
 
+function downloadImportTemplate(){
+  const wb = XLSX.utils.book_new();
+  const rows = [
+    ['الفريق','الاسم','الجنسية','الصفة','الرقم','رابط الصور'],
+    ['ريال مدريد','محمد أحمد','إسباني','لاعب مقيم',7,''],
+    ['ريال مدريد','خالد سالم','مغربي','لاعب مقيم',1,'']
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'نموذج');
+  XLSX.writeFile(wb, 'نموذج استيراد الفرق واللاعبين.xlsx');
+}
+
 async function loadTournaments() {
-  const { data, error } = await sb.from('tournaments').select('*').neq('status', 'archived').order('created_at', { ascending: false });
+  const { data, error } = await sb.from('tournaments').select('*').order('created_at', { ascending: false });
   const sel = document.getElementById('tournSelect');
   if (error) { sel.innerHTML = `<option value="">⚠️ خطأ: ${error.message}</option>`; return; }
+  const list = (data || []).filter(t => t.status !== 'archived');
   sel.innerHTML = '<option value="">-- اختر البطولة --</option>';
-  (data || []).forEach(t => {
+  list.forEach(t => {
     sel.innerHTML += `<option value="${t.id}">${t.name_ar||t.name}${t.season_label ? ' - ' + t.season_label : ''}</option>`;
   });
 }
