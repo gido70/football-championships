@@ -203,6 +203,7 @@ select option{background:#0f2a45;color:#ffffff}
         <button class="btn secondary half-btn" data-half="3" onclick="setHalf(3)" style="padding:8px 14px;font-size:13px">⏱️ وقت إضافي 1</button>
         <button class="btn secondary half-btn" data-half="4" onclick="setHalf(4)" style="padding:8px 14px;font-size:13px">⏱️ وقت إضافي 2</button>
         <button class="btn secondary half-btn" data-half="5" onclick="setHalf(5)" style="padding:8px 14px;font-size:13px">🎯 ركلات الترجيح</button>
+        <button class="btn secondary" onclick="pauseHalf()" style="padding:8px 14px;font-size:13px;background:rgba(255,180,0,.1);border-color:rgba(255,180,0,.4);color:#ffb400">⏸ نهاية الشوط الحالي (استراحة)</button>
       </div>
       <div id="pensRow" style="display:none;align-items:center;gap:14px;margin-top:10px;padding:12px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:10px">
         <span style="color:#c9a84c;font-size:13px;font-weight:700">🎯 نتيجة ركلات الترجيح:</span>
@@ -535,10 +536,12 @@ function updateHalfUI(h){
 
 async function setHalf(h){
   if(!cur)return;
-  const {error}=await sb.from('matches').update({current_half:h}).eq('id',cur.id);
+  const payload={current_half:h,phase_started_at:new Date().toISOString(),is_paused:(h===5)};
+  const {error}=await sb.from('matches').update(payload).eq('id',cur.id);
   if(error){setMsg('❌ فشل تحديث المرحلة: '+error.message,'err');return;}
-  cur.current_half=h;
+  Object.assign(cur,payload);
   updateHalfUI(h);
+  startStopClock();
   const labels={1:'1️⃣ بداية الشوط الأول',2:'2️⃣ بداية الشوط الثاني',3:'⏱️ بداية الوقت الإضافي الأول',4:'⏱️ بداية الوقت الإضافي الثاني',5:'🎯 بدء ركلات الترجيح'};
   const hn=cur.ht?.name_ar||cur.ht?.name||'';
   const an=cur.at?.name_ar||cur.at?.name||'';
@@ -546,6 +549,20 @@ async function setHalf(h){
   setMsg('✅ تم تحديث مرحلة المباراة','ok');
 }
 window.setHalf=setHalf;
+
+async function pauseHalf(){
+  if(!cur)return;
+  const {error}=await sb.from('matches').update({is_paused:true}).eq('id',cur.id);
+  if(error){setMsg('❌ فشل: '+error.message,'err');return;}
+  cur.is_paused=true;
+  startStopClock();
+  const halfLabels={1:'الشوط الأول',2:'الشوط الثاني',3:'الوقت الإضافي الأول',4:'الوقت الإضافي الثاني'};
+  const hn=cur.ht?.name_ar||cur.ht?.name||'';
+  const an=cur.at?.name_ar||cur.at?.name||'';
+  pushNews('⏸️ نهاية '+(halfLabels[cur.current_half]||'المرحلة الحالية')+' — '+hn+' '+(cur.home_score??0)+' - '+(cur.away_score??0)+' '+an);
+  setMsg('✅ أُوقف العداد — اضغط زر بداية المرحلة التالية عند الاستئناف','ok');
+}
+window.pauseHalf=pauseHalf;
 
 async function savePens(){
   if(!cur)return;
@@ -584,12 +601,16 @@ async function setMatchStatus(st){
   const payload={status:st};
   if(st==='live'){
     payload.live_started_at=new Date().toISOString();
+    payload.phase_started_at=new Date().toISOString();
+    payload.current_half=1;
+    payload.is_paused=false;
     payload.half_length_minutes=parseInt(document.getElementById('halfLenInput').value)||20;
   }
   const {error}=await sb.from('matches').update(payload).eq('id',cur.id);
   if(error){setMsg('❌ فشل التحديث: '+error.message,'err');console.error(error);return;}
   Object.assign(cur,payload);
   updateStatusUI(st);
+  if(st==='live')updateHalfUI(1);
   startStopClock();
   setMsg(st==='live'?'✅ بدأت المباراة — العداد يعمل الآن':'✅ انتهت المباراة','ok');
 
@@ -626,27 +647,40 @@ async function resetForTest(){
   setMsg('✅ تمت إعادة فتح المباراة للاختبار — كل البيانات (نتيجة، أحداث، تشكيلة، حكام، معلق، ملعب) صُفّرت','ok');
 }
 
+function phaseOffsetMin(half,HL){
+  const ET=15; // طول كل شوط إضافي (دقيقة) — ثابت افتراضي
+  if(half===1)return 0;
+  if(half===2)return HL;
+  if(half===3)return HL*2;
+  if(half===4)return HL*2+ET;
+  return HL*2+ET*2; // 5: ركلات ترجيح
+}
+
 function startStopClock(){
   stopClock();
-  if(cur.status==='live'&&cur.live_started_at){
+  if(cur.status==='live'&&!cur.is_paused&&cur.phase_started_at&&cur.current_half!==5){
     tickClock();
     clockTimer=setInterval(tickClock,1000);
+  }else if(cur.status==='live'&&cur.is_paused){
+    document.getElementById('mMin').textContent='⏸️ استراحة';
+    document.getElementById('qbMin').textContent='⏸️';
+  }else if(cur.status==='live'&&cur.current_half===5){
+    document.getElementById('mMin').textContent='🎯 ترجيح';
+    document.getElementById('qbMin').textContent='🎯';
   }else{
     document.getElementById('mMin').textContent='';
   }
 }
 
 function tickClock(){
-  if(!cur.live_started_at)return;
-  const startedMs=new Date(cur.live_started_at).getTime();
-  const elapsedMin=Math.floor((Date.now()-startedMs)/60000)+1;
-  const half=cur.half_length_minutes||20;
-  let label;
-  if(elapsedMin<=half) label=elapsedMin+"'";
-  else if(elapsedMin<=half*2) label=elapsedMin+"'";
-  else label=(half*2)+"+'";
+  if(!cur.phase_started_at)return;
+  const startedMs=new Date(cur.phase_started_at).getTime();
+  const HL=cur.half_length_minutes||20;
+  const offset=phaseOffsetMin(cur.current_half||1,HL);
+  const elapsedMin=offset+Math.floor((Date.now()-startedMs)/60000)+1;
+  const label=elapsedMin+"'";
   document.getElementById('mMin').textContent=label;
-  document.getElementById('minInput').value=Math.min(elapsedMin,half*2);
+  document.getElementById('minInput').value=elapsedMin;
   document.getElementById('qbMin').textContent=label;
 }
 
