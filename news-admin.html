@@ -58,9 +58,6 @@ textarea{resize:vertical;min-height:90px}
     </div>
     <div class="actions">
       <button class="btn" id="addBtn">📤 نشر الآن</button>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:#8b949e">
-        <input type="checkbox" id="pinChk"> 📌 تثبيت هذا الخبر في الأعلى
-      </label>
     </div>
     <div class="status" id="addMsg"></div>
   </section>
@@ -87,18 +84,17 @@ async function initTournaments(){
 
 async function loadNews(){
   if(!TID)return;
-  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('is_pinned',{ascending:false}).order('created_at',{ascending:false});
+  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false});
   const list=document.getElementById('newsList');
   document.getElementById('countBadge').textContent='('+((data||[]).length)+' خبر)';
   if(!data?.length){list.innerHTML='<div class="empty" style="padding:24px;text-align:center;color:#6e7b8f">لا توجد أخبار بعد — أضف أول خبر من الأعلى</div>';return;}
   list.innerHTML=data.map(n=>`
-    <div class="news-row ${n.is_pinned?'pinned':''}" id="nr-${n.id}">
+    <div class="news-row" id="nr-${n.id}">
       <div class="news-content">
-        ${n.is_pinned?'<span style="font-size:10px;color:#c9a84c;font-weight:800">📌 مثبّت &nbsp;</span>':''}${n.content}
+        ${n.content}
         <div class="news-meta">${new Date(n.created_at).toLocaleString('ar-AE',{dateStyle:'short',timeStyle:'short'})}</div>
       </div>
       <div class="news-actions">
-        <button class="news-pin ${n.is_pinned?'active':''}" onclick="togglePin('${n.id}',${!n.is_pinned})">${n.is_pinned?'📌 إلغاء التثبيت':'📌 تثبيت'}</button>
         <button class="news-del" onclick="deleteNews('${n.id}')">حذف</button>
       </div>
     </div>
@@ -109,20 +105,13 @@ document.getElementById('addBtn').onclick=async()=>{
   const content=document.getElementById('newsInput').value.trim();
   if(!content){setMsg('⚠️ أدخل نص الخبر','warn');return;}
   if(!TID){setMsg('⚠️ اختر بطولة أولاً','warn');return;}
-  const is_pinned=document.getElementById('pinChk').checked;
-  const {error}=await sb.from('news_items').insert({tournament_id:TID,content,is_pinned});
+  const {error}=await sb.from('news_items').insert({tournament_id:TID,content});
   if(error){setMsg('❌ فشل النشر: '+error.message,'err');return;}
   document.getElementById('newsInput').value='';
   document.getElementById('charCount').textContent='0';
-  document.getElementById('pinChk').checked=false;
   setMsg('✅ تم النشر فورًا','ok');
   loadNews();
 };
-
-async function togglePin(id,pin){
-  const {error}=await sb.from('news_items').update({is_pinned:pin}).eq('id',id);
-  if(!error)loadNews();
-}
 
 async function deleteNews(id){
   if(!confirm('حذف هذا الخبر نهائيًا؟'))return;
