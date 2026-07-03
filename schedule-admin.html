@@ -542,6 +542,7 @@
         newMatches.push({
           tournament_id: selectedTournament,
           round_name: roundName,
+          stage_code: roundName,
           match_no: nextNo++,
           home_team_id: shuffled[i].id,
           away_team_id: shuffled[i + 1].id,
@@ -598,13 +599,14 @@
 
       if (currentRound === 'semi_final') {
         const [sf1, sf2] = roundMatches;
-        newMatches.push({ tournament_id: selectedTournament, round_name: 'third_place', match_no: nextNo++, home_team_id: matchLoserId(sf1), away_team_id: matchLoserId(sf2), status: 'scheduled' });
-        newMatches.push({ tournament_id: selectedTournament, round_name: 'final', match_no: nextNo++, home_team_id: matchWinnerId(sf1), away_team_id: matchWinnerId(sf2), status: 'scheduled' });
+        newMatches.push({ tournament_id: selectedTournament, round_name: 'third_place', stage_code: 'third_place', match_no: nextNo++, home_team_id: matchLoserId(sf1), away_team_id: matchLoserId(sf2), status: 'scheduled' });
+        newMatches.push({ tournament_id: selectedTournament, round_name: 'final', stage_code: 'final', match_no: nextNo++, home_team_id: matchWinnerId(sf1), away_team_id: matchWinnerId(sf2), status: 'scheduled' });
       } else {
         for (let i = 0; i < roundMatches.length; i += 2) {
           newMatches.push({
             tournament_id: selectedTournament,
             round_name: nextRound,
+            stage_code: nextRound,
             match_no: nextNo++,
             home_team_id: matchWinnerId(roundMatches[i]),
             away_team_id: matchWinnerId(roundMatches[i + 1]),
