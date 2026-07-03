@@ -364,7 +364,7 @@ let cur=null,hPl=[],aPl=[],evtType={h:null,a:null};
 
 async function pushNews(text){
   if(!cur||!cur.tournament_id)return;
-  await sb.from('news_items').insert({tournament_id:cur.tournament_id,content:text});
+  await sb.from('news_items').insert({tournament_id:cur.tournament_id,title:text.slice(0,80),content:text});
 }
 const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل'};
 const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
