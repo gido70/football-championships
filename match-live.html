@@ -246,8 +246,8 @@ a{text-decoration:none;color:inherit}
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const qs=new URLSearchParams(location.search);
 const MID=qs.get('id');
-const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل'};
-const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
+const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل',injury:'إصابة'};
+const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄',injury:'🩹'};
 
 function showTab(p){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.p===p));
