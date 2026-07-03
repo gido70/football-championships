@@ -105,7 +105,7 @@ document.getElementById('addBtn').onclick=async()=>{
   const content=document.getElementById('newsInput').value.trim();
   if(!content){setMsg('⚠️ أدخل نص الخبر','warn');return;}
   if(!TID){setMsg('⚠️ اختر بطولة أولاً','warn');return;}
-  const {error}=await sb.from('news_items').insert({tournament_id:TID,content});
+  const {error}=await sb.from('news_items').insert({tournament_id:TID,title:content.slice(0,80),content});
   if(error){setMsg('❌ فشل النشر: '+error.message,'err');return;}
   document.getElementById('newsInput').value='';
   document.getElementById('charCount').textContent='0';
