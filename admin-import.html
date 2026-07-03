@@ -477,6 +477,8 @@ function processData(raw) {
     else if (kl.includes('رقم') || kl.includes('number')) colMap.number = k;
     else if (kl.includes('صور') || kl.includes('photo') || kl.includes('image') || kl.includes('url')) colMap.photo = k;
   });
+  console.log('DEBUG أعمدة الملف الفعلية:', keys);
+  console.log('DEBUG colMap المُكتشف:', colMap);
 
   allData = raw
     .filter(r => r[colMap.name] && String(r[colMap.name]).trim())
@@ -490,6 +492,8 @@ function processData(raw) {
       photo_url: String(r[colMap.photo] || '').trim(),
     }))
     .filter(r => r.name);
+  console.log('DEBUG أول صف كامل من الملف:', raw[0]);
+  console.log('DEBUG طول رابط صورة أول لاعب بعد المعالجة:', allData[0]?.photo_url?.length || 0);
 
   parsedData = [...allData];
   renderPreview();
