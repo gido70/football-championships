@@ -96,7 +96,7 @@ async function loadTeam(){
 
     <div class="sec">
       <h2>🧑‍💼 الإداري</h2>
-      ${team.submitted_by_name?`
+      ${(team.submitted_by_name||adminPhotoUrl||adminDocUrl)?`
       <div class="kv">
         <div>الاسم: <input id="adminNameEdit" value="${(team.submitted_by_name||'').replace(/"/g,'&quot;')}" style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit"></div>
         <div>الجنسية: <input id="adminNatEdit" value="${(team.admin_nationality||'').replace(/"/g,'&quot;')}" style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit"></div>
