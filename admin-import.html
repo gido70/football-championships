@@ -583,16 +583,21 @@ async function startImport() {
   let done = 0;
 
   for (const teamName of teamNames) {
-    const sample = allData.find(r => r.team === teamName);
-    const { data, error } = await sb.from('teams').upsert({
-      tournament_id: tournId,
-      name: teamName,
-    }, { onConflict: 'tournament_id,name', ignoreDuplicates: false }).select('id');
+    const { data: existing, error: findErr } = await sb.from('teams')
+      .select('id').eq('tournament_id', tournId).eq('name', teamName).limit(1);
+    if (findErr) { log(`خطأ بالبحث عن "${teamName}": ${findErr.message}`, 'err'); continue; }
 
-    if (error) { log(`خطأ في الفريق "${teamName}": ${error.message}`, 'err'); continue; }
-    if (data && data[0]) {
-      teamIdMap[teamName] = data[0].id;
-      log(`✓ فريق: ${teamName}`, 'ok');
+    if (existing && existing[0]) {
+      teamIdMap[teamName] = existing[0].id;
+      log(`↺ فريق موجود مسبقاً: ${teamName}`, 'ok');
+    } else {
+      const { data: inserted, error: insErr } = await sb.from('teams')
+        .insert({ tournament_id: tournId, name: teamName }).select('id');
+      if (insErr) { log(`خطأ في إنشاء الفريق "${teamName}": ${insErr.message}`, 'err'); continue; }
+      if (inserted && inserted[0]) {
+        teamIdMap[teamName] = inserted[0].id;
+        log(`✓ فريق جديد: ${teamName}`, 'ok');
+      }
     }
     done++;
     setProgress('importBar', 'importText', Math.round(done / (teamNames.length + allData.length) * 100), `الفرق: ${done}/${teamNames.length}`);
