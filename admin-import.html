@@ -418,11 +418,12 @@ async function checkConnection() {
 }
 
 async function loadTournaments() {
-  const { data } = await sb.from('tournaments').select('id,name,season').order('created_at', { ascending: false });
+  const { data, error } = await sb.from('tournaments').select('*').order('created_at', { ascending: false });
   const sel = document.getElementById('tournSelect');
+  if (error) { sel.innerHTML = `<option value="">⚠️ خطأ: ${error.message}</option>`; return; }
   sel.innerHTML = '<option value="">-- اختر البطولة --</option>';
   (data || []).forEach(t => {
-    sel.innerHTML += `<option value="${t.id}">${t.name}${t.season ? ' - ' + t.season : ''}</option>`;
+    sel.innerHTML += `<option value="${t.id}">${t.name_ar||t.name}${t.season_label ? ' - ' + t.season_label : ''}</option>`;
   });
 }
 
