@@ -196,6 +196,21 @@ select option{background:#0f2a45;color:#ffffff}
         <button class="btn btn-start" id="btnStart" onclick="setMatchStatus('live')">▶ بدء المباراة</button>
         <button class="btn btn-end" id="btnEnd" onclick="setMatchStatus('completed')" disabled>⏹ إنهاء المباراة</button>
       </div>
+      <div class="min-row" style="gap:8px;flex-wrap:wrap">
+        <label style="color:#b7c6dc;font-size:14px">مرحلة المباراة:</label>
+        <button class="btn secondary half-btn" data-half="1" onclick="setHalf(1)" style="padding:8px 14px;font-size:13px">1️⃣ الشوط الأول</button>
+        <button class="btn secondary half-btn" data-half="2" onclick="setHalf(2)" style="padding:8px 14px;font-size:13px">2️⃣ الشوط الثاني</button>
+        <button class="btn secondary half-btn" data-half="3" onclick="setHalf(3)" style="padding:8px 14px;font-size:13px">⏱️ وقت إضافي 1</button>
+        <button class="btn secondary half-btn" data-half="4" onclick="setHalf(4)" style="padding:8px 14px;font-size:13px">⏱️ وقت إضافي 2</button>
+        <button class="btn secondary half-btn" data-half="5" onclick="setHalf(5)" style="padding:8px 14px;font-size:13px">🎯 ركلات الترجيح</button>
+      </div>
+      <div id="pensRow" style="display:none;align-items:center;gap:14px;margin-top:10px;padding:12px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:10px">
+        <span style="color:#c9a84c;font-size:13px;font-weight:700">🎯 نتيجة ركلات الترجيح:</span>
+        <input type="number" id="homePensInput" min="0" max="20" placeholder="—" style="width:60px">
+        <span style="color:#b7c6dc">:</span>
+        <input type="number" id="awayPensInput" min="0" max="20" placeholder="—" style="width:60px">
+        <button class="btn secondary" onclick="savePens()" style="padding:6px 14px;font-size:12px">💾 حفظ</button>
+      </div>
       <div class="min-row" style="gap:10px;flex-wrap:wrap">
         <label style="color:#b7c6dc;font-size:14px">مدة الشوط (دقيقة):</label>
         <input type="number" id="halfLenInput" min="5" max="60" value="20" style="width:70px">
@@ -347,7 +362,7 @@ let cur=null,hPl=[],aPl=[],evtType={h:null,a:null};
 
 async function pushNews(text){
   if(!cur||!cur.tournament_id)return;
-  await sb.from('news_items').insert({tournament_id:cur.tournament_id,content:text,is_pinned:false});
+  await sb.from('news_items').insert({tournament_id:cur.tournament_id,content:text});
 }
 const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل'};
 const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
@@ -424,6 +439,9 @@ async function renderMatch(m){
   document.getElementById('aScore').textContent=m.away_score??0;
   document.getElementById('mRound').textContent=m.round_name||'';
   updateStatusUI(m.status||'scheduled');
+  updateHalfUI(m.current_half||1);
+  if(m.home_penalties!=null)document.getElementById('homePensInput').value=m.home_penalties;
+  if(m.away_penalties!=null)document.getElementById('awayPensInput').value=m.away_penalties;
   document.getElementById('quickBar').style.display='block';
   document.getElementById('qbHName').textContent=m.ht?.name_ar||m.ht?.name||'';
   document.getElementById('qbAName').textContent=m.at?.name_ar||m.at?.name||'';
@@ -503,6 +521,43 @@ function updateStatusUI(st){
   document.getElementById('btnStart').disabled=st!=='scheduled';
   document.getElementById('btnEnd').disabled=st!=='live';
 }
+
+function updateHalfUI(h){
+  document.querySelectorAll('.half-btn').forEach(b=>{
+    const active=parseInt(b.dataset.half)===h;
+    b.style.background=active?'#c9a84c':'';
+    b.style.color=active?'#0d1117':'';
+    b.style.borderColor=active?'#c9a84c':'';
+  });
+  document.getElementById('pensRow').style.display=(h===5)?'flex':'none';
+}
+
+async function setHalf(h){
+  if(!cur)return;
+  const {error}=await sb.from('matches').update({current_half:h}).eq('id',cur.id);
+  if(error){setMsg('❌ فشل تحديث المرحلة: '+error.message,'err');return;}
+  cur.current_half=h;
+  updateHalfUI(h);
+  const labels={1:'1️⃣ بداية الشوط الأول',2:'2️⃣ بداية الشوط الثاني',3:'⏱️ بداية الوقت الإضافي الأول',4:'⏱️ بداية الوقت الإضافي الثاني',5:'🎯 بدء ركلات الترجيح'};
+  const hn=cur.ht?.name_ar||cur.ht?.name||'';
+  const an=cur.at?.name_ar||cur.at?.name||'';
+  pushNews(labels[h]+' — '+hn+' × '+an);
+  setMsg('✅ تم تحديث مرحلة المباراة','ok');
+}
+window.setHalf=setHalf;
+
+async function savePens(){
+  if(!cur)return;
+  const hp=parseInt(document.getElementById('homePensInput').value);
+  const ap=parseInt(document.getElementById('awayPensInput').value);
+  const {error}=await sb.from('matches').update({home_penalties:isNaN(hp)?null:hp,away_penalties:isNaN(ap)?null:ap}).eq('id',cur.id);
+  if(error){setMsg('❌ فشل حفظ نتيجة الترجيح: '+error.message,'err');return;}
+  const hn=cur.ht?.name_ar||cur.ht?.name||'';
+  const an=cur.at?.name_ar||cur.at?.name||'';
+  pushNews('🎯 نتيجة ركلات الترجيح: '+hn+' '+hp+' - '+ap+' '+an);
+  setMsg('✅ تم حفظ نتيجة الترجيح','ok');
+}
+window.savePens=savePens;
 
 async function chScore(side,d){
   if(!cur)return;
