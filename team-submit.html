@@ -156,11 +156,12 @@ function uploadBox(key,previewUrl,uploadedFlag){
     ? `<img src="${previewUrl}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;display:block;margin:0 auto 6px">📎 استبدال الصورة`
     : (uploadedFlag ? '✅ تم الرفع سابقاً — اضغط للاستبدال' : '📎 اضغط لرفع صورة');
   const cls=(previewUrl||uploadedFlag)?'upload-box has-file':'upload-box';
-  const delBtn=(previewUrl||uploadedFlag)?`<button type="button" onclick="event.stopPropagation();clearField('${key}')" style="display:block;margin:6px auto 0;background:none;border:none;color:#ff6b6b;font-size:12px;cursor:pointer">🗑️ حذف</button>`:'';
+  const delBtn=(previewUrl||uploadedFlag)?`<button type="button" onclick="clearField('${key}')" style="display:block;width:100%;margin-top:6px;background:none;border:1px solid #ff6b6b;border-radius:8px;padding:6px;color:#ff6b6b;font-size:12px;cursor:pointer">🗑️ حذف الصورة</button>`:'';
   return `<div class="${cls}" id="${key}_box">
-    <div id="${key}_inner">${inner}</div>${delBtn}
+    <div id="${key}_inner">${inner}</div>
     <input type="file" accept="image/*" onchange="onFile('${key}',this)">
-  </div>`;
+  </div>
+  <div id="${key}_delwrap">${delBtn}</div>`;
 }
 
 function clearField(key){
@@ -170,6 +171,7 @@ function clearField(key){
   const box=document.getElementById(key+'_box');
   box.classList.remove('has-file');
   document.getElementById(key+'_inner').textContent='📎 اضغط لرفع صورة';
+  document.getElementById(key+'_delwrap').innerHTML='';
 }
 
 function onFile(key,input){
@@ -179,6 +181,7 @@ function onFile(key,input){
   clearedFields.delete(key);
   document.getElementById(key+'_box').classList.add('has-file');
   document.getElementById(key+'_inner').textContent='✅ '+f.name;
+  document.getElementById(key+'_delwrap').innerHTML=`<button type="button" onclick="clearField('${key}')" style="display:block;width:100%;margin-top:6px;background:none;border:1px solid #ff6b6b;border-radius:8px;padding:6px;color:#ff6b6b;font-size:12px;cursor:pointer">🗑️ حذف الصورة</button>`;
 }
 
 function addPlayer(isFirst,existing){
