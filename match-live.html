@@ -502,12 +502,27 @@ window.sendReact=sendReact;
 function initials(name){return (name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
 
 let clockTimer=null;
-function startClock(startedAt,half){
+function phaseOffsetMinPub(half,HL){
+  const ET=15;
+  if(half===1)return 0;
+  if(half===2)return HL;
+  if(half===3)return HL*2;
+  if(half===4)return HL*2+ET;
+  return HL*2+ET*2;
+}
+const HALF_LABELS={1:'⏱️ الشوط الأول',2:'⏱️ الشوط الثاني',3:'⏱️ وقت إضافي 1',4:'⏱️ وقت إضافي 2',5:'🎯 ركلات ترجيح'};
+function startClock(m){
   stopClock();
-  if(!startedAt)return;
+  const liveMinEl=document.getElementById('liveMin');
+  if(m.current_half===5){liveMinEl.textContent='🎯 ركلات ترجيح'+((m.home_penalties!=null&&m.away_penalties!=null)?(' '+m.home_penalties+'-'+m.away_penalties):'');return;}
+  if(m.is_paused){liveMinEl.textContent='⏸️ استراحة';return;}
+  if(!m.phase_started_at)return;
+  const HL=m.half_length_minutes||20;
+  const offset=phaseOffsetMinPub(m.current_half||1,HL);
+  const startedMs=new Date(m.phase_started_at).getTime();
   const tick=()=>{
-    const elapsedMin=Math.floor((Date.now()-new Date(startedAt).getTime())/60000)+1;
-    document.getElementById('liveMin').textContent=Math.min(elapsedMin,half*2)+"'"+(elapsedMin>half*2?'+':'');
+    const elapsedMin=offset+Math.floor((Date.now()-startedMs)/60000)+1;
+    liveMinEl.textContent=elapsedMin+"'";
   };
   tick();
   clockTimer=setInterval(tick,1000);
@@ -549,7 +564,7 @@ async function init(){
     document.getElementById('hScore').textContent=m.home_score??0;
     document.getElementById('aScore').textContent=m.away_score??0;
     document.getElementById('liveMin').style.display='block';
-    startClock(m.live_started_at,m.half_length_minutes||20);
+    startClock(m);
   }else if(m.status==='completed'){
     stopClock();
     sl.className='sb-status st-done'; sl.textContent='انتهت المباراة';
