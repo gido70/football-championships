@@ -149,22 +149,36 @@ async function buildForm(){
   }
 }
 
+const clearedFields=new Set();
+
 function uploadBox(key,previewUrl,uploadedFlag){
   const inner=previewUrl
     ? `<img src="${previewUrl}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;display:block;margin:0 auto 6px">📎 استبدال الصورة`
     : (uploadedFlag ? '✅ تم الرفع سابقاً — اضغط للاستبدال' : '📎 اضغط لرفع صورة');
   const cls=(previewUrl||uploadedFlag)?'upload-box has-file':'upload-box';
-  return `<div class="${cls}" id="${key}_box">${inner}
+  const delBtn=(previewUrl||uploadedFlag)?`<button type="button" onclick="event.stopPropagation();clearField('${key}')" style="display:block;margin:6px auto 0;background:none;border:none;color:#ff6b6b;font-size:12px;cursor:pointer">🗑️ حذف</button>`:'';
+  return `<div class="${cls}" id="${key}_box">
+    <div id="${key}_inner">${inner}</div>${delBtn}
     <input type="file" accept="image/*" onchange="onFile('${key}',this)">
   </div>`;
+}
+
+function clearField(key){
+  if(!confirm('حذف هذه الصورة نهائياً؟'))return;
+  clearedFields.add(key);
+  delete files[key];
+  const box=document.getElementById(key+'_box');
+  box.classList.remove('has-file');
+  document.getElementById(key+'_inner').textContent='📎 اضغط لرفع صورة';
 }
 
 function onFile(key,input){
   const f=input.files[0];
   if(!f)return;
   files[key]=f;
+  clearedFields.delete(key);
   document.getElementById(key+'_box').classList.add('has-file');
-  document.getElementById(key+'_box').firstChild.textContent='✅ '+f.name;
+  document.getElementById(key+'_inner').textContent='✅ '+f.name;
 }
 
 function addPlayer(isFirst,existing){
@@ -297,19 +311,19 @@ async function submitAll(){
   if(files['adminDoc']){
     const p=await uploadFile('adminDoc','team-docs',prefix);
     if(p)teamUpdate.admin_doc_url=p;
-  }
+  }else if(clearedFields.has('adminDoc')){teamUpdate.admin_doc_url=null;}
   if(files['adminPhoto']){
     const p=await uploadFile('adminPhoto','team-public',prefix);
     if(p){const {data}=sb.storage.from('team-public').getPublicUrl(p);teamUpdate.admin_photo_url=data?.publicUrl;}
-  }
+  }else if(clearedFields.has('adminPhoto')){teamUpdate.admin_photo_url=null;}
   if(files['coachDoc']){
     const p=await uploadFile('coachDoc','team-docs',prefix);
     if(p)teamUpdate.coach_id_url=p;
-  }
+  }else if(clearedFields.has('coachDoc')){teamUpdate.coach_id_url=null;}
   if(files['coachPhoto']){
     const p=await uploadFile('coachPhoto','team-public',prefix);
     if(p){const {data}=sb.storage.from('team-public').getPublicUrl(p);teamUpdate.coach_photo_url=data?.publicUrl;}
-  }
+  }else if(clearedFields.has('coachPhoto')){teamUpdate.coach_photo_url=null;}
 
   const {error:teamErr}=await sb.from('teams').update(teamUpdate).eq('id',TEAM.id);
   if(teamErr){msg.innerHTML='<div class="msg err">❌ فشل حفظ بيانات المدرب: '+teamErr.message+'</div>';btn.disabled=false;return;}
@@ -331,11 +345,11 @@ async function submitAll(){
     if(files['p'+n+'_jersey']){
       const jp=await uploadFile('p'+n+'_jersey','team-public',prefix);
       if(jp){const {data}=sb.storage.from('team-public').getPublicUrl(jp);payload.jersey_photo_url=data?.publicUrl;}
-    }
+    }else if(clearedFields.has('p'+n+'_jersey')){payload.jersey_photo_url=null;}
     if(files['p'+n+'_doc']){
       const dp=await uploadFile('p'+n+'_doc','team-docs',prefix);
       if(dp)payload.id_photo_url=dp;
-    }
+    }else if(clearedFields.has('p'+n+'_doc')){payload.id_photo_url=null;}
 
     let error;
     if(existingId){
