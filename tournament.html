@@ -210,13 +210,13 @@ document.getElementById('statsTabLink').href='stats.html?id='+TID;
 
 async function loadNews(){
   if(!TID)return;
-  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('is_pinned',{ascending:false}).order('created_at',{ascending:false}).limit(5);
+  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(5);
   const banner=document.getElementById('newsBanner');
   if(!data?.length){banner.innerHTML='';return;}
   const fmt=d=>new Date(d).toLocaleString('ar-AE',{dateStyle:'short',timeStyle:'short'});
   banner.innerHTML=`<div class="news-banner"><div class="news-banner-inner">
     <div class="news-header">📰 آخر الأخبار</div>
-    ${data.map(n=>`<div class="news-item-pub"><div class="${n.is_pinned?'n-pin':'n-dot'}"></div><div><div class="n-txt">${n.content}</div><span class="n-time">${fmt(n.created_at)}</span></div></div>`).join('')}
+    ${data.map(n=>`<div class="news-item-pub"><div class="n-dot"></div><div><div class="n-txt">${n.content}</div><span class="n-time">${fmt(n.created_at)}</span></div></div>`).join('')}
   </div></div>`;
 }
 loadNews();
