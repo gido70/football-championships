@@ -418,7 +418,7 @@ async function checkConnection() {
 }
 
 async function loadTournaments() {
-  const { data, error } = await sb.from('tournaments').select('*').order('created_at', { ascending: false });
+  const { data, error } = await sb.from('tournaments').select('*').neq('status', 'archived').order('created_at', { ascending: false });
   const sel = document.getElementById('tournSelect');
   if (error) { sel.innerHTML = `<option value="">⚠️ خطأ: ${error.message}</option>`; return; }
   sel.innerHTML = '<option value="">-- اختر البطولة --</option>';
