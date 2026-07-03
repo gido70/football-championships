@@ -536,7 +536,7 @@ function renderPreview() {
   tbody.innerHTML = parsedData.slice(0, 100).map(r => `
     <tr>
       <td>${r.photo_url
-        ? `<img src="${r.photo_url}" alt="${r.name}" onerror="this.outerHTML='<span class=no-photo>👤</span>'">`
+        ? `<img src="${r.photo_url}" alt="${r.name}" title="len:${r.photo_url.length}" onerror="console.error('DEBUG فشل تحميل صورة',this.alt,'أول 50 حرف:',this.src.slice(0,50));this.outerHTML='<span class=no-photo>👤</span>'">`
         : '<span class="no-photo">👤</span>'}</td>
       <td>${r.name}</td>
       <td>${r.team}</td>
