@@ -464,18 +464,39 @@ function fillMeta(m){
 
 async function saveMeta(){
   if(!cur)return;
+  const ref1=document.getElementById('referee1').value.trim()||null;
+  const ref2=document.getElementById('referee2').value.trim()||null;
+  const comm=document.getElementById('commentator').value.trim()||null;
+  const motmId=document.getElementById('manOfMatch').value||null;
   const payload={
-    referee_1:document.getElementById('referee1').value.trim()||null,
-    referee_2:document.getElementById('referee2').value.trim()||null,
-    commentator:document.getElementById('commentator').value.trim()||null,
+    referee_1:ref1,
+    referee_2:ref2,
+    commentator:comm,
     venue_name:document.getElementById('venueName').value.trim()||null,
     stream_url:document.getElementById('streamUrl').value.trim()||null,
-    player_of_match_id:document.getElementById('manOfMatch').value||null,
+    player_of_match_id:motmId,
   };
+
+  const prevRef1=cur.referee_1||null, prevRef2=cur.referee_2||null, prevComm=cur.commentator||null, prevMotm=cur.player_of_match_id||null;
   const {error}=await sb.from('matches').update(payload).eq('id',cur.id);
   const st=document.getElementById('metaStatus');
-  if(error){st.style.color='#ff6b6b';st.textContent='⚠️ فشل الحفظ';}
-  else{st.style.color='#34d399';st.textContent='✅ تم الحفظ';setTimeout(()=>st.textContent='',2500);}
+  if(error){st.style.color='#ff6b6b';st.textContent='⚠️ فشل الحفظ';return;}
+  st.style.color='#34d399';st.textContent='✅ تم الحفظ';setTimeout(()=>st.textContent='',2500);
+  Object.assign(cur,payload);
+
+  const hn=cur.ht?.name_ar||cur.ht?.name||'';
+  const an=cur.at?.name_ar||cur.at?.name||'';
+
+  if((ref1&&ref1!==prevRef1)||(ref2&&ref2!==prevRef2)||(comm&&comm!==prevComm)){
+    const parts=[];
+    if(ref1)parts.push('👨‍⚖️ الحكم: '+ref1+(ref2?' — مساعد: '+ref2:''));
+    if(comm)parts.push('🎙️ المعلق: '+comm);
+    if(parts.length)pushNews(parts.join(' | ')+' — '+hn+' × '+an);
+  }
+  if(motmId&&motmId!==prevMotm){
+    const pl=[...hPl,...aPl].find(p=>p.id===motmId);
+    if(pl)pushNews('⭐ نجم المباراة: '+(pl.full_name_ar||pl.name)+' — '+hn+' × '+an);
+  }
 }
 
 function fillVAR(m){
