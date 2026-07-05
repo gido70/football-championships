@@ -192,6 +192,7 @@ img[src=""], img:not([src]) { display:none !important; }
     <button class="tab" onclick="showTab(this,'tm')">👥 الفرق</button>
     <a class="tab" id="statsTabLink" href="#" style="text-decoration:none;display:inline-block">📊 إحصائيات</a>
     <a class="tab" id="awardsTabLink" href="#" style="text-decoration:none;display:inline-block">🏆 الجوائز</a>
+    <a class="tab" id="lbTabLink" href="#" style="text-decoration:none;display:inline-block">🥇 المتصدرون</a>
   </div>
 </div>
 
@@ -207,6 +208,7 @@ const sb=supabase.createClient("https://npoowwdjpbvhyjrmeqkv.supabase.co","eyJhb
 const TID=new URLSearchParams(location.search).get('id');
 document.getElementById('statsTabLink').href='stats.html?id='+TID;
   document.getElementById('awardsTabLink').href='awards.html?id='+TID;
+  document.getElementById('lbTabLink').href='leaderboard.html?tid='+TID;
 
 async function loadNews(){
   if(!TID)return;
