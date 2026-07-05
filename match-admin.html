@@ -627,7 +627,20 @@ async function setMatchStatus(st){
     const winner=hs>as?hn:(as>hs?an:null);
     let txt='🏁 انتهت المباراة: '+hn+' '+hs+' - '+as+' '+an+(winner?' — الفائز: '+winner:' — تعادل');
     pushNews(txt);
+    announceClosestGuess(hs,as);
   }
+}
+
+async function announceClosestGuess(hs,as){
+  const {data:preds}=await sb.from('match_predictions').select('home_score_pred,away_score_pred,player_name,created_at').eq('match_id',cur.id).not('player_name','is',null);
+  if(!preds||!preds.length)return;
+  const withDist=preds.map(p=>{
+    const dist=Math.abs(p.home_score_pred-hs)+Math.abs(p.away_score_pred-as);
+    const exact=(Number(p.home_score_pred)===Number(hs)&&Number(p.away_score_pred)===Number(as));
+    return {...p,dist,exact};
+  }).sort((a,b)=>a.dist-b.dist||(a.exact===b.exact?0:(a.exact?-1:1))||(new Date(a.created_at)-new Date(b.created_at)));
+  const w=withDist[0];
+  if(w&&w.player_name)pushNews('🏆 أقرب توقع لهذه المباراة: '+w.player_name+' ('+w.home_score_pred+' - '+w.away_score_pred+')'+(w.exact?' 🎯 دقيق تماماً!':''));
 }
 
 async function resetForTest(){
