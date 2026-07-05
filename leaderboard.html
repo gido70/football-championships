@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة المتصدرين — التوقعات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;margin:0;min-height:100vh}
+.nav{background:#161b22;border-bottom:1px solid #21262d;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.nav a{color:#8b949e;text-decoration:none;font-size:13px;border:1px solid #30363d;padding:6px 14px;border-radius:20px}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px 60px}
+.hero{text-align:center;padding:22px 14px;margin-bottom:18px;border-radius:16px;background:radial-gradient(ellipse at top,rgba(201,168,76,.18),rgba(22,27,34,.9));border:1px solid rgba(201,168,76,.35)}
+.hero h1{margin:0 0 6px;font-size:20px;color:#c9a84c}
+.hero p{margin:0;font-size:12.5px;color:#8b949e;line-height:1.8}
+.hof-title{font-weight:900;color:#c9a84c;margin:22px 0 10px;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.hof-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:6px}
+.hof-badge{background:linear-gradient(160deg,rgba(201,168,76,.15),#161b22);border:1.5px solid #c9a84c;border-radius:14px;padding:12px 8px;text-align:center}
+.hof-medal{font-size:22px;display:block;margin-bottom:4px}
+.hof-name{font-weight:800;font-size:12.5px}
+.hof-sub{font-size:10px;color:#c9a84c}
+.empty-note{font-size:12px;color:#6e7b8f;text-align:center;padding:10px 0}
+.lb-row{display:flex;align-items:center;gap:10px;background:#161b22;border:1px solid #21262d;border-radius:14px;padding:12px;margin-bottom:8px}
+.lb-rank{color:#c9a84c;font-weight:900;width:28px;text-align:center;font-size:15px}
+.lb-name{flex:1;font-weight:800}
+.lb-detail{font-size:11px;color:#8b949e;margin-top:3px}
+.lb-pts{font-weight:900;color:#c9a84c;font-size:17px}
+.loading{text-align:center;color:#6e7b8f;padding:40px 0}
+</style>
+</head>
+<body>
+<div class="nav"><span style="font-weight:800;color:#c9a84c">🏆 لوحة المتصدرين</span><a href="#" onclick="history.back();return false">‹ رجوع</a></div>
+<div class="wrap" id="app"><div class="loading">⏳ جاري التحميل...</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const qs=new URLSearchParams(location.search);
+const TID=qs.get('tid');
+
+const ROUND_LABEL={group:'دور المجموعات',round_of_16:'دور الـ16',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
+const ROUND_WEIGHT={group:1,round_of_16:2,quarter_final:3,semi_final:4,third_place:3,final:6};
+const EXACT_BONUS=2;
+const HOF_ROUNDS=['group','round_of_16','quarter_final','semi_final','final'];
+
+function outcome(h,a){ if(h>a)return'h'; if(a>h)return'a'; return'd'; }
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+
+async function load(){
+  if(!TID){document.getElementById('app').innerHTML='<div class="empty-note">لم تُحدَّد بطولة</div>';return;}
+  const {data:matches}=await sb.from('matches').select('id,round_name,status,home_score,away_score').eq('tournament_id',TID);
+  const decided=(matches||[]).filter(m=>m.status==='completed'&&m.home_score!=null&&m.away_score!=null);
+  const matchIds=(matches||[]).map(m=>m.id);
+  if(!matchIds.length){render([],{});return;}
+
+  const {data:preds}=await sb.from('match_predictions').select('match_id,session_key,player_name,home_score_pred,away_score_pred').in('match_id',matchIds).not('player_name','is',null);
+
+  const byPlayer={};
+  (preds||[]).forEach(p=>{
+    const key=(p.player_name||'').trim()+'|'+p.session_key;
+    if(!byPlayer[key])byPlayer[key]={name:p.player_name||'—',pts:0,correct:0,wrong:0,exact:0,voted:0,perRound:{}};
+    const m=(matches||[]).find(x=>x.id===p.match_id);
+    if(!m)return;
+    const pl=byPlayer[key];
+    const isDecided=decided.some(d=>d.id===m.id);
+    if(!isDecided)return;
+    pl.perRound[m.round_name]=pl.perRound[m.round_name]||{c:0,d:0};
+    pl.perRound[m.round_name].d++;
+    pl.voted++;
+    const actualOutcome=outcome(m.home_score,m.away_score);
+    const predOutcome=outcome(p.home_score_pred,p.away_score_pred);
+    if(actualOutcome===predOutcome){
+      pl.correct++;
+      pl.perRound[m.round_name].c++;
+      pl.pts+=(ROUND_WEIGHT[m.round_name]||1);
+      if(Number(p.home_score_pred)===Number(m.home_score)&&Number(p.away_score_pred)===Number(m.away_score)){
+        pl.exact++;
+        pl.pts+=EXACT_BONUS;
+      }
+    }else{
+      pl.wrong++;
+    }
+  });
+
+  render(Object.values(byPlayer), decided);
+}
+
+function render(players, decidedMatches){
+  const app=document.getElementById('app');
+  let html='<div class="hero"><h1>لوحة متصدري التوقعات</h1><p>نقاط مرجّحة حسب أهمية الدور — ربع النهائي 3، نصف النهائي 4، النهائي 6 — بالإضافة لمكافأة +2 لكل نتيجة دقيقة تماماً</p></div>';
+
+  // قائمة الأبطال لكل دور
+  const roundsWithDecided = HOF_ROUNDS.filter(r=>decidedMatches.some(m=>m.round_name===r));
+  if(roundsWithDecided.length){
+    roundsWithDecided.forEach(r=>{
+      const decidedInRound=decidedMatches.filter(m=>m.round_name===r).length;
+      const perfect=players.filter(p=>p.perRound[r]&&p.perRound[r].d>0&&p.perRound[r].c===p.perRound[r].d);
+      html+=`<div class="hof-title">🏅 ${ROUND_LABEL[r]||r} <span style="font-size:10.5px;color:#8b949e;font-weight:600">${decidedInRound} مباراة محسومة</span></div>`;
+      if(!perfect.length){html+='<div class="empty-note">لا يوجد حتى الآن من أصاب كل توقعات هذا الدور</div>';}
+      else{
+        html+='<div class="hof-grid">'+perfect.map(p=>`<div class="hof-badge"><span class="hof-medal">🏅</span><span class="hof-name">${esc(p.name)}</span><br><span class="hof-sub">${p.perRound[r].c}/${p.perRound[r].d} صحيح</span></div>`).join('')+'</div>';
+      }
+    });
+  }
+
+  html+='<div class="hof-title">📊 الترتيب العام</div>';
+  if(!players.length){
+    html+='<div class="empty-note">لا توجد توقعات محسومة بعد — النقاط تُحتسب فقط بعد انتهاء المباريات</div>';
+  }else{
+    const sorted=players.sort((a,b)=>b.pts-a.pts||b.correct-a.correct||b.exact-a.exact);
+    sorted.forEach((p,i)=>{
+      const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+      html+=`<div class="lb-row"><div class="lb-rank">${medal}</div><div><div class="lb-name">${esc(p.name)}</div><div class="lb-detail">صحيح: ${p.correct} · خطأ: ${p.wrong} · دقيق: ${p.exact} · شارك: ${p.voted}</div></div><div class="lb-pts">${p.pts}</div></div>`;
+    });
+  }
+  app.innerHTML=html;
+}
+
+load();
+</script>
+</body>
+</html>
