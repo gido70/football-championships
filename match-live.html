@@ -340,12 +340,26 @@ async function loadPredict(){
   await renderPredict();
 }
 
+function getPlayerName(){return localStorage.getItem('wc_player_name')||'';}
+function setPlayerName(n){localStorage.setItem('wc_player_name',n);}
+
 async function renderPredict(){
   const wrap=document.getElementById('predictWrap');
   const MID=cur.id;
   const sk=getSessionKey();
   const hName=cur.ht?.name_ar||cur.ht?.name||'الفريق الأول';
   const aName=cur.at?.name_ar||cur.at?.name||'الفريق الثاني';
+  const myName=getPlayerName();
+
+  if(!myName){
+    wrap.innerHTML=`<div class="pred-wrap">
+      <div class="pred-title">🎯 توقّع النتيجة</div>
+      <div class="pred-sub">اكتب اسمك أولاً — يظهر في لوحة المتصدرين وتُحسب به نقاطك</div>
+      <input class="pred-inp" id="nameInp" type="text" maxlength="30" placeholder="اسمك" style="width:100%;text-align:center;margin:10px 0">
+      <button class="pred-btn" onclick="saveNameAndRender()">متابعة</button>
+    </div>`;
+    return;
+  }
 
   const {data:preds}=await sb.from('match_predictions').select('home_score_pred,away_score_pred,session_key').eq('match_id',MID);
   const myPred=(preds||[]).find(p=>p.session_key===sk);
@@ -368,9 +382,11 @@ async function renderPredict(){
     </div>`).join('')}
   </div>`:'';
 
+  const leaderboardLink=`<a href="leaderboard.html?tid=${cur.tournament_id}" class="pred-btn" style="display:block;text-align:center;background:#c9a84c;margin-top:10px">🏆 لوحة المتصدرين</a>`;
+
   if(myPred){
     wrap.innerHTML=`<div class="pred-wrap">
-      <div class="pred-title">🎯 توقعاتك</div>
+      <div class="pred-title">🎯 توقعاتك — ${escapeHtmlPn(myName)}</div>
       <div class="pred-done">توقعت: ${hName} ${myPred.home_score_pred} - ${myPred.away_score_pred} ${aName}</div>
       <div class="pred-sub" style="margin-bottom:12px">هل تريد تغيير توقعك؟</div>
       <div class="pred-row">
@@ -383,12 +399,13 @@ async function renderPredict(){
         <span class="pred-team away">${aName}</span>
       </div>
       <button class="pred-btn" onclick="submitPredict('${MID}')">تحديث التوقع</button>
+      ${leaderboardLink}
       <div style="margin-top:16px">${statsHtml}</div>
     </div>`;
   } else {
     wrap.innerHTML=`<div class="pred-wrap">
-      <div class="pred-title">🎯 توقّع النتيجة</div>
-      <div class="pred-sub">ما هي نتيجة هذه المباراة في رأيك؟<br>يمكنك تغيير توقعك لاحقًا</div>
+      <div class="pred-title">🎯 توقّع النتيجة — ${escapeHtmlPn(myName)}</div>
+      <div class="pred-sub">ما هي نتيجة هذه المباراة في رأيك؟<br>يمكنك تغيير توقعك حتى قبل بداية المباراة فقط</div>
       <div class="pred-row">
         <span class="pred-team">${hName}</span>
         <div class="pred-score-box">
@@ -399,10 +416,21 @@ async function renderPredict(){
         <span class="pred-team away">${aName}</span>
       </div>
       <button class="pred-btn" onclick="submitPredict('${MID}')">إرسال توقعي</button>
+      ${leaderboardLink}
       ${total>0?`<div style="margin-top:16px">${statsHtml}</div>`:''}
     </div>`;
   }
 }
+
+function escapeHtmlPn(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+
+async function saveNameAndRender(){
+  const v=document.getElementById('nameInp').value.trim();
+  if(!v){return;}
+  setPlayerName(v);
+  await renderPredict();
+}
+window.saveNameAndRender=saveNameAndRender;
 
 async function submitPredict(matchId){
   const sk=getSessionKey();
@@ -413,7 +441,8 @@ async function submitPredict(matchId){
     tournament_id:cur.tournament_id,
     home_score_pred:h,
     away_score_pred:a,
-    session_key:sk
+    session_key:sk,
+    player_name:getPlayerName()
   },{onConflict:'match_id,session_key'});
   if(!error){predictLoaded=false;await renderPredict();}
 }
