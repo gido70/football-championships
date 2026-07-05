@@ -361,9 +361,27 @@ async function renderPredict(){
     return;
   }
 
-  const {data:preds}=await sb.from('match_predictions').select('home_score_pred,away_score_pred,session_key').eq('match_id',MID);
+  const {data:preds}=await sb.from('match_predictions').select('home_score_pred,away_score_pred,session_key,player_name,created_at').eq('match_id',MID);
   const myPred=(preds||[]).find(p=>p.session_key===sk);
   const total=(preds||[]).length;
+
+  let closestBanner='';
+  if(cur.status==='completed'&&cur.home_score!=null&&cur.away_score!=null&&total>0){
+    const withDist=(preds||[]).map(p=>{
+      const dist=Math.abs(p.home_score_pred-cur.home_score)+Math.abs(p.away_score_pred-cur.away_score);
+      const exact=(Number(p.home_score_pred)===Number(cur.home_score)&&Number(p.away_score_pred)===Number(cur.away_score));
+      return {...p,dist,exact};
+    }).sort((a,b)=>a.dist-b.dist||(a.exact===b.exact?0:(a.exact?-1:1))||(new Date(a.created_at)-new Date(b.created_at)));
+    const winner=withDist[0];
+    if(winner){
+      closestBanner=`<div class="pred-wrap" style="border:2px solid #c9a84c;background:linear-gradient(160deg,rgba(201,168,76,.15),transparent);margin-bottom:14px;text-align:center">
+        <div style="font-size:32px">🏆</div>
+        <div style="font-weight:900;color:#c9a84c;font-size:16px;margin:6px 0">أقرب توقع لهذه المباراة</div>
+        <div style="font-weight:800;font-size:18px">${escapeHtmlPn(winner.player_name||'مجهول')}</div>
+        <div style="color:#8b949e;font-size:12px;margin-top:4px">توقع ${winner.home_score_pred} - ${winner.away_score_pred} ${winner.exact?'· 🎯 نتيجة دقيقة!':''}</div>
+      </div>`;
+    }
+  }
 
   // إحصاء النتائج المتوقعة
   const scoreCount={};
@@ -385,7 +403,7 @@ async function renderPredict(){
   const leaderboardLink=`<a href="leaderboard.html?tid=${cur.tournament_id}" class="pred-btn" style="display:block;text-align:center;background:#c9a84c;margin-top:10px">🏆 لوحة المتصدرين</a>`;
 
   if(myPred){
-    wrap.innerHTML=`<div class="pred-wrap">
+    wrap.innerHTML=`${closestBanner}<div class="pred-wrap">
       <div class="pred-title">🎯 توقعاتك — ${escapeHtmlPn(myName)}</div>
       <div class="pred-done">توقعت: ${hName} ${myPred.home_score_pred} - ${myPred.away_score_pred} ${aName}</div>
       <div class="pred-sub" style="margin-bottom:12px">هل تريد تغيير توقعك؟</div>
@@ -403,7 +421,7 @@ async function renderPredict(){
       <div style="margin-top:16px">${statsHtml}</div>
     </div>`;
   } else {
-    wrap.innerHTML=`<div class="pred-wrap">
+    wrap.innerHTML=`${closestBanner}<div class="pred-wrap">
       <div class="pred-title">🎯 توقّع النتيجة — ${escapeHtmlPn(myName)}</div>
       <div class="pred-sub">ما هي نتيجة هذه المباراة في رأيك؟<br>يمكنك تغيير توقعك حتى قبل بداية المباراة فقط</div>
       <div class="pred-row">
