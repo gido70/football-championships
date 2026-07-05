@@ -25,6 +25,13 @@ a{text-decoration:none;color:inherit}
 
 .scoreboard{position:relative;padding:28px 16px 22px;text-align:center;overflow:hidden}
 .sb-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.18),transparent 60%)}
+@keyframes livepulse3{0%{box-shadow:0 0 0 0 rgba(255,59,59,.6)}70%{box-shadow:0 0 0 8px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
+.match-ticker{display:flex;align-items:center;gap:8px;background:#161b22;border:1px solid #21262d;border-bottom:2px solid rgba(255,59,59,.4);height:38px;overflow:hidden}
+.match-ticker .mt-label{flex-shrink:0;font-size:11px;font-weight:800;padding:0 12px;height:100%;display:flex;align-items:center;gap:5px;background:rgba(255,59,59,.12);color:#f85149;white-space:nowrap}
+.match-ticker .mt-dot{width:7px;height:7px;border-radius:50%;background:#f85149;animation:livepulse3 1.2s infinite}
+.mt-viewport{flex:1;overflow:hidden;position:relative;height:100%}
+.mt-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:13px;color:#e6edf3;will-change:transform}
+.mt-sep{margin:0 16px;color:#6e7b8f}
 .sb-inner{position:relative;z-index:1;max-width:720px;margin:0 auto}
 .sb-meta{display:flex;justify-content:center;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
 .sb-round{font-size:12px;font-weight:700;color:#8b949e;background:#161b22;border:1px solid #30363d;padding:4px 12px;border-radius:20px}
@@ -221,6 +228,8 @@ a{text-decoration:none;color:inherit}
     <div id="streamWrap"></div>
   </div>
 </div>
+
+<div id="matchNewsTicker"></div>
 
 <div id="motmWrap"></div>
 
@@ -576,6 +585,32 @@ function startClock(m){
 }
 function stopClock(){if(clockTimer){clearInterval(clockTimer);clockTimer=null;}}
 
+let mtRaf=null, mtPos=0;
+function stopMatchTicker(){
+  if(mtRaf){cancelAnimationFrame(mtRaf);mtRaf=null;}
+  document.getElementById('matchNewsTicker').innerHTML='';
+}
+async function loadMatchTicker(m){
+  const box=document.getElementById('matchNewsTicker');
+  if(m.status!=='live'){stopMatchTicker();return;}
+  const {data}=await sb.from('news_items').select('content,created_at').eq('match_id',m.id).order('created_at',{ascending:false}).limit(15);
+  if(!data||!data.length){stopMatchTicker();return;}
+  box.innerHTML=`<div class="match-ticker">
+    <div class="mt-label"><span class="mt-dot"></span>أخبار المباراة</div>
+    <div class="mt-viewport"><div class="mt-track" id="mtTrack">${data.map(n=>`<span>${n.content}</span>`).join('<span class="mt-sep">•</span>')}</div></div>
+  </div>`;
+  const track=document.getElementById('mtTrack');
+  mtPos=track.parentElement.offsetWidth;
+  if(mtRaf)cancelAnimationFrame(mtRaf);
+  const step=()=>{
+    mtPos-=1;
+    if(mtPos<-track.scrollWidth)mtPos=track.parentElement.offsetWidth;
+    track.style.transform='translateX('+mtPos+'px)';
+    mtRaf=requestAnimationFrame(step);
+  };
+  step();
+}
+
 async function init(){
   if(!MID){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>لم يتم تحديد المباراة</p></div>';return;}
   const {data:m,error}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(*),at:teams!matches_away_team_id_fkey(*)').eq('id',MID).single();
@@ -601,6 +636,8 @@ async function init(){
   hB.style.background=teamBg(hColor,hColor2); aB.style.background=teamBg(aColor,aColor2);
   if(ht.logo_url){hB.innerHTML=`<img src="${ht.logo_url}" style="width:100%;height:100%;object-fit:contain;border-radius:50%">`;}else{hB.textContent=initials(ht.name_ar||ht.name);}
   if(at.logo_url){aB.innerHTML=`<img src="${at.logo_url}" style="width:100%;height:100%;object-fit:contain;border-radius:50%">`;}else{aB.textContent=initials(at.name_ar||at.name);}
+
+  loadMatchTicker(m);
 
   const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مباراة المركز الثالث',final:'النهائي'};
   document.getElementById('roundLbl').textContent=rl[m.round_name]||m.round_name||'';
