@@ -35,15 +35,15 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .hs-num{font-size:34px;font-weight:900;line-height:1}
 .hs-lbl{font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;letter-spacing:.5px}
 .tabs-bar{background:#161b22;border-bottom:1px solid #21262d;position:sticky;top:58px;z-index:99;overflow-x:auto}
-.news-banner{background:linear-gradient(135deg,rgba(88,166,255,.12),rgba(88,166,255,.06));border-bottom:1px solid rgba(88,166,255,.2);padding:0 18px}
-.news-banner-inner{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:0}
-.news-item-pub{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(88,166,255,.1)}
-.news-item-pub:last-child{border-bottom:none}
-.news-item-pub .n-dot{width:6px;height:6px;border-radius:50%;background:#58a6ff;margin-top:7px;flex-shrink:0}
-.news-item-pub .n-pin{width:6px;height:6px;border-radius:50%;background:#c9a84c;margin-top:7px;flex-shrink:0}
-.news-item-pub .n-txt{font-size:13px;line-height:1.6;color:#e6edf3}
-.news-item-pub .n-time{font-size:10px;color:#6e7b8f;margin-top:2px;display:block}
-.news-header{font-size:11px;font-weight:800;color:#58a6ff;padding:10px 0 2px;letter-spacing:1px}
+@keyframes livepulse2{0%{box-shadow:0 0 0 0 rgba(255,59,59,.6)}70%{box-shadow:0 0 0 8px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
+.ticker-wrap{max-width:900px;margin:0 auto;padding:8px 14px 4px}
+.ticker-line{display:flex;align-items:center;gap:8px;background:#161b22;border:1px solid #21262d;border-radius:10px;padding:0;margin-bottom:8px;overflow:hidden;height:38px}
+.ticker-label{flex-shrink:0;font-size:11px;font-weight:800;padding:0 12px;height:100%;display:flex;align-items:center;border-left:1px solid;white-space:nowrap}
+.ticker-viewport{flex:1;overflow:hidden;position:relative;height:100%}
+.ticker-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:13px;color:#e6edf3;will-change:transform}
+.ticker-sep{margin:0 16px;color:#6e7b8f}
+.ticker-toggle{flex-shrink:0;background:transparent;border:none;color:#8b949e;font-size:14px;cursor:pointer;padding:0 12px;height:100%}
+.ticker-toggle:hover{color:#e6edf3}
 .tabs{max-width:1200px;margin:0 auto;display:flex;padding:0 20px}
 @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,59,59,.6)}70%{box-shadow:0 0 0 8px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
 .tab{padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#8b949e;transition:.2s;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
@@ -212,14 +212,48 @@ document.getElementById('statsTabLink').href='stats.html?id='+TID;
 
 async function loadNews(){
   if(!TID)return;
-  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(5);
+  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(20);
   const banner=document.getElementById('newsBanner');
   if(!data?.length){banner.innerHTML='';return;}
-  const fmt=d=>new Date(d).toLocaleString('ar-AE',{dateStyle:'short',timeStyle:'short'});
-  banner.innerHTML=`<div class="news-banner"><div class="news-banner-inner">
-    <div class="news-header">📰 آخر الأخبار</div>
-    ${data.map(n=>`<div class="news-item-pub"><div class="n-dot"></div><div><div class="n-txt">${n.content}</div><span class="n-time">${fmt(n.created_at)}</span></div></div>`).join('')}
-  </div></div>`;
+
+  const isVote=t=>t.includes('توقع')||t.startsWith('🏆');
+  const newsItems=data.filter(n=>!isVote(n.content));
+  const voteItems=data.filter(n=>isVote(n.content));
+
+  const line=(id,label,items,color)=>items.length?`
+    <div class="ticker-line" style="border-color:${color}55">
+      <div class="ticker-label" style="background:${color}22;color:${color};border-color:${color}55">${label}</div>
+      <div class="ticker-viewport">
+        <div class="ticker-track" id="${id}Track">${items.map(n=>`<span class="ticker-item">${n.content}</span>`).join('<span class="ticker-sep">•</span>')}</div>
+      </div>
+      <button class="ticker-toggle" id="${id}Toggle" onclick="toggleTicker('${id}')">⏸</button>
+    </div>`:'';
+
+  banner.innerHTML=`<div class="ticker-wrap">${line('news','📰 أخبار',newsItems,'#58a6ff')}${line('vote','🏆 توقعات',voteItems,'#c9a84c')}</div>`;
+
+  ['news','vote'].forEach(id=>{
+    const track=document.getElementById(id+'Track');
+    if(track)startTickerAnim(id,track);
+  });
+}
+
+const tickerState={};
+function startTickerAnim(id,track){
+  tickerState[id]={paused:false,pos:track.parentElement.offsetWidth};
+  const step=()=>{
+    if(!tickerState[id].paused){
+      tickerState[id].pos-=1;
+      if(tickerState[id].pos < -track.scrollWidth) tickerState[id].pos=track.parentElement.offsetWidth;
+      track.style.transform='translateX('+tickerState[id].pos+'px)';
+    }
+    tickerState[id].raf=requestAnimationFrame(step);
+  };
+  step();
+}
+function toggleTicker(id){
+  if(!tickerState[id])return;
+  tickerState[id].paused=!tickerState[id].paused;
+  document.getElementById(id+'Toggle').textContent=tickerState[id].paused?'▶':'⏸';
 }
 loadNews();
 
