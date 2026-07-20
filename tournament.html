@@ -125,8 +125,8 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 /* TEAMS */
 .tm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
 .tm-card{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:12px;padding:18px 14px;text-align:center;text-decoration:none;display:block;transition:.2s;position:relative;overflow:hidden}
-.tm-card::before{content:"";position:absolute;top:0;right:0;left:0;height:4px;background:var(--c,#c9a84c)}
-.tm-card:hover{border-color:#c9a84c;transform:translateY(-3px)}
+.tm-card::before{content:"";position:absolute;top:0;right:0;left:0;height:4px;background:var(--tab-accent,#378ADD)}
+.tm-card:hover{border-color:var(--tab-accent,#378ADD);transform:translateY(-3px)}
 .tm-grp{position:absolute;top:10px;left:10px;background:#F5F3EE;border:1px solid #E0DCCF;color:#79786A;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px}
 .tm-logo{width:44px;height:44px;object-fit:contain;border-radius:50%;display:block;margin:0 auto 8px}
 .tm-icon{font-size:38px;margin-bottom:10px;display:block}
@@ -206,7 +206,7 @@ img[src=""], img:not([src]) { display:none !important; }
     <button class="tab" onclick="showTab(this,'tm')">👥 الفرق</button>
     <a class="tab" id="statsTabLink" href="#" style="text-decoration:none;display:inline-block">📊 إحصائيات</a>
     <a class="tab" id="awardsTabLink" href="#" style="text-decoration:none;display:inline-block">🏆 الجوائز</a>
-    <a class="tab" id="lbTabLink" href="#" style="text-decoration:none;display:inline-block">🥇 المتصدرون</a>
+    <a class="tab" id="lbTabLink" href="#" style="text-decoration:none;display:inline-block">🥇 توقعات الأصدقاء</a>
   </div>
 </div>
 
