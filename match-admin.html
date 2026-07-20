@@ -235,6 +235,7 @@ select option{background:#0f2a45;color:#ffffff}
         <div class="meta-field"><label>المعلق</label><input id="commentator" placeholder="اسم المعلق"></div>
         <div class="meta-field"><label>الملعب</label><input id="venueName" placeholder="اسم الملعب"></div>
         <div class="meta-field"><label>رابط البث (اختياري)</label><input id="streamUrl" placeholder="https://..."></div>
+        <div class="meta-field"><label>رابط فيديو ملخص المباراة (اختياري)</label><input id="highlightVideoUrl" placeholder="رابط يوتيوب لملخص/تسجيل المباراة"></div>
         <div class="meta-field"><label>نجم المباراة (اختيارك)</label>
           <select id="manOfMatch"><option value="">— لاعب —</option></select>
         </div>
@@ -459,6 +460,7 @@ function fillMeta(m){
   document.getElementById('commentator').value=m.commentator||'';
   document.getElementById('venueName').value=m.venue_name||m.venue||'';
   document.getElementById('streamUrl').value=m.stream_url||'';
+  document.getElementById('highlightVideoUrl').value=m.highlight_video_url||'';
   document.getElementById('manOfMatch').value=m.player_of_match_id||'';
 }
 
@@ -474,6 +476,7 @@ async function saveMeta(){
     commentator:comm,
     venue_name:document.getElementById('venueName').value.trim()||null,
     stream_url:document.getElementById('streamUrl').value.trim()||null,
+    highlight_video_url:document.getElementById('highlightVideoUrl').value.trim()||null,
     player_of_match_id:motmId,
   };
 
@@ -668,7 +671,7 @@ async function resetForTest(){
   if(!cur)return;
   if(!confirm('سيتم إرجاع هذه المباراة إلى "مجدولة" وتصفير النتيجة، الأحداث، التشكيلة، والحكام/المعلق/الملعب — للاختبار فقط. متابعة؟'))return;
   const payload={status:'scheduled',home_score:0,away_score:0,live_started_at:null,live_status:'none',var_team_id:null,
-    referee_1:null,referee_2:null,commentator:null,venue_name:null,stream_url:null,player_of_match_id:null};
+    referee_1:null,referee_2:null,commentator:null,venue_name:null,stream_url:null,highlight_video_url:null,player_of_match_id:null};
   const {error}=await sb.from('matches').update(payload).eq('id',cur.id);
   if(error){setMsg('❌ فشل: '+error.message,'err');return;}
   await sb.from('match_events').delete().eq('match_id',cur.id);
