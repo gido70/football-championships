@@ -14,7 +14,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh}
+body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh;overflow-x:hidden}
 .nav{background:#FFFFFF;border-bottom:1px solid #EDEAE0;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .nav-title{font-size:17px;font-weight:800;color:#2C2C2A;display:flex;align-items:center;gap:10px}
 .nav-status{font-size:11px;padding:2px 10px;border-radius:20px;background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.2);display:none}
@@ -62,10 +62,16 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .st-table tr:last-child td{border-bottom:none}
 .st-table tr:hover td{background:rgba(0,0,0,.025)}
 .st-table tbody tr:first-child td{background:rgba(201,168,76,.06)}
-.st-table tbody tr:first-child td:nth-child(1),.st-table tbody tr:first-child td:nth-child(2){background:#1c1a10}
-.st-table th:nth-child(1),.st-table td:nth-child(1){position:sticky;right:0;z-index:2;background:#FFFFFF;box-shadow:2px 0 6px rgba(0,0,0,.35);width:48px}
-.st-table th:nth-child(2),.st-table td:nth-child(2){position:sticky;right:48px;z-index:2;background:#FFFFFF;box-shadow:2px 0 6px rgba(0,0,0,.35)}
-.st-table th:nth-child(1),.st-table th:nth-child(2){background:#F5F3EE}
+.st-table tbody tr:first-child td:nth-child(1),.st-table tbody tr:first-child td:nth-child(2){background:#FBF3DC}
+.st-table th:nth-child(1),.st-table td:nth-child(1){width:40px}
+@media(max-width:520px){
+  .st-table{min-width:0;width:100%}
+  .st-table th:nth-child(5),.st-table td:nth-child(5),
+  .st-table th:nth-child(6),.st-table td:nth-child(6),
+  .st-table th:nth-child(7),.st-table td:nth-child(7),
+  .st-table th:nth-child(8),.st-table td:nth-child(8){display:none}
+  .st-table th,.st-table td{padding:10px 8px;font-size:13px}
+}
 .rk{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:#EDEAE0;color:#79786A}
 .rk-1{background:linear-gradient(135deg,#f6d860,#c9a84c);color:#2C2C2A}
 .rk-2{background:linear-gradient(135deg,#d4d4d4,#a3a3a3);color:#2C2C2A}
