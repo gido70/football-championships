@@ -61,6 +61,11 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .st-table td{padding:12px 14px;border-bottom:1px solid #21262d;font-size:14px;white-space:nowrap}
 .st-table tr:last-child td{border-bottom:none}
 .st-table tr:hover td{background:rgba(255,255,255,.02)}
+.st-table tbody tr:first-child td{background:rgba(201,168,76,.06)}
+.st-table tbody tr:first-child td:nth-child(1),.st-table tbody tr:first-child td:nth-child(2){background:#1c1a10}
+.st-table th:nth-child(1),.st-table td:nth-child(1){position:sticky;right:0;z-index:2;background:#161b22;box-shadow:2px 0 6px rgba(0,0,0,.35);width:48px}
+.st-table th:nth-child(2),.st-table td:nth-child(2){position:sticky;right:48px;z-index:2;background:#161b22;box-shadow:2px 0 6px rgba(0,0,0,.35)}
+.st-table th:nth-child(1),.st-table th:nth-child(2){background:#0d1117}
 .rk{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:#21262d;color:#8b949e}
 .rk-1{background:linear-gradient(135deg,#f6d860,#c9a84c);color:#0d1117}
 .rk-2{background:linear-gradient(135deg,#d4d4d4,#a3a3a3);color:#0d1117}
@@ -116,6 +121,8 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .tm-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:18px 14px;text-align:center;text-decoration:none;display:block;transition:.2s;position:relative;overflow:hidden}
 .tm-card::before{content:"";position:absolute;top:0;right:0;left:0;height:4px;background:var(--c,#c9a84c)}
 .tm-card:hover{border-color:#c9a84c;transform:translateY(-3px)}
+.tm-grp{position:absolute;top:10px;left:10px;background:#0d1117;border:1px solid #30363d;color:#8b949e;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px}
+.tm-logo{width:44px;height:44px;object-fit:contain;border-radius:50%;display:block;margin:0 auto 8px}
 .tm-icon{font-size:38px;margin-bottom:10px;display:block}
 .tm-name{font-size:14px;font-weight:800;color:#e6edf3;margin-bottom:4px}
 .tm-cnt{font-size:13px;color:#8b949e}
@@ -461,17 +468,18 @@ async function loadScorers(){
     const rank=i+1;
     const rc=rColor[rank]||'#3a4150';
     const sn=(p.name||'').split(' ').slice(0,2).join(' ');
-    return `<div class="sc-item" style="${rank<=3?'border-color:'+rc+'44;background:'+rc+'08':''}">
-      <div class="sc-rank" style="color:${rc}">${rank}</div>
-      <div class="sc-av-wrap">
+    const big=rank===1;
+    return `<div class="sc-item" style="${rank<=3?'border-color:'+rc+'44;background:'+rc+'08':''}${big?';padding:14px 14px':''}">
+      <div class="sc-rank" style="color:${rc};${big?'font-size:17px':''}">${rank}</div>
+      <div class="sc-av-wrap" style="${big?'width:46px;height:46px':''}">
         ${p.photo
-          ?`<img class="sc-photo" src="${p.photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
+          ?`<img class="sc-photo" style="${big?'width:46px;height:46px':''}" src="${p.photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
           :''}
-        <div class="sc-ph" style="${p.photo?'display:none':''}background:${p.col}22;border-color:${p.col}55;color:${p.col}">${ini(p.name)}</div>
+        <div class="sc-ph" style="${p.photo?'display:none':''}${big?'width:46px;height:46px;font-size:16px':''}background:${p.col}22;border-color:${p.col}55;color:${p.col}">${ini(p.name)}</div>
       </div>
       ${p.number?`<span class="sc-num">#${p.number}</span>`:''}
-      <div class="sc-info"><div class="sc-name">${sn}</div><div class="sc-team"><div class="sc-tdot" style="background:${p.col}"></div>${p.team}</div></div>
-      <div class="sc-g"><div class="sc-gn">${p.g}</div><div class="sc-gl">هدف</div></div>
+      <div class="sc-info"><div class="sc-name" style="${big?'font-size:14px':''}">${sn}</div><div class="sc-team"><div class="sc-tdot" style="background:${p.col}"></div>${p.team}</div></div>
+      <div class="sc-g"><div class="sc-gn" style="${big?'font-size:20px;color:'+rc:''}">${p.g}</div><div class="sc-gl">هدف</div></div>
     </div>`;
   }).join('');
 }
@@ -484,7 +492,8 @@ async function loadTeams(){
   document.getElementById('hP').textContent=pl?.length||0;
   document.getElementById('tmWrap').innerHTML='<div class="sec-hd">👥 الفرق</div><div class="tm-grid">'+data.map(t=>`
     <a class="tm-card" href="team.html?id=${t.id}" style="--c:${t.primary_color||t.color_primary||'#c9a84c'}">
-      <span class="tm-icon">⚽</span>
+      ${t.group_code?`<span class="tm-grp">${t.group_code}</span>`:''}
+      ${t.logo_url?`<img class="tm-logo" src="${t.logo_url}" alt="">`:'<span class="tm-icon">⚽</span>'}
       <div class="tm-name">${t.name_ar||t.name}</div>
       <div class="tm-cnt">${cnt[t.id]||0} لاعب</div>
     </a>`).join('')+'</div>';
