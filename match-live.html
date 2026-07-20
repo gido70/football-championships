@@ -683,10 +683,25 @@ async function init(){
   if(m.commentator) chips.push(`<div class="info-chip">🎙️ <b>التعليق</b> ${m.commentator}</div>`);
   document.getElementById('infoStrip').innerHTML=chips.join('');
 
+  function youtubeEmbed(url){
+    try{
+      const u=new URL(url);
+      let id='';
+      if(u.hostname.includes('youtu.be'))id=u.pathname.replace('/','');
+      else if(u.searchParams.get('v'))id=u.searchParams.get('v');
+      else if(u.pathname.includes('/embed/'))return url;
+      return 'https://www.youtube.com/embed/'+id;
+    }catch(e){return url;}
+  }
+
   if(m.stream_url){
     if(document.getElementById('floatBack'))document.getElementById('floatBack').href='tournament.html?id='+(m.tournament_id||'');
   document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap">
       <iframe src="${m.stream_url}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+    </div>`;
+  }else if(m.highlight_video_url){
+    document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap">
+      <iframe src="${youtubeEmbed(m.highlight_video_url)}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
     </div>`;
   }
 
