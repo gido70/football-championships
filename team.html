@@ -8,11 +8,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh}
-.nav{background:#161b22;border-bottom:1px solid #21262d;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.nav-team{font-size:17px;font-weight:800;color:white;display:flex;align-items:center;gap:10px}
-.nav-back{color:#8b949e;text-decoration:none;font-size:14px;font-weight:600;padding:7px 16px;border-radius:8px;border:1px solid #30363d;transition:.2s}
-.nav-back:hover{background:#21262d;color:white}
+body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh}
+.nav{background:#FFFFFF;border-bottom:1px solid #EDEAE0;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.nav-team{font-size:17px;font-weight:800;color:#2C2C2A;display:flex;align-items:center;gap:10px}
+.nav-back{color:#79786A;text-decoration:none;font-size:14px;font-weight:600;padding:7px 16px;border-radius:8px;border:1px solid #E0DCCF;transition:.2s}
+.nav-back:hover{background:#EDEAE0;color:#2C2C2A}
 
 /* HERO */
 .hero{padding:48px 24px 36px;text-align:center;position:relative;overflow:hidden}
@@ -29,61 +29,61 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .ts-lbl{font-size:12px;color:rgba(255,255,255,.45);margin-top:4px}
 
 /* TABS */
-.tabs-bar{background:#161b22;border-bottom:1px solid #21262d;overflow-x:auto}
+.tabs-bar{background:#FFFFFF;border-bottom:1px solid #EDEAE0;overflow-x:auto}
 .tabs{max-width:1000px;margin:0 auto;display:flex;padding:0 20px}
-.tab{padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#8b949e;transition:.2s;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
+.tab{padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#79786A;transition:.2s;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
 .tab.active{color:var(--tc,#c9a84c);border-bottom-color:var(--tc,#c9a84c)}
-.tab:hover:not(.active){color:#e6edf3}
+.tab:hover:not(.active){color:#2C2C2A}
 
 /* MAIN */
 .main{max-width:1000px;margin:0 auto;padding:28px 20px}
-.sec-hd{font-size:16px;font-weight:800;color:#e6edf3;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid #21262d;display:flex;align-items:center;gap:8px}
+.sec-hd{font-size:16px;font-weight:800;color:#2C2C2A;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid #EDEAE0;display:flex;align-items:center;gap:8px}
 
 /* بطاقات اللاعبين */
 .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:24px}
-.player-card{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:18px 14px;text-align:center;transition:.2s;position:relative;overflow:hidden}
+.player-card{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:14px;padding:18px 14px;text-align:center;transition:.2s;position:relative;overflow:hidden}
 .player-card::before{content:"";position:absolute;top:0;right:0;left:0;height:3px;background:var(--tc,#c9a84c)}
-.player-card:hover{border-color:var(--tc,#c9a84c);background:#1c2128;transform:translateY(-2px)}
-.player-photo{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #30363d;margin:0 auto 10px;display:block}
-.player-ph{width:72px;height:72px;border-radius:50%;background:#21262d;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;border:2px solid #30363d}
-.player-number{position:absolute;top:10px;left:10px;background:var(--tc,#c9a84c);color:#0d1117;font-size:12px;font-weight:900;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-.player-name{font-size:14px;font-weight:700;color:#e6edf3;margin-bottom:4px;line-height:1.3}
-.player-nat{font-size:12px;color:#8b949e;margin-top:2px}
+.player-card:hover{border-color:var(--tc,#c9a84c);background:#EDEAE0;transform:translateY(-2px)}
+.player-photo{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #E0DCCF;margin:0 auto 10px;display:block}
+.player-ph{width:72px;height:72px;border-radius:50%;background:#EDEAE0;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;border:2px solid #E0DCCF}
+.player-number{position:absolute;top:10px;left:10px;background:var(--tc,#c9a84c);color:#2C2C2A;font-size:12px;font-weight:900;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.player-name{font-size:14px;font-weight:700;color:#2C2C2A;margin-bottom:4px;line-height:1.3}
+.player-nat{font-size:12px;color:#79786A;margin-top:2px}
 
 /* إحصائيات اللاعبين */
-.stats-table{background:#161b22;border:1px solid #30363d;border-radius:14px;overflow:hidden}
+.stats-table{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:14px;overflow:hidden}
 .stats-table table{width:100%;border-collapse:collapse}
-.stats-table th{padding:11px 14px;text-align:right;font-size:12px;font-weight:700;color:#8b949e;background:#0d1117;border-bottom:1px solid #21262d}
-.stats-table td{padding:11px 14px;border-bottom:1px solid #21262d;font-size:14px;vertical-align:middle}
+.stats-table th{padding:11px 14px;text-align:right;font-size:12px;font-weight:700;color:#79786A;background:#F5F3EE;border-bottom:1px solid #EDEAE0}
+.stats-table td{padding:11px 14px;border-bottom:1px solid #EDEAE0;font-size:14px;vertical-align:middle}
 .stats-table tr:last-child td{border-bottom:none}
-.stats-table tr:hover td{background:rgba(255,255,255,.02)}
+.stats-table tr:hover td{background:rgba(0,0,0,.025)}
 .player-cell{display:flex;align-items:center;gap:10px}
-.player-mini-photo{width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid #30363d}
-.player-mini-ph{width:34px;height:34px;border-radius:50%;background:#21262d;display:flex;align-items:center;justify-content:center;font-size:14px;border:1px solid #30363d;flex-shrink:0}
+.player-mini-photo{width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid #E0DCCF}
+.player-mini-ph{width:34px;height:34px;border-radius:50%;background:#EDEAE0;display:flex;align-items:center;justify-content:center;font-size:14px;border:1px solid #E0DCCF;flex-shrink:0}
 .stat-num{font-weight:800;font-size:16px}
 .stat-goals{color:#f85149}
 .stat-yellow{color:#f0e68c}
 .stat-red{color:#f85149}
 
-.empty{text-align:center;padding:48px 20px;color:#8b949e}
+.empty{text-align:center;padding:48px 20px;color:#79786A}
 .empty span{font-size:48px;display:block;margin-bottom:12px;opacity:.35}
 .tc{display:none}.tc.active{display:block}
 
 /* مباريات الفريق */
-.match-item{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:14px 16px;margin-bottom:8px;transition:.2s}
-.match-item:hover{border-color:#30363d;background:#1c2128}
-.match-top{display:flex;justify-content:space-between;margin-bottom:10px;font-size:12px;color:#8b949e}
+.match-item{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:12px;padding:14px 16px;margin-bottom:8px;transition:.2s}
+.match-item:hover{border-color:#E0DCCF;background:#EDEAE0}
+.match-top{display:flex;justify-content:space-between;margin-bottom:10px;font-size:12px;color:#79786A}
 .match-score-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
-.mt{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#e6edf3}
+.mt{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#2C2C2A}
 .mt.current{color:var(--tc,#c9a84c)}
 .mt.away{flex-direction:row-reverse}
 .mt-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 .ms-center{text-align:center}
 .ms-nums{font-size:22px;font-weight:900;display:flex;align-items:center;gap:8px;justify-content:center}
-.ms-sep{color:#30363d;font-size:18px}
+.ms-sep{color:#E0DCCF;font-size:18px}
 .m-badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700}
 .b-done{background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.2)}
-.b-sched{background:#21262d;color:#8b949e}
+.b-sched{background:#EDEAE0;color:#79786A}
 .b-live{background:#f85149;color:white}
 </style>
 </head>
@@ -105,7 +105,7 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
       <div class="ts"><div class="ts-num" id="tsP" style="color:#c9a84c">—</div><div class="ts-lbl">لاعب</div></div>
       <div class="ts"><div class="ts-num" id="tsM" style="color:#3fb950">—</div><div class="ts-lbl">مباراة</div></div>
       <div class="ts"><div class="ts-num" id="tsG" style="color:#f85149">—</div><div class="ts-lbl">هدف سجله</div></div>
-      <div class="ts"><div class="ts-num" id="tsGA" style="color:#8b949e">—</div><div class="ts-lbl">هدف استقبله</div></div>
+      <div class="ts"><div class="ts-num" id="tsGA" style="color:#79786A">—</div><div class="ts-lbl">هدف استقبله</div></div>
     </div>
   </div>
 </div>
@@ -122,7 +122,7 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
   <div class="tc active" id="tc-squad">
     <div class="sec-hd">👥 قائمة الفريق</div>
     <div class="players-grid" id="squadGrid">
-      <div style="background:#161b22;border-radius:14px;height:160px;animation:sh 1.5s infinite" class="skeleton"></div>
+      <div style="background:#FFFFFF;border-radius:14px;height:160px;animation:sh 1.5s infinite" class="skeleton"></div>
     </div>
   </div>
   <div class="tc" id="tc-stats">
@@ -136,7 +136,7 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 </div>
 
 <style>
-.skeleton{background:linear-gradient(90deg,#161b22 25%,#1c2128 50%,#161b22 75%);background-size:200% 100%;animation:sh 1.5s infinite;border-radius:14px}
+.skeleton{background:linear-gradient(90deg,#FFFFFF 25%,#EDEAE0 50%,#FFFFFF 75%);background-size:200% 100%;animation:sh 1.5s infinite;border-radius:14px}
 @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
 
@@ -236,7 +236,7 @@ async function loadStats(){
       const name=p.full_name_ar||p.name||'—';
       const photo=p.jersey_photo_url||null;
       return `<tr>
-        <td style="color:#8b949e">${p.number||p.shirt_number||'—'}</td>
+        <td style="color:#79786A">${p.number||p.shirt_number||'—'}</td>
         <td><div class="player-cell">
           ${photo?`<img class="player-mini-photo" src="${photo}" onerror="this.outerHTML='<div class=player-mini-ph>👤</div>'">`:'<div class="player-mini-ph">👤</div>'}
           <span>${name}</span>
@@ -283,7 +283,7 @@ async function loadMatches(){
     const isHome=m.home_team_id===TID;
     const opp=tm[isHome?m.away_team_id:m.home_team_id]||{};
     const oppName=opp.name_ar||opp.name||'؟';
-    const oppColor=opp.primary_color||opp.color_primary||'#8b949e';
+    const oppColor=opp.primary_color||opp.color_primary||'#79786A';
     const myScore=isHome?(m.home_score??'–'):(m.away_score??'–');
     const theirScore=isHome?(m.away_score??'–'):(m.home_score??'–');
     const d=m.status==='completed';
