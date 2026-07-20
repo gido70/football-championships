@@ -61,6 +61,10 @@ a{text-decoration:none;color:inherit}
 
 .empty{text-align:center;padding:50px 0;color:#8b949e}
 .empty span{font-size:34px;display:block;margin-bottom:8px}
+.mstrip{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 16px;max-width:760px;margin:0 auto}
+.mcard{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:14px;text-align:center}
+.mcard b{display:block;font-size:24px;font-weight:900;color:#fff}
+.mcard span{font-size:12px;color:#8b949e}
 /* pchip مشترك — أحجام صغيرة مناسبة للإحصائيات */
 .pchip{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.04);border:1px solid #21262d;border-radius:30px;padding:4px 10px 4px 5px;max-width:100%}
 .pchip-photo{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid #30363d}
@@ -109,6 +113,7 @@ a{text-decoration:none;color:inherit}
 </div>
 
 <div id="awardsHero"></div>
+<div id="totalsStrip" class="mstrip"></div>
 
 <div class="chips" id="chips">
   <button class="chip active" data-s="scorers" onclick="showSec('scorers')">⚽ الهدافون</button>
@@ -212,6 +217,19 @@ async function init(){
   buildOfficials(matches);
   buildInjuries(teamName);
   buildAwards();
+  buildTotals(events,matches,teams);
+}
+
+function buildTotals(events,matches,teams){
+  const goals=(events||[]).filter(e=>e.event_type==='goal').length;
+  const cards=(events||[]).filter(e=>e.event_type==='yellow_card'||e.event_type==='red_card').length;
+  const items=[
+    {v:goals,l:'هدف'},
+    {v:(matches||[]).length,l:'مباراة'},
+    {v:cards,l:'بطاقة'},
+    {v:(teams||[]).length,l:'فريق'}
+  ];
+  document.getElementById('totalsStrip').innerHTML=items.map(i=>`<div class="mcard"><b>${i.v}</b><span>${i.l}</span></div>`).join('');
 }
 
 function buildAwards(){
