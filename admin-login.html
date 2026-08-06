@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول - لوحة الإدارة</title>
+<link rel="stylesheet" href="admin.css">
+<style>
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh}
+  .login-box{width:100%;max-width:420px;padding:32px}
+  .login-box h1{margin:0 0 8px;font-size:24px;text-align:center}
+  .login-box p.sub{margin:0 0 26px;text-align:center;color:var(--muted);font-size:14px}
+  .field{margin-bottom:16px}
+  .login-status{min-height:22px;text-align:center;font-size:14px;margin-top:6px}
+  .login-status.err{color:var(--danger)}
+  .login-status.ok{color:var(--ok)}
+  button.btn{width:100%;margin-top:8px;padding:14px;font-size:16px}
+  button.btn[disabled]{opacity:.6;cursor:not-allowed}
+</style>
+</head>
+<body>
+
+<div class="card login-box">
+  <h1>🔒 لوحة الإدارة</h1>
+  <p class="sub">سجّل الدخول للمتابعة إلى صفحات الإدارة</p>
+
+  <form id="loginForm">
+    <div class="field">
+      <label for="email">البريد الإلكتروني</label>
+      <input type="email" id="email" required autocomplete="username" dir="ltr">
+    </div>
+    <div class="field">
+      <label for="password">كلمة المرور</label>
+      <input type="password" id="password" required autocomplete="current-password" dir="ltr">
+    </div>
+    <button type="submit" class="btn" id="loginBtn">دخول</button>
+    <div class="login-status" id="status"></div>
+  </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+// لو فيه جلسة مسجّلة بالفعل، رجّعه لصفحة الأدمن الرئيسية أو الصفحة المطلوبة
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    redirectAfterLogin();
+  }
+})();
+
+function redirectAfterLogin(){
+  const params = new URLSearchParams(window.location.search);
+  const next = params.get('next');
+  window.location.href = next ? decodeURIComponent(next) : 'admin-home.html';
+}
+
+const form = document.getElementById('loginForm');
+const statusEl = document.getElementById('status');
+const btn = document.getElementById('loginBtn');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+
+  btn.disabled = true;
+  statusEl.className = 'login-status';
+  statusEl.textContent = 'جارٍ التحقق...';
+
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    statusEl.className = 'login-status err';
+    statusEl.textContent = 'خطأ: البريد أو كلمة المرور غير صحيحة';
+    btn.disabled = false;
+    return;
+  }
+
+  statusEl.className = 'login-status ok';
+  statusEl.textContent = 'تم الدخول بنجاح...';
+  redirectAfterLogin();
+});
+</script>
+
+</body>
+</html>
