@@ -84,6 +84,17 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .motd-star-lbl{font-size:9.5px;color:#c9a84c}
 .motd-star-none{font-size:11px;color:#6e7b8f;text-align:center;padding:4px 0}
 
+.live-wrap{max-width:900px;margin:0 auto;padding:12px 16px 4px}
+.live-card{display:block;background:linear-gradient(135deg,rgba(255,59,59,.12),rgba(255,59,59,.04));border:1.5px solid rgba(255,59,59,.45);border-radius:14px;padding:14px 16px;text-decoration:none;color:inherit;animation:liveCardPulse 2s infinite}
+@keyframes liveCardPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,59,59,.25)}50%{box-shadow:0 0 0 6px rgba(255,59,59,0)}}
+.live-badge-row{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.live-badge-row .dot{width:8px;height:8px;border-radius:50%;background:#ff3b3b;animation:livepulse 1.5s infinite}
+.live-badge-row span.txt{font-size:12px;font-weight:900;color:#ff5c5c;letter-spacing:.3px}
+.live-teams-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.live-team-name{font-size:14px;font-weight:800;color:#e6edf3;flex:1;text-align:center}
+.live-score-box{font-size:24px;font-weight:900;color:#fff;background:rgba(0,0,0,.35);border-radius:10px;padding:6px 16px;min-width:70px;text-align:center}
+.live-cta{text-align:center;margin-top:10px;font-size:12px;font-weight:800;color:#ff5c5c}
+
 .bulletin-wrap{max-width:900px;margin:0 auto;padding:10px 16px 4px}
 .bulletin-card{background:#161b22;border:1px solid #21262d;border-radius:14px;padding:16px}
 .bulletin-head{font-size:13px;color:#c9a84c;font-weight:800;margin-bottom:10px}
@@ -91,13 +102,13 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .bulletin-desc{font-size:11.5px;color:#8b949e;margin-bottom:12px}
 .bulletin-btn{display:block;width:100%;text-align:center;background:linear-gradient(135deg,#c9a84c,#a5813a);color:#0d1117;font-weight:900;font-size:13px;padding:12px;border-radius:10px;text-decoration:none;margin-bottom:8px}
 .bulletin-more{display:block;width:100%;text-align:center;background:none;border:1px solid #30363d;color:#8b949e;font-size:12px;padding:9px;border-radius:10px;text-decoration:none}
-.ticker-wrap{max-width:900px;margin:0 auto;padding:8px 14px 4px}
-.ticker-line{display:flex;align-items:center;gap:8px;background:#FFFFFF;border:1px solid #EDEAE0;border-radius:10px;padding:0;margin-bottom:8px;overflow:hidden;height:38px}
-.ticker-label{flex-shrink:0;font-size:11px;font-weight:800;padding:0 12px;height:100%;display:flex;align-items:center;border-left:1px solid;white-space:nowrap}
+.ticker-wrap{max-width:900px;margin:0 auto;padding:10px 14px 4px}
+.ticker-line{display:flex;align-items:center;gap:0;background:#FFFFFF;border:1.5px solid #EDEAE0;border-radius:12px;padding:0;margin-bottom:10px;overflow:hidden;height:52px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.ticker-label{flex-shrink:0;font-size:13px;font-weight:900;padding:0 14px;height:100%;display:flex;align-items:center;border-left:1px solid;white-space:nowrap}
 .ticker-viewport{flex:1;overflow:hidden;position:relative;height:100%}
-.ticker-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:13px;color:#2C2C2A;will-change:transform}
-.ticker-sep{margin:0 16px;color:#9C9A8D}
-.ticker-toggle{flex-shrink:0;background:transparent;border:none;color:#79786A;font-size:14px;cursor:pointer;padding:0 12px;height:100%}
+.ticker-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:15px;font-weight:600;color:#2C2C2A;will-change:transform}
+.ticker-sep{margin:0 18px;color:#9C9A8D}
+.ticker-toggle{flex-shrink:0;background:transparent;border:none;color:#79786A;font-size:16px;cursor:pointer;padding:0 14px;height:100%}
 .ticker-toggle:hover{color:#2C2C2A}
 .tabs{max-width:1200px;margin:0 auto;display:flex;padding:0 20px}
 @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,59,59,.6)}70%{box-shadow:0 0 0 8px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
@@ -216,7 +227,7 @@ img[src=""], img:not([src]) { display:none !important; }
   <div class="nav-title">
     <span id="navName">البطولة</span>
     <span class="nav-status" id="navStatus"></span>
-    <span id="liveHeaderBadge" onclick="document.getElementById('matchesTabBtn').click();window.scrollTo({top:document.querySelector('.tabs-bar').offsetTop,behavior:'smooth'})" style="display:none;cursor:pointer;align-items:center;gap:6px;background:rgba(255,59,59,.15);border:1px solid rgba(255,59,59,.4);color:#ff5c5c;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800;margin-right:8px">
+    <span id="liveHeaderBadge" onclick="jumpToTab('ma')" style="display:none;cursor:pointer;align-items:center;gap:6px;background:rgba(255,59,59,.15);border:1px solid rgba(255,59,59,.4);color:#ff5c5c;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800;margin-right:8px">
       <span style="width:8px;height:8px;border-radius:50%;background:#ff3b3b;display:inline-block;animation:livepulse 1.5s infinite"></span>
       🔴 مباشر الآن
     </span>
@@ -248,6 +259,10 @@ img[src=""], img:not([src]) { display:none !important; }
   </div>
 </div>
 
+<div id="liveMatchSection"></div>
+
+<div id="newsBanner"></div>
+
 <div class="qlinks-wrap">
   <div class="qlinks-grid">
     <button class="qlink" style="background:#2d6a4f" onclick="jumpToTab('st')"><span class="qlink-ic">🏅</span> الترتيب</button>
@@ -258,25 +273,11 @@ img[src=""], img:not([src]) { display:none !important; }
     <a class="qlink" id="qlinkAwards" style="background:#a5813a" href="#"><span class="qlink-ic">🏆</span> الجوائز</a>
     <a class="qlink" id="qlinkVideos" style="background:#a3364c" href="#"><span class="qlink-ic">🎬</span> الفيديوهات</a>
     <a class="qlink" id="qlinkDocs" style="background:#3a5a8e" href="#"><span class="qlink-ic">📰</span> النشرات</a>
+    <a class="qlink" id="qlinkPredictions" style="background:#6b4c9a;grid-column:1/-1" href="#"><span class="qlink-ic">🥇</span> توقعات الأصدقاء</a>
   </div>
 </div>
-
-<div id="newsBanner"></div>
 
 <div id="motdSection"></div>
-
-<div class="tabs-bar">
-  <div class="tabs">
-    <button class="tab active" onclick="showTab(this,'st')">🏅 الترتيب</button>
-    <button class="tab" id="matchesTabBtn" onclick="showTab(this,'ma')">📅 المباريات<span id="liveDotTab" style="display:none;width:8px;height:8px;border-radius:50%;background:#ff3b3b;margin-right:6px;box-shadow:0 0 0 rgba(255,59,59,.6);animation:livepulse 1.5s infinite"></span></button>
-    <button class="tab" onclick="showTab(this,'sc')">⚽ الهدافون</button>
-    <button class="tab" onclick="showTab(this,'tm')">👥 الفرق</button>
-    <a class="tab" id="statsTabLink" href="#" style="text-decoration:none;display:inline-block">📊 إحصائيات</a>
-    <a class="tab" id="awardsTabLink" href="#" style="text-decoration:none;display:inline-block">🏆 الجوائز</a>
-    <a class="tab" id="videosTabLink" href="#" style="text-decoration:none;display:inline-block">🎬 الفيديوهات</a>
-    <a class="tab" id="lbTabLink" href="#" style="text-decoration:none;display:inline-block">🥇 توقعات الأصدقاء</a>
-  </div>
-</div>
 
 <div class="main">
   <div class="tc active" id="tc-st"><div id="stWrap"><div class="skeleton" style="height:180px;margin-bottom:10px"></div><div class="skeleton" style="height:180px"></div></div></div>
@@ -288,14 +289,11 @@ img[src=""], img:not([src]) { display:none !important; }
 <script>
 const sb=supabase.createClient("https://npoowwdjpbvhyjrmeqkv.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY");
 const TID=new URLSearchParams(location.search).get('id');
-document.getElementById('statsTabLink').href='stats.html?id='+TID;
-  document.getElementById('awardsTabLink').href='awards.html?id='+TID;
-  document.getElementById('videosTabLink').href='videos.html?id='+TID;
-  document.getElementById('lbTabLink').href='leaderboard.html?tid='+TID;
-  document.getElementById('qlinkStats').href='stats.html?id='+TID;
+document.getElementById('qlinkStats').href='stats.html?id='+TID;
   document.getElementById('qlinkAwards').href='awards.html?id='+TID;
   document.getElementById('qlinkVideos').href='videos.html?id='+TID;
   document.getElementById('qlinkDocs').href='documents.html?id='+TID;
+  document.getElementById('qlinkPredictions').href='leaderboard.html?tid='+TID;
 
 async function loadNews(){
   if(!TID)return;
@@ -473,20 +471,31 @@ window.closeHomeVideoPlayer=closeHomeVideoPlayer;
 
 loadNews();
 loadMOTD();
+loadLiveMatch();
 
 const TAB_ACCENT={st:'#639922',ma:'#c9a84c',sc:'#D85A30',tm:'#378ADD'};
-function showTab(btn,name){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+async function loadLiveMatch(){
+  const sec=document.getElementById('liveMatchSection');
+  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(2);
+  if(!matches?.length){sec.innerHTML='';return;}
+  sec.innerHTML=`<div class="live-wrap">${matches.map(m=>`
+    <a class="live-card" href="match-live.html?id=${m.id}" style="display:block;margin-bottom:10px">
+      <div class="live-badge-row"><span class="dot"></span><span class="txt">مباشر الآن</span></div>
+      <div class="live-teams-row">
+        <div class="live-team-name">${motdEsc(m.ht?.name_ar||m.ht?.name||'')}</div>
+        <div class="live-score-box">${m.home_score??0} - ${m.away_score??0}</div>
+        <div class="live-team-name">${motdEsc(m.at?.name_ar||m.at?.name||'')}</div>
+      </div>
+      <div class="live-cta">⚡ شاهد المباراة مباشرة</div>
+    </a>
+  `).join('')}</div>`;
+}
+
+function jumpToTab(name){
   document.querySelectorAll('.tc').forEach(c=>c.classList.remove('active'));
-  btn.classList.add('active');
   document.getElementById('tc-'+name).classList.add('active');
   if(TAB_ACCENT[name])document.documentElement.style.setProperty('--tab-accent',TAB_ACCENT[name]);
-}
-function jumpToTab(name){
-  const map={st:0,ma:1,sc:2,tm:3};
-  const btn=document.querySelectorAll('.tabs-bar .tab')[map[name]];
-  if(btn){showTab(btn,name);}
-  document.querySelector('.tabs-bar').scrollIntoView({behavior:'smooth',block:'start'});
+  document.querySelector('.main').scrollIntoView({behavior:'smooth',block:'start'});
 }
 window.jumpToTab=jumpToTab;
 document.documentElement.style.setProperty('--tab-accent',TAB_ACCENT.st);
@@ -524,7 +533,6 @@ async function loadTournament(){
   const {count:liveCount}=await sb.from('matches').select('id',{count:'exact',head:true}).eq('tournament_id',TID).eq('status','live');
   if(liveCount>0){
     document.getElementById('liveHeaderBadge').style.display='inline-flex';
-    document.getElementById('liveDotTab').style.display='inline-block';
   }
 
   // الخلفية — من GitHub مباشرة حسب الموسم
