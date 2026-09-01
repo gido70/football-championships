@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نشرات البطولة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;margin:0;min-height:100vh}
+.nav{background:#161b22;border-bottom:1px solid #21262d;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.nav a{color:#8b949e;text-decoration:none;font-size:13px;border:1px solid #30363d;padding:6px 14px;border-radius:20px}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:19px;color:#c9a84c;margin:0 0 14px}
+
+.doc-list{display:flex;flex-direction:column;gap:10px}
+.doc-row{display:flex;align-items:center;gap:14px;background:#161b22;border:1px solid #21262d;border-radius:12px;padding:12px 14px;cursor:pointer;transition:.15s;text-align:right;color:inherit;font-family:inherit;width:100%}
+.doc-row:hover{border-color:#c9a84c}
+.doc-emoji{font-size:26px;flex-shrink:0}
+.doc-info{flex:1;min-width:0}
+.doc-title{font-weight:800;font-size:14px;margin-bottom:2px}
+.doc-date{font-size:11.5px;color:#8b949e}
+.doc-desc{font-size:12px;color:#8b949e;margin-top:3px;line-height:1.5}
+.doc-arrow{color:#58a6ff;font-size:13px;flex-shrink:0}
+.empty-note{text-align:center;color:#6e7b8f;padding:60px 0;font-size:13px}
+.loading{text-align:center;color:#6e7b8f;padding:40px 0}
+
+.viewer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;z-index:999;padding:14px}
+.viewer-overlay.open{display:flex;flex-direction:column}
+.viewer-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.viewer-title{font-weight:800;font-size:14px;color:#e6edf3}
+.viewer-actions{display:flex;gap:10px;align-items:center}
+.viewer-actions a{color:#58a6ff;font-size:12px;text-decoration:none}
+.viewer-close{background:none;border:1px solid #30363d;color:#e6edf3;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+.viewer-frame-wrap{flex:1;background:#fff;border-radius:10px;overflow:hidden}
+.viewer-frame-wrap iframe{width:100%;height:100%;border:0}
+</style>
+</head>
+<body>
+<div class="nav"><span style="font-weight:800;color:#c9a84c">📰 نشرات البطولة</span><a href="#" onclick="history.back();return false">‹ رجوع</a></div>
+<div class="wrap"><h1 id="tourName"></h1><div id="app"><div class="loading">⏳ جاري التحميل...</div></div></div>
+
+<div class="viewer-overlay" id="viewerOverlay">
+  <div class="viewer-top">
+    <div class="viewer-title" id="viewerTitle"></div>
+    <div class="viewer-actions">
+      <a id="viewerExternalLink" href="#" target="_blank" rel="noopener">فتح مباشرة ↗</a>
+      <button class="viewer-close" onclick="closeViewer()">✕ إغلاق</button>
+    </div>
+  </div>
+  <div class="viewer-frame-wrap"><iframe id="viewerFrame" title="عرض النشرة"></iframe></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const qs=new URLSearchParams(location.search);
+const TID=qs.get('id')||qs.get('tid');
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function fmtDate(d){if(!d)return'';const dt=new Date(d);return dt.toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric'});}
+
+let DOCS=[];
+async function load(){
+  if(!TID){document.getElementById('app').innerHTML='<div class="empty-note">لم تُحدَّد بطولة</div>';return;}
+  const {data:t}=await sb.from('tournaments').select('name,name_ar').eq('id',TID).single();
+  document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — النشرات';
+
+  const {data}=await sb.from('documents').select('*').eq('tournament_id',TID).order('publish_date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false});
+  DOCS=data||[];
+  const app=document.getElementById('app');
+  if(!DOCS.length){app.innerHTML='<div class="empty-note">لا توجد نشرات مضافة بعد لهذه البطولة</div>';return;}
+
+  app.innerHTML='<div class="doc-list">'+DOCS.map((d,i)=>`
+    <button class="doc-row" onclick="openViewer(${i})">
+      <div class="doc-emoji">📄</div>
+      <div class="doc-info">
+        <div class="doc-title">${esc(d.title)}</div>
+        ${d.publish_date?`<div class="doc-date">${fmtDate(d.publish_date)}</div>`:''}
+        ${d.description?`<div class="doc-desc">${esc(d.description)}</div>`:''}
+      </div>
+      <div class="doc-arrow">قراءة ›</div>
+    </button>
+  `).join('')+'</div>';
+}
+
+function openViewer(i){
+  const d=DOCS[i];
+  document.getElementById('viewerFrame').src=d.pdf_url;
+  document.getElementById('viewerTitle').textContent=d.title;
+  document.getElementById('viewerExternalLink').href=d.pdf_url;
+  document.getElementById('viewerOverlay').classList.add('open');
+}
+function closeViewer(){
+  document.getElementById('viewerOverlay').classList.remove('open');
+  document.getElementById('viewerFrame').src='';
+}
+window.openViewer=openViewer;
+window.closeViewer=closeViewer;
+
+load();
+</script>
+</body>
+</html>

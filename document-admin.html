@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth-guard.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#071426">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+
+<title>إدارة النشرات (PDF)</title>
+<link rel="stylesheet" href="admin.css">
+<style>
+.doc-list{margin-top:18px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.doc-card{background:#161b22;border:1px solid #30363d;border-radius:14px;overflow:hidden}
+.doc-icon{width:100%;height:100px;background:#0d1117;display:flex;align-items:center;justify-content:center;font-size:34px;color:#c9a84c}
+.doc-body{padding:12px}
+.doc-title{font-weight:800;font-size:14px;margin-bottom:4px}
+.doc-date{font-size:11px;color:#8b949e;margin-bottom:8px}
+.doc-actions{display:flex;gap:6px}
+.doc-del{flex:1;background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:6px;font-size:12px;cursor:pointer;color:#f85149}
+.doc-open{flex:1;background:rgba(88,166,255,.15);border:1px solid rgba(88,166,255,.3);border-radius:8px;padding:6px;font-size:12px;cursor:pointer;color:#58a6ff;text-decoration:none;text-align:center;display:block}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <div class="page-head">
+    <div class="page-icon">📰</div>
+    <div class="page-title"><h1>إدارة النشرات (PDF)</h1><p>نشرات يومية بصيغة PDF تظهر مضمّنة في صفحة البطولة العامة</p></div>
+  </div>
+  <div class="nav-actions">
+    <a class="btn secondary" href="./admin-home.html">← لوحة الأدمن</a>
+    <a class="btn secondary" href="./index.html" target="_blank">الموقع العام ↗</a>
+  </div>
+</div></header>
+
+<main class="container">
+  <section class="panel">
+    <h3>اختر البطولة</h3>
+    <div class="form-grid"><div class="field full"><label>البطولة</label>
+      <select id="tSel"></select>
+    </div></div>
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <h3>➕ إضافة نشرة جديدة</h3>
+    <div class="form-grid">
+      <div class="field full"><label>عنوان النشرة</label>
+        <input type="text" id="titleInput" placeholder="مثال: نشرة الأربعاء 11-3-2026">
+      </div>
+      <div class="field"><label>تاريخ النشر (اختياري)</label>
+        <input type="date" id="dateInput">
+      </div>
+      <div class="field"><label>رابط ملف PDF</label>
+        <input type="text" id="urlInput" placeholder="https://... رابط مباشر لملف PDF" dir="ltr">
+      </div>
+      <div class="field full"><label>وصف مختصر (اختياري)</label>
+        <textarea id="descInput" placeholder="مثال: نتائج مباريات اليوم وأهم الأرقام"></textarea>
+      </div>
+    </div>
+    <div class="status" style="margin-top:6px;font-size:12px;color:#8b949e">
+      💡 ملاحظة: الصفحة تعرض رابط PDF جاهزاً فقط (لا يوجد رفع ملفات مباشر بعد) — ارفع ملف الـPDF أولاً إلى أي مستضيف (GitHub، Google Drive برابط مباشر، Supabase Storage...) ثم الصق رابطه هنا.
+    </div>
+    <div class="actions">
+      <button class="btn" id="addBtn">💾 إضافة النشرة</button>
+    </div>
+    <div class="status" id="addMsg"></div>
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <h3>📄 النشرات المضافة <span id="countBadge" style="font-size:12px;color:#8b949e;font-weight:400"></span></h3>
+    <div id="docList" class="doc-list"><div class="status">جاري التحميل...</div></div>
+  </section>
+</main>
+
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+let TID=null;
+
+function setMsg(t,c=''){const e=document.getElementById('addMsg');e.className='status '+c;e.textContent=t;}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function fmtDate(d){if(!d)return'';const dt=new Date(d);return dt.toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric'});}
+
+async function initTournaments(){
+  const {data}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});
+  const sel=document.getElementById('tSel');
+  sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
+  sel.onchange=()=>{TID=sel.value;loadDocs();};
+  if(data?.length){TID=data[0].id;loadDocs();}
+}
+
+async function loadDocs(){
+  if(!TID)return;
+  const {data}=await sb.from('documents').select('*').eq('tournament_id',TID).order('publish_date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false});
+  const list=document.getElementById('docList');
+  document.getElementById('countBadge').textContent='('+((data||[]).length)+' نشرة)';
+  if(!data?.length){list.innerHTML='<div class="empty" style="padding:24px;text-align:center;color:#6e7b8f;grid-column:1/-1">لا توجد نشرات بعد — أضف أول نشرة من الأعلى</div>';return;}
+  list.innerHTML=data.map(d=>`
+    <div class="doc-card">
+      <div class="doc-icon">📄</div>
+      <div class="doc-body">
+        <div class="doc-title">${esc(d.title)}</div>
+        <div class="doc-date">${d.publish_date?fmtDate(d.publish_date):''}</div>
+        <div class="doc-actions">
+          <a class="doc-open" href="${d.pdf_url}" target="_blank">فتح</a>
+          <button class="doc-del" onclick="deleteDoc('${d.id}')">حذف</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('addBtn').onclick=async()=>{
+  const title=document.getElementById('titleInput').value.trim();
+  const publish_date=document.getElementById('dateInput').value||null;
+  const pdf_url=document.getElementById('urlInput').value.trim();
+  const description=document.getElementById('descInput').value.trim()||null;
+  if(!TID){setMsg('⚠️ اختر بطولة أولاً','warn');return;}
+  if(!title||!pdf_url){setMsg('⚠️ العنوان ورابط الملف مطلوبان','warn');return;}
+  const {error}=await sb.from('documents').insert({tournament_id:TID,title,pdf_url,publish_date,description});
+  if(error){setMsg('❌ فشل الحفظ: '+error.message,'err');return;}
+  document.getElementById('titleInput').value='';
+  document.getElementById('dateInput').value='';
+  document.getElementById('urlInput').value='';
+  document.getElementById('descInput').value='';
+  setMsg('✅ تمت الإضافة','ok');
+  loadDocs();
+};
+
+async function deleteDoc(id){
+  if(!confirm('حذف هذه النشرة نهائيًا؟'))return;
+  await sb.from('documents').delete().eq('id',id);
+  loadDocs();
+}
+
+window.deleteDoc=deleteDoc;
+initTournaments();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
+    reg.update();
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;
+      nw.addEventListener('statechange',()=>{
+        if(nw.state==='installed'&&navigator.serviceWorker.controller)
+          window.location.reload();
+      });
+    });
+  });
+  navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
+}
+</script>
+</body>
+</html>
