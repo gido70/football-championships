@@ -54,6 +54,21 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .hv-frame-wrap iframe,.hv-frame-wrap video{position:absolute;inset:0;width:100%;height:100%;border:0}
 .hv-player-close{display:block;margin:10px auto 0;background:none;border:1px solid #444;color:#fff;border-radius:8px;padding:6px 16px;font-size:12px;cursor:pointer;font-family:inherit}
 @keyframes livepulse2{0%{box-shadow:0 0 0 0 rgba(255,59,59,.6)}70%{box-shadow:0 0 0 8px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
+
+.motd-wrap{max-width:900px;margin:0 auto;padding:10px 0 4px}
+.motd-head{display:flex;align-items:center;justify-content:space-between;padding:0 16px;margin-bottom:8px}
+.motd-head h3{font-size:13px;color:#c9a84c;margin:0;font-weight:800}
+.motd-head span.motd-date{font-size:11px;color:#8b949e}
+.motd-scroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 10px;-webkit-overflow-scrolling:touch}
+.motd-card{flex:0 0 210px;background:#161b22;border:1px solid #21262d;border-radius:12px;padding:10px;text-align:right;color:inherit;text-decoration:none;font-family:inherit;display:block}
+.motd-teams{font-size:11.5px;color:#8b949e;margin-bottom:2px;display:flex;justify-content:space-between}
+.motd-score{font-size:14px;font-weight:900;color:#e6edf3;margin-bottom:8px;text-align:center}
+.motd-star{display:flex;align-items:center;gap:8px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:9px;padding:6px 8px}
+.motd-star-av{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#0d1117}
+.motd-star-av-ph{width:32px;height:32px;border-radius:50%;background:#0d1117;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#c9a84c;flex-shrink:0}
+.motd-star-name{font-size:12px;font-weight:800;color:#e6edf3;line-height:1.3}
+.motd-star-lbl{font-size:9.5px;color:#c9a84c}
+.motd-star-none{font-size:11px;color:#6e7b8f;text-align:center;padding:4px 0}
 .ticker-wrap{max-width:900px;margin:0 auto;padding:8px 14px 4px}
 .ticker-line{display:flex;align-items:center;gap:8px;background:#FFFFFF;border:1px solid #EDEAE0;border-radius:10px;padding:0;margin-bottom:8px;overflow:hidden;height:38px}
 .ticker-label{flex-shrink:0;font-size:11px;font-weight:800;padding:0 12px;height:100%;display:flex;align-items:center;border-left:1px solid;white-space:nowrap}
@@ -213,6 +228,8 @@ img[src=""], img:not([src]) { display:none !important; }
 
 <div id="newsBanner"></div>
 
+<div id="motdSection"></div>
+
 <div id="homeVideosSection"></div>
 
 <div class="hv-player-overlay" id="hvPlayerOverlay" onclick="if(event.target===this)closeHomeVideoPlayer()">
@@ -299,6 +316,70 @@ function hvExtractYoutubeId(url){
   const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
   return m?m[1]:null;
 }
+function motdEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+
+async function loadMOTD(){
+  const sec=document.getElementById('motdSection');
+  // آخر تاريخ فيه مباريات مكتملة (اليوم يحدده الجدول لا التاريخ الحقيقي)
+  const {data:completedDates}=await sb.from('matches').select('match_date').eq('tournament_id',TID).eq('status','completed').not('match_date','is',null).order('match_date',{ascending:false}).limit(1);
+  const lastDate=completedDates?.[0]?.match_date;
+  if(!lastDate){sec.innerHTML='';return;}
+
+  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(id,name,name_ar),at:teams!matches_away_team_id_fkey(id,name,name_ar)').eq('tournament_id',TID).eq('match_date',lastDate).eq('status','completed').order('match_no').limit(4);
+  if(!matches?.length){sec.innerHTML='';return;}
+
+  const motmIds=matches.map(m=>m.player_of_match_id).filter(Boolean);
+  let motmMap={};
+  if(motmIds.length){
+    const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url').in('id',motmIds);
+    (players||[]).forEach(p=>motmMap[p.id]=p);
+  }
+
+  // للمباريات بلا اختيار أدمن، نجلب متصدر تصويت الجمهور
+  const noMotm=matches.filter(m=>!m.player_of_match_id);
+  let voteWinnerMap={};
+  if(noMotm.length){
+    const {data:votes}=await sb.from('match_votes').select('match_id,player_id').in('match_id',noMotm.map(m=>m.id));
+    const counts={};
+    (votes||[]).forEach(v=>{const k=v.match_id+'|'+v.player_id;counts[k]=(counts[k]||0)+1;});
+    const bestByMatch={};
+    Object.entries(counts).forEach(([k,c])=>{
+      const [mid,pid]=k.split('|');
+      if(!bestByMatch[mid]||c>bestByMatch[mid].c)bestByMatch[mid]={pid,c};
+    });
+    const winnerIds=Object.values(bestByMatch).map(v=>v.pid);
+    if(winnerIds.length){
+      const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url').in('id',winnerIds);
+      const pMap={};(players||[]).forEach(p=>pMap[p.id]=p);
+      Object.entries(bestByMatch).forEach(([mid,v])=>{voteWinnerMap[mid]=pMap[v.pid];});
+    }
+  }
+
+  function starBlock(m){
+    const star=m.player_of_match_id?motmMap[m.player_of_match_id]:voteWinnerMap[m.id];
+    const lbl=m.player_of_match_id?'⭐ رجل المباراة':'🗳️ اختيار الجمهور';
+    if(!star)return '<div class="motd-star-none">لم يُحدَّد نجم بعد</div>';
+    const name=star.full_name_ar||star.name||'—';
+    const ini=(name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+    return `<div class="motd-star">
+      ${star.jersey_photo_url?`<img class="motd-star-av" src="${star.jersey_photo_url}">`:`<div class="motd-star-av-ph">${ini}</div>`}
+      <div><div class="motd-star-name">${motdEsc(name)}</div><div class="motd-star-lbl">${lbl}</div></div>
+    </div>`;
+  }
+
+  const dateLabel=new Date(lastDate).toLocaleDateString('ar-SA-u-nu-latn',{weekday:'long',day:'numeric',month:'long'});
+  sec.innerHTML=`<div class="motd-wrap">
+    <div class="motd-head"><h3>⭐ نجوم المباراة</h3><span class="motd-date">${dateLabel}</span></div>
+    <div class="motd-scroll">${matches.map(m=>`
+      <a class="motd-card" href="match-live.html?id=${m.id}">
+        <div class="motd-teams"><span>${motdEsc(m.ht?.name_ar||m.ht?.name||'')}</span><span>${motdEsc(m.at?.name_ar||m.at?.name||'')}</span></div>
+        <div class="motd-score">${m.home_score??0} - ${m.away_score??0}</div>
+        ${starBlock(m)}
+      </a>
+    `).join('')}</div>
+  </div>`;
+}
+
 let HOME_VIDEOS=[];
 async function loadHomeVideos(){
   if(!TID)return;
@@ -349,6 +430,7 @@ window.closeHomeVideoPlayer=closeHomeVideoPlayer;
 
 loadNews();
 loadHomeVideos();
+loadMOTD();
 
 const TAB_ACCENT={st:'#639922',ma:'#c9a84c',sc:'#D85A30',tm:'#378ADD'};
 function showTab(btn,name){
