@@ -64,8 +64,17 @@
       <div class="field"><label>رابط الفيديو</label>
         <input type="text" id="urlInput" placeholder="https://youtu.be/... أو رابط mp4" dir="ltr">
       </div>
-      <div class="field full"><label>رابط صورة مصغّرة (اختياري)</label>
-        <input type="text" id="thumbInput" placeholder="https://..." dir="ltr">
+      <div class="field full"><label>الصورة المصغّرة (اختياري)</label>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <label style="display:inline-flex;align-items:center;gap:6px;background:rgba(78,161,255,.15);border:1px solid rgba(78,161,255,.3);color:#58a6ff;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">
+            📁 اختر صورة من الجهاز
+            <input type="file" id="thumbFile" accept="image/*" style="display:none">
+          </label>
+          <span id="thumbFileName" style="font-size:12px;color:#8b949e;align-self:center"></span>
+          <button type="button" id="thumbClearBtn" onclick="clearThumbFile()" style="display:none;background:none;border:none;color:#f85149;font-size:12px;cursor:pointer;font-family:inherit">✕ مسح</button>
+        </div>
+        <input type="text" id="thumbInput" placeholder="أو الصق رابط صورة مباشرة: https://..." dir="ltr">
+        <div id="thumbPreviewWrap" style="margin-top:8px;display:none"><img id="thumbPreview" style="width:80px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #30363d"></div>
       </div>
       <div class="field full"><label>وصف مختصر (اختياري)</label>
         <textarea id="descInput" placeholder="مثال: تغطية المؤتمر الصحفي وقرعة البطولة"></textarea>
@@ -119,11 +128,59 @@ async function loadVideos(){
   `).join('');
 }
 
+function resizeImageToDataUrl(file,maxSize){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const reader=new FileReader();
+    reader.onload=e=>{img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>h){if(w>maxSize){h=Math.round(h*maxSize/w);w=maxSize}}else{if(h>maxSize){w=Math.round(w*maxSize/h);h=maxSize}}
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL('image/jpeg',0.8));
+    };img.onerror=reject;img.src=e.target.result};
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+let uploadedThumbDataUrl=null;
+document.getElementById('thumbFile').onchange=async function(){
+  const f=this.files[0];
+  if(!f)return;
+  document.getElementById('thumbFileName').textContent='⏳ جاري المعالجة...';
+  try{
+    uploadedThumbDataUrl=await resizeImageToDataUrl(f,480);
+    document.getElementById('thumbFileName').textContent='✅ '+f.name;
+    document.getElementById('thumbClearBtn').style.display='inline';
+    document.getElementById('thumbInput').value='';
+    document.getElementById('thumbInput').disabled=true;
+    document.getElementById('thumbInput').placeholder='تم اختيار صورة من الجهاز — امسح الاختيار لاستخدام رابط بدلاً منها';
+    document.getElementById('thumbPreview').src=uploadedThumbDataUrl;
+    document.getElementById('thumbPreviewWrap').style.display='block';
+  }catch(err){
+    uploadedThumbDataUrl=null;
+    document.getElementById('thumbFileName').textContent='⚠️ تعذّرت قراءة الصورة';
+  }
+};
+
+function clearThumbFile(){
+  uploadedThumbDataUrl=null;
+  document.getElementById('thumbFile').value='';
+  document.getElementById('thumbFileName').textContent='';
+  document.getElementById('thumbClearBtn').style.display='none';
+  document.getElementById('thumbInput').disabled=false;
+  document.getElementById('thumbInput').placeholder='أو الصق رابط صورة مباشرة: https://...';
+  document.getElementById('thumbPreviewWrap').style.display='none';
+}
+window.clearThumbFile=clearThumbFile;
+
 document.getElementById('addBtn').onclick=async()=>{
   const title=document.getElementById('titleInput').value.trim();
   const video_type=document.getElementById('typeInput').value;
   const video_url=document.getElementById('urlInput').value.trim();
-  const thumbnail_url=document.getElementById('thumbInput').value.trim()||null;
+  const thumbnail_url=uploadedThumbDataUrl||document.getElementById('thumbInput').value.trim()||null;
   const description=document.getElementById('descInput').value.trim()||null;
   if(!TID){setMsg('⚠️ اختر بطولة أولاً','warn');return;}
   if(!title||!video_url){setMsg('⚠️ العنوان والرابط مطلوبان','warn');return;}
@@ -132,6 +189,12 @@ document.getElementById('addBtn').onclick=async()=>{
   document.getElementById('titleInput').value='';
   document.getElementById('urlInput').value='';
   document.getElementById('thumbInput').value='';
+  document.getElementById('thumbInput').disabled=false;
+  document.getElementById('thumbInput').placeholder='أو الصق رابط صورة مباشرة: https://...';
+  document.getElementById('thumbFileName').textContent='';
+  document.getElementById('thumbClearBtn').style.display='none';
+  document.getElementById('thumbPreviewWrap').style.display='none';
+  uploadedThumbDataUrl=null;
   document.getElementById('descInput').value='';
   setMsg('✅ تمت الإضافة','ok');
   loadVideos();
