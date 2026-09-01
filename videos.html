@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>فيديوهات البطولة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;margin:0;min-height:100vh}
+.nav{background:#161b22;border-bottom:1px solid #21262d;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.nav a{color:#8b949e;text-decoration:none;font-size:13px;border:1px solid #30363d;padding:6px 14px;border-radius:20px}
+.wrap{max-width:920px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:19px;color:#c9a84c;margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.card{background:#161b22;border:1px solid #21262d;border-radius:14px;overflow:hidden;text-decoration:none;color:inherit;display:block;transition:.2s}
+.card:hover{border-color:#c9a84c}
+.thumb-wrap{position:relative}
+.thumb{width:100%;height:140px;object-fit:cover;display:block;background:#0d1117}
+.thumb-ph{width:100%;height:140px;background:#0d1117;display:flex;align-items:center;justify-content:center;font-size:36px;color:#30363d}
+.play-badge{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25)}
+.play-icon{width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
+.body{padding:12px}
+.title{font-weight:800;font-size:14px;margin-bottom:6px}
+.desc{font-size:12px;color:#8b949e;line-height:1.6}
+.empty-note{text-align:center;color:#6e7b8f;padding:60px 0;font-size:13px}
+.loading{text-align:center;color:#6e7b8f;padding:40px 0}
+</style>
+</head>
+<body>
+<div class="nav"><span style="font-weight:800;color:#c9a84c">🎬 فيديوهات البطولة</span><a href="#" onclick="history.back();return false">‹ رجوع</a></div>
+<div class="wrap"><h1 id="tourName"></h1><div id="app"><div class="loading">⏳ جاري التحميل...</div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const qs=new URLSearchParams(location.search);
+const TID=qs.get('id')||qs.get('tid');
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+
+async function load(){
+  if(!TID){document.getElementById('app').innerHTML='<div class="empty-note">لم تُحدَّد بطولة</div>';return;}
+  const {data:t}=await sb.from('tournaments').select('name,name_ar').eq('id',TID).single();
+  document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — الفيديوهات';
+
+  const {data}=await sb.from('videos').select('*').eq('tournament_id',TID).order('created_at',{ascending:false});
+  const app=document.getElementById('app');
+  if(!data||!data.length){app.innerHTML='<div class="empty-note">لا توجد فيديوهات مضافة بعد لهذه البطولة</div>';return;}
+
+  app.innerHTML='<div class="grid">'+data.map(v=>`
+    <a class="card" href="${v.video_url}" target="_blank" rel="noopener">
+      <div class="thumb-wrap">
+        ${v.thumbnail_url?`<img class="thumb" src="${v.thumbnail_url}" alt="${esc(v.title)}">`:'<div class="thumb-ph">🎬</div>'}
+        <div class="play-badge"><div class="play-icon">▶</div></div>
+      </div>
+      <div class="body">
+        <div class="title">${esc(v.title)}</div>
+        ${v.description?`<div class="desc">${esc(v.description)}</div>`:''}
+      </div>
+    </a>
+  `).join('')+'</div>';
+}
+load();
+</script>
+</body>
+</html>
