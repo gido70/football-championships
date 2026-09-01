@@ -65,16 +65,21 @@
         <input type="text" id="urlInput" placeholder="https://youtu.be/... أو رابط mp4" dir="ltr">
       </div>
       <div class="field full"><label>الصورة المصغّرة (اختياري)</label>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap">
           <label style="display:inline-flex;align-items:center;gap:6px;background:rgba(78,161,255,.15);border:1px solid rgba(78,161,255,.3);color:#58a6ff;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">
             📁 اختر صورة من الجهاز
             <input type="file" id="thumbFile" accept="image/*" style="display:none">
           </label>
-          <span id="thumbFileName" style="font-size:12px;color:#8b949e;align-self:center"></span>
-          <button type="button" id="thumbClearBtn" onclick="clearThumbFile()" style="display:none;background:none;border:none;color:#f85149;font-size:12px;cursor:pointer;font-family:inherit">✕ مسح</button>
+        </div>
+        <div id="thumbSuccessBox" style="display:none;align-items:center;gap:12px;background:rgba(63,185,80,.12);border:1.5px solid #3fb950;border-radius:10px;padding:10px 14px;margin-bottom:8px">
+          <img id="thumbPreview" style="width:64px;height:48px;object-fit:cover;border-radius:6px;border:1px solid #3fb950;flex-shrink:0">
+          <div style="flex:1">
+            <div style="color:#3fb950;font-weight:800;font-size:13px">✅ تم تجهيز الصورة بنجاح</div>
+            <div id="thumbFileName" style="font-size:11px;color:#8b949e;margin-top:2px"></div>
+          </div>
+          <button type="button" id="thumbClearBtn" onclick="clearThumbFile()" style="background:none;border:1px solid #f85149;color:#f85149;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit;flex-shrink:0">✕ مسح</button>
         </div>
         <input type="text" id="thumbInput" placeholder="أو الصق رابط صورة مباشرة: https://..." dir="ltr">
-        <div id="thumbPreviewWrap" style="margin-top:8px;display:none"><img id="thumbPreview" style="width:80px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #30363d"></div>
       </div>
       <div class="field full"><label>وصف مختصر (اختياري)</label>
         <textarea id="descInput" placeholder="مثال: تغطية المؤتمر الصحفي وقرعة البطولة"></textarea>
@@ -149,30 +154,28 @@ let uploadedThumbDataUrl=null;
 document.getElementById('thumbFile').onchange=async function(){
   const f=this.files[0];
   if(!f)return;
+  document.getElementById('thumbSuccessBox').style.display='flex';
   document.getElementById('thumbFileName').textContent='⏳ جاري المعالجة...';
   try{
     uploadedThumbDataUrl=await resizeImageToDataUrl(f,480);
-    document.getElementById('thumbFileName').textContent='✅ '+f.name;
-    document.getElementById('thumbClearBtn').style.display='inline';
+    document.getElementById('thumbFileName').textContent=f.name+' — جاهزة للحفظ مع الفيديو';
     document.getElementById('thumbInput').value='';
     document.getElementById('thumbInput').disabled=true;
     document.getElementById('thumbInput').placeholder='تم اختيار صورة من الجهاز — امسح الاختيار لاستخدام رابط بدلاً منها';
     document.getElementById('thumbPreview').src=uploadedThumbDataUrl;
-    document.getElementById('thumbPreviewWrap').style.display='block';
   }catch(err){
     uploadedThumbDataUrl=null;
-    document.getElementById('thumbFileName').textContent='⚠️ تعذّرت قراءة الصورة';
+    document.getElementById('thumbSuccessBox').style.display='none';
+    setMsg('⚠️ تعذّرت قراءة الصورة، جرّب صورة أخرى','warn');
   }
 };
 
 function clearThumbFile(){
   uploadedThumbDataUrl=null;
   document.getElementById('thumbFile').value='';
-  document.getElementById('thumbFileName').textContent='';
-  document.getElementById('thumbClearBtn').style.display='none';
+  document.getElementById('thumbSuccessBox').style.display='none';
   document.getElementById('thumbInput').disabled=false;
   document.getElementById('thumbInput').placeholder='أو الصق رابط صورة مباشرة: https://...';
-  document.getElementById('thumbPreviewWrap').style.display='none';
 }
 window.clearThumbFile=clearThumbFile;
 
@@ -191,9 +194,7 @@ document.getElementById('addBtn').onclick=async()=>{
   document.getElementById('thumbInput').value='';
   document.getElementById('thumbInput').disabled=false;
   document.getElementById('thumbInput').placeholder='أو الصق رابط صورة مباشرة: https://...';
-  document.getElementById('thumbFileName').textContent='';
-  document.getElementById('thumbClearBtn').style.display='none';
-  document.getElementById('thumbPreviewWrap').style.display='none';
+  document.getElementById('thumbSuccessBox').style.display='none';
   uploadedThumbDataUrl=null;
   document.getElementById('descInput').value='';
   setMsg('✅ تمت الإضافة','ok');
