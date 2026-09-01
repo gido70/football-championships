@@ -33,6 +33,19 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .hs{text-align:center;padding:0 24px;border-left:1px solid rgba(255,255,255,.12)}
 .hs:last-child{border-left:none}
 .hs-num{font-size:34px;font-weight:900;line-height:1}
+@media(max-width:480px){
+  .hero{padding:22px 14px 20px}
+  .hero-side-logo{width:44px;height:44px}
+  .hero-title{font-size:22px;margin-bottom:2px}
+  .hero-stats{gap:2px}
+  .hs{padding:0 10px}
+  .hs-num{font-size:22px}
+  .hs-lbl{font-size:11px}
+}
+.qlinks-wrap{max-width:900px;margin:0 auto;padding:12px 16px 4px}
+.qlinks-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.qlink{display:flex;align-items:center;gap:8px;padding:13px 14px;border-radius:12px;color:#fff;font-weight:800;font-size:13px;text-decoration:none;border:none;cursor:pointer;font-family:inherit;text-align:right}
+.qlink span.qlink-ic{font-size:16px}
 .hs-lbl{font-size:12px;color:rgba(255,255,255,.45);margin-top:4px;letter-spacing:.5px}
 .tabs-bar{background:#FFFFFF;border-bottom:1px solid #EDEAE0;position:sticky;top:58px;z-index:99;overflow-x:auto}
 .hv-wrap{max-width:900px;margin:0 auto;padding:10px 0 4px}
@@ -234,6 +247,19 @@ img[src=""], img:not([src]) { display:none !important; }
   </div>
 </div>
 
+<div class="qlinks-wrap">
+  <div class="qlinks-grid">
+    <button class="qlink" style="background:#2d6a4f" onclick="jumpToTab('st')"><span class="qlink-ic">🏅</span> الترتيب</button>
+    <button class="qlink" style="background:#1d4e89" onclick="jumpToTab('ma')"><span class="qlink-ic">📅</span> المباريات</button>
+    <button class="qlink" style="background:#8a4f2d" onclick="jumpToTab('sc')"><span class="qlink-ic">⚽</span> الهدافون</button>
+    <button class="qlink" style="background:#5b3a8e" onclick="jumpToTab('tm')"><span class="qlink-ic">👥</span> الفرق</button>
+    <a class="qlink" id="qlinkStats" style="background:#1a6e73" href="#"><span class="qlink-ic">📊</span> الإحصائيات</a>
+    <a class="qlink" id="qlinkAwards" style="background:#a5813a" href="#"><span class="qlink-ic">🏆</span> الجوائز</a>
+    <a class="qlink" id="qlinkVideos" style="background:#a3364c" href="#"><span class="qlink-ic">🎬</span> الفيديوهات</a>
+    <a class="qlink" id="qlinkDocs" style="background:#3a5a8e" href="#"><span class="qlink-ic">📰</span> النشرات</a>
+  </div>
+</div>
+
 <div id="newsBanner"></div>
 
 <div id="motdSection"></div>
@@ -276,6 +302,10 @@ document.getElementById('statsTabLink').href='stats.html?id='+TID;
   document.getElementById('awardsTabLink').href='awards.html?id='+TID;
   document.getElementById('videosTabLink').href='videos.html?id='+TID;
   document.getElementById('lbTabLink').href='leaderboard.html?tid='+TID;
+  document.getElementById('qlinkStats').href='stats.html?id='+TID;
+  document.getElementById('qlinkAwards').href='awards.html?id='+TID;
+  document.getElementById('qlinkVideos').href='videos.html?id='+TID;
+  document.getElementById('qlinkDocs').href='documents.html?id='+TID;
 
 async function loadNews(){
   if(!TID)return;
@@ -464,6 +494,13 @@ function showTab(btn,name){
   document.getElementById('tc-'+name).classList.add('active');
   if(TAB_ACCENT[name])document.documentElement.style.setProperty('--tab-accent',TAB_ACCENT[name]);
 }
+function jumpToTab(name){
+  const map={st:0,ma:1,sc:2,tm:3};
+  const btn=document.querySelectorAll('.tabs-bar .tab')[map[name]];
+  if(btn){showTab(btn,name);}
+  document.querySelector('.tabs-bar').scrollIntoView({behavior:'smooth',block:'start'});
+}
+window.jumpToTab=jumpToTab;
 document.documentElement.style.setProperty('--tab-accent',TAB_ACCENT.st);
 
 async function loadTournament(){
