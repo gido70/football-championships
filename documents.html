@@ -111,7 +111,13 @@ function closeViewer(){
 window.openViewer=openViewer;
 window.closeViewer=closeViewer;
 
-load();
+load().then(()=>{
+  const openId=qs.get('open');
+  if(openId){
+    const idx=DOCS.findIndex(d=>d.id===openId);
+    if(idx>-1)openViewer(idx);
+  }
+});
 </script>
 </body>
 </html>

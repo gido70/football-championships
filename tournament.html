@@ -69,6 +69,14 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .motd-star-name{font-size:12px;font-weight:800;color:#e6edf3;line-height:1.3}
 .motd-star-lbl{font-size:9.5px;color:#c9a84c}
 .motd-star-none{font-size:11px;color:#6e7b8f;text-align:center;padding:4px 0}
+
+.bulletin-wrap{max-width:900px;margin:0 auto;padding:10px 16px 4px}
+.bulletin-card{background:#161b22;border:1px solid #21262d;border-radius:14px;padding:16px}
+.bulletin-head{font-size:13px;color:#c9a84c;font-weight:800;margin-bottom:10px}
+.bulletin-title{font-size:14px;font-weight:800;color:#e6edf3;margin-bottom:4px}
+.bulletin-desc{font-size:11.5px;color:#8b949e;margin-bottom:12px}
+.bulletin-btn{display:block;width:100%;text-align:center;background:linear-gradient(135deg,#c9a84c,#a5813a);color:#0d1117;font-weight:900;font-size:13px;padding:12px;border-radius:10px;text-decoration:none;margin-bottom:8px}
+.bulletin-more{display:block;width:100%;text-align:center;background:none;border:1px solid #30363d;color:#8b949e;font-size:12px;padding:9px;border-radius:10px;text-decoration:none}
 .ticker-wrap{max-width:900px;margin:0 auto;padding:8px 14px 4px}
 .ticker-line{display:flex;align-items:center;gap:8px;background:#FFFFFF;border:1px solid #EDEAE0;border-radius:10px;padding:0;margin-bottom:8px;overflow:hidden;height:38px}
 .ticker-label{flex-shrink:0;font-size:11px;font-weight:800;padding:0 12px;height:100%;display:flex;align-items:center;border-left:1px solid;white-space:nowrap}
@@ -230,6 +238,8 @@ img[src=""], img:not([src]) { display:none !important; }
 
 <div id="motdSection"></div>
 
+<div id="bulletinSection"></div>
+
 <div id="homeVideosSection"></div>
 
 <div class="hv-player-overlay" id="hvPlayerOverlay" onclick="if(event.target===this)closeHomeVideoPlayer()">
@@ -380,6 +390,21 @@ async function loadMOTD(){
   </div>`;
 }
 
+async function loadBulletin(){
+  const sec=document.getElementById('bulletinSection');
+  const {data}=await sb.from('documents').select('*').eq('tournament_id',TID).order('publish_date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false}).limit(1);
+  const latest=data?.[0];
+  if(!latest){sec.innerHTML='';return;}
+  const {count}=await sb.from('documents').select('id',{count:'exact',head:true}).eq('tournament_id',TID);
+  sec.innerHTML=`<div class="bulletin-wrap"><div class="bulletin-card">
+    <div class="bulletin-head">📰 نشرة البطولة</div>
+    <div class="bulletin-title">${motdEsc(latest.title)}</div>
+    <div class="bulletin-desc">آخر نشرة صادرة — يمكنك قراءتها مباشرة داخل الصفحة</div>
+    <a class="bulletin-btn" href="documents.html?id=${TID}&open=${latest.id}">📖 قراءة النشرة</a>
+    ${count>1?`<a class="bulletin-more" href="documents.html?id=${TID}">عرض بقية الأعداد (${count})</a>`:''}
+  </div></div>`;
+}
+
 let HOME_VIDEOS=[];
 async function loadHomeVideos(){
   if(!TID)return;
@@ -387,8 +412,6 @@ async function loadHomeVideos(){
   const socialLinks=[];
   if(tRow?.instagram_url)socialLinks.push(`<a href="${tRow.instagram_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#161b22;border:1px solid #21262d;border-radius:20px;padding:6px 14px;font-size:12px;color:#e6edf3;text-decoration:none">📷 إنستغرام</a>`);
   if(tRow?.youtube_url)socialLinks.push(`<a href="${tRow.youtube_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#161b22;border:1px solid #21262d;border-radius:20px;padding:6px 14px;font-size:12px;color:#e6edf3;text-decoration:none">▶️ يوتيوب</a>`);
-  const {count:docsCount}=await sb.from('documents').select('id',{count:'exact',head:true}).eq('tournament_id',TID);
-  if(docsCount>0)socialLinks.push(`<a href="documents.html?id=${TID}" style="display:inline-flex;align-items:center;gap:6px;background:#161b22;border:1px solid #21262d;border-radius:20px;padding:6px 14px;font-size:12px;color:#e6edf3;text-decoration:none">📰 النشرات</a>`);
   const socialHtml=socialLinks.length?`<div style="display:flex;gap:8px;padding:0 16px 12px;flex-wrap:wrap">${socialLinks.join('')}</div>`:'';
 
   const {data}=await sb.from('videos').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(3);
@@ -431,6 +454,7 @@ window.closeHomeVideoPlayer=closeHomeVideoPlayer;
 loadNews();
 loadHomeVideos();
 loadMOTD();
+loadBulletin();
 
 const TAB_ACCENT={st:'#639922',ma:'#c9a84c',sc:'#D85A30',tm:'#378ADD'};
 function showTab(btn,name){
