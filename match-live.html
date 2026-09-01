@@ -185,6 +185,9 @@ a{text-decoration:none;color:inherit}
 @media(max-width:600px){.lu-grid{grid-template-columns:1fr}}
 
 .motm{max-width:900px;margin:18px auto 0;background:linear-gradient(135deg,#EDEAE0,#FFFFFF);border:1px solid #c9a84c;border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:14px}
+.winner-banner{max-width:900px;margin:14px auto 0;background:linear-gradient(135deg,#2d6a4f,#1e4d38);color:#fff;border-radius:14px;padding:12px 20px;text-align:center;font-size:15px;font-weight:900}
+.winner-banner .cup{font-size:18px;margin-left:6px}
+.draw-banner{max-width:900px;margin:14px auto 0;background:#EDEAE0;color:#79786A;border-radius:14px;padding:12px 20px;text-align:center;font-size:14px;font-weight:800}
 .motm-ic{font-size:30px}
 .motm-lbl{font-size:11px;color:#c9a84c;font-weight:800;letter-spacing:.5px}
 .motm-name{font-size:16px;font-weight:800}
@@ -227,13 +230,18 @@ a{text-decoration:none;color:inherit}
     </div>
     <div id="varBanner" class="var-banner" style="display:none"></div>
     <div class="info-strip" id="infoStrip"></div>
-    <div id="streamWrap"></div>
   </div>
 </div>
 
-<div id="matchNewsTicker"></div>
+<div id="winnerWrap"></div>
 
 <div id="motmWrap"></div>
+
+<div class="main" style="padding-bottom:0">
+  <div id="streamWrap"></div>
+</div>
+
+<div id="matchNewsTicker"></div>
 
 <div class="main">
   <div class="pane active" id="p-events"><div id="eventsWrap"></div></div>
@@ -705,6 +713,14 @@ async function init(){
     document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap">
       <iframe src="${youtubeEmbed(m.highlight_video_url)}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
     </div>`;
+  }
+
+  let winnerHtml='';
+  if(m.status==='completed'&&m.home_score!=null&&m.away_score!=null){
+    if(m.home_score>m.away_score)winnerHtml=`<div class="winner-banner"><span class="cup">🏆</span>${ht?.name_ar||ht?.name||''} فاز بالمباراة</div>`;
+    else if(m.away_score>m.home_score)winnerHtml=`<div class="winner-banner"><span class="cup">🏆</span>${at?.name_ar||at?.name||''} فاز بالمباراة</div>`;
+    else winnerHtml=`<div class="draw-banner">🤝 انتهت المباراة بالتعادل</div>`;
+    document.getElementById('winnerWrap').innerHTML=winnerHtml;
   }
 
   if(m.player_of_match_id){
