@@ -38,6 +38,7 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 .player-title{font-weight:800;font-size:14px}
 .player-actions{display:flex;gap:10px;align-items:center}
 .player-actions a{color:#58a6ff;font-size:12px;text-decoration:none}
+.player-home{background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);color:#c9a84c!important;border-radius:8px;padding:8px 14px!important;font-size:13px!important;font-weight:800;text-decoration:none!important;min-height:38px;display:inline-flex;align-items:center}
 .player-close{background:none;border:1px solid #30363d;color:#e6edf3;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit;min-height:38px}
 @media(max-width:480px){
   .wrap{padding:14px 10px 40px}
@@ -59,6 +60,7 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
     <div class="player-meta">
       <div class="player-title" id="playerTitle"></div>
       <div class="player-actions">
+        <a id="playerHomeLink" class="player-home" href="#">🏠 الرئيسية</a>
         <a id="playerExternalLink" href="#" target="_blank" rel="noopener">فتح في يوتيوب ↗</a>
         <button class="player-close" onclick="closePlayer()">✕ إغلاق</button>
       </div>
@@ -120,6 +122,7 @@ function openPlayer(i){
   }
   document.getElementById('playerTitle').textContent=v.title;
   document.getElementById('playerExternalLink').href=v.video_url;
+  document.getElementById('playerHomeLink').href='tournament.html?id='+TID;
   document.getElementById('playerOverlay').classList.add('open');
 }
 

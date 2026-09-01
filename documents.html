@@ -31,6 +31,7 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px}
 .viewer-title{font-weight:800;font-size:14px;color:#e6edf3}
 .viewer-actions{display:flex;gap:10px;align-items:center}
 .viewer-actions a{color:#58a6ff;font-size:12px;text-decoration:none}
+.viewer-home{background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);color:#c9a84c!important;border-radius:8px;padding:8px 14px!important;font-size:13px!important;font-weight:800;text-decoration:none!important;min-height:38px;display:inline-flex;align-items:center}
 .viewer-close{background:none;border:1px solid #30363d;color:#e6edf3;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit;min-height:38px}
 @media(max-width:480px){
   .wrap{padding:14px 10px 40px}
@@ -54,7 +55,7 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px}
   <div class="viewer-top">
     <div class="viewer-title" id="viewerTitle"></div>
     <div class="viewer-actions">
-      <a id="viewerExternalLink" href="#" target="_blank" rel="noopener">فتح مباشرة ↗</a>
+      <a id="viewerHomeLink" class="viewer-home" href="#">🏠 الرئيسية</a>
       <button class="viewer-close" onclick="closeViewer()">✕ إغلاق</button>
     </div>
   </div>
@@ -101,7 +102,7 @@ function openViewer(i){
   const d=DOCS[i];
   document.getElementById('viewerFrame').src=d.pdf_url;
   document.getElementById('viewerTitle').textContent=d.title;
-  document.getElementById('viewerExternalLink').href=d.pdf_url;
+  document.getElementById('viewerHomeLink').href='tournament.html?id='+TID;
   document.getElementById('viewerOverlay').classList.add('open');
 }
 function closeViewer(){
