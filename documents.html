@@ -2,13 +2,13 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>نشرات البطولة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}
 body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;margin:0;min-height:100vh}
-.nav{background:#161b22;border-bottom:1px solid #21262d;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.nav{background:#161b22;border-bottom:1px solid #21262d;padding:calc(14px + env(safe-area-inset-top,0px)) 20px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .nav a{color:#8b949e;text-decoration:none;font-size:13px;border:1px solid #30363d;padding:8px 16px;border-radius:20px;min-height:36px;display:inline-flex;align-items:center}
 .wrap{max-width:900px;margin:0 auto;padding:20px 16px 60px}
 h1{font-size:19px;color:#c9a84c;margin:0 0 14px}
@@ -25,7 +25,7 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px}
 .empty-note{text-align:center;color:#6e7b8f;padding:60px 0;font-size:13px}
 .loading{text-align:center;color:#6e7b8f;padding:40px 0}
 
-.viewer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;z-index:999;padding:14px}
+.viewer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;z-index:999;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))}
 .viewer-overlay.open{display:flex;flex-direction:column}
 .viewer-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
 .viewer-title{font-weight:800;font-size:14px;color:#e6edf3}
