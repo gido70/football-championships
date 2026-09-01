@@ -8,8 +8,8 @@
 <style>
 *{box-sizing:border-box}
 body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;margin:0;min-height:100vh}
-.nav{background:#161b22;border-bottom:1px solid #21262d;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
-.nav a{color:#8b949e;text-decoration:none;font-size:13px;border:1px solid #30363d;padding:6px 14px;border-radius:20px}
+.nav{background:#161b22;border-bottom:1px solid #21262d;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.nav a{color:#8b949e;text-decoration:none;font-size:13px;border:1px solid #30363d;padding:8px 16px;border-radius:20px;min-height:36px;display:inline-flex;align-items:center}
 .wrap{max-width:100%;margin:0 auto;padding:20px 0 60px}
 h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 
@@ -38,11 +38,19 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 .player-title{font-weight:800;font-size:14px}
 .player-actions{display:flex;gap:10px;align-items:center}
 .player-actions a{color:#58a6ff;font-size:12px;text-decoration:none}
-.player-close{background:none;border:1px solid #30363d;color:#e6edf3;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+.player-close{background:none;border:1px solid #30363d;color:#e6edf3;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit;min-height:38px}
+@media(max-width:480px){
+  .wrap{padding:14px 10px 40px}
+  .card{flex:0 0 165px}
+  .player-overlay{padding:8px}
+  .player-meta{flex-wrap:wrap;gap:8px}
+  .player-title{flex:1 1 100%;order:1}
+  .player-actions{order:2;width:100%;justify-content:space-between}
+}
 </style>
 </head>
 <body>
-<div class="nav"><span style="font-weight:800;color:#c9a84c">🎬 فيديوهات البطولة</span><a href="#" onclick="history.back();return false">‹ رجوع</a></div>
+<div class="nav"><span style="font-weight:800;color:#c9a84c">🎬 فيديوهات البطولة</span><a href="#" id="backLink" onclick="history.back();return false">‹ رجوع للبطولة</a></div>
 <div class="wrap"><h1 id="tourName"></h1><div id="app"><div class="loading">⏳ جاري التحميل...</div></div></div>
 
 <div class="player-overlay" id="playerOverlay" onclick="if(event.target===this)closePlayer()">
@@ -74,6 +82,9 @@ function extractYoutubeId(url){
 let VIDEOS=[];
 async function load(){
   if(!TID){document.getElementById('app').innerHTML='<div class="empty-note">لم تُحدَّد بطولة</div>';return;}
+  const backLink=document.getElementById('backLink');
+  backLink.href='tournament.html?id='+TID;
+  backLink.removeAttribute('onclick');
   const {data:t}=await sb.from('tournaments').select('name,name_ar').eq('id',TID).single();
   document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — الفيديوهات';
 
