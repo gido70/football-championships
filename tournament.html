@@ -305,10 +305,17 @@ function hvExtractYoutubeId(url){
 let HOME_VIDEOS=[];
 async function loadHomeVideos(){
   if(!TID)return;
-  const {data}=await sb.from('videos').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(8);
+  const {data:tRow}=await sb.from('tournaments').select('instagram_url,youtube_url').eq('id',TID).single();
+  const socialLinks=[];
+  if(tRow?.instagram_url)socialLinks.push(`<a href="${tRow.instagram_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#161b22;border:1px solid #21262d;border-radius:20px;padding:6px 14px;font-size:12px;color:#e6edf3;text-decoration:none">📷 إنستغرام</a>`);
+  if(tRow?.youtube_url)socialLinks.push(`<a href="${tRow.youtube_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#161b22;border:1px solid #21262d;border-radius:20px;padding:6px 14px;font-size:12px;color:#e6edf3;text-decoration:none">▶️ يوتيوب</a>`);
+  const socialHtml=socialLinks.length?`<div style="display:flex;gap:8px;padding:0 16px 12px;flex-wrap:wrap">${socialLinks.join('')}</div>`:'';
+
+  const {data}=await sb.from('videos').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(3);
   HOME_VIDEOS=data||[];
   const sec=document.getElementById('homeVideosSection');
-  if(!HOME_VIDEOS.length){sec.innerHTML='';return;}
+  if(!HOME_VIDEOS.length&&!socialLinks.length){sec.innerHTML='';return;}
+  if(!HOME_VIDEOS.length){sec.innerHTML=`<div class="hv-wrap">${socialHtml}</div>`;return;}
   sec.innerHTML=`<div class="hv-wrap">
     <div class="hv-head"><h3>🎬 أحدث الفيديوهات</h3><a href="videos.html?id=${TID}">عرض الكل ›</a></div>
     <div class="hv-carousel">${HOME_VIDEOS.map((v,i)=>`
@@ -320,6 +327,7 @@ async function loadHomeVideos(){
         <div class="hv-title">${v.title.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}</div>
       </button>
     `).join('')}</div>
+    ${socialHtml}
   </div>`;
 }
 function openHomeVideoPlayer(i){

@@ -159,6 +159,17 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
       </div>
     </div>
 
+    <div class="form-grid" style="margin-top:10px">
+      <div class="field">
+        <label>رابط إنستغرام (اختياري)</label>
+        <input id="instagram_url" placeholder="https://instagram.com/..." dir="ltr">
+      </div>
+      <div class="field">
+        <label>رابط قناة يوتيوب (اختياري)</label>
+        <input id="youtube_url" placeholder="https://youtube.com/@..." dir="ltr">
+      </div>
+    </div>
+
     <!-- معاينة الهوية -->
     <div class="identity-preview" id="idPreview">
       <div class="id-bg" id="idBg" style="background:linear-gradient(135deg,#0b1f3a,#1a4a7a)"></div>
@@ -337,6 +348,8 @@ async function editTour(id){
   document.getElementById('group_count').value=r.group_count||4;
   document.getElementById('status').value=r.status||'draft';
   document.getElementById('notes').value=r.notes||'';
+  document.getElementById('instagram_url').value=r.instagram_url||'';
+  document.getElementById('youtube_url').value=r.youtube_url||'';
   if(r.primary_color) document.getElementById('primary_color').value=r.primary_color;
   if(r.secondary_color) document.getElementById('secondary_color').value=r.secondary_color;
 
@@ -383,6 +396,8 @@ async function delTour(id){
 function resetForm(){
   document.getElementById('tForm').reset();
   document.getElementById('editing_id').value='';
+  document.getElementById('instagram_url').value='';
+  document.getElementById('youtube_url').value='';
   document.getElementById('bg_image_url').value='';
   document.getElementById('cup_logo_url').value='';
   document.getElementById('committee_logo_url').value='';
@@ -422,6 +437,8 @@ document.getElementById('tForm').addEventListener('submit',async e=>{
     cup_logo_url:document.getElementById('cup_logo_url').value||null,
     committee_logo_url:document.getElementById('committee_logo_url').value||null,
     notes:document.getElementById('notes').value.trim()||null,
+    instagram_url:document.getElementById('instagram_url').value.trim()||null,
+    youtube_url:document.getElementById('youtube_url').value.trim()||null,
     is_active:document.getElementById('status').value==='active',
   };
   setMsg('جاري الحفظ...');
