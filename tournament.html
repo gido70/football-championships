@@ -95,6 +95,33 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .live-score-box{font-size:24px;font-weight:900;color:#fff;background:rgba(0,0,0,.35);border-radius:10px;padding:6px 16px;min-width:70px;text-align:center}
 .live-cta{text-align:center;margin-top:10px;font-size:12px;font-weight:800;color:#ff5c5c}
 
+.feed-wrap{max-width:900px;margin:0 auto;padding:14px 16px 4px}
+.feed-post{background:#161b22;border:1px solid #21262d;border-radius:14px;margin-bottom:12px;overflow:hidden;text-align:right}
+.feed-post-body{padding:12px 14px}
+.feed-post-ic{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;color:#8b949e;margin-bottom:6px}
+.feed-post-title{font-size:14px;font-weight:800;color:#e6edf3;margin-bottom:4px;line-height:1.4}
+.feed-post-cap{font-size:12px;color:#9199a3;line-height:1.6;margin-bottom:8px}
+.feed-post-imgs{display:grid;gap:3px}
+.feed-post-imgs.n1{grid-template-columns:1fr}
+.feed-post-imgs.n2{grid-template-columns:1fr 1fr}
+.feed-post-imgs.n3{grid-template-columns:2fr 1fr}
+.feed-post-imgs.n3 img:first-child{grid-row:span 2}
+.feed-post-imgs img{width:100%;height:100%;object-fit:cover;display:block;max-height:260px;cursor:pointer}
+.feed-post-imgs.n1 img{max-height:340px}
+.feed-post-link-btn{display:block;text-align:center;background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.3);color:#58a6ff;font-weight:800;font-size:12.5px;padding:9px;border-radius:8px;text-decoration:none;margin-top:2px}
+.feed-post-vid{position:relative;background:#000;padding-top:56.25%;cursor:pointer}
+.feed-post-vid img,.feed-post-vid .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.feed-post-vid .ph{display:flex;align-items:center;justify-content:center;font-size:34px;color:#30363d;background:#0d1117}
+.feed-post-vid .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25)}
+.feed-post-vid .play span{width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
+.feed-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.94);display:none;align-items:center;justify-content:center;z-index:999;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))}
+.feed-lightbox.open{display:flex;flex-direction:column}
+.feed-lightbox-top{display:flex;justify-content:flex-end;margin-bottom:10px}
+.feed-lightbox-close{background:none;border:1px solid #30363d;color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit}
+.feed-lightbox-body{flex:1;display:flex;align-items:center;justify-content:center}
+.feed-lightbox-body img{max-width:100%;max-height:100%;border-radius:8px}
+.feed-lightbox-body iframe{width:100%;height:100%;border:0;border-radius:8px}
+
 .bulletin-wrap{max-width:900px;margin:0 auto;padding:10px 16px 4px}
 .bulletin-card{background:#161b22;border:1px solid #21262d;border-radius:14px;padding:16px}
 .bulletin-head{font-size:13px;color:#c9a84c;font-weight:800;margin-bottom:10px}
@@ -115,7 +142,8 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .tab{padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#79786A;transition:.2s;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
 .tab.active{color:var(--tab-accent,#c9a84c);border-bottom-color:var(--tab-accent,#c9a84c)}
 .tab:hover:not(.active){color:#2C2C2A}
-.main{max-width:1200px;margin:0 auto;padding:28px 20px}
+.main{max-width:1200px;margin:0 auto;padding:28px 20px;display:none}
+.main.shown{display:block}
 .sec-hd{font-size:16px;font-weight:800;color:#2C2C2A;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid #EDEAE0;display:flex;align-items:center;gap:8px}
 /* STANDINGS */
 .st-wrap{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:14px;overflow:hidden;margin-bottom:20px}
@@ -279,8 +307,15 @@ img[src=""], img:not([src]) { display:none !important; }
 
 <div id="motdSection"></div>
 
-<div class="main">
-  <div class="tc active" id="tc-st"><div id="stWrap"><div class="skeleton" style="height:180px;margin-bottom:10px"></div><div class="skeleton" style="height:180px"></div></div></div>
+<div id="feedSection"></div>
+
+<div class="feed-lightbox" id="feedLightbox" onclick="if(event.target===this)closeFeedLightbox()">
+  <div class="feed-lightbox-top"><button class="feed-lightbox-close" onclick="closeFeedLightbox()">✕ إغلاق</button></div>
+  <div class="feed-lightbox-body" id="feedLightboxBody"></div>
+</div>
+
+<div class="main" id="mainContent">
+  <div class="tc" id="tc-st"><div id="stWrap"><div class="skeleton" style="height:180px;margin-bottom:10px"></div><div class="skeleton" style="height:180px"></div></div></div>
   <div class="tc" id="tc-ma"><div id="maWrap"><div class="skeleton" style="height:80px;margin-bottom:8px"></div><div class="skeleton" style="height:80px;margin-bottom:8px"></div><div class="skeleton" style="height:80px"></div></div></div>
   <div class="tc" id="tc-sc"><div id="scWrap"><div class="skeleton" style="height:64px;margin-bottom:8px"></div><div class="skeleton" style="height:64px;margin-bottom:8px"></div><div class="skeleton" style="height:64px"></div></div></div>
   <div class="tc" id="tc-tm"><div id="tmWrap"><div class="skeleton" style="height:100px"></div></div></div>
@@ -340,11 +375,56 @@ function toggleTicker(id){
   tickerState[id].paused=!tickerState[id].paused;
   document.getElementById(id+'Toggle').textContent=tickerState[id].paused?'▶':'⏸';
 }
-function hvExtractYoutubeId(url){
-  const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
+function motdEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+
+function feedYoutubeId(url){
+  const m=(url||'').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
   return m?m[1]:null;
 }
-function motdEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+
+function openFeedLightbox(html){
+  document.getElementById('feedLightboxBody').innerHTML=html;
+  document.getElementById('feedLightbox').classList.add('open');
+}
+function closeFeedLightbox(){
+  document.getElementById('feedLightbox').classList.remove('open');
+  document.getElementById('feedLightboxBody').innerHTML='';
+}
+window.openFeedLightbox=openFeedLightbox;
+window.closeFeedLightbox=closeFeedLightbox;
+
+async function loadFeed(){
+  const sec=document.getElementById('feedSection');
+  const {data}=await sb.from('feed_posts').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(15);
+  if(!data?.length){sec.innerHTML='';return;}
+
+  const cards=data.map((p)=>{
+    const icMap={link:'🔗 رابط',image:'🖼️ صور',video:'🎬 فيديو'};
+    let media='';
+    if(p.post_type==='image'&&p.image_urls?.length){
+      const n=Math.min(p.image_urls.length,3);
+      media=`<div class="feed-post-imgs n${n}">${p.image_urls.slice(0,3).map(u=>`<img src="${u}" onclick='openFeedLightbox("<img src=\\'${u}\\'>")'>`).join('')}</div>`;
+    }else if(p.post_type==='video'){
+      const yid=p.video_type==='youtube'?feedYoutubeId(p.video_url):null;
+      const thumb=yid?`https://img.youtube.com/vi/${yid}/hqdefault.jpg`:(p.thumbnail_url||null);
+      const embed=yid?`https://www.youtube.com/embed/${yid}?autoplay=1`:p.video_url;
+      const iframeTag=yid?`<iframe src="${embed}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`:`<video src="${embed}" controls autoplay style="position:absolute;inset:0;width:100%;height:100%"></video>`;
+      media=`<div class="feed-post-vid" onclick='openFeedLightbox(${JSON.stringify(`<div style="position:relative;width:100%;height:100%">${iframeTag}</div>`)})'>${thumb?`<img src="${thumb}">`:'<div class="ph">🎬</div>'}<div class="play"><span>▶</span></div></div>`;
+    }
+    return `<div class="feed-post">
+      ${p.post_type==='video'?media:''}
+      <div class="feed-post-body">
+        <div class="feed-post-ic">${icMap[p.post_type]||'📣'}</div>
+        <div class="feed-post-title">${motdEsc(p.title)}</div>
+        ${p.caption?`<div class="feed-post-cap">${motdEsc(p.caption)}</div>`:''}
+        ${p.post_type==='image'?media:''}
+        ${p.post_type==='link'?`<a class="feed-post-link-btn" href="${p.link_url}" target="_blank" rel="noopener">فتح الرابط ↗</a>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  sec.innerHTML=`<div class="feed-wrap">${cards}</div>`;
+}
 
 async function loadMOTD(){
   const sec=document.getElementById('motdSection');
@@ -408,70 +488,11 @@ async function loadMOTD(){
   </div>`;
 }
 
-async function loadBulletin(){
-  const sec=document.getElementById('bulletinSection');
-  const {data}=await sb.from('documents').select('*').eq('tournament_id',TID).order('publish_date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false}).limit(1);
-  const latest=data?.[0];
-  if(!latest){sec.innerHTML='';return;}
-  const {count}=await sb.from('documents').select('id',{count:'exact',head:true}).eq('tournament_id',TID);
-  sec.innerHTML=`<div class="bulletin-wrap"><div class="bulletin-card">
-    <div class="bulletin-head">📰 نشرة البطولة</div>
-    <div class="bulletin-title">${motdEsc(latest.title)}</div>
-    <div class="bulletin-desc">آخر نشرة صادرة — يمكنك قراءتها مباشرة داخل الصفحة</div>
-    <a class="bulletin-btn" href="documents.html?id=${TID}&open=${latest.id}">📖 قراءة النشرة</a>
-    ${count>1?`<a class="bulletin-more" href="documents.html?id=${TID}">عرض بقية الأعداد (${count})</a>`:''}
-  </div></div>`;
-}
-
-let HOME_VIDEOS=[];
-async function loadHomeVideos(){
-  if(!TID)return;
-  const {data:tRow}=await sb.from('tournaments').select('instagram_url,youtube_url').eq('id',TID).single();
-  const socialLinks=[];
-  if(tRow?.instagram_url)socialLinks.push(`<a href="${tRow.instagram_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#161b22;border:1px solid #21262d;border-radius:20px;padding:6px 14px;font-size:12px;color:#e6edf3;text-decoration:none">📷 إنستغرام</a>`);
-  if(tRow?.youtube_url)socialLinks.push(`<a href="${tRow.youtube_url}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#161b22;border:1px solid #21262d;border-radius:20px;padding:6px 14px;font-size:12px;color:#e6edf3;text-decoration:none">▶️ يوتيوب</a>`);
-  const socialHtml=socialLinks.length?`<div style="display:flex;gap:8px;padding:0 16px 12px;flex-wrap:wrap">${socialLinks.join('')}</div>`:'';
-
-  const {data}=await sb.from('videos').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(3);
-  HOME_VIDEOS=data||[];
-  const sec=document.getElementById('homeVideosSection');
-  if(!HOME_VIDEOS.length&&!socialLinks.length){sec.innerHTML='';return;}
-  if(!HOME_VIDEOS.length){sec.innerHTML=`<div class="hv-wrap">${socialHtml}</div>`;return;}
-  sec.innerHTML=`<div class="hv-wrap">
-    <div class="hv-head"><h3>🎬 أحدث الفيديوهات</h3><a href="videos.html?id=${TID}">عرض الكل ›</a></div>
-    <div class="hv-carousel">${HOME_VIDEOS.map((v,i)=>`
-      <button class="hv-card" onclick="openHomeVideoPlayer(${i})">
-        <div class="hv-thumb-wrap">
-          ${v.thumbnail_url?`<img class="hv-thumb" src="${v.thumbnail_url}">`:'<div class="hv-thumb-ph">🎬</div>'}
-          <div class="hv-play"><span>▶</span></div>
-        </div>
-        <div class="hv-title">${v.title.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}</div>
-      </button>
-    `).join('')}</div>
-    ${socialHtml}
-  </div>`;
-}
-function openHomeVideoPlayer(i){
-  const v=HOME_VIDEOS[i];
-  const wrap=document.getElementById('hvFrameWrap');
-  if(v.video_type==='youtube'){
-    const yid=hvExtractYoutubeId(v.video_url);
-    wrap.innerHTML=yid?`<iframe src="https://www.youtube.com/embed/${yid}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`:'';
-  }else{
-    wrap.innerHTML=`<video src="${v.video_url}" controls autoplay></video>`;
-  }
-  document.getElementById('hvPlayerOverlay').classList.add('open');
-}
-function closeHomeVideoPlayer(){
-  document.getElementById('hvPlayerOverlay').classList.remove('open');
-  document.getElementById('hvFrameWrap').innerHTML='';
-}
-window.openHomeVideoPlayer=openHomeVideoPlayer;
-window.closeHomeVideoPlayer=closeHomeVideoPlayer;
 
 loadNews();
 loadMOTD();
 loadLiveMatch();
+loadFeed();
 
 const TAB_ACCENT={st:'#639922',ma:'#c9a84c',sc:'#D85A30',tm:'#378ADD'};
 async function loadLiveMatch(){
@@ -492,6 +513,7 @@ async function loadLiveMatch(){
 }
 
 function jumpToTab(name){
+  document.getElementById('mainContent').classList.add('shown');
   document.querySelectorAll('.tc').forEach(c=>c.classList.remove('active'));
   document.getElementById('tc-'+name).classList.add('active');
   if(TAB_ACCENT[name])document.documentElement.style.setProperty('--tab-accent',TAB_ACCENT[name]);

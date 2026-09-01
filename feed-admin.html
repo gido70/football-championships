@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth-guard.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#071426">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+
+<title>إدارة أخبار الدورة</title>
+<link rel="stylesheet" href="admin.css">
+<style>
+.type-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.type-tab{flex:1;min-width:100px;padding:12px;border-radius:10px;border:1.5px solid #30363d;background:#161b22;color:#8b949e;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit;text-align:center}
+.type-tab.active{border-color:#c9a84c;color:#c9a84c;background:rgba(201,168,76,.1)}
+.type-panel{display:none}
+.type-panel.active{display:block}
+.img-slot-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.img-slot{flex:1;min-width:100px}
+.img-slot label{display:inline-flex;align-items:center;gap:6px;background:rgba(78,161,255,.15);border:1px solid rgba(78,161,255,.3);color:#58a6ff;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-family:inherit;width:100%;justify-content:center}
+.img-slot input[type=file]{display:none}
+.img-preview{width:100%;height:70px;object-fit:cover;border-radius:8px;margin-top:6px;display:none}
+.feed-list{margin-top:18px;display:flex;flex-direction:column;gap:12px}
+.feed-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:12px;display:flex;gap:12px;align-items:flex-start}
+.feed-ic{font-size:22px;flex-shrink:0}
+.feed-body{flex:1;min-width:0}
+.feed-title{font-weight:800;font-size:13px;margin-bottom:2px}
+.feed-cap{font-size:11.5px;color:#8b949e;margin-bottom:6px}
+.feed-imgs{display:flex;gap:4px}
+.feed-imgs img{width:50px;height:50px;object-fit:cover;border-radius:6px}
+.feed-del{background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;color:#f85149;flex-shrink:0}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <div class="page-head">
+    <div class="page-icon">📣</div>
+    <div class="page-title"><h1>إدارة أخبار الدورة</h1><p>موجز أخبار تفاعلي (روابط، صور، فيديوهات) يظهر في الصفحة الرئيسية للبطولة</p></div>
+  </div>
+  <div class="nav-actions">
+    <a class="btn secondary" href="./admin-home.html">← لوحة الأدمن</a>
+    <a class="btn secondary" href="./index.html" target="_blank">الموقع العام ↗</a>
+  </div>
+</div></header>
+
+<main class="container">
+  <section class="panel">
+    <h3>اختر البطولة</h3>
+    <div class="form-grid"><div class="field full"><label>البطولة</label>
+      <select id="tSel"></select>
+    </div></div>
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <h3>➕ إضافة خبر جديد</h3>
+
+    <div class="type-tabs">
+      <button class="type-tab active" data-type="link" onclick="selectType('link')">🔗 رابط</button>
+      <button class="type-tab" data-type="image" onclick="selectType('image')">🖼️ صور</button>
+      <button class="type-tab" data-type="video" onclick="selectType('video')">🎬 فيديو</button>
+    </div>
+
+    <div class="form-grid">
+      <div class="field full"><label>العنوان</label>
+        <input type="text" id="titleInput" placeholder="مثال: زيارة اللجنة المنظمة لمعسكر الفريق">
+      </div>
+      <div class="field full"><label>تعليق مختصر (اختياري)</label>
+        <textarea id="captionInput" placeholder="وصف قصير للخبر"></textarea>
+      </div>
+    </div>
+
+    <div class="type-panel active" id="panel-link">
+      <div class="form-grid">
+        <div class="field full"><label>رابط الخبر (تلفزيون، إنستغرام، موقع إخباري...)</label>
+          <input type="text" id="linkUrlInput" placeholder="https://..." dir="ltr">
+        </div>
+      </div>
+    </div>
+
+    <div class="type-panel" id="panel-image">
+      <div class="img-slot-row">
+        <div class="img-slot"><label>📁 صورة 1<input type="file" accept="image/*" data-slot="0" onchange="handleImgFile(this)"></label><img class="img-preview" id="imgPrev0"></div>
+        <div class="img-slot"><label>📁 صورة 2<input type="file" accept="image/*" data-slot="1" onchange="handleImgFile(this)"></label><img class="img-preview" id="imgPrev1"></div>
+        <div class="img-slot"><label>📁 صورة 3<input type="file" accept="image/*" data-slot="2" onchange="handleImgFile(this)"></label><img class="img-preview" id="imgPrev2"></div>
+      </div>
+      <div class="status" style="font-size:11.5px;color:#8b949e">يمكن اختيار صورة واحدة حتى ثلاث صور لنفس الخبر</div>
+    </div>
+
+    <div class="type-panel" id="panel-video">
+      <div class="form-grid">
+        <div class="field"><label>نوع الفيديو</label>
+          <select id="vidTypeInput">
+            <option value="youtube">رابط يوتيوب</option>
+            <option value="mp4">رابط فيديو مباشر (mp4)</option>
+          </select>
+        </div>
+        <div class="field"><label>رابط الفيديو</label>
+          <input type="text" id="vidUrlInput" placeholder="https://youtu.be/..." dir="ltr">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="addBtn">💾 نشر الخبر</button>
+    </div>
+    <div class="status" id="addMsg"></div>
+  </section>
+
+  <section class="panel" style="margin-top:20px">
+    <h3>📣 الأخبار المنشورة <span id="countBadge" style="font-size:12px;color:#8b949e;font-weight:400"></span></h3>
+    <div id="feedList" class="feed-list"><div class="status">جاري التحميل...</div></div>
+  </section>
+</main>
+
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+let TID=null;
+let currentType='link';
+let imgSlots=[null,null,null];
+
+function setMsg(t,c=''){const e=document.getElementById('addMsg');e.className='status '+c;e.textContent=t;}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+
+function selectType(t){
+  currentType=t;
+  document.querySelectorAll('.type-tab').forEach(b=>b.classList.toggle('active',b.dataset.type===t));
+  document.querySelectorAll('.type-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+t).classList.add('active');
+}
+window.selectType=selectType;
+
+function resizeImageToDataUrl(file,maxSize){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const reader=new FileReader();
+    reader.onload=e=>{img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>h){if(w>maxSize){h=Math.round(h*maxSize/w);w=maxSize}}else{if(h>maxSize){w=Math.round(w*maxSize/h);h=maxSize}}
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL('image/jpeg',0.82));
+    };img.onerror=reject;img.src=e.target.result};
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleImgFile(input){
+  const slot=parseInt(input.dataset.slot);
+  const f=input.files[0];
+  if(!f)return;
+  try{
+    const dataUrl=await resizeImageToDataUrl(f,720);
+    imgSlots[slot]=dataUrl;
+    const prev=document.getElementById('imgPrev'+slot);
+    prev.src=dataUrl;
+    prev.style.display='block';
+  }catch(e){setMsg('⚠️ تعذّرت قراءة الصورة','warn');}
+}
+window.handleImgFile=handleImgFile;
+
+async function initTournaments(){
+  const {data}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});
+  const sel=document.getElementById('tSel');
+  sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
+  sel.onchange=()=>{TID=sel.value;loadFeed();};
+  if(data?.length){TID=data[0].id;loadFeed();}
+}
+
+async function loadFeed(){
+  if(!TID)return;
+  const {data}=await sb.from('feed_posts').select('*').eq('tournament_id',TID).order('created_at',{ascending:false});
+  const list=document.getElementById('feedList');
+  document.getElementById('countBadge').textContent='('+((data||[]).length)+' خبر)';
+  if(!data?.length){list.innerHTML='<div class="empty" style="padding:24px;text-align:center;color:#6e7b8f">لا توجد أخبار بعد — أضف أول خبر من الأعلى</div>';return;}
+  const icMap={link:'🔗',image:'🖼️',video:'🎬'};
+  list.innerHTML=data.map(p=>`
+    <div class="feed-card">
+      <div class="feed-ic">${icMap[p.post_type]||'📣'}</div>
+      <div class="feed-body">
+        <div class="feed-title">${esc(p.title)}</div>
+        ${p.caption?`<div class="feed-cap">${esc(p.caption)}</div>`:''}
+        ${p.post_type==='image'&&p.image_urls?.length?`<div class="feed-imgs">${p.image_urls.map(u=>`<img src="${u}">`).join('')}</div>`:''}
+        ${p.post_type==='link'?`<div class="feed-cap" style="color:#58a6ff">${esc(p.link_url||'')}</div>`:''}
+        ${p.post_type==='video'?`<div class="feed-cap" style="color:#58a6ff">${esc(p.video_url||'')}</div>`:''}
+      </div>
+      <button class="feed-del" onclick="deletePost('${p.id}')">حذف</button>
+    </div>
+  `).join('');
+}
+
+document.getElementById('addBtn').onclick=async()=>{
+  const title=document.getElementById('titleInput').value.trim();
+  const caption=document.getElementById('captionInput').value.trim()||null;
+  if(!TID){setMsg('⚠️ اختر بطولة أولاً','warn');return;}
+  if(!title){setMsg('⚠️ العنوان مطلوب','warn');return;}
+
+  const payload={tournament_id:TID,post_type:currentType,title,caption};
+
+  if(currentType==='link'){
+    const link_url=document.getElementById('linkUrlInput').value.trim();
+    if(!link_url){setMsg('⚠️ رابط الخبر مطلوب','warn');return;}
+    payload.link_url=link_url;
+  }else if(currentType==='image'){
+    const imgs=imgSlots.filter(Boolean);
+    if(!imgs.length){setMsg('⚠️ اختر صورة واحدة على الأقل','warn');return;}
+    payload.image_urls=imgs;
+  }else if(currentType==='video'){
+    const video_url=document.getElementById('vidUrlInput').value.trim();
+    if(!video_url){setMsg('⚠️ رابط الفيديو مطلوب','warn');return;}
+    payload.video_type=document.getElementById('vidTypeInput').value;
+    payload.video_url=video_url;
+  }
+
+  const {error}=await sb.from('feed_posts').insert(payload);
+  if(error){setMsg('❌ فشل النشر: '+error.message,'err');return;}
+
+  document.getElementById('titleInput').value='';
+  document.getElementById('captionInput').value='';
+  document.getElementById('linkUrlInput').value='';
+  document.getElementById('vidUrlInput').value='';
+  imgSlots=[null,null,null];
+  [0,1,2].forEach(i=>{document.getElementById('imgPrev'+i).style.display='none';});
+  setMsg('✅ تم النشر','ok');
+  loadFeed();
+};
+
+async function deletePost(id){
+  if(!confirm('حذف هذا الخبر نهائيًا؟'))return;
+  await sb.from('feed_posts').delete().eq('id',id);
+  loadFeed();
+}
+window.deletePost=deletePost;
+
+initTournaments();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').then(reg=>{
+    reg.update();
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;
+      nw.addEventListener('statechange',()=>{
+        if(nw.state==='installed'&&navigator.serviceWorker.controller)
+          window.location.reload();
+      });
+    });
+  });
+  navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
+}
+</script>
+</body>
+</html>
