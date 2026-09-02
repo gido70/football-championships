@@ -13,21 +13,31 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .wrap{max-width:100%;margin:0 auto;padding:20px 0 60px}
 h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 
-.carousel{display:flex;gap:14px;overflow-x:auto;padding:4px 16px 14px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
-.carousel::-webkit-scrollbar{height:6px}
-.carousel::-webkit-scrollbar-thumb{background:#30363d;border-radius:10px}
-.card{flex:0 0 220px;scroll-snap-align:start;background:#161b22;border:1px solid #21262d;border-radius:14px;overflow:hidden;cursor:pointer;transition:.2s;padding:0;text-align:right;color:inherit;font-family:inherit}
+.carousel{display:grid;grid-template-columns:1fr;gap:14px;padding:4px 16px 14px}
+.card{width:100%;background:#161b22;border:1px solid #21262d;border-radius:14px;overflow:hidden;cursor:pointer;transition:.2s;padding:0;text-align:right;color:inherit;font-family:inherit}
 .card:hover{outline:2px solid #c9a84c}
 .thumb-wrap{position:relative}
-.thumb{width:100%;height:124px;object-fit:cover;display:block;background:#0d1117}
-.thumb-ph{width:100%;height:124px;background:#0d1117;display:flex;align-items:center;justify-content:center;font-size:32px;color:#30363d}
+.thumb{width:100%;height:190px;object-fit:cover;display:block;background:#0d1117}
+.thumb-ph{width:100%;height:190px;background:#0d1117;display:flex;align-items:center;justify-content:center;font-size:32px;color:#30363d}
 .play-badge{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25)}
-.play-icon{width:42px;height:42px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff}
-.body{padding:10px 12px}
-.title{font-weight:800;font-size:13px;margin-bottom:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.desc{font-size:11px;color:#8b949e;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.play-icon{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
+.body{padding:12px 14px}
+.title{font-weight:800;font-size:14px;margin-bottom:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.desc{font-size:12px;color:#8b949e;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .empty-note{text-align:center;color:#6e7b8f;padding:60px 0;font-size:13px}
 .loading{text-align:center;color:#6e7b8f;padding:40px 0}
+
+/* شاشات أعرض (تابلت/حاسوب): عمودان أو ثلاثة */
+@media(min-width:600px){.carousel{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:920px){.carousel{grid-template-columns:repeat(3,1fr)}}
+/* الهاتف بالوضع العرضي تحديداً: ثلاثة أعمدة دائماً بغض النظر عن العرض */
+@media(orientation:landscape) and (max-width:920px){
+  .carousel{grid-template-columns:repeat(3,1fr)}
+  .thumb,.thumb-ph{height:110px}
+  .body{padding:8px 10px}
+  .title{font-size:12px;-webkit-line-clamp:1}
+  .desc{display:none}
+}
 
 .player-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:999;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
 .player-overlay.open{display:flex}
@@ -42,7 +52,6 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 .player-close{background:none;border:1px solid #30363d;color:#e6edf3;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit;min-height:38px}
 @media(max-width:480px){
   .wrap{padding:14px 10px 40px}
-  .card{flex:0 0 165px}
   .player-overlay{padding:8px}
   .player-meta{flex-wrap:wrap;gap:8px}
   .player-title{flex:1 1 100%;order:1}
