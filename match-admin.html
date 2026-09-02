@@ -79,6 +79,9 @@ select option{background:#0f2a45;color:#ffffff}
 .evt-btn.y{border-color:rgba(255,213,79,.3);background:rgba(255,213,79,.05)}
 .evt-btn.r{border-color:rgba(255,107,107,.3);background:rgba(255,107,107,.05)}
 .evt-form{background:rgba(0,0,0,.25);border-radius:12px;padding:14px;display:none;margin-top:8px}
+.voice-btn{background:rgba(88,166,255,.15);border:1px solid rgba(88,166,255,.4);color:#58a6ff;border-radius:8px;width:38px;height:38px;font-size:16px;cursor:pointer;flex-shrink:0}
+.voice-btn.listening{background:rgba(248,81,73,.2);border-color:#f85149;animation:voicePulse 1s infinite}
+@keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(248,81,73,.5)}50%{box-shadow:0 0 0 6px rgba(248,81,73,0)}}
 .evt-form.show{display:block}
 .evt-form select,.evt-form input{width:100%;margin-bottom:8px;padding:9px 12px;border-radius:10px;font-size:14px}
 .ef-btns{display:flex;gap:8px}
@@ -324,7 +327,11 @@ select option{background:#0f2a45;color:#ffffff}
         </div>
         <div class="evt-form" id="hForm">
           <div style="font-size:13px;color:#b7c6dc;margin-bottom:10px" id="hFormLbl">تسجيل حدث</div>
-          <select id="hPlayer"><option value="">— اللاعب (اختياري) —</option></select>
+          <div style="display:flex;gap:6px;align-items:center">
+            <select id="hPlayer" style="flex:1"><option value="">— اللاعب (اختياري) —</option></select>
+            <button type="button" class="voice-btn" id="hVoiceBtn" onclick="startVoicePick('h')" title="اختيار اللاعب بالصوت">🎤</button>
+          </div>
+          <div id="hVoiceStatus" style="font-size:11px;color:#8fa3c0;margin-top:4px;display:none"></div>
           <input type="number" id="hMin" placeholder="الدقيقة" min="1" max="120">
           <div class="ef-btns">
             <button class="btn-sm btn-sm-ok" onclick="submitEvt('h')">✓ تأكيد</button>
@@ -342,7 +349,11 @@ select option{background:#0f2a45;color:#ffffff}
         </div>
         <div class="evt-form" id="aForm">
           <div style="font-size:13px;color:#b7c6dc;margin-bottom:10px" id="aFormLbl">تسجيل حدث</div>
-          <select id="aPlayer"><option value="">— اللاعب (اختياري) —</option></select>
+          <div style="display:flex;gap:6px;align-items:center">
+            <select id="aPlayer" style="flex:1"><option value="">— اللاعب (اختياري) —</option></select>
+            <button type="button" class="voice-btn" id="aVoiceBtn" onclick="startVoicePick('a')" title="اختيار اللاعب بالصوت">🎤</button>
+          </div>
+          <div id="aVoiceStatus" style="font-size:11px;color:#8fa3c0;margin-top:4px;display:none"></div>
           <input type="number" id="aMin" placeholder="الدقيقة" min="1" max="120">
           <div class="ef-btns">
             <button class="btn-sm btn-sm-ok" onclick="submitEvt('a')">✓ تأكيد</button>
@@ -820,6 +831,71 @@ async function saveMin(){
   document.getElementById('mMin').textContent=m+"'";
   // match_minute غير موجود في الجدول؛ نعرضها محلياً فقط دون أن نكسر الحفظ
 }
+
+function normalizeArabic(s){
+  return (s||'').toLowerCase()
+    .replace(/[إأآا]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه')
+    .replace(/[ًٌٍَُِّْ]/g,'')
+    .replace(/[^\u0600-\u06FF\u0020a-z0-9]/g,'')
+    .trim();
+}
+
+function matchPlayerByVoice(text,side){
+  const sel=document.getElementById(side+'Player');
+  const opts=[...sel.options].filter(o=>o.value);
+  const norm=normalizeArabic(text);
+  const words=norm.split(/\s+/).filter(Boolean);
+  let best=null,bestScore=0;
+  opts.forEach(o=>{
+    const oNorm=normalizeArabic(o.text);
+    let score=0;
+    if(oNorm.includes(norm)&&norm.length>=2)score+=10;
+    words.forEach(w=>{if(w.length>=2&&oNorm.includes(w))score+=2;});
+    if(score>bestScore){bestScore=score;best=o;}
+  });
+  return bestScore>0?best:null;
+}
+
+function startVoicePick(side){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const statusEl=document.getElementById(side+'VoiceStatus');
+  const btn=document.getElementById(side+'VoiceBtn');
+  if(!SR){
+    statusEl.style.display='block';
+    statusEl.style.color='#ff6b6b';
+    statusEl.textContent='⚠️ التعرّف الصوتي غير مدعوم في هذا المتصفح — جرّب Chrome';
+    return;
+  }
+  const rec=new SR();
+  rec.lang='ar-SA';
+  rec.interimResults=false;
+  rec.maxAlternatives=3;
+
+  statusEl.style.display='block';
+  statusEl.style.color='#f7c948';
+  statusEl.textContent='🎙️ استمع الآن... قل اسم اللاعب';
+  btn.classList.add('listening');
+
+  rec.onresult=(e)=>{
+    const text=e.results[0][0].transcript;
+    const match=matchPlayerByVoice(text,side);
+    if(match){
+      document.getElementById(side+'Player').value=match.value;
+      statusEl.style.color='#3fb950';
+      statusEl.textContent='✅ سمعت: "'+text+'" — اخترت: '+match.text+' (تأكد من القائمة قبل الحفظ)';
+    }else{
+      statusEl.style.color='#ff6b6b';
+      statusEl.textContent='⚠️ سمعت: "'+text+'" — لم أجد لاعباً مطابقاً، اختره يدوياً من القائمة';
+    }
+  };
+  rec.onerror=(e)=>{
+    statusEl.style.color='#ff6b6b';
+    statusEl.textContent='⚠️ تعذّر الاستماع ('+e.error+') — تأكد من إذن الميكروفون وحاول مجدداً';
+  };
+  rec.onend=()=>{btn.classList.remove('listening');};
+  rec.start();
+}
+window.startVoicePick=startVoicePick;
 
 function openEvt(side,type){
   evtType[side]=type;
