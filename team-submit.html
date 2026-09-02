@@ -174,10 +174,43 @@ function clearField(key){
   document.getElementById(key+'_delwrap').innerHTML='';
 }
 
-function onFile(key,input){
+function enhanceImage(file,maxDim){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    const reader=new FileReader();
+    reader.onload=e=>{
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>h){if(w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}}
+        else{if(h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}}
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext('2d');
+        try{ctx.filter='contrast(1.08) brightness(1.05) saturate(1.08)';}catch(e){}
+        ctx.drawImage(img,0,0,w,h);
+        canvas.toBlob(blob=>{blob?resolve(blob):reject(new Error('toBlob failed'))},'image/jpeg',0.9);
+      };
+      img.onerror=reject;
+      img.src=e.target.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function onFile(key,input){
   const f=input.files[0];
   if(!f)return;
-  files[key]=f;
+  document.getElementById(key+'_inner').textContent='⏳ جارٍ تجويد الصورة...';
+  const isDoc=key.endsWith('_doc');
+  try{
+    const enhanced=await enhanceImage(f,isDoc?1400:1000);
+    enhanced.name=f.name;
+    files[key]=enhanced;
+  }catch(err){
+    console.error(err);
+    files[key]=f;
+  }
   clearedFields.delete(key);
   document.getElementById(key+'_box').classList.add('has-file');
   document.getElementById(key+'_inner').textContent='✅ '+f.name;
@@ -284,9 +317,8 @@ function importExcel(input){
 async function uploadFile(key,bucket,pathPrefix){
   const f=files[key];
   if(!f)return null;
-  const ext=f.name.split('.').pop();
-  const path=`${pathPrefix}/${key}-${Date.now()}.${ext}`;
-  const {error}=await sb.storage.from(bucket).upload(path,f);
+  const path=`${pathPrefix}/${key}-${Date.now()}.jpg`;
+  const {error}=await sb.storage.from(bucket).upload(path,f,{contentType:'image/jpeg'});
   if(error){console.error(error);return null;}
   return path;
 }
