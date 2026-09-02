@@ -334,13 +334,12 @@ document.getElementById('qlinkStats').href='stats.html?id='+TID;
 
 async function loadNews(){
   if(!TID)return;
-  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(20);
+  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(30);
   const banner=document.getElementById('newsBanner');
   if(!data?.length){banner.innerHTML='';return;}
 
-  const isVote=t=>t.includes('توقع')||t.startsWith('🏆');
-  const newsItems=data.filter(n=>!isVote(n.content));
-  const voteItems=data.filter(n=>isVote(n.content));
+  const matchItems=data.filter(n=>n.match_id);
+  const generalItems=data.filter(n=>!n.match_id);
 
   const line=(id,label,items,color)=>items.length?`
     <div class="ticker-line" style="border-color:${color}55">
@@ -351,9 +350,9 @@ async function loadNews(){
       <button class="ticker-toggle" id="${id}Toggle" onclick="toggleTicker('${id}')">⏸</button>
     </div>`:'';
 
-  banner.innerHTML=`<div class="ticker-wrap">${line('news','📰 أخبار',newsItems,'#58a6ff')}${line('vote','🏆 توقعات',voteItems,'#c9a84c')}</div>`;
+  banner.innerHTML=`<div class="ticker-wrap">${line('match','⚽ أخبار المباريات',matchItems,'#1d4e89')}${line('general','📢 أخبار الدورة',generalItems,'#a3364c')}</div>`;
 
-  ['news','vote'].forEach(id=>{
+  ['match','general'].forEach(id=>{
     const track=document.getElementById(id+'Track');
     if(track)startTickerAnim(id,track);
   });
@@ -361,10 +360,11 @@ async function loadNews(){
 
 const tickerState={};
 function startTickerAnim(id,track){
+  if(tickerState[id]?.raf)cancelAnimationFrame(tickerState[id].raf);
   tickerState[id]={paused:false,pos:track.parentElement.offsetWidth};
   const step=()=>{
     if(!tickerState[id].paused){
-      tickerState[id].pos-=1;
+      tickerState[id].pos-=1.6;
       if(tickerState[id].pos < -track.scrollWidth) tickerState[id].pos=track.parentElement.offsetWidth;
       track.style.transform='translateX('+tickerState[id].pos+'px)';
     }
@@ -377,6 +377,9 @@ function toggleTicker(id){
   tickerState[id].paused=!tickerState[id].paused;
   document.getElementById(id+'Toggle').textContent=tickerState[id].paused?'▶':'⏸';
 }
+
+// تحديث تلقائي للشريط كل 25 ثانية بلا حاجة لإعادة تحميل الصفحة
+setInterval(()=>{if(TID)loadNews();},25000);
 function motdEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 
 function feedYoutubeId(url){

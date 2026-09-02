@@ -64,6 +64,9 @@ a{text-decoration:none;color:inherit}
 
 .stream-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#f85149,#cc3333);color:#fff;font-weight:800;font-size:14px;padding:10px 22px;border-radius:30px;margin-top:18px}
 .video-embed-wrap{position:relative;width:100%;max-width:760px;margin:18px auto 0;padding-bottom:56.25%;height:0;border-radius:14px;overflow:hidden;border:1px solid #E0DCCF;background:#000}
+.video-fs-btn{position:absolute;bottom:10px;left:10px;width:38px;height:38px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:8px;font-size:18px;cursor:pointer;z-index:5}
+.video-embed-wrap:fullscreen{padding-bottom:0;height:100vh;max-width:100%;border-radius:0}
+.video-embed-wrap:fullscreen iframe{width:100%;height:100%}
 .video-embed-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 
 .tabbar{position:fixed;bottom:0;left:0;right:0;background:rgba(22,27,34,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid #EDEAE0;display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
@@ -737,12 +740,14 @@ async function init(){
 
   if(m.stream_url){
     if(document.getElementById('floatBack'))document.getElementById('floatBack').href='tournament.html?id='+(m.tournament_id||'');
-  document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap">
+  document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap" id="videoEmbedBox">
       <iframe src="${m.stream_url}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+      <button class="video-fs-btn" onclick="toggleVideoFullscreen()" title="ملء الشاشة">⛶</button>
     </div>`;
   }else if(m.highlight_video_url){
-    document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap">
+    document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap" id="videoEmbedBox">
       <iframe src="${youtubeEmbed(m.highlight_video_url)}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+      <button class="video-fs-btn" onclick="toggleVideoFullscreen()" title="ملء الشاشة">⛶</button>
     </div>`;
   }
 
@@ -789,6 +794,17 @@ function safeTextColor(candidate,bgHex,fallbackDark,fallbackLight){
   return relLuminance(bgHex)>0.5?fallbackDark:fallbackLight;
 }
 window.safeTextColor=safeTextColor;window.contrastRatio=contrastRatio;
+
+function toggleVideoFullscreen(){
+  const box=document.getElementById('videoEmbedBox');
+  if(!box)return;
+  if(document.fullscreenElement){document.exitFullscreen();}
+  else{
+    (box.requestFullscreen||box.webkitRequestFullscreen||box.mozRequestFullScreen)?.call(box);
+    if(screen.orientation?.lock)screen.orientation.lock('landscape').catch(()=>{});
+  }
+}
+window.toggleVideoFullscreen=toggleVideoFullscreen;
 
 function genAvatarSvg(primary,secondary,number){
   const p=primary||'#9C9A8D',s=secondary||'#79786A';
