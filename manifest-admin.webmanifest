@@ -1,0 +1,28 @@
+{
+  "id": "./admin",
+  "name": "لوحة إدارة البطولات",
+  "short_name": "إدارة البطولات",
+  "description": "Tournament Admin — لوحة التحكم الإدارية لمنصة إدارة البطولات الرياضية",
+  "start_url": "./admin-home.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0A1C33",
+  "theme_color": "#0A1C33",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "admin-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "admin-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
