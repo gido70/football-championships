@@ -236,10 +236,10 @@ select option{background:#0f2a45;color:#ffffff}
     <div class="match-meta-panel">
       <div class="meta-title">⚖️ الحكام والمعلق والملعب</div>
       <div class="meta-grid">
-        <div class="meta-field"><label>الحكم الأول</label><input id="referee1" placeholder="اسم الحكم الأول"></div>
-        <div class="meta-field"><label>الحكم الثاني</label><input id="referee2" placeholder="اسم الحكم الثاني / مساعد"></div>
-        <div class="meta-field"><label>المعلق</label><input id="commentator" placeholder="اسم المعلق"></div>
-        <div class="meta-field"><label>الملعب</label><input id="venueName" placeholder="اسم الملعب"></div>
+        <div class="meta-field"><label>الحكم الأول</label><div style="display:flex;gap:6px"><input id="referee1" placeholder="اسم الحكم الأول" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee1')">🎤</button></div></div>
+        <div class="meta-field"><label>الحكم الثاني</label><div style="display:flex;gap:6px"><input id="referee2" placeholder="اسم الحكم الثاني / مساعد" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee2')">🎤</button></div></div>
+        <div class="meta-field"><label>المعلق</label><div style="display:flex;gap:6px"><input id="commentator" placeholder="اسم المعلق" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('commentator')">🎤</button></div></div>
+        <div class="meta-field"><label>الملعب</label><div style="display:flex;gap:6px"><input id="venueName" placeholder="اسم الملعب" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('venueName')">🎤</button></div></div>
         <div class="meta-field"><label>رابط البث (اختياري)</label><input id="streamUrl" placeholder="https://..."></div>
         <div class="meta-field"><label>رابط فيديو ملخص المباراة (اختياري)</label><input id="highlightVideoUrl" placeholder="رابط يوتيوب لملخص/تسجيل المباراة"></div>
         <div class="meta-field"><label>نجم المباراة (اختيارك)</label>
@@ -270,6 +270,7 @@ select option{background:#0f2a45;color:#ffffff}
         <span>👥 التشكيلة الأساسية</span>
         <div style="position:relative">
           <button type="button" id="injBtn" onclick="toggleInjDropdown()" style="background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.4);color:#f85149;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px">🩹 تسجيل إصابة <span id="injCount" style="display:none;background:#f85149;color:#fff;border-radius:10px;padding:0 6px;font-size:10px"></span></button>
+          <button type="button" class="voice-btn" onclick="startVoiceInjury()" title="تسجيل إصابة بالصوت">🎤</button>
           <button type="button" onclick="clearAllInjuries()" style="background:transparent;border:1px solid #30363d;color:#8b949e;border-radius:20px;padding:6px 14px;font-size:11px;cursor:pointer;font-family:inherit">🧹 مسح الإصابات القديمة</button>
           <div id="injDropdown" style="display:none;position:absolute;left:0;top:calc(100% + 6px);background:#161b22;border:1px solid #30363d;border-radius:14px;padding:8px;width:260px;max-height:280px;overflow-y:auto;z-index:200;box-shadow:0 8px 30px rgba(0,0,0,.6)">
             <div style="font-size:11px;color:#6e7b8f;padding:4px 6px 8px;font-weight:700">اختر اللاعب المصاب</div>
@@ -277,6 +278,7 @@ select option{background:#0f2a45;color:#ffffff}
           </div>
         </div>
       </div>
+      <div id="injuryVoiceStatus" style="font-size:11px;color:#8fa3c0;margin-top:4px;display:none"></div>
 
       <!-- شرائح اللاعبين المصابين -->
       <div id="injuredChips" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px"></div>
@@ -831,6 +833,59 @@ async function saveMin(){
   document.getElementById('mMin').textContent=m+"'";
   // match_minute غير موجود في الجدول؛ نعرضها محلياً فقط دون أن نكسر الحفظ
 }
+
+function startVoiceText(inputId){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  const input=document.getElementById(inputId);
+  if(!SR){alert('التعرّف الصوتي غير مدعوم في هذا المتصفح — جرّب Chrome');return;}
+  const rec=new SR();
+  rec.lang='ar-SA';
+  rec.interimResults=false;
+  const oldPlaceholder=input.placeholder;
+  input.placeholder='🎙️ استمع الآن...';
+  rec.onresult=(e)=>{
+    input.value=e.results[0][0].transcript;
+    input.placeholder=oldPlaceholder;
+  };
+  rec.onerror=()=>{input.placeholder=oldPlaceholder;};
+  rec.onend=()=>{input.placeholder=oldPlaceholder;};
+  rec.start();
+}
+window.startVoiceText=startVoiceText;
+
+async function startVoiceInjury(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('التعرّف الصوتي غير مدعوم في هذا المتصفح — جرّب Chrome');return;}
+  const rec=new SR();
+  rec.lang='ar-SA';
+  rec.interimResults=false;
+  const statusEl=document.getElementById('injuryVoiceStatus');
+  if(statusEl){statusEl.style.display='block';statusEl.style.color='#f7c948';statusEl.textContent='🎙️ استمع الآن... قل اسم اللاعب المصاب';}
+  rec.onresult=(e)=>{
+    const text=e.results[0][0].transcript;
+    const allPlayers=[...(hPl||[]),...(aPl||[])];
+    const norm=normalizeArabic(text);
+    let best=null,bestScore=0;
+    allPlayers.forEach(p=>{
+      const pn=normalizeArabic(p.full_name_ar||p.name||'');
+      let score=0;
+      if(pn.includes(norm)&&norm.length>=2)score+=10;
+      norm.split(/\s+/).forEach(w=>{if(w.length>=2&&pn.includes(w))score+=2;});
+      if(score>bestScore){bestScore=score;best=p;}
+    });
+    if(best&&statusEl){
+      selectInjured(best.id);
+      statusEl.style.color='#3fb950';
+      statusEl.textContent='✅ سمعت: "'+text+'" — تم تحديد/إلغاء إصابة: '+(best.full_name_ar||best.name);
+    }else if(statusEl){
+      statusEl.style.color='#ff6b6b';
+      statusEl.textContent='⚠️ سمعت: "'+text+'" — لم أجد لاعباً مطابقاً، اختره يدوياً من القائمة';
+    }
+  };
+  rec.onerror=(e)=>{if(statusEl){statusEl.style.color='#ff6b6b';statusEl.textContent='⚠️ تعذّر الاستماع ('+e.error+')';}};
+  rec.start();
+}
+window.startVoiceInjury=startVoiceInjury;
 
 function normalizeArabic(s){
   return (s||'').toLowerCase()
