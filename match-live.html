@@ -423,6 +423,28 @@ async function renderPredict(){
 
   const leaderboardLink=`<a href="leaderboard.html?tid=${cur.tournament_id}" class="pred-btn" style="display:block;text-align:center;background:#c9a84c;margin-top:10px">🏆 لوحة المتصدرين</a>`;
 
+  const isLocked=cur.status!=='scheduled';
+
+  if(isLocked&&myPred){
+    wrap.innerHTML=`${closestBanner}<div class="pred-wrap">
+      <div class="pred-title">🔒 توقعاتك — ${escapeHtmlPn(myName)}</div>
+      <div class="pred-done">توقعت: ${hName} ${myPred.home_score_pred} - ${myPred.away_score_pred} ${aName}</div>
+      <div class="pred-sub">التوقعات مغلقة الآن — لا يمكن التعديل بعد بداية المباراة</div>
+      ${leaderboardLink}
+      <div style="margin-top:16px">${statsHtml}</div>
+    </div>`;
+    return;
+  }
+  if(isLocked&&!myPred){
+    wrap.innerHTML=`${closestBanner}<div class="pred-wrap">
+      <div class="pred-title">🔒 التوقعات مغلقة</div>
+      <div class="pred-sub">${cur.status==='live'?'المباراة بدأت بالفعل — لم يعد بالإمكان التوقع':'انتهت المباراة'}</div>
+      ${leaderboardLink}
+      ${total>0?`<div style="margin-top:16px">${statsHtml}</div>`:''}
+    </div>`;
+    return;
+  }
+
   if(myPred){
     wrap.innerHTML=`${closestBanner}<div class="pred-wrap">
       <div class="pred-title">🎯 توقعاتك — ${escapeHtmlPn(myName)}</div>
