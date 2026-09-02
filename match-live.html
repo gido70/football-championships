@@ -295,7 +295,7 @@ async function renderVote(){
   const sk=getSessionKey();
 
   // اجلب اللاعبين من الفريقين
-  const {data:lineups}=await sb.from('match_lineups').select('player:players(id,name,full_name_ar,jersey_photo_url,team_id)').eq('match_id',MID);
+  const {data:lineups}=await sb.from('match_lineups').select('player:players(id,name,full_name_ar,number,jersey_photo_url,team_id)').eq('match_id',MID);
   const players=(lineups||[]).map(l=>l.player).filter(Boolean);
 
   if(!players.length){
@@ -321,7 +321,7 @@ async function renderVote(){
     const isWinner=p.id===topId&&total>1;
     const tColor=teamColorOf(p.team_id);
     return `<div class="vote-card ${isMyVote?'voted':''} ${isWinner?'winner':''}" onclick="castVote('${p.id}','${MID}')">
-      ${p.jersey_photo_url?`<img class="vote-av" src="${p.jersey_photo_url}">`:`<div class="vote-av" style="${tColor?`background:${tColor};color:#fff`:''}">${initials(p.full_name_ar||p.name)}</div>`}
+      ${p.jersey_photo_url?`<img class="vote-av" src="${p.jersey_photo_url}">`:`<div class="vote-av" style="overflow:hidden;padding:0">${genAvatarSvg(tColor,null,p.number)}</div>`}
       <div class="vote-info">
         <div class="vote-name">${p.full_name_ar||p.name}${isMyVote?' ✓':''}</div>
         <div class="vote-team">${isWinner?'🏆 المتصدر الآن':''}</div>
@@ -760,14 +760,25 @@ async function init(){
 }
 
 // ===== مكوّن بطاقة اللاعب الموحّد =====
+function genAvatarSvg(primary,secondary,number){
+  const p=primary||'#9C9A8D',s=secondary||'#79786A';
+  return `<svg viewBox="0 0 100 100" style="width:100%;height:100%;display:block">
+    <circle cx="50" cy="50" r="50" fill="${p}"/>
+    <circle cx="50" cy="36" r="15" fill="${s}" opacity="0.85"/>
+    <path d="M18 92 Q50 58 82 92 Z" fill="${s}" opacity="0.85"/>
+    <circle cx="50" cy="67" r="21" fill="#ffffff"/>
+    <text x="50" y="76" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="900" fill="${p}" text-anchor="middle">${number??''}</text>
+  </svg>`;
+}
+window.genAvatarSvg=genAvatarSvg;
+
 function pchip(name,photo,number,role,variant='',color){
   const ini=(name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
   const sn=(name||'—').split(' ').slice(0,2).join(' ');
-  const badgeStyle=(!photo&&color)?`background:${color};color:#fff`:'';
-  const badgeContent=(!photo&&number!=null)?('#'+number):ini;
+  const fallback=color?genAvatarSvg(color,null,number):`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#EDEAE0;color:#9C9A8D;font-weight:800">${number??ini}</div>`;
   return `<span class="pchip ${variant}">
     ${photo?`<img class="pchip-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
-    <span class="pchip-av" style="${photo?'display:none':badgeStyle}">${badgeContent}</span>
+    <span class="pchip-av" style="${photo?'display:none':'overflow:hidden'}">${fallback}</span>
     ${number?`<span class="pchip-num">#${number}</span>`:''}
     <span class="pchip-name">${sn}</span>
     ${role?`<span class="pchip-role">${role}</span>`:''}
@@ -829,7 +840,7 @@ async function loadLineups(m,ht,at,hColor,aColor){
       <div class="pl-num">${p.number??''}</div>
       <div class="pl-photo-wrap">
         ${photo?`<img class="pl-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
-        <div class="pl-initials" style="${photo?'display:none':'display:flex'}${!photo&&color?`;background:${color};color:#fff;border-color:${color}`:''}">${p.number??ini(name)}</div>
+        <div class="pl-initials" style="${photo?'display:none':'display:flex'};overflow:hidden;padding:0;border-width:0">${photo?ini(name):genAvatarSvg(color,null,p.number)}</div>
       </div>
       <div class="pl-name">${sn}</div>
       ${p.is_goalkeeper?'<div class="pl-badge">حارس</div>':''}
