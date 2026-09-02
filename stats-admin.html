@@ -79,6 +79,14 @@
         <div class="feature-icon">🌍</div><h3>الجنسيات المشاركة</h3><p>عدد اللاعبين لكل جنسية</p>
         <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportNationalities()">📊 إكسل</button><button class="btn secondary" onclick="exportNationalitiesWord()">📄 وورد</button></div>
       </div>
+      <div class="feature-card" style="text-align:right">
+        <div class="feature-icon">🎯</div><h3>ضربات الجزاء</h3><p>الأهداف المُحرَزة والضائعة من ركلات الجزاء أثناء اللعب</p>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportPenalties()">📊 إكسل</button><button class="btn secondary" onclick="exportPenaltiesWord()">📄 وورد</button></div>
+      </div>
+      <div class="feature-card" style="text-align:right">
+        <div class="feature-icon">🥅</div><h3>ركلات الترجيح</h3><p>عدد المباريات المحسومة بالترجيح، وتفاصيل كل ضربة</p>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportShootouts()">📊 إكسل</button><button class="btn secondary" onclick="exportShootoutsWord()">📄 وورد</button></div>
+      </div>
     </div>
   </section>
 
@@ -429,6 +437,93 @@ async function exportNationalitiesWord(){
   const rows=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([nat,c],i)=>[i+1,nat,c]);
   if(!rows.length){setMsg('⚠️ لا توجد بيانات جنسيات بعد','warn');return;}
   downloadWordSingle('جنسيات لاعبي '+TNAME+'.doc','الجنسيات المشاركة — '+TNAME,[{title:'🌍 الجنسيات المشاركة',headers,rows}]);
+  setMsg('✅ تم التحميل','ok');
+}
+
+async function getPenaltyData(){
+  const matches=await getMatches();
+  const mids=matches.map(m=>m.id);
+  const {data:scored}=await sb.from('match_events').select('*,player:players(name,full_name_ar,number)').in('match_id',mids).eq('event_type','goal').eq('event_subtype','penalty');
+  const {data:missed}=await sb.from('match_penalties_missed').select('*,player:players(name,full_name_ar,number)').in('match_id',mids);
+  return {matches,scored:scored||[],missed:missed||[]};
+}
+async function exportPenalties(){
+  setMsg('⏳ جاري التجهيز...');
+  const {matches,scored,missed}=await getPenaltyData();
+  const mByI={};matches.forEach(m=>mByI[m.id]=m);
+  if(!scored.length&&!missed.length){setMsg('⚠️ لا توجد ركلات جزاء مسجَّلة بعد لهذه البطولة','warn');return;}
+  const summaryRows=[{البيان:'إجمالي الأهداف من ركلات الجزاء',العدد:scored.length},{البيان:'إجمالي الركلات الضائعة',العدد:missed.length},{البيان:'إجمالي عدد ركلات الجزاء',العدد:scored.length+missed.length}];
+  const scoredRows=scored.map((e,i)=>({الترتيب:i+1,اللاعب:e.player?.full_name_ar||e.player?.name||'—',الرقم:e.player?.number||'',الفريق:teamName[e.team_id]||'','رقم المباراة':mByI[e.match_id]?.match_no||'',الدقيقة:e.minute||''}));
+  const missedRows=missed.map((e,i)=>({الترتيب:i+1,اللاعب:e.player?.full_name_ar||e.player?.name||'—',الرقم:e.player?.number||'',الفريق:teamName[e.team_id]||'','رقم المباراة':mByI[e.match_id]?.match_no||''}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(summaryRows,['البيان','العدد']),'ملخص');
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(scoredRows,['الترتيب','اللاعب','الرقم','الفريق','رقم المباراة','الدقيقة']),'أهداف من جزاء');
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(missedRows,['الترتيب','اللاعب','الرقم','الفريق','رقم المباراة']),'ركلات ضائعة');
+  dl(wb,'ضربات الجزاء - '+TNAME+'.xlsx');
+  setMsg('✅ تم التحميل','ok');
+}
+async function exportPenaltiesWord(){
+  setMsg('⏳ جاري التجهيز...');
+  const {matches,scored,missed}=await getPenaltyData();
+  const mByI={};matches.forEach(m=>mByI[m.id]=m);
+  if(!scored.length&&!missed.length){setMsg('⚠️ لا توجد ركلات جزاء مسجَّلة بعد لهذه البطولة','warn');return;}
+  const sumHeaders=['البيان','العدد'];
+  const sumRows=[['إجمالي الأهداف من ركلات الجزاء',scored.length],['إجمالي الركلات الضائعة',missed.length],['إجمالي عدد ركلات الجزاء',scored.length+missed.length]];
+  const scHeaders=['اللاعب','الرقم','الفريق','رقم المباراة','الدقيقة'];
+  const scRows=scored.map(e=>[e.player?.full_name_ar||e.player?.name||'—',e.player?.number||'',teamName[e.team_id]||'',mByI[e.match_id]?.match_no||'',e.minute||'']);
+  const msHeaders=['اللاعب','الرقم','الفريق','رقم المباراة'];
+  const msRows=missed.map(e=>[e.player?.full_name_ar||e.player?.name||'—',e.player?.number||'',teamName[e.team_id]||'',mByI[e.match_id]?.match_no||'']);
+  downloadWordSingle('ضربات الجزاء - '+TNAME+'.doc','ضربات الجزاء — '+TNAME,[
+    {title:'📊 ملخص عام',headers:sumHeaders,rows:sumRows},
+    {title:'✅ أهداف من ركلات الجزاء',headers:scHeaders,rows:scRows},
+    {title:'❌ ركلات جزاء ضائعة',headers:msHeaders,rows:msRows}
+  ]);
+  setMsg('✅ تم التحميل','ok');
+}
+
+async function getShootoutData(){
+  const matches=await getMatches();
+  const mids=matches.map(m=>m.id);
+  const {data}=await sb.from('match_penalty_shootout').select('*,player:players(name,full_name_ar,number)').in('match_id',mids).order('shot_order');
+  return {matches,shots:data||[]};
+}
+async function exportShootouts(){
+  setMsg('⏳ جاري التجهيز...');
+  const {matches,shots}=await getShootoutData();
+  if(!shots.length){setMsg('⚠️ لا توجد ركلات ترجيح مسجَّلة بعد لهذه البطولة','warn');return;}
+  const mByI={};matches.forEach(m=>mByI[m.id]=m);
+  const matchIds=[...new Set(shots.map(s=>s.match_id))];
+  const summaryRows=matchIds.map(mid=>{
+    const m=mByI[mid];
+    const ms=shots.filter(s=>s.match_id===mid);
+    const hC=ms.filter(s=>s.team_id===m.home_team_id&&s.result==='scored').length;
+    const aC=ms.filter(s=>s.team_id===m.away_team_id&&s.result==='scored').length;
+    return {'رقم المباراة':m.match_no,'الفريق الأول':teamName[m.home_team_id]||'','نتيجة الترجيح':hC+' - '+aC,'الفريق الثاني':teamName[m.away_team_id]||''};
+  });
+  const detailRows=shots.map((s,i)=>({الترتيب:i+1,'رقم المباراة':mByI[s.match_id]?.match_no||'',الفريق:teamName[s.team_id]||'',اللاعب:s.player?.full_name_ar||s.player?.name||'—',الرقم:s.player?.number||'',النتيجة:s.result==='scored'?'✅ هدف':'❌ ضائعة'}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(summaryRows,['رقم المباراة','الفريق الأول','نتيجة الترجيح','الفريق الثاني']),'ملخص الترجيح');
+  XLSX.utils.book_append_sheet(wb,sheetFromRows(detailRows,['الترتيب','رقم المباراة','الفريق','اللاعب','الرقم','النتيجة']),'تفاصيل كل ضربة');
+  dl(wb,'ركلات الترجيح - '+TNAME+'.xlsx');
+  setMsg('✅ تم التحميل','ok');
+}
+async function exportShootoutsWord(){
+  setMsg('⏳ جاري التجهيز...');
+  const {matches,shots}=await getShootoutData();
+  if(!shots.length){setMsg('⚠️ لا توجد ركلات ترجيح مسجَّلة بعد لهذه البطولة','warn');return;}
+  const mByI={};matches.forEach(m=>mByI[m.id]=m);
+  const matchIds=[...new Set(shots.map(s=>s.match_id))];
+  const sumHeaders=['رقم المباراة','الفريق الأول','نتيجة الترجيح','الفريق الثاني'];
+  const sumRows=matchIds.map(mid=>{
+    const m=mByI[mid];
+    const ms=shots.filter(s=>s.match_id===mid);
+    const hC=ms.filter(s=>s.team_id===m.home_team_id&&s.result==='scored').length;
+    const aC=ms.filter(s=>s.team_id===m.away_team_id&&s.result==='scored').length;
+    return [m.match_no,teamName[m.home_team_id]||'',hC+' - '+aC,teamName[m.away_team_id]||''];
+  });
+  const detHeaders=['رقم المباراة','الفريق','اللاعب','الرقم','النتيجة'];
+  const detRows=shots.map(s=>[mByI[s.match_id]?.match_no||'',teamName[s.team_id]||'',s.player?.full_name_ar||s.player?.name||'—',s.player?.number||'',s.result==='scored'?'✅ هدف':'❌ ضائعة']);
+  downloadWordSingle('ركلات الترجيح - '+TNAME+'.doc','ركلات الترجيح — '+TNAME,[{title:'🥅 ملخص المباريات المحسومة بالترجيح',headers:sumHeaders,rows:sumRows},{title:'📋 تفاصيل كل ضربة',headers:detHeaders,rows:detRows}]);
   setMsg('✅ تم التحميل','ok');
 }
 

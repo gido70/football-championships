@@ -353,6 +353,21 @@ select option{background:#0f2a45;color:#ffffff}
       </div>
     </div>
 
+    <!-- ركلات الترجيح -->
+    <div class="var-box" style="margin-top:20px">
+      <div class="var-title">🥅 ركلات الترجيح (عند التعادل في الأدوار الإقصائية)</div>
+      <div class="meta-grid">
+        <div class="meta-field"><label>الفريق</label><select id="soTeamSel"></select></div>
+        <div class="meta-field"><label>الضارب</label><select id="soPlayerSel"><option value="">— اختر —</option></select></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button class="btn-sm btn-sm-ok" style="flex:1" onclick="recordShootout('scored')">✅ سجّل الهدف</button>
+        <button class="btn-sm btn-sm-x" style="flex:1" onclick="recordShootout('missed')">❌ أضاع</button>
+      </div>
+      <div id="shootoutScore" style="text-align:center;font-size:20px;font-weight:900;margin-top:14px;color:#f7c948"></div>
+      <div id="shootoutList" style="margin-top:10px"></div>
+    </div>
+
     <!-- تسجيل الأحداث -->
     <div class="evt-grid">
       <div class="evt-panel">
@@ -362,6 +377,7 @@ select option{background:#0f2a45;color:#ffffff}
           <button class="evt-btn y" onclick="openEvt('h','yellow_card')">🟨 صفراء</button>
           <button class="evt-btn r" onclick="openEvt('h','red_card')">🟥 حمراء</button>
           <button class="evt-btn" onclick="openEvt('h','substitution')">🔄 تبديل</button>
+          <button class="evt-btn" style="background:rgba(248,81,73,.12);border-color:rgba(248,81,73,.3)" onclick="openEvt('h','penalty_missed')">❌ جزاء ضائع</button>
         </div>
         <div class="evt-form" id="hForm">
           <div style="font-size:13px;color:#b7c6dc;margin-bottom:10px" id="hFormLbl">تسجيل حدث</div>
@@ -371,6 +387,7 @@ select option{background:#0f2a45;color:#ffffff}
           </div>
           <div id="hVoiceStatus" style="font-size:11px;color:#8fa3c0;margin-top:4px;display:none"></div>
           <input type="number" id="hMin" placeholder="الدقيقة" min="1" max="120">
+          <label id="hPenWrap" style="display:none;align-items:center;gap:6px;margin-top:8px;font-size:12.5px;color:#f7c948;cursor:pointer"><input type="checkbox" id="hPenCheck"> ⚽ من ركلة جزاء؟</label>
           <div class="ef-btns">
             <button class="btn-sm btn-sm-ok" onclick="submitEvt('h')">✓ تأكيد</button>
             <button class="btn-sm btn-sm-x" onclick="closeEvt('h')">إلغاء</button>
@@ -384,6 +401,7 @@ select option{background:#0f2a45;color:#ffffff}
           <button class="evt-btn y" onclick="openEvt('a','yellow_card')">🟨 صفراء</button>
           <button class="evt-btn r" onclick="openEvt('a','red_card')">🟥 حمراء</button>
           <button class="evt-btn" onclick="openEvt('a','substitution')">🔄 تبديل</button>
+          <button class="evt-btn" style="background:rgba(248,81,73,.12);border-color:rgba(248,81,73,.3)" onclick="openEvt('a','penalty_missed')">❌ جزاء ضائع</button>
         </div>
         <div class="evt-form" id="aForm">
           <div style="font-size:13px;color:#b7c6dc;margin-bottom:10px" id="aFormLbl">تسجيل حدث</div>
@@ -393,6 +411,7 @@ select option{background:#0f2a45;color:#ffffff}
           </div>
           <div id="aVoiceStatus" style="font-size:11px;color:#8fa3c0;margin-top:4px;display:none"></div>
           <input type="number" id="aMin" placeholder="الدقيقة" min="1" max="120">
+          <label id="aPenWrap" style="display:none;align-items:center;gap:6px;margin-top:8px;font-size:12.5px;color:#f7c948;cursor:pointer"><input type="checkbox" id="aPenCheck"> ⚽ من ركلة جزاء؟</label>
           <div class="ef-btns">
             <button class="btn-sm btn-sm-ok" onclick="submitEvt('a')">✓ تأكيد</button>
             <button class="btn-sm btn-sm-x" onclick="closeEvt('a')">إلغاء</button>
@@ -419,7 +438,7 @@ async function pushNews(text){
   if(!cur||!cur.tournament_id)return;
   await sb.from('news_items').insert({tournament_id:cur.tournament_id,match_id:cur.id,title:text.slice(0,80),content:text});
 }
-const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل'};
+const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل',penalty_missed:'ركلة جزاء ضائعة'};
 const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
 
 function setMsg(t,c=''){const b=document.getElementById('statusMsg');if(b){b.className='status '+c;b.textContent=t;}}
@@ -470,6 +489,8 @@ async function onMatchChange(){
     `<option value="${m.home_team_id}">${m.ht?.name_ar||m.ht?.name||'الفريق الأول'}</option>`+
     `<option value="${m.away_team_id}">${m.at?.name_ar||m.at?.name||'الفريق الثاني'}</option>`;
   loadVarLog();
+  loadShootoutTeamSel();
+  loadShootoutLog();
   startStopClock();
   loadEvts();
   loadLineupAdmin(m);
@@ -576,6 +597,50 @@ function updateVARDisplay(status,teamId){
   if(status&&status!=='none'){el.style.display='block';el.textContent=txt;}
   else{el.style.display='none';}
 }
+
+async function loadShootoutTeamSel(){
+  const sel=document.getElementById('soTeamSel');
+  if(!sel||!cur)return;
+  sel.innerHTML=`<option value="${cur.home_team_id}">${cur.ht?.name_ar||cur.ht?.name||'الفريق الأول'}</option><option value="${cur.away_team_id}">${cur.at?.name_ar||cur.at?.name||'الفريق الثاني'}</option>`;
+  sel.onchange=loadShootoutPlayers;
+  await loadShootoutPlayers();
+}
+async function loadShootoutPlayers(){
+  const tid=document.getElementById('soTeamSel').value;
+  const {data}=await sb.from('players').select('id,name,full_name_ar,number').eq('team_id',tid).order('number');
+  const sel=document.getElementById('soPlayerSel');
+  sel.innerHTML='<option value="">— اختر —</option>'+(data||[]).map(p=>`<option value="${p.id}">#${p.number??''} ${p.full_name_ar||p.name}</option>`).join('');
+}
+async function recordShootout(result){
+  const tid=document.getElementById('soTeamSel').value;
+  const pid=document.getElementById('soPlayerSel').value;
+  if(!pid){setMsg('⚠️ اختر الضارب أولاً','warn');return;}
+  const {count}=await sb.from('match_penalty_shootout').select('id',{count:'exact',head:true}).eq('match_id',cur.id).eq('team_id',tid);
+  const {error}=await sb.from('match_penalty_shootout').insert({match_id:cur.id,team_id:tid,player_id:pid,shot_order:(count||0)+1,result});
+  if(error){setMsg('❌ فشل التسجيل: '+error.message,'err');return;}
+  document.getElementById('soPlayerSel').value='';
+  setMsg(result==='scored'?'✅ هدف!':'❌ ضائعة','ok');
+  loadShootoutLog();
+}
+async function loadShootoutLog(){
+  if(!cur)return;
+  const {data}=await sb.from('match_penalty_shootout').select('*,player:players(name,full_name_ar,number)').eq('match_id',cur.id).order('shot_order');
+  const scoreEl=document.getElementById('shootoutScore');
+  const listEl=document.getElementById('shootoutList');
+  if(!scoreEl||!listEl)return;
+  if(!data||!data.length){scoreEl.textContent='';listEl.innerHTML='';return;}
+  const hCount=data.filter(s=>s.team_id===cur.home_team_id&&s.result==='scored').length;
+  const aCount=data.filter(s=>s.team_id===cur.away_team_id&&s.result==='scored').length;
+  scoreEl.textContent=`${cur.ht?.name_ar||cur.ht?.name||''} ${hCount} — ${aCount} ${cur.at?.name_ar||cur.at?.name||''}`;
+  listEl.innerHTML=data.map(s=>{
+    const tn=s.team_id===cur.home_team_id?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name);
+    return `<div style="display:flex;justify-content:space-between;background:rgba(255,255,255,.04);border-radius:8px;padding:6px 10px;margin-bottom:5px;font-size:12.5px">
+      <span>#${s.shot_order} — ${tn} — ${s.player?.full_name_ar||s.player?.name||'—'}</span>
+      <span>${s.result==='scored'?'✅':'❌'}</span>
+    </div>`;
+  }).join('');
+}
+window.recordShootout=recordShootout;
 
 async function logVarEvent(){
   if(!cur)return;
@@ -1085,6 +1150,9 @@ function openEvt(side,type){
   const teamName=side==='h'?(cur.ht?.name_ar||cur.ht?.name||''):(cur.at?.name_ar||cur.at?.name||'');
   document.getElementById(side+'FormLbl').textContent='تسجيل '+(EL[type]||type)+' — '+teamName;
   document.getElementById(side+'Min').value=document.getElementById('minInput').value||'';
+  const penWrap=document.getElementById(side+'PenWrap');
+  penWrap.style.display=type==='goal'?'flex':'none';
+  document.getElementById(side+'PenCheck').checked=false;
   document.getElementById(side+'Form').classList.add('show');
   document.getElementById(side+'Form').scrollIntoView({behavior:'smooth',block:'center'});
 }
@@ -1097,7 +1165,20 @@ async function submitEvt(side){
   const min=parseInt(document.getElementById(side+'Min').value)||0;
   const tid=side==='h'?cur.home_team_id:cur.away_team_id;
   const type=evtType[side];
-  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:pid||null,team_id:tid,event_type:type,minute:min});
+
+  if(type==='penalty_missed'){
+    if(!pid){setMsg('⚠️ اختر اللاعب الذي أضاع ركلة الجزاء','warn');return;}
+    const {error}=await sb.from('match_penalties_missed').insert({match_id:cur.id,team_id:tid,player_id:pid});
+    if(error){setMsg('❌ فشل التسجيل: '+error.message,'err');return;}
+    closeEvt(side);
+    setMsg('✅ سُجِّلت ركلة الجزاء الضائعة — '+playerLabel,'ok');
+    const tn3=side==='h'?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name);
+    pushNews('❌ ركلة جزاء ضائعة لـ '+playerLabel+' ('+tn3+') في الدقيقة '+min);
+    return;
+  }
+
+  const isPenalty=type==='goal'&&document.getElementById(side+'PenCheck')?.checked;
+  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:pid||null,team_id:tid,event_type:type,minute:min,event_subtype:isPenalty?'penalty':null});
   if(error){setMsg('❌ فشل تسجيل الحدث: '+error.message,'err');return;}
 
   if(type==='goal'){
@@ -1108,10 +1189,10 @@ async function submitEvt(side){
   }
   closeEvt(side);
   loadEvts();
-  setMsg('✅ تم تسجيل '+(EL[type]||type)+' — '+playerLabel,'ok');
+  setMsg('✅ تم تسجيل '+(EL[type]||type)+(isPenalty?' (ركلة جزاء)':'')+' — '+playerLabel,'ok');
 
   const tn2=side==='h'?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name);
-  if(type==='goal')pushNews('⚽ هدف! '+playerLabel+' يسجل لـ'+tn2+' في الدقيقة '+min+' — '+(cur.home_score??0)+' - '+(cur.away_score??0));
+  if(type==='goal')pushNews((isPenalty?'⚽🎯 هدف من ركلة جزاء! ':'⚽ هدف! ')+playerLabel+' يسجل لـ'+tn2+' في الدقيقة '+min+' — '+(cur.home_score??0)+' - '+(cur.away_score??0));
   else if(type==='yellow_card')pushNews('🟨 بطاقة صفراء لـ '+playerLabel+' ('+tn2+')');
   else if(type==='red_card')pushNews('🟥 بطاقة حمراء لـ '+playerLabel+' ('+tn2+')');
 }
