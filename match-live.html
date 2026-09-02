@@ -312,14 +312,16 @@ async function renderVote(){
   const topId=Object.entries(countMap).sort((a,b)=>b[1]-a[1])[0]?.[0];
 
   function initials(n){return(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
+  function teamColorOf(teamId){return teamId===cur.home_team_id?cur.ht?.primary_color:(teamId===cur.away_team_id?cur.at?.primary_color:null);}
 
   const cards=players.map(p=>{
     const cnt=countMap[p.id]||0;
     const pct=Math.round(cnt/total*100);
     const isMyVote=myVote===p.id;
     const isWinner=p.id===topId&&total>1;
+    const tColor=teamColorOf(p.team_id);
     return `<div class="vote-card ${isMyVote?'voted':''} ${isWinner?'winner':''}" onclick="castVote('${p.id}','${MID}')">
-      ${p.jersey_photo_url?`<img class="vote-av" src="${p.jersey_photo_url}">`:`<div class="vote-av">${initials(p.full_name_ar||p.name)}</div>`}
+      ${p.jersey_photo_url?`<img class="vote-av" src="${p.jersey_photo_url}">`:`<div class="vote-av" style="${tColor?`background:${tColor};color:#fff`:''}">${initials(p.full_name_ar||p.name)}</div>`}
       <div class="vote-info">
         <div class="vote-name">${p.full_name_ar||p.name}${isMyVote?' ✓':''}</div>
         <div class="vote-team">${isWinner?'🏆 المتصدر الآن':''}</div>
@@ -727,7 +729,7 @@ async function init(){
     const {data:p}=await sb.from('players').select('name,full_name_ar,number,jersey_photo_url,team_id').eq('id',m.player_of_match_id).single();
     if(p){
       const tm=p.team_id===m.home_team_id?ht:at;
-      document.getElementById('motmWrap').innerHTML=`<div class="motm"><div class="motm-ic">⭐</div><div><div class="motm-lbl">رجل المباراة</div><div style="margin-top:6px">${pchip(p.full_name_ar||p.name,p.jersey_photo_url,p.number,tm?.name_ar||tm?.name||'','motm')}</div></div></div>`;
+      document.getElementById('motmWrap').innerHTML=`<div class="motm"><div class="motm-ic">⭐</div><div><div class="motm-lbl">رجل المباراة</div><div style="margin-top:6px">${pchip(p.full_name_ar||p.name,p.jersey_photo_url,p.number,tm?.name_ar||tm?.name||'','motm',tm?.primary_color)}</div></div></div>`;
     }
   }
 
@@ -736,12 +738,14 @@ async function init(){
 }
 
 // ===== مكوّن بطاقة اللاعب الموحّد =====
-function pchip(name,photo,number,role,variant=''){
+function pchip(name,photo,number,role,variant='',color){
   const ini=(name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
   const sn=(name||'—').split(' ').slice(0,2).join(' ');
+  const badgeStyle=(!photo&&color)?`background:${color};color:#fff`:'';
+  const badgeContent=(!photo&&number!=null)?('#'+number):ini;
   return `<span class="pchip ${variant}">
     ${photo?`<img class="pchip-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
-    <span class="pchip-av" style="${photo?'display:none':''}">${ini}</span>
+    <span class="pchip-av" style="${photo?'display:none':badgeStyle}">${badgeContent}</span>
     ${number?`<span class="pchip-num">#${number}</span>`:''}
     <span class="pchip-name">${sn}</span>
     ${role?`<span class="pchip-role">${role}</span>`:''}
@@ -756,6 +760,7 @@ async function loadEvents(m,ht,at){
   const variantMap={goal:'goal',yellow_card:'yellow',red_card:'red'};
   wrap.innerHTML=data.map(e=>{
     const side=e.team_id===m.home_team_id?'home':'away';
+    const tColor=side==='home'?ht?.primary_color:at?.primary_color;
     const name=e.manual_player_name||e.player?.full_name_ar||e.player?.name||'';
     const photo=e.player?.jersey_photo_url||null;
     const num=e.player?.number||null;
@@ -764,7 +769,7 @@ async function loadEvents(m,ht,at){
     return `<div class="evt-row ${side==='away'?'away-side':''}">
       <span class="evt-min">${e.minute||0}'</span>
       <span class="evt-ic">${EI[e.event_type]||'📌'}</span>
-      <div style="flex:1">${name?pchip(name,photo,num,role,v):''} <span style="color:#9C9A8D;font-size:12px">${EL[e.event_type]||e.event_type}</span></div>
+      <div style="flex:1">${name?pchip(name,photo,num,role,v,tColor):''} <span style="color:#9C9A8D;font-size:12px">${EL[e.event_type]||e.event_type}</span></div>
     </div>`;
   }).join('');
 }
@@ -790,7 +795,7 @@ async function loadLineups(m,ht,at,hColor,aColor){
     return `<div class="staff-row">${persons.map(card).join('')}</div>`;
   };
 
-  const plCard=(p,isSub=false)=>{
+  const plCard=(p,isSub=false,color)=>{
     const name=p.full_name_ar||p.name||'—';
     const sn=name.split(' ').slice(0,2).join(' ');
     const photo=p.jersey_photo_url;
@@ -798,7 +803,7 @@ async function loadLineups(m,ht,at,hColor,aColor){
       <div class="pl-num">${p.number??''}</div>
       <div class="pl-photo-wrap">
         ${photo?`<img class="pl-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
-        <div class="pl-initials" style="${photo?'display:none':'display:flex'}">${ini(name)}</div>
+        <div class="pl-initials" style="${photo?'display:none':'display:flex'}${!photo&&color?`;background:${color};color:#fff;border-color:${color}`:''}">${p.number??ini(name)}</div>
       </div>
       <div class="pl-name">${sn}</div>
       ${p.is_goalkeeper?'<div class="pl-badge">حارس</div>':''}
@@ -813,7 +818,7 @@ async function loadLineups(m,ht,at,hColor,aColor){
       <span style="font-size:11px;color:#9C9A8D;margin-right:6px">(${players.length} لاعب)</span>
     </div>
     ${staffRow(staff,color)}
-    <div class="pl-grid">${players.map(p=>plCard(isLineup?p.player||p:p,p.is_starting===false)).join('')}</div>
+    <div class="pl-grid">${players.map(p=>plCard(isLineup?p.player||p:p,p.is_starting===false,color)).join('')}</div>
   </div>`;
 
   if(!data||!data.length){
