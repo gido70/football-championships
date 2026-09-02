@@ -79,28 +79,52 @@ async function initTournaments(){
 }
 
 const AWARD_DEFS=[
-  {key:'top_scorer',title:'👟 هداف البطولة'},
-  {key:'best_goalkeeper',title:'🧤 أفضل حارس مرمى'},
-  {key:'best_player',title:'🏅 أفضل لاعب في البطولة'},
+  {key:'top_scorer',title:'👟 هداف البطولة',isPlayer:true},
+  {key:'best_goalkeeper',title:'🧤 أفضل حارس مرمى',isPlayer:true},
+  {key:'best_player',title:'🏅 أفضل لاعب في البطولة',isPlayer:true},
   {key:'best_admin',title:'🧑‍💼 أفضل إداري'},
   {key:'best_management',title:'🏆 أفضل إدارة فريق'},
 ];
 
+let ALL_PLAYERS=[];
+async function loadAllPlayers(){
+  const {data}=await sb.from('players').select('id,name,full_name_ar,number,jersey_photo_url,team_id,teams!inner(name,name_ar,tournament_id)').eq('teams.tournament_id',TID);
+  ALL_PLAYERS=data||[];
+}
+
 function buildAwardsForm(){
-  document.getElementById('awardsForm').innerHTML=AWARD_DEFS.map(a=>`
-    <div class="field full">
+  document.getElementById('awardsForm').innerHTML=AWARD_DEFS.map(a=>{
+    if(a.isPlayer){
+      const opts=ALL_PLAYERS.map(p=>`<option value="${p.id}">${p.full_name_ar||p.name} — #${p.number??''} — ${p.teams?.name_ar||p.teams?.name||''}</option>`).join('');
+      return `<div class="field full">
+        <label>${a.title}</label>
+        <select id="award_${a.key}_player">
+          <option value="">— اختر لاعباً —</option>
+          ${opts}
+        </select>
+      </div>`;
+    }
+    return `<div class="field full">
       <label>${a.title}</label>
       <input type="text" id="award_${a.key}_name" placeholder="اسم الفائز">
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 async function loadAwards(){
+  await loadAllPlayers();
   buildAwardsForm();
   const {data}=await sb.from('tournament_awards').select('*').eq('tournament_id',TID);
   (data||[]).forEach(a=>{
-    const el=document.getElementById('award_'+a.award_key+'_name');
-    if(el)el.value=a.winner_name||'';
+    const def=AWARD_DEFS.find(d=>d.key===a.award_key);
+    if(!def)return;
+    if(def.isPlayer){
+      const el=document.getElementById('award_'+a.award_key+'_player');
+      if(el&&a.winner_player_id)el.value=a.winner_player_id;
+    }else{
+      const el=document.getElementById('award_'+a.award_key+'_name');
+      if(el)el.value=a.winner_name||'';
+    }
   });
 }
 
@@ -109,15 +133,26 @@ async function saveAwards(){
   msg.className='status';msg.textContent='⏳ جاري الحفظ...';
   let ok=0,fail=0;
   for(const a of AWARD_DEFS){
-    const name=document.getElementById('award_'+a.key+'_name').value.trim();
-    if(!name)continue;
-    const {error}=await sb.from('tournament_awards').upsert({
-      tournament_id:TID,award_key:a.key,title:a.title,winner_name:name
-    },{onConflict:'tournament_id,award_key'});
+    let payload={tournament_id:TID,award_key:a.key,title:a.title};
+    if(a.isPlayer){
+      const pid=document.getElementById('award_'+a.key+'_player').value;
+      if(!pid)continue;
+      const p=ALL_PLAYERS.find(pp=>pp.id===pid);
+      payload.winner_player_id=pid;
+      payload.winner_name=p?.full_name_ar||p?.name||null;
+      payload.winner_team_id=p?.team_id||null;
+      payload.winner_photo_url=p?.jersey_photo_url||null;
+    }else{
+      const name=document.getElementById('award_'+a.key+'_name').value.trim();
+      if(!name)continue;
+      payload.winner_name=name;
+      payload.winner_player_id=null;
+    }
+    const {error}=await sb.from('tournament_awards').upsert(payload,{onConflict:'tournament_id,award_key'});
     if(error)fail++;else ok++;
   }
   if(fail){msg.className='status err';msg.textContent='⚠️ تم حفظ '+ok+'، وفشل '+fail;}
-  else{msg.className='status ok';msg.textContent='✅ تم حفظ الجوائز بنجاح';}
+  else{msg.className='status ok';msg.textContent='✅ تم حفظ الجوائز — الصورة والرقم والفريق تُسحب تلقائياً من ملف اللاعب';}
 }
 window.saveAwards=saveAwards;
 

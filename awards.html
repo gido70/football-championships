@@ -132,6 +132,13 @@ async function init(){
   const {data:teams}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
   const teamName={};(teams||[]).forEach(tm=>teamName[tm.id]=tm.name_ar||tm.name||'');
 
+  const playerIds=(awards||[]).map(a=>a.winner_player_id).filter(Boolean);
+  const numberMap={};
+  if(playerIds.length){
+    const {data:pls}=await sb.from('players').select('id,number').in('id',playerIds);
+    (pls||[]).forEach(p=>numberMap[p.id]=p.number);
+  }
+
   const aMap={};(awards||[]).forEach(a=>aMap[a.award_key]=a);
 
   document.getElementById('awardsGrid').innerHTML=AWARD_DEFS.map(def=>{
@@ -139,6 +146,7 @@ async function init(){
     const photo=a?.winner_photo_url||null;
     const name=a?.winner_name||null;
     const team=a?.winner_team_id?teamName[a.winner_team_id]:'';
+    const number=a?.winner_player_id?numberMap[a.winner_player_id]:null;
     return `<div class="award-card${def.key==='top_scorer'||def.key==='best_player'?' top':''}">
       <div class="award-banner">
         <span class="award-ic">${def.ic}</span>
@@ -148,7 +156,7 @@ async function init(){
       </div>
       <div class="award-body">
         <div class="award-type">${def.ic} ${def.title}</div>
-        <div class="award-name">${name||'—'}</div>
+        <div class="award-name">${name||'—'}${number!=null?` <span style="opacity:.7">#${number}</span>`:''}</div>
         ${team?`<div class="award-team">👥 ${team}</div>`:''}
       </div>
     </div>`;
