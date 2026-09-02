@@ -213,6 +213,7 @@ function dl(wb,filename){XLSX.writeFile(wb,filename);}
 function sheetFromRows(rows,headers){
   const ws=XLSX.utils.json_to_sheet(rows,{header:headers});
   ws['!cols']=headers.map(()=>({wch:20}));
+  ws['!views']=[{RTL:true}];
   return ws;
 }
 
