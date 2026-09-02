@@ -315,6 +315,32 @@ select option{background:#0f2a45;color:#ffffff}
         <button class="var-btn" data-var="red_card_review" onclick="setVAR('red_card_review')">🟥 مراجعة طرد</button>
       </div>
       <div class="var-status-display" id="varStatusDisplay"></div>
+
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1)">
+        <div style="font-size:13px;font-weight:800;color:#b7c6dc;margin-bottom:10px">📋 تسجيل القرار في السجل الدائم (يبقى ظاهراً للجمهور حتى بعد انتهاء المراجعة)</div>
+        <div class="meta-grid">
+          <div class="meta-field"><label>الفريق</label><select id="varLogTeam"><option value="">— اختر —</option></select></div>
+          <div class="meta-field"><label>نوع الحالة</label>
+            <select id="varLogType">
+              <option value="penalty">ضربة جزاء</option>
+              <option value="goal">هدف</option>
+              <option value="red_card">بطاقة حمراء</option>
+              <option value="other">أخرى</option>
+            </select>
+          </div>
+          <div class="meta-field"><label>القرار النهائي</label>
+            <select id="varLogResult">
+              <option value="awarded">تم احتسابه</option>
+              <option value="cancelled">أُلغي</option>
+              <option value="confirmed">تأكيد قرار الحكم</option>
+            </select>
+          </div>
+          <div class="meta-field"><label>الدقيقة</label><input type="number" id="varLogMinute" min="1" max="120"></div>
+        </div>
+        <button class="btn-meta-save" style="margin-top:10px" onclick="logVarEvent()">➕ إضافة للسجل</button>
+        <div id="varLogMsg" style="font-size:12px;margin-top:8px"></div>
+        <div id="varLogList" style="margin-top:12px"></div>
+      </div>
     </div>
 
     <!-- تسجيل الأحداث -->
@@ -429,6 +455,11 @@ async function onMatchChange(){
     `<option value="${m.home_team_id}">${m.ht?.name_ar||m.ht?.name||'الفريق الأول'}</option>`+
     `<option value="${m.away_team_id}">${m.at?.name_ar||m.at?.name||'الفريق الثاني'}</option>`;
   vs.value=m.var_team_id||'';
+  const vlt=document.getElementById('varLogTeam');
+  vlt.innerHTML='<option value="">— اختر —</option>'+
+    `<option value="${m.home_team_id}">${m.ht?.name_ar||m.ht?.name||'الفريق الأول'}</option>`+
+    `<option value="${m.away_team_id}">${m.at?.name_ar||m.at?.name||'الفريق الثاني'}</option>`;
+  loadVarLog();
   startStopClock();
   loadEvts();
   loadLineupAdmin(m);
@@ -535,6 +566,46 @@ function updateVARDisplay(status,teamId){
   if(status&&status!=='none'){el.style.display='block';el.textContent=txt;}
   else{el.style.display='none';}
 }
+
+async function logVarEvent(){
+  if(!cur)return;
+  const team_id=document.getElementById('varLogTeam').value||null;
+  const var_type=document.getElementById('varLogType').value;
+  const var_result=document.getElementById('varLogResult').value;
+  const minute=parseInt(document.getElementById('varLogMinute').value)||null;
+  const msg=document.getElementById('varLogMsg');
+  const {data:existing}=await sb.from('match_var_events').select('id').eq('match_id',cur.id);
+  if((existing||[]).length>=4){msg.style.color='#ff6b6b';msg.textContent='⚠️ وصلت للحد الأقصى (4 مراجعات فار لكل مباراة)';return;}
+  const {error}=await sb.from('match_var_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,team_id,var_type,var_result,minute});
+  if(error){msg.style.color='#ff6b6b';msg.textContent='❌ فشل: '+error.message;return;}
+  msg.style.color='#34d399';msg.textContent='✅ أُضيف للسجل الدائم';
+  document.getElementById('varLogMinute').value='';
+  loadVarLog();
+}
+window.logVarEvent=logVarEvent;
+
+async function loadVarLog(){
+  if(!cur)return;
+  const {data}=await sb.from('match_var_events').select('*').eq('match_id',cur.id).order('created_at');
+  const list=document.getElementById('varLogList');
+  if(!data||!data.length){list.innerHTML='';return;}
+  const typeMap={penalty:'ضربة جزاء',goal:'هدف',red_card:'بطاقة حمراء',other:'أخرى'};
+  const resMap={awarded:'✅ تم احتسابه',cancelled:'❌ أُلغي',confirmed:'☑️ تأكيد قرار الحكم'};
+  list.innerHTML='<div style="font-size:12px;color:#8fa3c0;margin-bottom:6px">السجل الحالي ('+data.length+'/4):</div>'+
+    data.map((e,i)=>{
+      const tn=e.team_id===cur.home_team_id?(cur.ht?.name_ar||cur.ht?.name):(e.team_id===cur.away_team_id?(cur.at?.name_ar||cur.at?.name):'—');
+      return `<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12.5px">
+        <span>${i+1}) ${tn} — ${typeMap[e.var_type]} — ${resMap[e.var_result]}${e.minute?' ('+e.minute+"')":''}</span>
+        <button onclick="delVarEvent('${e.id}')" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:14px">🗑</button>
+      </div>`;
+    }).join('');
+}
+async function delVarEvent(id){
+  if(!confirm('حذف هذا القيد من سجل الفار؟'))return;
+  await sb.from('match_var_events').delete().eq('id',id);
+  loadVarLog();
+}
+window.delVarEvent=delVarEvent;
 
 async function setVAR(status){
   if(!cur)return;
