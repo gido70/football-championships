@@ -818,8 +818,10 @@ async function loadVarLog(m,ht,at){
   if(!data||!data.length){wrap.innerHTML='';return;}
   const typeMap={penalty:'ضربة جزاء',goal:'هدف',red_card:'بطاقة حمراء',other:'أخرى'};
   const resStyle={awarded:['✅ تم احتسابه','rgba(63,185,80,.15)','#2d6a4f'],cancelled:['❌ أُلغي','rgba(248,81,73,.15)','#a3364c'],confirmed:['☑️ تأكيد قرار الحكم','rgba(88,166,255,.15)','#1d4e89']};
+  const hCount=data.filter(e=>e.team_id===m.home_team_id).length;
+  const aCount=data.filter(e=>e.team_id===m.away_team_id).length;
   wrap.innerHTML=`<div class="var-log-wrap">
-    <div class="var-log-title">📺 سجل مراجعات الفار في هذه المباراة (${data.length})</div>
+    <div class="var-log-title">📺 سجل مراجعات الفار — ${ht?.name_ar||ht?.name||''}: ${hCount}/2 — ${at?.name_ar||at?.name||''}: ${aCount}/2</div>
     ${data.map(e=>{
       const tn=e.team_id===m.home_team_id?(ht?.name_ar||ht?.name):(e.team_id===m.away_team_id?(at?.name_ar||at?.name):'—');
       const [label,bg,color]=resStyle[e.var_result]||['—','#eee','#666'];
