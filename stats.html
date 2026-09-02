@@ -350,10 +350,14 @@ async function buildInjuries(teamName){
   const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url,team_id,injury_note').eq('tournament_id',TID).eq('is_injured',true);
   const wrap=document.getElementById('injuriesWrap');
   if(!players||!players.length){wrap.innerHTML='<div class="empty"><span>💪</span><p>لا توجد إصابات مسجلة — الجميع بصحة جيدة</p></div>';return;}
-  wrap.innerHTML=players.map(p=>`<div class="info-card">
-    ${p.jersey_photo_url?`<img class="lead-photo" src="${p.jersey_photo_url}">`:`<div class="info-ic">🩹</div>`}
-    <div class="info-body"><b>${p.full_name_ar||p.name}</b><span>${teamName[p.team_id]||''}${p.injury_note?' — '+p.injury_note:''}</span></div>
-  </div>`).join('');
+  wrap.innerHTML=players.map(p=>{
+    const nm=p.full_name_ar||p.name||'';
+    const ini=nm.trim().split(' ').map(w=>w[0]).slice(0,2).join('');
+    return `<div class="info-card">
+    ${p.jersey_photo_url?`<img class="lead-photo" src="${p.jersey_photo_url}">`:`<div class="info-ic" style="background:#21262d;color:#8b949e;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center">${ini}</div>`}
+    <div class="info-body"><b>${nm}</b><span>${teamName[p.team_id]||''}${p.injury_note?' — '+p.injury_note:''}</span></div>
+  </div>`;
+  }).join('');
 }
 
 init().catch(err=>{
