@@ -32,7 +32,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .tabs-bar{background:#FFFFFF;border-bottom:1px solid #EDEAE0;overflow-x:auto}
 .tabs{max-width:1000px;margin:0 auto;display:flex;padding:0 20px}
 .tab{padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#79786A;transition:.2s;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
-.tab.active{color:var(--tc,#c9a84c);border-bottom-color:var(--tc,#c9a84c)}
+.tab.active{color:var(--tc-text,#c9a84c);border-bottom-color:var(--tc,#c9a84c)}
 .tab:hover:not(.active){color:#2C2C2A}
 
 /* MAIN */
@@ -48,7 +48,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .player-card:active{transform:translateY(0);box-shadow:0 1px 0 rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.05)}
 .player-photo{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #FFFFFF;box-shadow:0 0 0 2px var(--tc,#c9a84c),0 4px 10px rgba(0,0,0,.12);margin:0 auto 10px;display:block}
 .player-ph{width:72px;height:72px;border-radius:50%;background:#EDEAE0;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;border:3px solid #FFFFFF;box-shadow:0 0 0 2px var(--tc,#c9a84c),0 4px 10px rgba(0,0,0,.12)}
-.player-number{position:absolute;top:10px;left:10px;background:var(--tc,#c9a84c);color:#2C2C2A;font-size:12px;font-weight:900;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,.2)}
+.player-number{position:absolute;top:10px;left:10px;background:var(--tc,#c9a84c);color:var(--tc-num,#2C2C2A);font-size:12px;font-weight:900;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,.2)}
 .player-name{font-size:14px;font-weight:700;color:#2C2C2A;margin-bottom:4px;line-height:1.3}
 .player-nat{font-size:12px;color:#79786A;margin-top:2px}
 
@@ -77,7 +77,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .match-top{display:flex;justify-content:space-between;margin-bottom:10px;font-size:12px;color:#79786A}
 .match-score-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
 .mt{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:#2C2C2A}
-.mt.current{color:var(--tc,#c9a84c)}
+.mt.current{color:var(--tc-text,#c9a84c)}
 .mt.away{flex-direction:row-reverse}
 .mt-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 .ms-center{text-align:center}
@@ -145,6 +145,20 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 <script>
 const sb=supabase.createClient("https://npoowwdjpbvhyjrmeqkv.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY");
 const TID=new URLSearchParams(location.search).get('id');
+function relLum(hex){
+  if(!hex)return 0;
+  const c=hex.replace('#','');
+  const r=parseInt(c.substring(0,2),16)/255, g=parseInt(c.substring(2,4),16)/255, b=parseInt(c.substring(4,6),16)/255;
+  const f=v=>v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);
+  return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b);
+}
+function contrastR(h1,h2){const l1=relLum(h1)+0.05,l2=relLum(h2)+0.05;return l1>l2?l1/l2:l2/l1;}
+function safeText(candidate,bg,dark,light){
+  dark=dark||'#2C2C2A';light=light||'#FFFFFF';
+  if(candidate&&contrastR(candidate,bg)>=3)return candidate;
+  return relLum(bg)>0.5?dark:light;
+}
+
 let teamColor='#c9a84c';
 let teamData=null;
 
@@ -172,9 +186,16 @@ async function loadTeam(){
   document.getElementById('teamInitial').style.background=`rgba(255,255,255,.15)`;
   document.getElementById('teamInitial').textContent=name.charAt(0);
 
-  // تطبيق لون الفريق على التبويبات
+  // تطبيق لون الفريق على التبويبات (بتباين آمن)
+  const textOnPage=safeText(color,'#FFFFFF');
+  const textOnColor=safeText('#2C2C2A',color);
   document.getElementById('tabsRow').style.setProperty('--tc',color);
-  document.querySelectorAll('.player-card,.match-item').forEach(el=>el.style.setProperty('--tc',color));
+  document.getElementById('tabsRow').style.setProperty('--tc-text',textOnPage);
+  document.querySelectorAll('.player-card,.match-item').forEach(el=>{
+    el.style.setProperty('--tc',color);
+    el.style.setProperty('--tc-text',textOnPage);
+    el.style.setProperty('--tc-num',textOnColor);
+  });
 }
 
 async function loadSquad(){
@@ -197,8 +218,8 @@ async function loadSquad(){
     const role=p.role||'player_resident';
     const photo=p.jersey_photo_url||null;
     const subtitle=roleLabel[role]||p.nationality||'';
-    return `<div class="player-card" style="--tc:${teamColor}">
-      ${num?`<div class="player-number">${num}</div>`:''}
+    return `<div class="player-card" style="--tc:${teamColor};--tc-num:${safeText('#2C2C2A',teamColor)}">
+      ${num?`<div class="player-number" style="color:var(--tc-num)">${num}</div>`:''}
       ${photo
         ? `<img class="player-photo" src="${photo}" alt="${name}" onerror="this.outerHTML='<div class=player-ph>👤</div>'">`
         : '<div class="player-ph">👤</div>'}

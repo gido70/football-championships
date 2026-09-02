@@ -760,14 +760,33 @@ async function init(){
 }
 
 // ===== مكوّن بطاقة اللاعب الموحّد =====
+function relLuminance(hex){
+  if(!hex)return 0;
+  const c=hex.replace('#','');
+  const r=parseInt(c.substring(0,2),16)/255, g=parseInt(c.substring(2,4),16)/255, b=parseInt(c.substring(4,6),16)/255;
+  const f=v=>v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);
+  return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b);
+}
+function contrastRatio(hex1,hex2){
+  const l1=relLuminance(hex1)+0.05, l2=relLuminance(hex2)+0.05;
+  return l1>l2?l1/l2:l2/l1;
+}
+function safeTextColor(candidate,bgHex,fallbackDark,fallbackLight){
+  fallbackDark=fallbackDark||'#2C2C2A';fallbackLight=fallbackLight||'#FFFFFF';
+  if(candidate&&contrastRatio(candidate,bgHex)>=3)return candidate;
+  return relLuminance(bgHex)>0.5?fallbackDark:fallbackLight;
+}
+window.safeTextColor=safeTextColor;window.contrastRatio=contrastRatio;
+
 function genAvatarSvg(primary,secondary,number){
   const p=primary||'#9C9A8D',s=secondary||'#79786A';
+  const numColor=safeTextColor(p,'#ffffff');
   return `<svg viewBox="0 0 100 100" style="width:100%;height:100%;display:block">
     <circle cx="50" cy="50" r="50" fill="${p}"/>
     <circle cx="50" cy="36" r="15" fill="${s}" opacity="0.85"/>
     <path d="M18 92 Q50 58 82 92 Z" fill="${s}" opacity="0.85"/>
     <circle cx="50" cy="67" r="21" fill="#ffffff"/>
-    <text x="50" y="76" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="900" fill="${p}" text-anchor="middle">${number??''}</text>
+    <text x="50" y="76" font-family="Arial,Helvetica,sans-serif" font-size="24" font-weight="900" fill="${numColor}" text-anchor="middle">${number??''}</text>
   </svg>`;
 }
 window.genAvatarSvg=genAvatarSvg;
@@ -806,8 +825,8 @@ async function loadEvents(m,ht,at){
     </div>`;
   }).join('');
   wrap.innerHTML=`<div class="evt-legend" style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:#79786A;padding:0 10px 8px;border-bottom:1px solid #EDEAE0;margin-bottom:4px">
-    <span style="color:${ht?.primary_color||'#79786A'}">${ht?.name_ar||ht?.name||''} ▶</span>
-    <span style="color:${at?.primary_color||'#79786A'}">◀ ${at?.name_ar||at?.name||''}</span>
+    <span style="color:${safeTextColor(ht?.primary_color,'#F5F3EE')}">${ht?.name_ar||ht?.name||''} ▶</span>
+    <span style="color:${safeTextColor(at?.primary_color,'#F5F3EE')}">◀ ${at?.name_ar||at?.name||''}</span>
   </div>`+wrap.innerHTML;
 }
 
@@ -826,8 +845,8 @@ async function loadLineups(m,ht,at,hColor,aColor){
     if(!persons.length)return '';
     const card=([photo,name,role])=>`<div class="staff-card" style="border-color:${color}44">
       ${photo?`<img class="staff-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
-      <div class="staff-initials" style="border-color:${color};color:${color}${photo?';display:none':''}">${ini(name||role)}</div>
-      <div class="staff-info"><div class="staff-role" style="color:${color}">${role}</div><div class="staff-name">${name||'—'}</div></div>
+      <div class="staff-initials" style="border-color:${color};color:${safeTextColor(color,'#F5F3EE')}${photo?';display:none':''}">${ini(name||role)}</div>
+      <div class="staff-info"><div class="staff-role" style="color:${safeTextColor(color,'#F5F3EE')}">${role}</div><div class="staff-name">${name||'—'}</div></div>
     </div>`;
     return `<div class="staff-row">${persons.map(card).join('')}</div>`;
   };
