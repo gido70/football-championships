@@ -94,6 +94,8 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .live-team-name{font-size:14px;font-weight:800;color:#2C2C2A;flex:1;text-align:center}
 .live-score-box{font-size:24px;font-weight:900;color:#fff;background:#2C2C2A;border-radius:10px;padding:6px 16px;min-width:70px;text-align:center}
 .live-cta{text-align:center;margin-top:10px;font-size:12px;font-weight:800;color:#ff5c5c}
+.live-vote-btn{display:block;text-align:center;margin-top:10px;background:linear-gradient(135deg,#c9a84c,#a5813a);color:#0d1117;font-weight:900;font-size:13px;padding:11px;border-radius:10px;text-decoration:none;box-shadow:0 4px 0 rgba(0,0,0,.15),0 6px 14px rgba(0,0,0,.12)}
+.live-vote-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.15)}
 
 .feed-wrap{max-width:900px;margin:0 auto;padding:14px 16px 4px}
 .feed-post{background:#161b22;border:1px solid #21262d;border-radius:14px;margin-bottom:12px;overflow:hidden;text-align:right}
@@ -500,15 +502,18 @@ async function loadLiveMatch(){
   const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(2);
   if(!matches?.length){sec.innerHTML='';return;}
   sec.innerHTML=`<div class="live-wrap">${matches.map(m=>`
-    <a class="live-card" href="match-live.html?id=${m.id}" style="display:block;margin-bottom:10px">
-      <div class="live-badge-row"><span class="dot"></span><span class="txt">مباشر الآن</span></div>
-      <div class="live-teams-row">
-        <div class="live-team-name">${motdEsc(m.ht?.name_ar||m.ht?.name||'')}</div>
-        <div class="live-score-box">${m.home_score??0} - ${m.away_score??0}</div>
-        <div class="live-team-name">${motdEsc(m.at?.name_ar||m.at?.name||'')}</div>
-      </div>
-      <div class="live-cta">⚡ اضغط هنا لمشاهدة المباراة مباشرة بكل تفاصيلها</div>
-    </a>
+    <div class="live-card" style="margin-bottom:10px">
+      <a href="match-live.html?id=${m.id}" style="display:block;color:inherit;text-decoration:none">
+        <div class="live-badge-row"><span class="dot"></span><span class="txt">مباشر الآن</span></div>
+        <div class="live-teams-row">
+          <div class="live-team-name">${motdEsc(m.ht?.name_ar||m.ht?.name||'')}</div>
+          <div class="live-score-box">${m.home_score??0} - ${m.away_score??0}</div>
+          <div class="live-team-name">${motdEsc(m.at?.name_ar||m.at?.name||'')}</div>
+        </div>
+        <div class="live-cta">⚡ اضغط هنا لمشاهدة المباراة مباشرة بكل تفاصيلها</div>
+      </a>
+      <a href="match-live.html?id=${m.id}&tab=vote" class="live-vote-btn">🗳️ صوّت الآن لاختيار أفضل لاعب في المباراة</a>
+    </div>
   `).join('')}</div>`;
 }
 

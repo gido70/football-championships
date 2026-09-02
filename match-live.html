@@ -766,6 +766,9 @@ async function init(){
   loadVarLog(m,ht,at);
   await loadPlayerRatings(m.id);
   loadLineups(m,ht,at,hColor,aColor);
+
+  const wantedTab=qs.get('tab');
+  if(wantedTab==='vote'){showTab('vote');loadVote();}
 }
 
 // ===== مكوّن بطاقة اللاعب الموحّد =====
