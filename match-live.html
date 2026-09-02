@@ -24,6 +24,25 @@ a{text-decoration:none;color:inherit}
 .nav-tname img{width:26px;height:26px;border-radius:50%;object-fit:contain}
 
 .scoreboard{position:relative;padding:28px 16px 22px;text-align:center;overflow:hidden}
+
+/* ===== الوضع العرضي (Landscape) — مهم أثناء متابعة البث المباشر ===== */
+@media(orientation:landscape) and (max-height:500px){
+  .scoreboard{padding:10px 16px 8px}
+  .teams-row{flex-direction:row}
+  .team-col{gap:4px}
+  .team-badge{width:44px;height:44px}
+  .team-name{font-size:12px}
+  .team-score{font-size:22px}
+  .info-strip{flex-wrap:nowrap;overflow-x:auto;gap:6px;padding-bottom:4px}
+  .video-embed-wrap{max-width:92vw;margin:8px auto}
+  .var-log-wrap,.motm{margin:8px auto;padding:8px 12px}
+  .tabs-bar{position:sticky;top:0}
+  .main{padding:10px 16px}
+  .pl-grid{grid-template-columns:repeat(6,1fr)}
+}
+@media(orientation:landscape) and (max-height:420px){
+  .video-embed-wrap{max-width:70vw}
+}
 .sb-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.18),transparent 60%)}
 @keyframes livepulse3{0%{box-shadow:0 0 0 0 rgba(255,59,59,.6)}70%{box-shadow:0 0 0 8px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
 .match-ticker{display:flex;align-items:center;gap:8px;background:#FFFFFF;border:1px solid #EDEAE0;border-bottom:2px solid rgba(255,59,59,.4);height:38px;overflow:hidden}
