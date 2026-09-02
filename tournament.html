@@ -133,7 +133,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .bulletin-more{display:block;width:100%;text-align:center;background:none;border:1px solid #30363d;color:#8b949e;font-size:12px;padding:9px;border-radius:10px;text-decoration:none}
 .ticker-wrap{max-width:900px;margin:0 auto;padding:10px 14px 4px}
 .ticker-line{display:flex;align-items:center;gap:0;background:#FFFFFF;border:1.5px solid #EDEAE0;border-radius:12px;padding:0;margin-bottom:10px;overflow:hidden;height:52px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.ticker-label{flex-shrink:0;font-size:13px;font-weight:900;padding:0 14px;height:100%;display:flex;align-items:center;border-left:1px solid;white-space:nowrap}
+.ticker-label{flex-shrink:0;width:118px;font-size:13px;font-weight:900;padding:0 10px;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;border-left:1px solid;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ticker-viewport{flex:1;overflow:hidden;position:relative;height:100%}
 .ticker-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:15px;font-weight:600;color:#2C2C2A;will-change:transform}
 .ticker-sep{margin:0 18px;color:#9C9A8D}
@@ -350,7 +350,7 @@ async function loadNews(){
       <button class="ticker-toggle" id="${id}Toggle" onclick="toggleTicker('${id}')">⏸</button>
     </div>`:'';
 
-  banner.innerHTML=`<div class="ticker-wrap">${line('match','⚽ أخبار المباريات',matchItems,'#1d4e89')}${line('general','📢 أخبار الدورة',generalItems,'#a3364c')}</div>`;
+  banner.innerHTML=`<div class="ticker-wrap">${line('match','⚽ أخبار المباريات',matchItems,'#1d4e89')}${line('general','📢 أخبار الكأس',generalItems,'#a3364c')}</div>`;
 
   ['match','general'].forEach(id=>{
     const track=document.getElementById(id+'Track');
