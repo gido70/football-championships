@@ -44,4 +44,7 @@ select,select option{background-color:#0b1c31!important;color:#eef5ff!important}
   input,select,textarea{font-size:15px!important}
   th,td{padding:9px 8px;font-size:12.5px}
   .stat-card-num{font-size:26px}
+  .actions{flex-direction:column}
+  .actions .btn{width:100%;justify-content:center;min-height:46px}
+  table{display:block;overflow-x:auto;white-space:nowrap}
 }
