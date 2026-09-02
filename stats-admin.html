@@ -40,6 +40,11 @@
   </section>
 
   <section class="panel" style="margin-top:24px">
+    <h3>🌍 الجنسيات المشاركة <span id="natCount" style="font-size:12px;color:#8b949e;font-weight:400"></span></h3>
+    <div id="natList" style="margin-top:10px"><div class="note">جاري التحميل...</div></div>
+  </section>
+
+  <section class="panel" style="margin-top:24px">
     <h3>📥 تصدير حسب الفئة</h3>
     <div class="cards-row" style="grid-template-columns:repeat(3,1fr)">
       <button class="feature-card" style="cursor:pointer;text-align:right;border:none;width:100%" onclick="exportScorers()"><div class="feature-icon">⚽</div><h3>الهدافون</h3><p>قائمة كاملة بالأهداف لكل لاعب</p></button>
@@ -78,8 +83,28 @@ async function initTournaments(){
   if(error){sel.innerHTML=`<option value="">⚠️ خطأ: ${error.message}</option>`;setMsg('فشل تحميل البطولات: '+error.message,'err');return;}
   if(!data||!data.length){sel.innerHTML='<option value="">لا توجد بطولات</option>';return;}
   sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name} ${t.season_label?'- '+t.season_label:''}</option>`).join('');
-  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;loadTeamNames();loadAwards();};
-  if(data&&data.length){TID=data[0].id;TNAME=sel.options[0].text;await loadTeamNames();await loadAwards();}
+  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;loadTeamNames();loadAwards();loadNationalitiesLive();};
+  if(data&&data.length){TID=data[0].id;TNAME=sel.options[0].text;await loadTeamNames();await loadAwards();await loadNationalitiesLive();}
+}
+
+async function loadNationalitiesLive(){
+  const box=document.getElementById('natList');
+  const countEl=document.getElementById('natCount');
+  box.innerHTML='<div class="note">جاري التحميل...</div>';
+  const {data:players}=await sb.from('players').select('nationality,teams!inner(tournament_id)').eq('teams.tournament_id',TID);
+  const counts={};
+  (players||[]).forEach(p=>{
+    const n=(p.nationality||'').trim();
+    if(!n)return;
+    counts[n]=(counts[n]||0)+1;
+  });
+  const rows=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  if(!rows.length){box.innerHTML='<div class="note">لا توجد بيانات جنسيات مُدخلة بعد لهذه البطولة</div>';countEl.textContent='';return;}
+  countEl.textContent='('+rows.length+' جنسية)';
+  box.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="text-align:right;color:#8b949e;border-bottom:1px solid #30363d"><th style="padding:6px 8px">الجنسية</th><th style="padding:6px 8px">عدد اللاعبين</th></tr></thead>
+    <tbody>${rows.map(([nat,c])=>`<tr style="border-bottom:1px solid #21262d"><td style="padding:6px 8px">${nat}</td><td style="padding:6px 8px;color:#c9a84c;font-weight:800">${c}</td></tr>`).join('')}</tbody>
+  </table>`;
 }
 
 const AWARD_DEFS=[
