@@ -1,7 +1,7 @@
 {
   "id": "./",
   "name": "منصة إدارة البطولات الرياضية",
-  "short_name": "منصة البطولات",
+  "short_name": "بطولات",
   "description": "Sports Tournament Management Platform — منصة متكاملة لإدارة البطولات الرياضية من الجدولة إلى التتويج",
   "start_url": "./index.html",
   "scope": "./",
