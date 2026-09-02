@@ -167,6 +167,7 @@ a{text-decoration:none;color:inherit}
 .pl-card{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center}
 .pl-card.pl-sub{opacity:.6}
 .pl-num{font-size:11px;font-weight:900;color:#79786A}
+.pl-rating{position:absolute;top:0;left:6px;color:#fff;font-size:10px;font-weight:900;padding:1px 6px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.2)}
 .pl-photo-wrap{width:54px;height:54px}
 .pl-photo{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #E0DCCF}
 .pl-initials{width:54px;height:54px;border-radius:50%;background:#EDEAE0;border:2px solid #E0DCCF;font-size:14px;font-weight:800;color:#9C9A8D;display:flex;align-items:center;justify-content:center}
@@ -763,6 +764,7 @@ async function init(){
 
   loadEvents(m,ht,at);
   loadVarLog(m,ht,at);
+  await loadPlayerRatings(m.id);
   loadLineups(m,ht,at,hColor,aColor);
 }
 
@@ -797,6 +799,31 @@ function genAvatarSvg(primary,secondary,number){
   </svg>`;
 }
 window.genAvatarSvg=genAvatarSvg;
+
+let PLAYER_RATINGS={};
+async function loadPlayerRatings(matchId){
+  const {data}=await sb.from('match_events').select('player_id,event_type').eq('match_id',matchId);
+  const counts={};
+  (data||[]).forEach(e=>{
+    if(!e.player_id)return;
+    if(!counts[e.player_id])counts[e.player_id]={goal:0,yellow_card:0,red_card:0};
+    if(counts[e.player_id][e.event_type]!==undefined)counts[e.player_id][e.event_type]++;
+  });
+  const ratings={};
+  Object.entries(counts).forEach(([pid,c])=>{
+    let r=6.0+c.goal*1.4-c.yellow_card*0.5-c.red_card*2.5;
+    r=Math.max(1,Math.min(10,r));
+    ratings[pid]=r.toFixed(1);
+  });
+  PLAYER_RATINGS=ratings;
+}
+function ratingColor(r){
+  const v=parseFloat(r);
+  if(v>=8)return'#2d6a4f';
+  if(v>=6.5)return'#3fb950';
+  if(v>=5)return'#f7c948';
+  return'#a3364c';
+}
 
 function pchip(name,photo,number,role,variant='',color){
   const ini=(name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
@@ -883,8 +910,10 @@ async function loadLineups(m,ht,at,hColor,aColor){
     const name=p.full_name_ar||p.name||'—';
     const sn=name.split(' ').slice(0,2).join(' ');
     const photo=p.jersey_photo_url;
-    return `<div class="pl-card${isSub?' pl-sub':''}">
+    const rating=PLAYER_RATINGS[p.id];
+    return `<div class="pl-card${isSub?' pl-sub':''}" style="position:relative">
       <div class="pl-num">${p.number??''}</div>
+      ${rating?`<div class="pl-rating" style="background:${ratingColor(rating)}">${rating}</div>`:''}
       <div class="pl-photo-wrap">
         ${photo?`<img class="pl-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
         <div class="pl-initials" style="${photo?'display:none':'display:flex'};overflow:hidden;padding:0;border-width:0">${photo?ini(name):genAvatarSvg(color,null,p.number)}</div>
