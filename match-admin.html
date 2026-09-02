@@ -236,14 +236,14 @@ select option{background:#0f2a45;color:#ffffff}
     <div class="match-meta-panel">
       <div class="meta-title">⚖️ الحكام والمعلق والملعب</div>
       <div class="meta-grid">
-        <div class="meta-field"><label>الحكم الأول</label><div style="display:flex;gap:6px"><input id="referee1" placeholder="اسم الحكم الأول" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee1')">🎤</button></div></div>
-        <div class="meta-field"><label>الحكم الثاني</label><div style="display:flex;gap:6px"><input id="referee2" placeholder="اسم الحكم الثاني / مساعد" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee2')">🎤</button></div></div>
-        <div class="meta-field"><label>المعلق</label><div style="display:flex;gap:6px"><input id="commentator" placeholder="اسم المعلق" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('commentator')">🎤</button></div></div>
-        <div class="meta-field"><label>الملعب</label><div style="display:flex;gap:6px"><input id="venueName" placeholder="اسم الملعب" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('venueName')">🎤</button></div></div>
+        <div class="meta-field"><label>الحكم الأول</label><div style="display:flex;gap:6px"><input id="referee1" placeholder="اسم الحكم الأول" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee1','referee_1')">🎤</button></div></div>
+        <div class="meta-field"><label>الحكم الثاني</label><div style="display:flex;gap:6px"><input id="referee2" placeholder="اسم الحكم الثاني / مساعد" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee2','referee_2')">🎤</button></div></div>
+        <div class="meta-field"><label>المعلق</label><div style="display:flex;gap:6px"><input id="commentator" placeholder="اسم المعلق" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('commentator','commentator')">🎤</button></div></div>
+        <div class="meta-field"><label>الملعب</label><div style="display:flex;gap:6px"><input id="venueName" placeholder="اسم الملعب" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('venueName','venue_name')">🎤</button></div></div>
         <div class="meta-field"><label>رابط البث (اختياري)</label><input id="streamUrl" placeholder="https://..."></div>
         <div class="meta-field"><label>رابط فيديو ملخص المباراة (اختياري)</label><input id="highlightVideoUrl" placeholder="رابط يوتيوب لملخص/تسجيل المباراة"></div>
         <div class="meta-field"><label>نجم المباراة (اختيارك)</label>
-          <select id="manOfMatch"><option value="">— لاعب —</option></select>
+          <div style="display:flex;gap:6px"><select id="manOfMatch" style="flex:1"><option value="">— لاعب —</option></select><button type="button" class="voice-btn" onclick="startVoiceMotm()">🎤</button></div>
         </div>
       </div>
       <div id="voteResultBox" style="display:none;margin:12px 0;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:12px 14px">
@@ -834,7 +834,41 @@ async function saveMin(){
   // match_minute غير موجود في الجدول؛ نعرضها محلياً فقط دون أن نكسر الحفظ
 }
 
-function startVoiceText(inputId){
+function startVoiceMotm(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('التعرّف الصوتي غير مدعوم في هذا المتصفح — جرّب Chrome');return;}
+  const rec=new SR();
+  rec.lang='ar-SA';
+  rec.interimResults=false;
+  setMsg('🎙️ استمع الآن... قل اسم أفضل لاعب في المباراة');
+  rec.onresult=async(e)=>{
+    const text=e.results[0][0].transcript;
+    const sel=document.getElementById('manOfMatch');
+    const opts=[...sel.options].filter(o=>o.value);
+    const norm=normalizeArabic(text);
+    let best=null,bestScore=0;
+    opts.forEach(o=>{
+      const oNorm=normalizeArabic(o.text);
+      let score=0;
+      if(oNorm.includes(norm)&&norm.length>=2)score+=10;
+      norm.split(/\s+/).forEach(w=>{if(w.length>=2&&oNorm.includes(w))score+=2;});
+      if(score>bestScore){bestScore=score;best=o;}
+    });
+    if(best&&cur){
+      sel.value=best.value;
+      const {error}=await sb.from('matches').update({player_of_match_id:best.value}).eq('id',cur.id);
+      if(!error){cur.player_of_match_id=best.value;setMsg('✅ سمعت: "'+text+'" — أفضل لاعب: '+best.text+' (حُفظ تلقائياً)','ok');}
+      else setMsg('❌ فشل الحفظ: '+error.message,'err');
+    }else{
+      setMsg('⚠️ سمعت: "'+text+'" — لم أجد لاعباً مطابقاً، اختره يدوياً من القائمة','warn');
+    }
+  };
+  rec.onerror=(e)=>setMsg('⚠️ تعذّر الاستماع ('+e.error+')','warn');
+  rec.start();
+}
+window.startVoiceMotm=startVoiceMotm;
+
+function startVoiceText(inputId,dbField){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const input=document.getElementById(inputId);
   if(!SR){alert('التعرّف الصوتي غير مدعوم في هذا المتصفح — جرّب Chrome');return;}
@@ -843,11 +877,20 @@ function startVoiceText(inputId){
   rec.interimResults=false;
   const oldPlaceholder=input.placeholder;
   input.placeholder='🎙️ استمع الآن...';
-  rec.onresult=(e)=>{
-    input.value=e.results[0][0].transcript;
+  input.style.borderColor='#f7c948';
+  rec.onresult=async(e)=>{
+    const text=e.results[0][0].transcript;
+    input.value=text;
     input.placeholder=oldPlaceholder;
+    if(dbField&&cur){
+      input.style.borderColor='#f7c948';
+      const {error}=await sb.from('matches').update({[dbField]:text}).eq('id',cur.id);
+      if(!error){cur[dbField]=text;input.style.borderColor='#3fb950';setMsg('✅ حُفظ صوتياً: '+text,'ok');}
+      else{input.style.borderColor='#ff6b6b';setMsg('❌ فشل الحفظ: '+error.message,'err');}
+      setTimeout(()=>{input.style.borderColor='';},2000);
+    }
   };
-  rec.onerror=()=>{input.placeholder=oldPlaceholder;};
+  rec.onerror=()=>{input.placeholder=oldPlaceholder;input.style.borderColor='#ff6b6b';setTimeout(()=>{input.style.borderColor='';},2000);};
   rec.onend=()=>{input.placeholder=oldPlaceholder;};
   rec.start();
 }
