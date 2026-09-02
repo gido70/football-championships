@@ -137,8 +137,8 @@ a{text-decoration:none;color:inherit}
 .empty span{font-size:36px;display:block;margin-bottom:8px}
 
 /* events */
-.evt-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #EDEAE0}
-.evt-row.away-side{flex-direction:row-reverse;text-align:left}
+.evt-row{display:flex;align-items:center;gap:12px;padding:11px 10px;border-bottom:1px solid #EDEAE0;border-right:4px solid transparent}
+.evt-row.away-side{flex-direction:row-reverse;text-align:left;border-right:none;border-left:4px solid transparent}
 .evt-ic{font-size:18px;width:30px;text-align:center}
 .evt-min{font-size:12px;font-weight:800;color:#79786A;width:34px;text-align:center}
 .evt-name{font-size:14px;font-weight:700;flex:1}
@@ -766,12 +766,16 @@ async function loadEvents(m,ht,at){
     const num=e.player?.number||null;
     const role=e.player?.is_goalkeeper?'حارس':null;
     const v=variantMap[e.event_type]||'';
-    return `<div class="evt-row ${side==='away'?'away-side':''}">
+    return `<div class="evt-row ${side==='away'?'away-side':''}" style="${side==='away'?`border-left-color:${tColor||'transparent'}`:`border-right-color:${tColor||'transparent'}`}">
       <span class="evt-min">${e.minute||0}'</span>
       <span class="evt-ic">${EI[e.event_type]||'📌'}</span>
       <div style="flex:1">${name?pchip(name,photo,num,role,v,tColor):''} <span style="color:#9C9A8D;font-size:12px">${EL[e.event_type]||e.event_type}</span></div>
     </div>`;
   }).join('');
+  wrap.innerHTML=`<div class="evt-legend" style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:#79786A;padding:0 10px 8px;border-bottom:1px solid #EDEAE0;margin-bottom:4px">
+    <span style="color:${ht?.primary_color||'#79786A'}">${ht?.name_ar||ht?.name||''} ▶</span>
+    <span style="color:${at?.primary_color||'#79786A'}">◀ ${at?.name_ar||at?.name||''}</span>
+  </div>`+wrap.innerHTML;
 }
 
 async function loadLineups(m,ht,at,hColor,aColor){
