@@ -281,6 +281,17 @@ function downloadTemplate(){
   wsNote['!cols']=[{wch:60}];
   XLSX.utils.book_append_sheet(wb,wsNote,'ملاحظة عن الصور');
 
+  const staffData=[
+    ['الحقل','القيمة'],
+    ['اسم المدرب',''],
+    ['جنسية المدرب',''],
+    ['اسم الإداري',''],
+    ['جنسية الإداري','']
+  ];
+  const wsStaff=XLSX.utils.aoa_to_sheet(staffData);
+  wsStaff['!cols']=[{wch:20},{wch:30}];
+  XLSX.utils.book_append_sheet(wb,wsStaff,'المدرب والإداري');
+
   XLSX.writeFile(wb,'نموذج-اللاعبين.xlsx');
 }
 
@@ -341,6 +352,21 @@ function importExcel(input){
       const rows=XLSX.utils.sheet_to_json(sheet,{defval:''});
       if(!rows.length){xMsg.textContent='⚠️ الملف فارغ';return;}
 
+      // قراءة ورقة "المدرب والإداري" إن وُجدت وتعبئتها تلقائياً
+      let staffMsg='';
+      const staffSheetName=wb.SheetNames.find(n=>n.includes('المدرب')||n.includes('الإداري'));
+      if(staffSheetName){
+        const staffRows=XLSX.utils.sheet_to_json(wb.Sheets[staffSheetName],{header:1,defval:''});
+        const staffMap={};
+        staffRows.forEach(r=>{if(r[0])staffMap[r[0].toString().trim()]=(r[1]||'').toString().trim();});
+        const setIf=(id,key)=>{if(staffMap[key]){const el=document.getElementById(id);if(el)el.value=staffMap[key];}};
+        setIf('coachName','اسم المدرب');
+        setIf('coachNat','جنسية المدرب');
+        setIf('adminName','اسم الإداري');
+        setIf('adminNat','جنسية الإداري');
+        if(Object.values(staffMap).some(v=>v))staffMsg=' + بيانات المدرب/الإداري';
+      }
+
       const headers=Object.keys(rows[0]);
       const findCol=(...keys)=>headers.find(h=>keys.some(k=>h.toString().trim().toLowerCase().includes(k)));
       const colName=findCol('اسم','name');
@@ -365,7 +391,7 @@ function importExcel(input){
         }
         added++;
       });
-      xMsg.textContent=`✅ تم استيراد ${added} لاعبًا من الملف — راجع البيانات أدناه وأكمل الصور لكل لاعب`;
+      xMsg.textContent=`✅ تم استيراد ${added} لاعبًا من الملف${staffMsg} — راجع البيانات أدناه وأكمل الصور لكل لاعب`;
       document.getElementById('playersWrap').scrollIntoView({behavior:'smooth'});
     }catch(err){
       console.error(err);
