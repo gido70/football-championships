@@ -138,6 +138,14 @@ async function buildForm(){
     <input type="file" id="xlsxInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="importExcel(this)">
     <div id="xlsxMsg" style="font-size:12px;color:#8b949e;margin-top:8px;text-align:center"></div>
 
+    <div style="margin-top:14px;padding:14px;border:1.5px dashed #3fb950;border-radius:12px;background:rgba(63,185,80,.06)">
+      <div style="font-size:13px;font-weight:800;color:#3fb950;margin-bottom:6px">📸 رفع كل صور اللاعبين دفعة واحدة (بعد الاستيراد)</div>
+      <div style="font-size:11.5px;color:#8b949e;margin-bottom:10px">اختر كل صور اللاعبين معاً من جهازك. سمِّ كل ملف صورة برقم قميص اللاعب فقط، مثلاً: <code style="color:#3fb950">10.jpg</code> أو <code style="color:#3fb950">7.png</code> — سيُنسَب تلقائياً للاعب صاحب هذا الرقم.</div>
+      <button type="button" class="add-player-btn" style="width:100%;border-color:#3fb950;color:#3fb950" onclick="document.getElementById('bulkPhotoInput').click()">📁 اختيار كل الصور دفعة واحدة</button>
+      <input type="file" id="bulkPhotoInput" accept="image/*" multiple style="display:none" onchange="importBulkPhotos(this)">
+      <div id="bulkPhotoMsg" style="font-size:12px;color:#8b949e;margin-top:8px;text-align:center"></div>
+    </div>
+
     <button type="button" class="submit-btn" id="submitBtn" onclick="submitAll()">💾 حفظ البيانات</button>
     <div id="msg"></div>
   `;
@@ -261,10 +269,64 @@ function downloadTemplate(){
   ws['!cols']=[{wch:28},{wch:10},{wch:16},{wch:14}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'اللاعبون');
+
+  const noteData=[
+    ['ملاحظة مهمة عن الصور'],
+    ['هذا الملف لا يحمل الصور — فقط الاسم والرقم والجنسية.'],
+    ['بعد استيراد هذا الملف في الصفحة، استخدم زر "رفع كل الصور دفعة واحدة" أسفله.'],
+    ['سمِّ كل ملف صورة برقم قميص اللاعب فقط، مثال: 10.jpg أو 7.png'],
+    ['سيُنسَب كل ملف تلقائياً للاعب صاحب نفس الرقم.']
+  ];
+  const wsNote=XLSX.utils.aoa_to_sheet(noteData);
+  wsNote['!cols']=[{wch:60}];
+  XLSX.utils.book_append_sheet(wb,wsNote,'ملاحظة عن الصور');
+
   XLSX.writeFile(wb,'نموذج-اللاعبين.xlsx');
 }
 
 function removePlayer(n){document.getElementById('player_'+n)?.remove();}
+
+async function importBulkPhotos(input){
+  const fileList=[...input.files];
+  const msg=document.getElementById('bulkPhotoMsg');
+  if(!fileList.length)return;
+  msg.textContent='⏳ جاري المطابقة والتجويد...';
+
+  // ابنِ خريطة: رقم القميص → عنصر لاعب في النموذج
+  const playerCards=[...document.querySelectorAll('.player-card')];
+  const numToCard={};
+  playerCards.forEach(card=>{
+    const n=card.id.replace('player_','');
+    const numInput=document.getElementById('p'+n+'_num');
+    const num=(numInput?.value||'').trim();
+    if(num)numToCard[num]=n;
+  });
+
+  let matched=0,unmatched=[];
+  for(const f of fileList){
+    const baseName=f.name.replace(/\.[^.]+$/,'').trim();
+    const n=numToCard[baseName];
+    if(!n){unmatched.push(f.name);continue;}
+    try{
+      const enhanced=await enhanceImage(f,1000);
+      enhanced.name=f.name;
+      files['p'+n+'_jersey']=enhanced;
+      document.getElementById('p'+n+'_jersey_box')?.classList.add('has-file');
+      const inner=document.getElementById('p'+n+'_jersey_inner');
+      if(inner)inner.textContent='✅ '+f.name+' (من الرفع الجماعي)';
+      const delwrap=document.getElementById('p'+n+'_jersey_delwrap');
+      if(delwrap)delwrap.innerHTML=`<button type="button" onclick="clearField('p${n}_jersey')" style="display:block;width:100%;margin-top:6px;background:none;border:1px solid #ff6b6b;border-radius:8px;padding:6px;color:#ff6b6b;font-size:12px;cursor:pointer">🗑️ حذف الصورة</button>`;
+      clearedFields.delete('p'+n+'_jersey');
+      matched++;
+    }catch(err){console.error(err);unmatched.push(f.name);}
+  }
+
+  msg.innerHTML=`✅ تم ربط ${matched} صورة بنجاح بنجاح`+
+    (unmatched.length?`<br>⚠️ لم يُطابَق: ${unmatched.join('، ')} — تأكد أن اسم الملف هو رقم القميص بالضبط (مثال: 10.jpg)`:'')+
+    `<br>لا تنسَ الضغط على "💾 حفظ البيانات" أسفل الصفحة لتثبيت كل شيء`;
+  input.value='';
+}
+window.importBulkPhotos=importBulkPhotos;
 
 function importExcel(input){
   const f=input.files[0];
