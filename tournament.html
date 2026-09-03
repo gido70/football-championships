@@ -253,6 +253,23 @@ img[src=""], img:not([src]) { display:none !important; }
 </style>
 </head>
 <body>
+<div id="installBanner" style="display:none;position:sticky;top:0;z-index:200;background:linear-gradient(135deg,#0F2A4A,#1B3A5C);color:#fff;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.2)">
+  <span id="installBannerText">📲 احفظ المنصة كتطبيق على هاتفك بضغطة واحدة</span>
+  <button id="installBannerBtn" onclick="handleInstallClick()" style="background:#C9A84C;color:#0F2A4A;border:none;border-radius:20px;padding:6px 16px;font-weight:900;font-size:12.5px;margin-right:10px;cursor:pointer">تثبيت الآن</button>
+  <button onclick="dismissInstallBanner()" style="background:none;border:none;color:#fff;opacity:.7;font-size:16px;cursor:pointer;position:absolute;left:14px;top:8px">✕</button>
+</div>
+<div id="iosInstallSheet" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 30px;max-width:480px;width:100%;text-align:center">
+    <div style="font-size:40px;margin-bottom:10px">📲</div>
+    <div style="font-weight:900;font-size:16px;margin-bottom:14px;color:#0F2A4A">لحفظ المنصة كتطبيق على آيفون</div>
+    <div style="text-align:right;font-size:14px;line-height:2;color:#333">
+      1) اضغط زر المشاركة <span style="font-size:18px">⬆️</span> أسفل الشاشة في Safari<br>
+      2) اختر "إضافة إلى الشاشة الرئيسية" <span style="font-size:16px">➕</span><br>
+      3) اضغط "إضافة" أعلى يمين الشاشة
+    </div>
+    <button onclick="document.getElementById('iosInstallSheet').style.display='none'" style="margin-top:18px;background:#0F2A4A;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-weight:800;cursor:pointer">فهمت، شكراً</button>
+  </div>
+</div>
 <nav class="nav">
   <div class="nav-title">
     <span id="navName">البطولة</span>
@@ -498,6 +515,38 @@ loadNews();
 loadMOTD();
 loadLiveMatch();
 setInterval(loadLiveMatch,12000);
+
+// ===== شريط "احفظ كتطبيق" الذكي =====
+let deferredInstallPrompt=null;
+function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}
+function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent);}
+
+if(!isStandalone()&&!localStorage.getItem('installBannerDismissed')){
+  window.addEventListener('beforeinstallprompt',(e)=>{
+    e.preventDefault();
+    deferredInstallPrompt=e;
+    document.getElementById('installBanner').style.display='block';
+  });
+  if(isIOS()){
+    document.getElementById('installBanner').style.display='block';
+  }
+}
+async function handleInstallClick(){
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    const {outcome}=await deferredInstallPrompt.userChoice;
+    if(outcome==='accepted')dismissInstallBanner();
+    deferredInstallPrompt=null;
+  }else if(isIOS()){
+    document.getElementById('iosInstallSheet').style.display='flex';
+  }
+}
+function dismissInstallBanner(){
+  document.getElementById('installBanner').style.display='none';
+  localStorage.setItem('installBannerDismissed','1');
+}
+window.handleInstallClick=handleInstallClick;
+window.dismissInstallBanner=dismissInstallBanner;
 loadFeed();
 
 const TAB_ACCENT={st:'#639922',ma:'#c9a84c',sc:'#D85A30',tm:'#378ADD'};

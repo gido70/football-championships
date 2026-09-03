@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>باركود المنصة</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner">
+  <div class="page-head"><div class="page-icon">📱</div><div class="page-title"><h1>باركود المنصة (QR)</h1><p>لطباعته وتوزيعه على الجمهور — يفتح المنصة مباشرة بضغطة أو مسح</p></div></div>
+  <div class="nav-actions"><a class="btn secondary" href="./admin-home.html">← لوحة الأدمن</a></div>
+</div></header>
+
+<main class="container">
+  <section class="panel">
+    <h3>اختر البطولة</h3>
+    <div class="form-grid"><div class="field full"><label>البطولة</label><select id="tSel"></select></div></div>
+  </section>
+
+  <section class="panel" style="margin-top:20px;text-align:center">
+    <div id="qrBox" style="display:inline-block;background:#fff;padding:24px;border-radius:16px;margin:20px 0"></div>
+    <div id="linkPreview" style="font-size:13px;color:#8b949e;word-break:break-all;margin-bottom:16px"></div>
+    <div class="actions" style="justify-content:center">
+      <button class="btn" onclick="downloadQR()">⬇️ تحميل الباركود كصورة</button>
+      <button class="btn secondary" onclick="copyLink()">📋 نسخ الرابط</button>
+    </div>
+    <div class="status" id="msg"></div>
+  </section>
+
+  <section class="panel" style="margin-top:20px;background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.25)">
+    <h3>💡 فكرة استخدام</h3>
+    <p style="color:#9fb0c9;font-size:13px;line-height:1.9">اطبع هذا الباركود على لافتات الملعب، بطاقات الدعوة، أو شاشات العرض. أي شخص يمسحه بكاميرا هاتفه يفتح المنصة مباشرة، وستظهر له تلقائياً دعوة "احفظ كتطبيق" فور الفتح.</p>
+  </section>
+</main>
+
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+let currentUrl='';
+let qrInstance=null;
+
+async function init(){
+  const {data}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});
+  const sel=document.getElementById('tSel');
+  sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
+  sel.onchange=renderQR;
+  if(data?.length)renderQR();
+}
+function renderQR(){
+  const tid=document.getElementById('tSel').value;
+  currentUrl=`https://gido70.github.io/football-championships/tournament.html?id=${tid}`;
+  document.getElementById('linkPreview').textContent=currentUrl;
+  document.getElementById('qrBox').innerHTML='';
+  qrInstance=new QRCode(document.getElementById('qrBox'),{
+    text:currentUrl,width:260,height:260,
+    colorDark:'#0F2A4A',colorLight:'#ffffff',
+    correctLevel:QRCode.CorrectLevel.H
+  });
+}
+function downloadQR(){
+  const img=document.querySelector('#qrBox img')||document.querySelector('#qrBox canvas');
+  const url=img.tagName==='CANVAS'?img.toDataURL('image/png'):img.src;
+  const a=document.createElement('a');
+  a.href=url;a.download='باركود-المنصة.png';a.click();
+  setMsg('✅ تم التحميل','ok');
+}
+function copyLink(){
+  navigator.clipboard.writeText(currentUrl);
+  setMsg('✅ تم نسخ الرابط','ok');
+}
+function setMsg(t,c){const e=document.getElementById('msg');e.className='status '+c;e.textContent=t;setTimeout(()=>e.textContent='',3000);}
+window.downloadQR=downloadQR;window.copyLink=copyLink;
+init();
+</script>
+</body>
+</html>
