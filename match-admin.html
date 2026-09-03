@@ -51,8 +51,14 @@ select option{background:#0f2a45;color:#ffffff}
 .min-row input{width:80px;text-align:center;padding:8px 12px;font-size:15px;border-radius:10px}
 
 /* معلومات المباراة الإضافية */
-.match-meta-panel{background:linear-gradient(180deg,rgba(27,58,92,.96),rgba(20,45,72,.96));border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:20px;margin-bottom:20px}
+.match-meta-panel{background:linear-gradient(180deg,rgba(35,70,110,.95),rgba(24,52,84,.95));border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:20px;margin-bottom:20px}
 .meta-title{font-size:15px;font-weight:700;color:#eef5ff;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:8px}
+.collapsible-head{cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
+.collapsible-head .chev{transition:transform .2s;font-size:13px;opacity:.7}
+.collapsible-head.open .chev{transform:rotate(180deg)}
+.collapsible-body{display:none;padding-top:14px}
+.collapsible-body.open{display:block}
+.collapsible-summary{font-size:11.5px;color:#8fa3c0;font-weight:400}
 .meta-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .meta-field label{font-size:12px;color:#b7c6dc;display:block;margin-bottom:6px}
 .meta-field input{width:100%;padding:9px 12px;border-radius:10px;font-size:13px}
@@ -243,7 +249,11 @@ select option{background:#0f2a45;color:#ffffff}
     </div>
 
     <div class="match-meta-panel">
-      <div class="meta-title">⚖️ الحكام والمعلق والملعب</div>
+      <div class="meta-title collapsible-head" onclick="toggleSection('refPanel')">
+        <span>⚖️ الحكام والمعلق والملعب <span class="collapsible-summary" id="refSummary"></span></span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="collapsible-body" id="refPanel">
       <div class="meta-grid">
         <div class="meta-field"><label>الحكم الأول</label><div style="display:flex;gap:6px"><input id="referee1" placeholder="اسم الحكم الأول" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee1','referee_1')">🎤</button></div></div>
         <div class="meta-field"><label>الحكم الثاني</label><div style="display:flex;gap:6px"><input id="referee2" placeholder="اسم الحكم الثاني / مساعد" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee2','referee_2')">🎤</button></div></div>
@@ -268,6 +278,7 @@ select option{background:#0f2a45;color:#ffffff}
       <div class="meta-save-row">
         <button class="btn-meta-save" onclick="saveMeta()">💾 حفظ المعلومات</button>
         <span id="metaStatus" style="font-size:12px;margin-right:10px;color:#34d399"></span>
+      </div>
       </div>
     </div>
 
@@ -305,7 +316,11 @@ select option{background:#0f2a45;color:#ffffff}
 
     <!-- VAR -->
     <div class="var-panel">
-      <div class="var-title">📺 حالة الفار (VAR)</div>
+      <div class="var-title collapsible-head" onclick="toggleSection('varPanel')">
+        <span>📺 حالة الفار (VAR) <span class="collapsible-summary" id="varSummary"></span></span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="collapsible-body" id="varPanel">
       <div class="meta-field" style="margin-bottom:12px">
         <label style="color:#b7c6dc;font-size:13px">الفريق المعني بالمراجعة (اختياري)</label>
         <select id="varTeamSel" style="width:100%"><option value="">— بدون تحديد فريق —</option></select>
@@ -345,11 +360,16 @@ select option{background:#0f2a45;color:#ffffff}
         <div id="varLogMsg" style="font-size:12px;margin-top:8px"></div>
         <div id="varLogList" style="margin-top:12px"></div>
       </div>
+      </div>
     </div>
 
     <!-- ركلات الترجيح -->
     <div class="var-box" style="margin-top:20px">
-      <div class="var-title">🥅 ركلات الترجيح (عند التعادل في الأدوار الإقصائية)</div>
+      <div class="var-title collapsible-head" onclick="toggleSection('shootoutPanel')">
+        <span>🥅 ركلات الترجيح (عند التعادل في الأدوار الإقصائية) <span class="collapsible-summary" id="shootoutSummary"></span></span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="collapsible-body" id="shootoutPanel">
       <div class="meta-grid">
         <div class="meta-field"><label>الفريق</label><select id="soTeamSel"></select></div>
         <div class="meta-field"><label>الضارب</label><select id="soPlayerSel"><option value="">— اختر —</option></select></div>
@@ -360,6 +380,7 @@ select option{background:#0f2a45;color:#ffffff}
       </div>
       <div id="shootoutScore" style="text-align:center;font-size:20px;font-weight:900;margin-top:14px;color:#f7c948"></div>
       <div id="shootoutList" style="margin-top:10px"></div>
+      </div>
     </div>
 
     <!-- تسجيل الأحداث -->
@@ -415,23 +436,33 @@ select option{background:#0f2a45;color:#ffffff}
     </div>
 
     <div class="match-meta-panel" style="background:linear-gradient(135deg,rgba(88,166,255,.1),rgba(88,166,255,.03));border:1.5px solid rgba(88,166,255,.35)">
-      <div class="meta-title" style="color:#58a6ff">🎥 رابط بث المباراة (يوتيوب) — يظهر ويُشاهَد داخل المنصة</div>
+      <div class="meta-title collapsible-head" style="color:#58a6ff" onclick="toggleSection('videoPanel')">
+        <span>🎥 رابط بث المباراة (يوتيوب) <span class="collapsible-summary" id="videoSummary"></span></span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="collapsible-body" id="videoPanel">
       <div class="meta-grid">
         <div class="meta-field"><label>رابط البث المباشر (يوتيوب)</label><input id="streamUrl" placeholder="https://youtube.com/watch?v=... أو رابط live"></div>
         <div class="meta-field"><label>رابط فيديو ملخص/تسجيل المباراة (بعد الانتهاء)</label><input id="highlightVideoUrl" placeholder="رابط يوتيوب لملخص/تسجيل المباراة"></div>
       </div>
       <div style="font-size:11.5px;color:#8fa3c0;margin-top:8px">💡 هذا الرابط يبقى محفوظاً مع المباراة دائماً — الجمهور يشاهد الفيديو مضمّناً داخل المنصة نفسها (كما كان في نسخة 2026)، مع زر اختياري لفتحه في يوتيوب مباشرة.</div>
       <button class="btn-meta-save" style="margin-top:12px" onclick="saveMeta()">💾 حفظ رابط الفيديو</button>
+      </div>
     </div>
 
     <div class="match-meta-panel" style="background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.03));border:1.5px solid rgba(201,168,76,.35)">
-      <div class="meta-title" style="color:#c9a84c">🖨️ تقارير قابلة للطباعة (وورد)</div>
+      <div class="meta-title collapsible-head" style="color:#c9a84c" onclick="toggleSection('reportsPanel')">
+        <span>🖨️ تقارير قابلة للطباعة (وورد)</span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="collapsible-body" id="reportsPanel">
       <div style="font-size:11.5px;color:#8fa3c0;margin-bottom:12px">مستندان جاهزان للطباعة قبل المباراة — تشكيلة كل فريق كاملة، توقيع الإداري، وبيانات المعلّق.</div>
       <div class="actions">
         <button class="btn secondary" onclick="printRefereeReport()">⚖️ تقرير الحكم</button>
         <button class="btn secondary" onclick="printCommentatorReport()">🎙️ تقرير المعلّق</button>
       </div>
       <div class="status" id="reportMsg"></div>
+      </div>
     </div>
 
     <!-- معلومات المباراة: حكام، معلق، ملعب -->
@@ -558,6 +589,7 @@ function fillMeta(m){
   document.getElementById('streamUrl').value=m.stream_url||'';
   document.getElementById('highlightVideoUrl').value=m.highlight_video_url||'';
   document.getElementById('manOfMatch').value=m.player_of_match_id||'';
+  updateCollapsedSummaries();
 }
 
 async function saveMeta(){
@@ -582,6 +614,7 @@ async function saveMeta(){
   if(error){st.style.color='#ff6b6b';st.textContent='⚠️ فشل الحفظ';return;}
   st.style.color='#34d399';st.textContent='✅ تم الحفظ';setTimeout(()=>st.textContent='',2500);
   Object.assign(cur,payload);
+  updateCollapsedSummaries();
 
   const hn=cur.ht?.name_ar||cur.ht?.name||'';
   const an=cur.at?.name_ar||cur.at?.name||'';
@@ -1430,6 +1463,33 @@ async function printCommentatorReport(){
   document.getElementById('reportMsg').textContent='✅ تم التحميل';
 }
 window.printCommentatorReport=printCommentatorReport;
+
+function toggleSection(id){
+  const body=document.getElementById(id);
+  const head=body.previousElementSibling;
+  const isOpen=body.classList.contains('open');
+  body.classList.toggle('open',!isOpen);
+  head.classList.toggle('open',!isOpen);
+}
+window.toggleSection=toggleSection;
+
+function updateCollapsedSummaries(){
+  const ref1=document.getElementById('referee1')?.value;
+  const comm=document.getElementById('commentator')?.value;
+  const motmSel=document.getElementById('manOfMatch');
+  const motmTxt=motmSel?.options[motmSel.selectedIndex]?.text;
+  const parts=[];
+  if(ref1)parts.push('حكم: '+ref1);
+  if(comm)parts.push('معلق: '+comm);
+  if(motmTxt&&motmTxt!=='— لاعب —')parts.push('نجم: '+motmTxt);
+  const refSum=document.getElementById('refSummary');
+  if(refSum)refSum.textContent=parts.length?'('+parts.join(' | ')+')':'';
+
+  const varStatusText=document.querySelector('.var-btn[data-var].active')?.textContent;
+  const varSum=document.getElementById('varSummary');
+  if(varSum)varSum.textContent=(varStatusText&&varStatusText!=='بدون مراجعة')?'('+varStatusText+')':'';
+}
+window.updateCollapsedSummaries=updateCollapsedSummaries;
 
 window.saveMeta=saveMeta;window.setVAR=setVAR;
 window.chScore=chScore;window.setMatchStatus=setMatchStatus;window.saveMin=saveMin;window.resetForTest=resetForTest;window.saveLineups=saveLineups;
