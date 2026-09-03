@@ -876,7 +876,8 @@ async function loadStandings(){
   }));
   let html='';
   Object.entries(grouped).sort().forEach(([grp,rows])=>{
-    html+=`<div class="st-wrap"><div class="g-title">المجموعة ${grp}</div><div class="st-scroll"><table class="st-table"><thead><tr><th>#</th><th>الفريق</th><th title="لعب">ل</th><th title="فاز">ف</th><th title="تعادل">ت</th><th title="خسر">خ</th><th title="له">له</th><th title="عليه">عل</th><th title="الفارق">فق</th><th style="color:#c9a84c" title="النقاط">نق</th></tr></thead><tbody>`;
+    const grpTitle = grp==='عام' ? 'الترتيب العام' : ('المجموعة '+grp);
+    html+=`<div class="st-wrap"><div class="g-title">${grpTitle}</div><div class="st-scroll"><table class="st-table"><thead><tr><th>#</th><th>الفريق</th><th title="لعب">ل</th><th title="فاز">ف</th><th title="تعادل">ت</th><th title="خسر">خ</th><th title="له">له</th><th title="عليه">عل</th><th title="الفارق">فق</th><th style="color:#c9a84c" title="النقاط">نق</th></tr></thead><tbody>`;
     rows.forEach((r,i)=>{
       const pts=r.w*3+r.d,gd=r.gf-r.ga,gc=gd>0?'gd-p':gd<0?'gd-n':'';
       html+=`<tr><td><span class="rk rk-${i+1}">${i+1}</span></td><td><div class="t-cell"><div class="t-dot" style="background:${r.t.color_primary||'#79786A'}"></div><span class="t-name">${r.t.name}</span></div></td><td class="nc">${r.p}</td><td class="nc">${r.w}</td><td class="nc">${r.d}</td><td class="nc">${r.l}</td><td class="nc">${r.gf}</td><td class="nc">${r.ga}</td><td class="nc ${gc}">${gd>0?'+':''}${gd}</td><td><span class="pts">${pts}</span></td></tr>`;
