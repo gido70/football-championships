@@ -22,7 +22,7 @@ body{font-family:"Tajawal",sans-serif!important}
 select,input,textarea{background:#0f2a45!important;color:#ffffff!important;font-family:"Tajawal",sans-serif!important}
 select option{background:#0f2a45;color:#ffffff}
 
-.match-board{background:linear-gradient(135deg,#071426,#0f2a45);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:28px;margin-bottom:20px}
+.match-board{background:linear-gradient(135deg,#0F2A4A,#16385F);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:28px;margin-bottom:20px}
 .sb{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;margin:20px 0}
 .sb-team{text-align:center}
 .sb-tname{font-size:20px;font-weight:800;color:#eef5ff;margin-bottom:8px}
@@ -51,7 +51,7 @@ select option{background:#0f2a45;color:#ffffff}
 .min-row input{width:80px;text-align:center;padding:8px 12px;font-size:15px;border-radius:10px}
 
 /* معلومات المباراة الإضافية */
-.match-meta-panel{background:linear-gradient(180deg,rgba(16,40,70,.96),rgba(11,28,49,.96));border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:20px;margin-bottom:20px}
+.match-meta-panel{background:linear-gradient(180deg,rgba(27,58,92,.96),rgba(20,45,72,.96));border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:20px;margin-bottom:20px}
 .meta-title{font-size:15px;font-weight:700;color:#eef5ff;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:8px}
 .meta-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .meta-field label{font-size:12px;color:#b7c6dc;display:block;margin-bottom:6px}
@@ -242,6 +242,35 @@ select option{background:#0f2a45;color:#ffffff}
       <div id="statusMsg" class="status" style="margin-top:10px"></div>
     </div>
 
+    <div class="match-meta-panel">
+      <div class="meta-title">⚖️ الحكام والمعلق والملعب</div>
+      <div class="meta-grid">
+        <div class="meta-field"><label>الحكم الأول</label><div style="display:flex;gap:6px"><input id="referee1" placeholder="اسم الحكم الأول" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee1','referee_1')">🎤</button></div></div>
+        <div class="meta-field"><label>الحكم الثاني</label><div style="display:flex;gap:6px"><input id="referee2" placeholder="اسم الحكم الثاني / مساعد" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee2','referee_2')">🎤</button></div></div>
+        <div class="meta-field"><label>المعلق</label><div style="display:flex;gap:6px"><input id="commentator" placeholder="اسم المعلق" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('commentator','commentator')">🎤</button></div></div>
+        <div class="meta-field"><label>الملعب</label><div style="display:flex;gap:6px"><input id="venueName" placeholder="اسم الملعب" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('venueName','venue_name')">🎤</button></div></div>
+        <div class="meta-field"><label>نجم المباراة (اختيارك)</label>
+          <div style="display:flex;gap:6px"><select id="manOfMatch" style="flex:1"><option value="">— لاعب —</option></select><button type="button" class="voice-btn" onclick="startVoiceMotm()">🎤</button></div>
+        </div>
+      </div>
+      <div id="voteResultBox" style="display:none;margin:12px 0;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:12px 14px">
+        <div style="font-size:12px;font-weight:800;color:#c9a84c;margin-bottom:8px">⭐ تصويت الجمهور على نجم المباراة</div>
+        <div id="voteResultList" style="font-size:13px;color:#8b949e">جاري التحميل...</div>
+      </div>
+      <div id="predictResultBox" style="display:none;margin:12px 0;background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.25);border-radius:12px;padding:12px 14px">
+        <div style="font-size:12px;font-weight:800;color:#58a6ff;margin-bottom:8px">🎯 توقعات الجمهور لهذه المباراة</div>
+        <div id="predictResultList" style="font-size:13px;color:#8b949e">جاري التحميل...</div>
+      </div>
+      <div id="reactResultBox" style="display:none;margin:12px 0;background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.2);border-radius:12px;padding:12px 14px">
+        <div style="font-size:12px;font-weight:800;color:#f85149;margin-bottom:8px">⚡ ردود فعل الجمهور</div>
+        <div id="reactResultList" style="font-size:13px;color:#8b949e;display:flex;gap:16px;flex-wrap:wrap"></div>
+      </div>
+      <div class="meta-save-row">
+        <button class="btn-meta-save" onclick="saveMeta()">💾 حفظ المعلومات</button>
+        <span id="metaStatus" style="font-size:12px;margin-right:10px;color:#34d399"></span>
+      </div>
+    </div>
+
     <div class="match-meta-panel" id="lineupPanel">
       <div class="meta-title"><span>👥 التشكيلة الأساسية</span></div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;position:relative;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)">
@@ -406,34 +435,6 @@ select option{background:#0f2a45;color:#ffffff}
     </div>
 
     <!-- معلومات المباراة: حكام، معلق، ملعب -->
-    <div class="match-meta-panel">
-      <div class="meta-title">⚖️ الحكام والمعلق والملعب</div>
-      <div class="meta-grid">
-        <div class="meta-field"><label>الحكم الأول</label><div style="display:flex;gap:6px"><input id="referee1" placeholder="اسم الحكم الأول" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee1','referee_1')">🎤</button></div></div>
-        <div class="meta-field"><label>الحكم الثاني</label><div style="display:flex;gap:6px"><input id="referee2" placeholder="اسم الحكم الثاني / مساعد" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee2','referee_2')">🎤</button></div></div>
-        <div class="meta-field"><label>المعلق</label><div style="display:flex;gap:6px"><input id="commentator" placeholder="اسم المعلق" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('commentator','commentator')">🎤</button></div></div>
-        <div class="meta-field"><label>الملعب</label><div style="display:flex;gap:6px"><input id="venueName" placeholder="اسم الملعب" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('venueName','venue_name')">🎤</button></div></div>
-        <div class="meta-field"><label>نجم المباراة (اختيارك)</label>
-          <div style="display:flex;gap:6px"><select id="manOfMatch" style="flex:1"><option value="">— لاعب —</option></select><button type="button" class="voice-btn" onclick="startVoiceMotm()">🎤</button></div>
-        </div>
-      </div>
-      <div id="voteResultBox" style="display:none;margin:12px 0;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:12px 14px">
-        <div style="font-size:12px;font-weight:800;color:#c9a84c;margin-bottom:8px">⭐ تصويت الجمهور على نجم المباراة</div>
-        <div id="voteResultList" style="font-size:13px;color:#8b949e">جاري التحميل...</div>
-      </div>
-      <div id="predictResultBox" style="display:none;margin:12px 0;background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.25);border-radius:12px;padding:12px 14px">
-        <div style="font-size:12px;font-weight:800;color:#58a6ff;margin-bottom:8px">🎯 توقعات الجمهور لهذه المباراة</div>
-        <div id="predictResultList" style="font-size:13px;color:#8b949e">جاري التحميل...</div>
-      </div>
-      <div id="reactResultBox" style="display:none;margin:12px 0;background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.2);border-radius:12px;padding:12px 14px">
-        <div style="font-size:12px;font-weight:800;color:#f85149;margin-bottom:8px">⚡ ردود فعل الجمهور</div>
-        <div id="reactResultList" style="font-size:13px;color:#8b949e;display:flex;gap:16px;flex-wrap:wrap"></div>
-      </div>
-      <div class="meta-save-row">
-        <button class="btn-meta-save" onclick="saveMeta()">💾 حفظ المعلومات</button>
-        <span id="metaStatus" style="font-size:12px;margin-right:10px;color:#34d399"></span>
-      </div>
-    </div>
 
     <!-- التشكيلة والإصابات -->
 

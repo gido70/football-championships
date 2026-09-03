@@ -1,9 +1,9 @@
 :root{
-  --bg:#071426;--panel:#112a49;--text:#eef5ff;--muted:#b7c6dc;--line:rgba(255,255,255,.08);
+  --bg:#0F2A4A;--panel:#1B3A5C;--text:#eef5ff;--muted:#b7c6dc;--line:rgba(255,255,255,.10);
   --primary:#4ea1ff;--primary-2:#2e7de0;--danger:#ff6b6b;--warn:#ffd54f;--ok:#34d399;
 }
 *{box-sizing:border-box}html,body{margin:0;padding:0}
-body{font-family:Tahoma,Arial,sans-serif;background:linear-gradient(90deg,#041224 0%,#071b31 20%,#0a2340 55%,#0f2f55 100%);color:var(--text);min-height:100vh}
+body{font-family:Tahoma,Arial,sans-serif;background:linear-gradient(135deg,#0F2A4A 0%,#16385F 50%,#1B3A5C 100%);color:var(--text);min-height:100vh}
 a{text-decoration:none;color:inherit}.container{max-width:1280px;margin:0 auto;padding:28px 20px 40px}
 .topbar{border-bottom:1px solid var(--line);background:rgba(4,14,28,.55);backdrop-filter:blur(8px)}
 .topbar-inner{max-width:1280px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top,0px)) 20px 18px;display:flex;justify-content:space-between;align-items:center;gap:16px}
@@ -13,7 +13,7 @@ a{text-decoration:none;color:inherit}.container{max-width:1280px;margin:0 auto;p
 .nav-actions{display:flex;flex-direction:row-reverse;gap:10px;flex-wrap:wrap}
 .btn,button.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;cursor:pointer;font-size:15px}
 .btn.secondary,button.btn.secondary{background:transparent}
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:22px}.card,.panel{background:linear-gradient(180deg, rgba(16,40,70,.96), rgba(11,28,49,.96));border:1px solid var(--line);border-radius:24px;box-shadow:0 14px 40px rgba(0,0,0,.18)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:22px}.card,.panel{background:linear-gradient(180deg, rgba(27,58,92,.96), rgba(20,45,72,.96));border:1px solid var(--line);border-radius:24px;box-shadow:0 14px 40px rgba(0,0,0,.12)}
 .card{padding:24px}.panel{padding:22px}.panel h2,.panel h3,.card h2,.card h3{margin:0 0 18px;font-size:22px}
 .hero{display:grid;grid-template-columns:1.45fr .95fr;gap:22px;margin-bottom:24px}.hero h2{margin:0 0 14px;font-size:46px;line-height:1.2}.hero p{margin:0;color:var(--muted);font-size:18px;line-height:1.9}
 .badge{display:inline-block;margin-bottom:14px;padding:8px 14px;border-radius:999px;background:rgba(78,161,255,.12);border:1px solid rgba(78,161,255,.25);color:#a8d0ff;font-size:14px}
