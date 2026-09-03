@@ -146,6 +146,17 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
         </div>
       </div>
 
+      <!-- ترتيب الشعارين -->
+      <div class="form-grid" style="margin-top:14px">
+        <div class="field full">
+          <label>ترتيب الشعارين في أعلى صفحة البطولة</label>
+          <select id="logo_layout">
+            <option value="normal">اللجنة يمين، الكأس يسار (الوضع الافتراضي)</option>
+            <option value="swapped">عكسه — الكأس يمين، اللجنة يسار</option>
+          </select>
+        </div>
+      </div>
+
       <!-- ألوان السمة -->
       <div class="form-grid" style="margin-top:10px">
         <div class="field">
@@ -352,6 +363,7 @@ async function editTour(id){
   document.getElementById('youtube_url').value=r.youtube_url||'';
   if(r.primary_color) document.getElementById('primary_color').value=r.primary_color;
   if(r.secondary_color) document.getElementById('secondary_color').value=r.secondary_color;
+  document.getElementById('logo_layout').value=r.logo_layout||'normal';
 
   // الخلفية
   if(r.bg_image_url){
@@ -436,6 +448,7 @@ document.getElementById('tForm').addEventListener('submit',async e=>{
     logo_url:document.getElementById('cup_logo_url').value||null,
     cup_logo_url:document.getElementById('cup_logo_url').value||null,
     committee_logo_url:document.getElementById('committee_logo_url').value||null,
+    logo_layout:document.getElementById('logo_layout').value||'normal',
     notes:document.getElementById('notes').value.trim()||null,
     instagram_url:document.getElementById('instagram_url').value.trim()||null,
     youtube_url:document.getElementById('youtube_url').value.trim()||null,

@@ -615,34 +615,44 @@ async function loadTournament(){
     document.getElementById('liveHeaderBadge').style.display='inline-flex';
   }
 
-  // الخلفية — من GitHub مباشرة حسب الموسم
+  // الخلفية — ما ترفعه في إعداد البطولة له الأولوية دائماً
   const bgEl=document.getElementById('heroBg');
-  const bgFile = season==='2027' ? 'bg_2027.jpg' : season==='2026' ? 'bg_2026.jpg' : '';
-  if(bgFile){
-    bgEl.style.backgroundImage=`url('https://gido70.github.io/football-championships/${bgFile}')`;
-    bgEl.style.backgroundSize='cover';
-    bgEl.style.backgroundPosition='center top';
-  } else if(t.bg_image_url && !t.bg_image_url.startsWith('data:')){
+  if(t.bg_image_url){
     bgEl.style.backgroundImage=`url('${t.bg_image_url}')`;
     bgEl.style.backgroundSize='cover';
     bgEl.style.backgroundPosition='center top';
   } else {
-    bgEl.style.background=`linear-gradient(135deg,${p},${s})`;
+    const bgFile = season==='2027' ? 'bg_2027.jpg' : season==='2026' ? 'bg_2026.jpg' : '';
+    if(bgFile){
+      bgEl.style.backgroundImage=`url('https://gido70.github.io/football-championships/${bgFile}')`;
+      bgEl.style.backgroundSize='cover';
+      bgEl.style.backgroundPosition='center top';
+    } else {
+      bgEl.style.background=`linear-gradient(135deg,${p},${s})`;
+    }
   }
 
-  // شعار اللجنة (يسار) — من GitHub
-  document.getElementById('committeeLogoWrap').innerHTML=
-    `<img src="https://gido70.github.io/football-championships/logo_committee.png" class="hero-side-logo" alt="اللجنة"
-      style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.8)) brightness(1.2)"
+  // شعار اللجنة — ما تُدخله في إعداد البطولة له الأولوية، بلا أي فلتر يغيّر ألوانه
+  const committeeUrl = t.committee_logo_url || `https://gido70.github.io/football-championships/logo_committee.png`;
+  const committeeImg=`<img src="${committeeUrl}" class="hero-side-logo" alt="اللجنة"
+      style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))"
       onerror="this.style.display='none'">`;
 
   // شعار الكأس — من قاعدة البيانات أولاً، ثم الملف الافتراضي
   const cupLogoUrl = t.cup_logo_url || t.logo_url ||
     `https://gido70.github.io/football-championships/logo_cup_${season||'2026'}.png`;
-  document.getElementById('cupLogoWrap').innerHTML=
-    `<img src="${cupLogoUrl}" class="hero-side-logo" alt="${name}"
+  const cupImg=`<img src="${cupLogoUrl}" class="hero-side-logo" alt="${name}"
       style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))"
       onerror="this.style.display='none'">`;
+
+  // ترتيب الشعارين قابل للعكس من إعدادات البطولة
+  if(t.logo_layout==='swapped'){
+    document.getElementById('committeeLogoWrap').innerHTML=cupImg;
+    document.getElementById('cupLogoWrap').innerHTML=committeeImg;
+  }else{
+    document.getElementById('committeeLogoWrap').innerHTML=committeeImg;
+    document.getElementById('cupLogoWrap').innerHTML=cupImg;
+  }
 }
 
 
