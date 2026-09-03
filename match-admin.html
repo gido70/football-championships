@@ -250,6 +250,21 @@ select option{background:#0f2a45;color:#ffffff}
       <div id="statusMsg" class="status" style="margin-top:10px"></div>
     </div>
 
+    <div class="match-meta-panel" style="background:linear-gradient(135deg,rgba(88,166,255,.1),rgba(88,166,255,.03));border:1.5px solid rgba(88,166,255,.35)">
+      <div class="meta-title collapsible-head" style="color:#58a6ff" onclick="toggleSection('videoPanel')">
+        <span>🎥 رابط بث المباراة (يوتيوب) <span class="collapsible-summary" id="videoSummary"></span></span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="collapsible-body" id="videoPanel">
+      <div class="meta-grid">
+        <div class="meta-field"><label>رابط البث المباشر (يوتيوب)</label><input id="streamUrl" placeholder="https://youtube.com/watch?v=... أو رابط live"></div>
+        <div class="meta-field"><label>رابط فيديو ملخص/تسجيل المباراة (بعد الانتهاء)</label><input id="highlightVideoUrl" placeholder="رابط يوتيوب لملخص/تسجيل المباراة"></div>
+      </div>
+      <div style="font-size:11.5px;color:#8fa3c0;margin-top:8px">💡 هذا الرابط يبقى محفوظاً مع المباراة دائماً — الجمهور يشاهد الفيديو مضمّناً داخل المنصة نفسها (كما كان في نسخة 2026)، مع زر اختياري لفتحه في يوتيوب مباشرة.</div>
+      <button class="btn-meta-save" style="margin-top:12px" onclick="saveMeta()">💾 حفظ رابط الفيديو</button>
+      </div>
+    </div>
+
     <div class="match-meta-panel">
       <div class="meta-title collapsible-head" onclick="toggleSection('refPanel')">
         <span>⚖️ الحكام والمعلق والملعب <span class="collapsible-summary" id="refSummary"></span></span>
@@ -284,31 +299,38 @@ select option{background:#0f2a45;color:#ffffff}
       </div>
     </div>
 
+    <div class="match-meta-panel">
+      <div class="meta-title collapsible-head" style="color:#f85149" onclick="toggleSection('injuryBody')">
+        <span>🩹 إصابات اللاعبين <span class="collapsible-summary" id="injurySummary"></span></span>
+        <span class="chev">▾</span>
+      </div>
+      <div class="collapsible-body" id="injuryBody">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+          <button type="button" id="injBtn" onclick="toggleInjDropdown()" style="background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.4);color:#f85149;border-radius:20px;padding:8px 16px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;min-height:38px">🩹 تسجيل إصابة <span id="injCount" style="display:none;background:#f85149;color:#fff;border-radius:10px;padding:0 6px;font-size:10px"></span></button>
+          <button type="button" class="voice-btn" onclick="startVoiceInjury()" title="تسجيل إصابة بالصوت">🎤</button>
+          <button type="button" onclick="clearAllInjuries()" style="background:transparent;border:1px solid #30363d;color:#8b949e;border-radius:20px;padding:8px 14px;font-size:11.5px;cursor:pointer;font-family:inherit;min-height:38px">🧹 مسح الإصابات القديمة</button>
+        </div>
+        <div id="injuryVoiceStatus" style="font-size:11px;color:#8fa3c0;margin-top:4px;display:none"></div>
+        <!-- شرائح اللاعبين المصابين -->
+        <div id="injuredChips" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px"></div>
+      </div>
+    </div>
+    <div id="injOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)toggleInjDropdown()">
+      <div id="injDropdown" style="background:#1B3A5C;border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:16px;width:100%;max-width:360px;max-height:70vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:13px;color:#eef5ff;font-weight:800">اختر اللاعب المصاب</span>
+          <button onclick="toggleInjDropdown()" style="background:none;border:none;color:#8fa3c0;font-size:18px;cursor:pointer">✕</button>
+        </div>
+        <div id="injPlayerList"></div>
+      </div>
+    </div>
+
     <div class="match-meta-panel" id="lineupPanel">
       <div class="meta-title collapsible-head" onclick="toggleSection('lineupBody')">
         <span>👥 التشكيلة الأساسية <span class="collapsible-summary" id="lineupSummary"></span></span>
         <span class="chev">▾</span>
       </div>
       <div class="collapsible-body" id="lineupBody">
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)">
-          <button type="button" id="injBtn" onclick="toggleInjDropdown()" style="background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.4);color:#f85149;border-radius:20px;padding:8px 16px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;min-height:38px">🩹 تسجيل إصابة <span id="injCount" style="display:none;background:#f85149;color:#fff;border-radius:10px;padding:0 6px;font-size:10px"></span></button>
-          <button type="button" class="voice-btn" onclick="startVoiceInjury()" title="تسجيل إصابة بالصوت">🎤</button>
-          <button type="button" onclick="clearAllInjuries()" style="background:transparent;border:1px solid #30363d;color:#8b949e;border-radius:20px;padding:8px 14px;font-size:11.5px;cursor:pointer;font-family:inherit;min-height:38px">🧹 مسح الإصابات القديمة</button>
-        </div>
-      <div id="injOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)toggleInjDropdown()">
-        <div id="injDropdown" style="background:#1B3A5C;border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:16px;width:100%;max-width:360px;max-height:70vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.5)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <span style="font-size:13px;color:#eef5ff;font-weight:800">اختر اللاعب المصاب</span>
-            <button onclick="toggleInjDropdown()" style="background:none;border:none;color:#8fa3c0;font-size:18px;cursor:pointer">✕</button>
-          </div>
-          <div id="injPlayerList"></div>
-        </div>
-      </div>
-      <div id="injuryVoiceStatus" style="font-size:11px;color:#8fa3c0;margin-top:4px;display:none"></div>
-
-      <!-- شرائح اللاعبين المصابين -->
-      <div id="injuredChips" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px"></div>
-
       <div class="lu-admin-grid">
         <div>
           <div class="lu-admin-team-hd" id="luHName">الفريق الأول</div>
@@ -447,20 +469,6 @@ select option{background:#0f2a45;color:#ffffff}
       </div>
     </div>
 
-    <div class="match-meta-panel" style="background:linear-gradient(135deg,rgba(88,166,255,.1),rgba(88,166,255,.03));border:1.5px solid rgba(88,166,255,.35)">
-      <div class="meta-title collapsible-head" style="color:#58a6ff" onclick="toggleSection('videoPanel')">
-        <span>🎥 رابط بث المباراة (يوتيوب) <span class="collapsible-summary" id="videoSummary"></span></span>
-        <span class="chev">▾</span>
-      </div>
-      <div class="collapsible-body" id="videoPanel">
-      <div class="meta-grid">
-        <div class="meta-field"><label>رابط البث المباشر (يوتيوب)</label><input id="streamUrl" placeholder="https://youtube.com/watch?v=... أو رابط live"></div>
-        <div class="meta-field"><label>رابط فيديو ملخص/تسجيل المباراة (بعد الانتهاء)</label><input id="highlightVideoUrl" placeholder="رابط يوتيوب لملخص/تسجيل المباراة"></div>
-      </div>
-      <div style="font-size:11.5px;color:#8fa3c0;margin-top:8px">💡 هذا الرابط يبقى محفوظاً مع المباراة دائماً — الجمهور يشاهد الفيديو مضمّناً داخل المنصة نفسها (كما كان في نسخة 2026)، مع زر اختياري لفتحه في يوتيوب مباشرة.</div>
-      <button class="btn-meta-save" style="margin-top:12px" onclick="saveMeta()">💾 حفظ رابط الفيديو</button>
-      </div>
-    </div>
 
     <div class="match-meta-panel" style="background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.03));border:1.5px solid rgba(201,168,76,.35)">
       <div class="meta-title collapsible-head" style="color:#c9a84c" onclick="toggleSection('reportsPanel')">
@@ -1372,6 +1380,8 @@ function renderInjuredChips(){
   const cnt=document.getElementById('injCount');
   cnt.style.display=injured.length?'inline':'none';
   cnt.textContent=injured.length;
+  const injSum=document.getElementById('injurySummary');
+  if(injSum)injSum.textContent=injured.length?'('+injured.length+' مصاب)':'';
   const ini=n=>(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
   document.getElementById('injuredChips').innerHTML=injured.map(p=>`
     <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.35);border-radius:30px;padding:5px 12px 5px 6px;cursor:pointer" title="اضغط لإلغاء الإصابة" onclick="selectInjured('${p.id}')">
