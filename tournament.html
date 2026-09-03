@@ -256,6 +256,17 @@ img[src=""], img:not([src]) { display:none !important; }
 </style>
 </head>
 <body>
+<div id="accessGateOverlay" style="display:none;position:fixed;inset:0;background:#0F2A4A;z-index:9999;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#1B3A5C;border-radius:20px;padding:32px 24px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="font-size:44px;margin-bottom:10px">🔒</div>
+    <div style="font-weight:900;font-size:17px;color:#eef5ff;margin-bottom:8px">هذه البطولة خاصة</div>
+    <div style="font-size:13px;color:#b7c6dc;margin-bottom:18px">أدخل رمز الدخول الذي استلمته لمشاهدة هذه البطولة</div>
+    <input id="accessCodeInput" placeholder="اكتب الرمز هنا" style="width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:#0F2A4A;color:#fff;font-size:15px;text-align:center;margin-bottom:12px" onkeydown="if(event.key==='Enter')submitAccessCode()">
+    <button onclick="submitAccessCode()" style="width:100%;background:#C9A84C;color:#0F2A4A;border:none;border-radius:10px;padding:12px;font-weight:900;font-size:14px;cursor:pointer">دخول</button>
+    <div id="accessGateMsg" style="color:#f85149;font-size:12.5px;margin-top:10px"></div>
+  </div>
+</div>
+<div id="pageBodyWrap" style="display:none">
 <div id="installBanner" style="display:none;position:sticky;top:0;z-index:200;background:linear-gradient(135deg,#0F2A4A,#1B3A5C);color:#fff;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.2)">
   <span id="installBannerText">📲 احفظ المنصة كتطبيق على هاتفك بضغطة واحدة</span>
   <button id="installBannerBtn" onclick="handleInstallClick()" style="background:#C9A84C;color:#0F2A4A;border:none;border-radius:20px;padding:6px 16px;font-weight:900;font-size:12.5px;margin-right:10px;cursor:pointer">تثبيت الآن</button>
@@ -347,6 +358,40 @@ img[src=""], img:not([src]) { display:none !important; }
 <script>
 const sb=supabase.createClient("https://npoowwdjpbvhyjrmeqkv.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY");
 const TID=new URLSearchParams(location.search).get('id');
+
+async function checkTournamentAccess(){
+  const {data:t}=await sb.from('tournaments').select('is_public').eq('id',TID).single();
+  if(!t||t.is_public!==false){
+    document.getElementById('pageBodyWrap').style.display='block';
+    return true;
+  }
+  const grantedKey='tourAccess_'+TID;
+  if(localStorage.getItem(grantedKey)==='1'){
+    document.getElementById('pageBodyWrap').style.display='block';
+    return true;
+  }
+  document.getElementById('accessGateOverlay').style.display='flex';
+  return false;
+}
+async function submitAccessCode(){
+  const code=document.getElementById('accessCodeInput').value.trim();
+  const msgEl=document.getElementById('accessGateMsg');
+  if(!code){msgEl.textContent='اكتب الرمز أولاً';return;}
+  msgEl.style.color='#8fa3c0';msgEl.textContent='⏳ جاري التحقق...';
+  const {data}=await sb.from('viewer_access_codes').select('id').eq('tournament_id',TID).eq('code',code).maybeSingle();
+  if(data){
+    localStorage.setItem('tourAccess_'+TID,'1');
+    document.getElementById('accessGateOverlay').style.display='none';
+    document.getElementById('pageBodyWrap').style.display='block';
+    location.reload();
+  }else{
+    msgEl.style.color='#f85149';
+    msgEl.textContent='❌ رمز غير صحيح، حاول مرة أخرى';
+  }
+}
+window.submitAccessCode=submitAccessCode;
+let ACCESS_GRANTED=true;
+(async()=>{ ACCESS_GRANTED=await checkTournamentAccess(); })();
 document.getElementById('qlinkStats').href='stats.html?id='+TID;
   document.getElementById('qlinkAwards').href='awards.html?id='+TID;
   document.getElementById('qlinkVideos').href='videos.html?id='+TID;
@@ -1001,5 +1046,6 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
 }
 </script>
+</div>
 </body>
 </html>
