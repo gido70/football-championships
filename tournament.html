@@ -603,6 +603,7 @@ loadNews();
 loadMOTD();
 loadLiveMatch();
 setInterval(loadLiveMatch,12000);
+requestNotifyPermissionOnce();
 
 // ===== شريط "احفظ كتطبيق" الذكي =====
 let deferredInstallPrompt=null;
@@ -638,10 +639,36 @@ window.dismissInstallBanner=dismissInstallBanner;
 loadFeed();
 
 const TAB_ACCENT={st:'#639922',ma:'#c9a84c',sc:'#D85A30',tm:'#378ADD'};
+let lastKnownScores={};
+function requestNotifyPermissionOnce(){
+  if(!('Notification' in window))return;
+  if(Notification.permission==='default'&&!localStorage.getItem('notifyAsked')){
+    localStorage.setItem('notifyAsked','1');
+    setTimeout(()=>Notification.requestPermission(),4000);
+  }
+}
+function showLocalNotification(title,body){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  try{
+    const n=new Notification(title,{body,icon:'./icon-app.png',silent:true,tag:'live-update'});
+    setTimeout(()=>n.close(),8000);
+  }catch(e){}
+}
+
 async function loadLiveMatch(){
   const sec=document.getElementById('liveMatchSection');
   const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(2);
   if(!matches?.length){sec.innerHTML='';return;}
+
+  matches.forEach(m=>{
+    const key=m.id, hn=m.ht?.name_ar||m.ht?.name||'', an=m.at?.name_ar||m.at?.name||'';
+    const scoreStr=`${m.home_score??0}-${m.away_score??0}`;
+    if(lastKnownScores[key]!==undefined&&lastKnownScores[key]!==scoreStr){
+      showLocalNotification('⚽ تحديث النتيجة',`${hn} ${m.home_score??0} - ${m.away_score??0} ${an}`);
+    }
+    lastKnownScores[key]=scoreStr;
+  });
+
   sec.innerHTML=`<div class="live-wrap">${matches.map(m=>`
     <div class="live-card" style="margin-bottom:10px">
       <a href="match-live.html?id=${m.id}" style="display:block;color:inherit;text-decoration:none">
