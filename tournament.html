@@ -349,27 +349,77 @@ document.getElementById('qlinkStats').href='stats.html?id='+TID;
   document.getElementById('qlinkDocs').href='documents.html?id='+TID;
   document.getElementById('qlinkPredictions').href='leaderboard.html?tid='+TID;
 
+async function generateAutoBulletin(){
+  if(!TID)return[];
+  const items=[];
+  const {data:tour}=await sb.from('tournaments').select('primary_color').eq('id',TID).single();
+  const bulletinColor=tour?.primary_color||'#c9a84c';
+
+  // 1) المتصدر الحالي من جدول الترتيب
+  const {data:teams}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
+  const {data:matches}=await sb.from('matches').select('*').eq('tournament_id',TID).eq('status','completed');
+  if(teams?.length&&matches?.length){
+    const st={};teams.forEach(t=>st[t.id]={t,p:0,w:0,d:0,l:0,gf:0,ga:0});
+    matches.forEach(m=>{
+      if(!st[m.home_team_id]||!st[m.away_team_id])return;
+      const h=st[m.home_team_id],a=st[m.away_team_id],hs=m.home_score||0,as=m.away_score||0;
+      h.p++;a.p++;h.gf+=hs;h.ga+=as;a.gf+=as;a.ga+=hs;
+      if(hs>as){h.w++;a.l++;}else if(hs<as){a.w++;h.l++;}else{h.d++;a.d++;}
+    });
+    const table=Object.values(st).sort((a,b)=>((b.w*3+b.d)-(a.w*3+a.d))||((b.gf-b.ga)-(a.gf-a.ga)));
+    if(table[0]?.p>0){
+      const leader=table[0];
+      items.push(`🏆 المتصدر حالياً: ${leader.t.name_ar||leader.t.name} برصيد ${leader.w*3+leader.d} نقطة`);
+    }
+    // 2) آخر نتيجة
+    const lastMatch=matches.sort((a,b)=>new Date(b.match_date||0)-new Date(a.match_date||0))[0];
+    if(lastMatch){
+      const hn=teams.find(t=>t.id===lastMatch.home_team_id)?.name_ar||'';
+      const an=teams.find(t=>t.id===lastMatch.away_team_id)?.name_ar||'';
+      items.push(`📊 آخر نتيجة: ${hn} ${lastMatch.home_score} - ${lastMatch.away_score} ${an}`);
+    }
+  }
+  // 3) الهداف الحالي (إن وُجد إسناد لاعب حقيقي لأي هدف)
+  const {data:goalEvents}=await sb.from('match_events').select('player_id,player:players(full_name_ar,name)').eq('tournament_id',TID).eq('event_type','goal').not('player_id','is',null);
+  if(goalEvents?.length){
+    const cnt={};goalEvents.forEach(e=>{const n=e.player?.full_name_ar||e.player?.name;if(n)cnt[n]=(cnt[n]||0)+1;});
+    const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
+    if(top)items.push(`⚽ هداف البطولة حتى الآن: ${top[0]} برصيد ${top[1]} ${top[1]===1?'هدف':'أهداف'}`);
+  }
+  // 4) المباراة القادمة
+  const {data:nextMatches}=await sb.from('matches').select('*').eq('tournament_id',TID).eq('status','scheduled').order('match_date').limit(1);
+  const nextMatch=nextMatches?.[0];
+  if(nextMatch&&teams?.length){
+    const hn=teams.find(t=>t.id===nextMatch.home_team_id)?.name_ar||'';
+    const an=teams.find(t=>t.id===nextMatch.away_team_id)?.name_ar||'';
+    items.push(`📅 المباراة القادمة: ${hn} × ${an} — ${nextMatch.match_date||''}`);
+  }
+  return {items,color:bulletinColor};
+}
+
 async function loadNews(){
   if(!TID)return;
   const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(30);
   const banner=document.getElementById('newsBanner');
-  if(!data?.length){banner.innerHTML='';return;}
 
-  const matchItems=data.filter(n=>n.match_id);
-  const generalItems=data.filter(n=>!n.match_id);
+  const matchItems=(data||[]).filter(n=>n.match_id);
+  const generalItems=(data||[]).filter(n=>!n.match_id);
+  const {items:bulletinItems,color:bulletinColor}=await generateAutoBulletin();
+
+  if(!matchItems.length&&!generalItems.length&&!bulletinItems.length){banner.innerHTML='';return;}
 
   const line=(id,label,items,color)=>items.length?`
     <div class="ticker-line" style="border-color:${color}55">
       <div class="ticker-label" style="background:${color}22;color:${color};border-color:${color}55">${label}</div>
       <div class="ticker-viewport">
-        <div class="ticker-track" id="${id}Track">${items.map(n=>`<span class="ticker-item">${n.content}</span>`).join('<span class="ticker-sep">•</span>')}</div>
+        <div class="ticker-track" id="${id}Track">${items.map(n=>`<span class="ticker-item">${n.content||n}</span>`).join('<span class="ticker-sep">•</span>')}</div>
       </div>
       <button class="ticker-toggle" id="${id}Toggle" onclick="toggleTicker('${id}')">⏸</button>
     </div>`:'';
 
-  banner.innerHTML=`<div class="ticker-wrap">${line('match','⚽ أخبار المباريات',matchItems,'#1d4e89')}${line('general','📢 أخبار الكأس',generalItems,'#a3364c')}</div>`;
+  banner.innerHTML=`<div class="ticker-wrap">${line('bulletin','📰 نشرة البطولة',bulletinItems,bulletinColor)}${line('match','⚽ أخبار المباريات',matchItems,'#1d4e89')}${line('general','📢 أخبار الكأس',generalItems,'#a3364c')}</div>`;
 
-  ['match','general'].forEach(id=>{
+  ['bulletin','match','general'].forEach(id=>{
     const track=document.getElementById(id+'Track');
     if(track)startTickerAnim(id,track);
   });
