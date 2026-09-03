@@ -252,6 +252,16 @@ select option{background:#0f2a45;color:#ffffff}
       <button class="btn-meta-save" style="margin-top:12px" onclick="saveMeta()">💾 حفظ رابط الفيديو</button>
     </div>
 
+    <div class="match-meta-panel" style="background:linear-gradient(135deg,rgba(201,168,76,.1),rgba(201,168,76,.03));border:1.5px solid rgba(201,168,76,.35)">
+      <div class="meta-title" style="color:#c9a84c">🖨️ تقارير قابلة للطباعة (وورد)</div>
+      <div style="font-size:11.5px;color:#8fa3c0;margin-bottom:12px">مستندان جاهزان للطباعة قبل المباراة — تشكيلة كل فريق كاملة، توقيع الإداري، وبيانات المعلّق.</div>
+      <div class="actions">
+        <button class="btn secondary" onclick="printRefereeReport()">⚖️ تقرير الحكم</button>
+        <button class="btn secondary" onclick="printCommentatorReport()">🎙️ تقرير المعلّق</button>
+      </div>
+      <div class="status" id="reportMsg"></div>
+    </div>
+
     <!-- معلومات المباراة: حكام، معلق، ملعب -->
     <div class="match-meta-panel">
       <div class="meta-title">⚖️ الحكام والمعلق والملعب</div>
@@ -1350,6 +1360,77 @@ async function saveLineups(){
 
 
 window.openEvt=openEvt;window.closeEvt=closeEvt;window.submitEvt=submitEvt;window.delEvt=delEvt;
+function escR(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+function rTable(title,headers,rows){
+  if(!rows||!rows.length)return `<h2 style="color:#1a5c3a;border-bottom:2px solid #c9a84c;padding-bottom:4px">${title}</h2><p style="color:#888">لا توجد بيانات</p>`;
+  return `<h2 style="color:#1a5c3a;border-bottom:2px solid #c9a84c;padding-bottom:4px">${title}</h2>
+    <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:20px" dir="rtl">
+      <tr>${headers.map(h=>`<th style="background:#1a5c3a;color:#fff;padding:6px">${escR(h)}</th>`).join('')}</tr>
+      ${rows.map(r=>`<tr>${r.map(c=>`<td style="padding:6px;text-align:center">${escR(c)}</td>`).join('')}</tr>`).join('')}
+    </table>`;
+}
+function downloadReportDoc(filename,pageTitle,bodyHtml){
+  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:Tajawal,Arial">
+    <h1 style="text-align:center;color:#1a5c3a">${escR(pageTitle)}</h1>${bodyHtml}</body></html>`;
+  const blob=new Blob(['\ufeff',html],{type:'application/msword'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;a.click();
+  URL.revokeObjectURL(url);
+}
+async function fetchReportData(){
+  const {data:hTeam}=await sb.from('teams').select('name,name_ar,submitted_by_name,coach_name').eq('id',cur.home_team_id).single();
+  const {data:aTeam}=await sb.from('teams').select('name,name_ar,submitted_by_name,coach_name').eq('id',cur.away_team_id).single();
+  const {data:lineups}=await sb.from('match_lineups').select('team_id,is_starting,player:players(name,full_name_ar,number,nationality,is_goalkeeper)').eq('match_id',cur.id).order('team_id');
+  const hName=cur.ht?.name_ar||cur.ht?.name||'الفريق الأول';
+  const aName=cur.at?.name_ar||cur.at?.name||'الفريق الثاني';
+  const hLineup=(lineups||[]).filter(l=>l.team_id===cur.home_team_id).map(l=>l.player).filter(Boolean).sort((a,b)=>(a.number||99)-(b.number||99));
+  const aLineup=(lineups||[]).filter(l=>l.team_id===cur.away_team_id).map(l=>l.player).filter(Boolean).sort((a,b)=>(a.number||99)-(b.number||99));
+  return {hTeam,aTeam,hName,aName,hLineup,aLineup};
+}
+
+async function printRefereeReport(){
+  document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
+  const {hTeam,aTeam,hName,aName,hLineup,aLineup}=await fetchReportData();
+  const infoRows=[
+    ['الفريق الأول',hName],['الفريق الثاني',aName],
+    ['الملعب',document.getElementById('venueName').value||'—'],
+    ['الحكم الأول',document.getElementById('referee1').value||'—'],
+    ['الحكم الثاني',document.getElementById('referee2').value||'—'],
+  ];
+  const hRows=hLineup.map(p=>[p.number??'',p.full_name_ar||p.name||'—',p.is_goalkeeper?'حارس':'لاعب']);
+  const aRows=aLineup.map(p=>[p.number??'',p.full_name_ar||p.name||'—',p.is_goalkeeper?'حارس':'لاعب']);
+  let body='';
+  body+=rTable('📋 معلومات المباراة',['البيان','التفاصيل'],infoRows);
+  body+=rTable('👥 تشكيلة '+hName,['الرقم','الاسم','الصفة'],hRows);
+  body+=`<p style="margin:6px 0 24px">توقيع إداري ${escR(hName)}: ${escR(hTeam?.submitted_by_name||'____________________')} &nbsp;&nbsp;&nbsp; التوقيع: ______________</p>`;
+  body+=rTable('👥 تشكيلة '+aName,['الرقم','الاسم','الصفة'],aRows);
+  body+=`<p style="margin:6px 0 24px">توقيع إداري ${escR(aName)}: ${escR(aTeam?.submitted_by_name||'____________________')} &nbsp;&nbsp;&nbsp; التوقيع: ______________</p>`;
+  body+=`<p style="margin-top:30px">توقيع الحكم: ______________</p>`;
+  downloadReportDoc('تقرير الحكم - '+hName+' × '+aName+'.doc','تقرير حكم المباراة',body);
+  document.getElementById('reportMsg').textContent='✅ تم التحميل';
+}
+window.printRefereeReport=printRefereeReport;
+
+async function printCommentatorReport(){
+  document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
+  const {hName,aName,hLineup,aLineup}=await fetchReportData();
+  const infoRows=[
+    ['الفريق الأول',hName],['الفريق الثاني',aName],
+    ['الملعب',document.getElementById('venueName').value||'—'],
+    ['المعلّق',document.getElementById('commentator').value||'—'],
+  ];
+  const hRows=hLineup.map(p=>[p.number??'',p.full_name_ar||p.name||'—',p.nationality||'—']);
+  const aRows=aLineup.map(p=>[p.number??'',p.full_name_ar||p.name||'—',p.nationality||'—']);
+  let body='';
+  body+=rTable('📋 معلومات المباراة',['البيان','التفاصيل'],infoRows);
+  body+=rTable('🎙️ تشكيلة '+hName+' (بالأرقام والجنسيات)',['الرقم','الاسم','الجنسية'],hRows);
+  body+=rTable('🎙️ تشكيلة '+aName+' (بالأرقام والجنسيات)',['الرقم','الاسم','الجنسية'],aRows);
+  downloadReportDoc('تقرير المعلق - '+hName+' × '+aName+'.doc','تقرير المعلّق',body);
+  document.getElementById('reportMsg').textContent='✅ تم التحميل';
+}
+window.printCommentatorReport=printCommentatorReport;
+
 window.saveMeta=saveMeta;window.setVAR=setVAR;
 window.chScore=chScore;window.setMatchStatus=setMatchStatus;window.saveMin=saveMin;window.resetForTest=resetForTest;window.saveLineups=saveLineups;
 
