@@ -1380,13 +1380,14 @@ function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
 async function fetchReportData(){
   const {data:hTeam}=await sb.from('teams').select('name,name_ar,submitted_by_name,coach_name,logo_url').eq('id',cur.home_team_id).single();
   const {data:aTeam}=await sb.from('teams').select('name,name_ar,submitted_by_name,coach_name,logo_url').eq('id',cur.away_team_id).single();
-  const {data:lineups}=await sb.from('match_lineups').select('team_id,is_starting,player:players(name,full_name_ar,number,nationality,is_goalkeeper)').eq('match_id',cur.id).order('team_id');
+  const {data:hRoster}=await sb.from('players').select('name,full_name_ar,number,nationality,is_goalkeeper').eq('team_id',cur.home_team_id).order('number');
+  const {data:aRoster}=await sb.from('players').select('name,full_name_ar,number,nationality,is_goalkeeper').eq('team_id',cur.away_team_id).order('number');
   const {data:tour}=await sb.from('tournaments').select('name_ar,name,committee_logo_url,cup_logo_url,logo_url').eq('id',cur.tournament_id).single();
   const {data:events}=await sb.from('match_events').select('event_type,minute').eq('match_id',cur.id).eq('event_type','goal').order('minute');
   const hName=cur.ht?.name_ar||cur.ht?.name||'الفريق الأول';
   const aName=cur.at?.name_ar||cur.at?.name||'الفريق الثاني';
-  const hLineup=(lineups||[]).filter(l=>l.team_id===cur.home_team_id).map(l=>l.player).filter(Boolean).sort((a,b)=>(a.number||99)-(b.number||99));
-  const aLineup=(lineups||[]).filter(l=>l.team_id===cur.away_team_id).map(l=>l.player).filter(Boolean).sort((a,b)=>(a.number||99)-(b.number||99));
+  const hLineup=(hRoster||[]).sort((a,b)=>(a.number||99)-(b.number||99));
+  const aLineup=(aRoster||[]).sort((a,b)=>(a.number||99)-(b.number||99));
   return {hTeam,aTeam,hName,aName,hLineup,aLineup,tour,events:events||[]};
 }
 
@@ -1402,13 +1403,14 @@ function reportLetterhead(tour,tourName){
 
 async function printRefereeReport(){
   document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
-  const {hName,aName,tour,events}=await fetchReportData();
+  const {hName,aName,hLineup,aLineup,tour,events}=await fetchReportData();
   const tourName=tour?.name_ar||tour?.name||'';
   const hHalf=events.filter(e=>e.minute<=45).length, aHalf=events.length-hHalf; // تقديري وفق دقيقة كل هدف
   const infoTable=`
     <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px" dir="rtl">
       <tr><td style="background:#1a5c3a;color:#fff;padding:8px;font-weight:800;width:20%">رقم المباراة</td><td style="padding:8px" colspan="3">${escR(cur.match_no||'—')}</td></tr>
-      <tr><td style="background:#1a5c3a;color:#fff;padding:8px;font-weight:800">البطولة</td><td style="padding:8px" colspan="3">${escR(tourName)}</td></tr>
+      <tr><td style="background:#1a5c3a;color:#fff;padding:8px;font-weight:800">التاريخ</td><td style="padding:8px">${escR(cur.match_date||'—')} ${escR(cur.match_time||'')}</td>
+          <td style="background:#1a5c3a;color:#fff;padding:8px;font-weight:800">البطولة</td><td style="padding:8px">${escR(tourName)}</td></tr>
       <tr><td style="background:#1a5c3a;color:#fff;padding:8px;font-weight:800">الملعب</td><td style="padding:8px" colspan="3">${escR(document.getElementById('venueName').value||'—')}</td></tr>
       <tr>
         <td style="background:#1a5c3a;color:#fff;padding:8px;font-weight:800">الفريق</td><td style="padding:8px;font-weight:800">${escR(hName)}</td>
@@ -1417,6 +1419,12 @@ async function printRefereeReport(){
       <tr>
         <td style="background:#1a5c3a;color:#fff;padding:8px;font-weight:800">النتيجة النهائية</td><td style="padding:8px;text-align:center" colspan="3"><b style="font-size:16px">${cur.home_score??0} - ${cur.away_score??0}</b></td>
       </tr>
+    </table>`;
+  const rosterTable=(name,roster)=>`
+    <h2 style="color:#1a5c3a;border-bottom:2px solid #c9a84c;padding-bottom:4px">👥 قائمة ${escR(name)} الكاملة (${roster.length} لاعباً) — يُؤشَّر عليها حسب المشاركين فعلياً</h2>
+    <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12.5px" dir="rtl">
+      <tr><th style="background:#1a5c3a;color:#fff;padding:6px;width:12%">مشارك؟</th><th style="background:#1a5c3a;color:#fff;padding:6px;width:12%">الرقم</th><th style="background:#1a5c3a;color:#fff;padding:6px">الاسم</th></tr>
+      ${roster.map(p=>`<tr><td style="text-align:center;font-size:20px;padding:6px">☐</td><td style="text-align:center;padding:6px">${p.number??''}</td><td style="padding:6px">${escR(p.full_name_ar||p.name||'—')}</td></tr>`).join('')}
     </table>`;
   const blankRows=Array.from({length:16}).map(()=>`<tr><td style="padding:14px;border:1px solid #999"></td><td style="padding:14px;border:1px solid #999"></td><td style="padding:14px;border:1px solid #999"></td><td style="padding:14px;border:1px solid #999"></td></tr>`).join('');
   const eventsTable=`
@@ -1445,7 +1453,7 @@ async function printRefereeReport(){
       </tr>
     </table>`;
   const header=reportLetterhead(tour,tourName);
-  const body=infoTable+eventsTable+sigTable;
+  const body=infoTable+rosterTable(hName,hLineup)+rosterTable(aName,aLineup)+eventsTable+sigTable;
   downloadReportDoc('تقرير الحكم - '+hName+' × '+aName+'.doc','تقرير حكم المباراة',body,header);
   document.getElementById('reportMsg').textContent='✅ تم التحميل';
 }
