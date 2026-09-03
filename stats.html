@@ -106,6 +106,7 @@ a{text-decoration:none;color:inherit}
   <a class="nav-back" id="backLink" href="index.html">← رجوع</a>
   <div class="nav-title" id="navTitle">📊 الإحصائيات</div>
 </div>
+<div id="scopeNotice" style="display:none;background:rgba(184,134,11,.1);border-bottom:2px solid #b8860b;color:#8a6d2f;text-align:center;padding:10px 16px;font-size:13px;font-weight:700"></div>
 
 <div class="hero">
   <h1 id="tName">إحصائيات البطولة</h1>
@@ -190,6 +191,11 @@ async function init(){
     document.getElementById('tName').textContent=t.name_ar||t.name||'';
     document.getElementById('navTitle').innerHTML='📊 إحصائيات '+(t.name_ar||t.name||'');
     document.title='إحصائيات '+(t.name_ar||t.name||'');
+    if(t.notes){
+      const nEl=document.getElementById('scopeNotice');
+      nEl.textContent=t.notes;
+      nEl.style.display='block';
+    }
   }
 
   const {data:teams}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
