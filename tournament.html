@@ -497,6 +497,7 @@ async function loadMOTD(){
 loadNews();
 loadMOTD();
 loadLiveMatch();
+setInterval(loadLiveMatch,12000);
 loadFeed();
 
 const TAB_ACCENT={st:'#639922',ma:'#c9a84c',sc:'#D85A30',tm:'#378ADD'};
