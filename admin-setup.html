@@ -92,7 +92,16 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
           <option value="groups_knockout">مجموعات + إقصاء</option>
           <option value="knockout">إقصاء مباشر</option>
           <option value="league">دوري</option>
+          <option value="swiss_league">دوري سويسري (نظام دوري أبطال أوروبا الجديد)</option>
         </select>
+      </div>
+      <div class="field" id="swissQualifyField" style="display:none">
+        <label>عدد المتأهلين مباشرة لدور الـ16</label>
+        <input type="number" id="swiss_auto_qualify" value="8" min="1">
+      </div>
+      <div class="field" id="swissPlayoffField" style="display:none">
+        <label>آخر مركز مؤهل للملحق الإقصائي</label>
+        <input type="number" id="swiss_playoff_cutoff" value="24" min="1">
       </div>
       <div class="field">
         <label>عدد الفرق</label>
@@ -377,6 +386,9 @@ async function editTour(id){
   document.getElementById('name').value=r.name||'';
   document.getElementById('season_label').value=r.season_label||'';
   document.getElementById('tournament_type').value=r.tournament_type||'groups_knockout';
+  document.getElementById('swiss_auto_qualify').value=r.swiss_auto_qualify||8;
+  document.getElementById('swiss_playoff_cutoff').value=r.swiss_playoff_cutoff||24;
+  toggleSwissFields();
   document.getElementById('team_count').value=r.team_count||16;
   document.getElementById('group_count').value=r.group_count||4;
   document.getElementById('status').value=r.status||'draft';
@@ -430,6 +442,13 @@ async function delTour(id){
   if(error){setMsg('فشل الحذف','err');return;}
   setMsg('تم الحذف','ok');loadRows();
 }
+
+function toggleSwissFields(){
+  const isSwiss=document.getElementById('tournament_type').value==='swiss_league';
+  document.getElementById('swissQualifyField').style.display=isSwiss?'block':'none';
+  document.getElementById('swissPlayoffField').style.display=isSwiss?'block':'none';
+}
+document.getElementById('tournament_type').addEventListener('change',toggleSwissFields);
 
 document.getElementById('is_public').addEventListener('change',function(){
   document.getElementById('privateCodesBox').style.display=this.checked?'none':'block';
@@ -496,6 +515,8 @@ document.getElementById('tForm').addEventListener('submit',async e=>{
     name:document.getElementById('name').value.trim(),
     season_label:document.getElementById('season_label').value.trim(),
     tournament_type:document.getElementById('tournament_type').value,
+    swiss_auto_qualify:parseInt(document.getElementById('swiss_auto_qualify').value)||8,
+    swiss_playoff_cutoff:parseInt(document.getElementById('swiss_playoff_cutoff').value)||24,
     status:document.getElementById('status').value,
     team_count:Number(document.getElementById('team_count').value||0),
     group_count:Number(document.getElementById('group_count').value||0),

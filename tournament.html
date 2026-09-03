@@ -828,6 +828,9 @@ async function loadStandings(){
   const {data:teams}=await sb.from('teams').select('*').eq('tournament_id',TID);
   const {data:matches}=await sb.from('matches').select('*').eq('tournament_id',TID).eq('status','completed');
   const {data:cardEvents}=await sb.from('match_events').select('team_id,event_type').eq('tournament_id',TID).in('event_type',['yellow_card','red_card']);
+  const {data:tourCfg}=await sb.from('tournaments').select('tournament_type,swiss_auto_qualify,swiss_playoff_cutoff').eq('id',TID).single();
+  const isSwiss=tourCfg?.tournament_type==='swiss_league';
+  const autoQ=tourCfg?.swiss_auto_qualify||8, playoffCut=tourCfg?.swiss_playoff_cutoff||24;
   document.getElementById('hT').textContent=teams?.length||0;
   if(!teams||!teams.length){document.getElementById('stWrap').innerHTML='<div class="empty"><span>📊</span><p>لا يوجد ترتيب بعد<br>أضف الفرق وابدأ المباريات</p></div>';return;}
   const st={};
@@ -880,9 +883,21 @@ async function loadStandings(){
     html+=`<div class="st-wrap"><div class="g-title">${grpTitle}</div><div class="st-scroll"><table class="st-table"><thead><tr><th>#</th><th>الفريق</th><th title="لعب">ل</th><th title="فاز">ف</th><th title="تعادل">ت</th><th title="خسر">خ</th><th title="له">له</th><th title="عليه">عل</th><th title="الفارق">فق</th><th style="color:#c9a84c" title="النقاط">نق</th></tr></thead><tbody>`;
     rows.forEach((r,i)=>{
       const pts=r.w*3+r.d,gd=r.gf-r.ga,gc=gd>0?'gd-p':gd<0?'gd-n':'';
-      html+=`<tr><td><span class="rk rk-${i+1}">${i+1}</span></td><td><div class="t-cell"><div class="t-dot" style="background:${r.t.color_primary||'#79786A'}"></div><span class="t-name">${r.t.name}</span></div></td><td class="nc">${r.p}</td><td class="nc">${r.w}</td><td class="nc">${r.d}</td><td class="nc">${r.l}</td><td class="nc">${r.gf}</td><td class="nc">${r.ga}</td><td class="nc ${gc}">${gd>0?'+':''}${gd}</td><td><span class="pts">${pts}</span></td></tr>`;
+      const rank=i+1;
+      let zoneBorder='';
+      if(isSwiss){
+        if(rank<=autoQ)zoneBorder='border-right:4px solid #2ea043';
+        else if(rank<=playoffCut)zoneBorder='border-right:4px solid #d29922';
+        else zoneBorder='border-right:4px solid #6e7681';
+      }
+      html+=`<tr style="${zoneBorder}"><td><span class="rk rk-${i+1}">${i+1}</span></td><td><div class="t-cell"><div class="t-dot" style="background:${r.t.color_primary||'#79786A'}"></div><span class="t-name">${r.t.name}</span></div></td><td class="nc">${r.p}</td><td class="nc">${r.w}</td><td class="nc">${r.d}</td><td class="nc">${r.l}</td><td class="nc">${r.gf}</td><td class="nc">${r.ga}</td><td class="nc ${gc}">${gd>0?'+':''}${gd}</td><td><span class="pts">${pts}</span></td></tr>`;
     });
     html+='</tbody></table></div>';
+    if(isSwiss)html+=`<div style="max-width:900px;margin:10px auto 0;padding:0 16px;font-size:11.5px;display:flex;gap:16px;flex-wrap:wrap">
+      <span><span style="display:inline-block;width:10px;height:10px;background:#2ea043;border-radius:2px;margin-left:5px"></span>مؤهل مباشرة لدور الـ16 (1-${autoQ})</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#d29922;border-radius:2px;margin-left:5px"></span>ملحق إقصائي (${autoQ+1}-${playoffCut})</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:#6e7681;border-radius:2px;margin-left:5px"></span>مُقصى (${playoffCut+1} فما فوق)</span>
+    </div>`;
   });
   html+='<div style="max-width:900px;margin:8px auto 0;padding:0 16px;font-size:10.5px;color:#9C9A8D">ترتيب الفوز بالتعادل: النقاط ← فارق الأهداف ← الأهداف المسجَّلة ← المواجهة المباشرة ← اللعب النظيف (كروت أقل)</div>';
   document.getElementById('stWrap').innerHTML=html;
