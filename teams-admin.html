@@ -298,6 +298,64 @@ document.getElementById('copyBtn').onclick=async()=>{
 };
 
 </script>
+
+<section class="panel" style="margin-top:24px;background:rgba(163,54,76,.06);border:1px solid rgba(163,54,76,.35)">
+  <h3 style="color:#a3364c">⚠️ منطقة الخطر — تصفير البطولة بالكامل</h3>
+  <p style="color:#9fb0c9;font-size:13px;margin-bottom:14px">
+    يحذف نهائياً <strong>كل</strong> الفرق واللاعبين والمباريات وأحداثها (أهداف، بطاقات، فار، ترجيح) والجوائز والتشكيلات، لكن يُبقي البطولة نفسها (الاسم، الشعار، التواريخ) لتُملأ من جديد ببيانات حقيقية.
+    <br><strong style="color:#f7c948">لا يمكن التراجع عن هذا الإجراء إطلاقاً.</strong>
+  </p>
+  <div class="form-grid">
+    <div class="field full">
+      <label>اكتب اسم البطولة المختارة أعلاه بالضبط للتأكيد</label>
+      <input id="resetConfirmInput" placeholder="اكتب اسم البطولة هنا حرفياً">
+    </div>
+  </div>
+  <div class="actions"><button class="btn" id="resetTournamentBtn" style="background:#a3364c" onclick="resetTournament()">🗑️ تصفير البطولة بالكامل نهائياً</button></div>
+  <div class="status" id="resetMsg"></div>
+</section>
+
+<script>
+async function resetTournament(){
+  const sel=document.getElementById('tournamentSelect');
+  const tid=selectedTournament;
+  const tname=sel.options[sel.selectedIndex]?.text?.trim();
+  const typed=document.getElementById('resetConfirmInput').value.trim();
+  const msgEl=document.getElementById('resetMsg');
+  if(!tid){msgEl.textContent='⚠️ اختر بطولة أولاً من أعلى الصفحة';msgEl.className='status err';return;}
+  if(!typed||typed!==tname){msgEl.textContent='❌ يجب كتابة اسم البطولة "'+tname+'" حرفياً بالضبط للتأكيد';msgEl.className='status err';return;}
+  if(!confirm('تأكيد أخير: سيُحذف كل شيء في بطولة "'+tname+'" نهائياً بلا رجعة. متابعة؟'))return;
+
+  msgEl.textContent='⏳ جاري التصفير...';msgEl.className='status';
+
+  const {data:teams}=await client.from('teams').select('id').eq('tournament_id',tid);
+  const teamIds=(teams||[]).map(t=>t.id);
+  const {data:matches}=await client.from('matches').select('id').eq('tournament_id',tid);
+  const matchIds=(matches||[]).map(m=>m.id);
+
+  if(matchIds.length){
+    await client.from('match_events').delete().in('match_id',matchIds);
+    await client.from('match_var_events').delete().in('match_id',matchIds);
+    await client.from('match_penalty_shootout').delete().in('match_id',matchIds);
+    await client.from('match_penalties_missed').delete().in('match_id',matchIds);
+    await client.from('match_lineups').delete().in('match_id',matchIds);
+  }
+  await client.from('matches').delete().eq('tournament_id',tid);
+  await client.from('tournament_awards').delete().eq('tournament_id',tid);
+  await client.from('news_items').delete().eq('tournament_id',tid);
+  if(teamIds.length){
+    await client.from('players').delete().in('team_id',teamIds);
+  }
+  await client.from('teams').delete().eq('tournament_id',tid);
+
+  msgEl.textContent='✅ تم تصفير البطولة بالكامل — جاهزة الآن لإدخال فرق حقيقية جديدة';
+  msgEl.className='status ok';
+  document.getElementById('resetConfirmInput').value='';
+  loadTeams();
+}
+window.resetTournament=resetTournament;
+</script>
+
 <script>
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('./sw.js').then(reg=>{
