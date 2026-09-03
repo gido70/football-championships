@@ -87,6 +87,10 @@
         <div class="feature-icon">🥅</div><h3>ركلات الترجيح</h3><p>عدد المباريات المحسومة بالترجيح، وتفاصيل كل ضربة</p>
         <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportShootouts()">📊 إكسل</button><button class="btn secondary" onclick="exportShootoutsWord()">📄 وورد</button></div>
       </div>
+      <div class="feature-card" style="text-align:right">
+        <div class="feature-icon">🏆</div><h3>ترتيب المجموعات</h3><p>جدول ترتيب كامل لكل مجموعة على حدة (نقاط، فارق أهداف)</p>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportGroupStandings()">📊 إكسل</button><button class="btn secondary" onclick="exportGroupStandingsWord()">📄 وورد</button></div>
+      </div>
     </div>
   </section>
 
@@ -738,6 +742,58 @@ async function exportFullReportWord(){
   setMsg('✅ تم تنزيل تقرير الوورد');
 }
 window.exportFullReportWord=exportFullReportWord;
+
+function computeGroupStandings(matches,teams){
+  const groups={};
+  teams.forEach(t=>{
+    const g=t.group_code||'بلا مجموعة';
+    if(!groups[g])groups[g]=[];
+    groups[g].push({id:t.id,name:t.name_ar||t.name,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0});
+  });
+  matches.filter(m=>m.status==='completed').forEach(m=>{
+    const g=teams.find(t=>t.id===m.home_team_id)?.group_code||'بلا مجموعة';
+    const list=groups[g];if(!list)return;
+    const h=list.find(t=>t.id===m.home_team_id), a=list.find(t=>t.id===m.away_team_id);
+    if(!h||!a)return;
+    const hs=m.home_score||0, as=m.away_score||0;
+    h.p++;a.p++;h.gf+=hs;h.ga+=as;a.gf+=as;a.ga+=hs;
+    if(hs>as){h.w++;h.pts+=3;a.l++;}
+    else if(hs<as){a.w++;a.pts+=3;h.l++;}
+    else{h.d++;a.d++;h.pts++;a.pts++;}
+  });
+  Object.keys(groups).forEach(g=>groups[g].sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf));
+  return groups;
+}
+
+async function exportGroupStandings(){
+  setMsg('⏳ جاري التجهيز...');
+  const matches=await getMatches();
+  const {data:teams}=await sb.from('teams').select('id,name,name_ar,group_code').eq('tournament_id',TID);
+  const groups=computeGroupStandings(matches,teams||[]);
+  const wb=XLSX.utils.book_new();
+  Object.entries(groups).forEach(([g,list])=>{
+    const rows=list.map((t,i)=>({المركز:i+1,الفريق:t.name,لعب:t.p,فوز:t.w,تعادل:t.d,خسارة:t.l,له:t.gf,عليه:t.ga,الفارق:t.gf-t.ga,النقاط:t.pts}));
+    XLSX.utils.book_append_sheet(wb,sheetFromRows(rows,['المركز','الفريق','لعب','فوز','تعادل','خسارة','له','عليه','الفارق','النقاط']),'مجموعة '+g);
+  });
+  dl(wb,'ترتيب المجموعات - '+TNAME+'.xlsx');
+  setMsg('✅ تم التحميل','ok');
+}
+window.exportGroupStandings=exportGroupStandings;
+
+async function exportGroupStandingsWord(){
+  setMsg('⏳ جاري التجهيز...');
+  const matches=await getMatches();
+  const {data:teams}=await sb.from('teams').select('id,name,name_ar,group_code').eq('tournament_id',TID);
+  const groups=computeGroupStandings(matches,teams||[]);
+  const headers=['المركز','الفريق','لعب','فوز','تعادل','خسارة','له','عليه','الفارق','النقاط'];
+  const sections=Object.entries(groups).map(([g,list])=>({
+    title:'🏆 مجموعة '+g,headers,
+    rows:list.map((t,i)=>[i+1,t.name,t.p,t.w,t.d,t.l,t.gf,t.ga,t.gf-t.ga,t.pts])
+  }));
+  downloadWordSingle('ترتيب المجموعات - '+TNAME+'.doc','ترتيب المجموعات — '+TNAME,sections);
+  setMsg('✅ تم التحميل','ok');
+}
+window.exportGroupStandingsWord=exportGroupStandingsWord;
 </script>
 
 <script>
