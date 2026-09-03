@@ -99,8 +99,18 @@ async function load(){
   const {data:t}=await sb.from('tournaments').select('name,name_ar').eq('id',TID).single();
   document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — الفيديوهات';
 
-  const {data}=await sb.from('videos').select('*').eq('tournament_id',TID).order('created_at',{ascending:false});
-  VIDEOS=data||[];
+  const {data:vidRows}=await sb.from('videos').select('*').eq('tournament_id',TID).order('created_at',{ascending:false});
+  const {data:matchVids}=await sb.from('matches').select('id,home_score,away_score,match_date,highlight_video_url,home_team_id,away_team_id').eq('tournament_id',TID).eq('status','completed').not('highlight_video_url','is',null);
+  let matchVideoItems=[];
+  if(matchVids?.length){
+    const {data:teams}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
+    const tName=id=>teams?.find(t=>t.id===id)?.name_ar||teams?.find(t=>t.id===id)?.name||'';
+    matchVideoItems=matchVids.map(m=>({
+      id:'match-'+m.id,title:`ملخص: ${tName(m.home_team_id)} ${m.home_score}-${m.away_score} ${tName(m.away_team_id)}`,
+      video_type:'youtube',video_url:m.highlight_video_url,description:'ملخص المباراة',created_at:m.match_date,_isMatch:true
+    }));
+  }
+  VIDEOS=[...matchVideoItems,...(vidRows||[])];
   const app=document.getElementById('app');
   if(!VIDEOS.length){app.innerHTML='<div class="empty-note">لا توجد فيديوهات مضافة بعد لهذه البطولة</div>';return;}
 

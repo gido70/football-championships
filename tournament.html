@@ -352,8 +352,8 @@ document.getElementById('qlinkStats').href='stats.html?id='+TID;
 async function generateAutoBulletin(){
   if(!TID)return[];
   const items=[];
-  const {data:tour}=await sb.from('tournaments').select('primary_color').eq('id',TID).single();
-  const bulletinColor=tour?.primary_color||'#c9a84c';
+  const {data:tour}=await sb.from('tournaments').select('primary_color,secondary_color').eq('id',TID).single();
+  const bulletinColor=tour?.secondary_color||'#c9a84c';
 
   // 1) المتصدر الحالي من جدول الترتيب
   const {data:teams}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
