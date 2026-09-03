@@ -760,7 +760,7 @@ async function init(){
   if(m.stream_url){
     if(document.getElementById('floatBack'))document.getElementById('floatBack').href='tournament.html?id='+(m.tournament_id||'');
   document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap" id="videoEmbedBox">
-      <iframe src="${m.stream_url}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+      <iframe src="${youtubeEmbed(m.stream_url)}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
       <button class="video-fs-btn" onclick="toggleVideoFullscreen()" title="ملء الشاشة">⛶</button>
     </div>`;
   }else if(m.highlight_video_url){
