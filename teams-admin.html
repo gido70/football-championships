@@ -169,6 +169,7 @@ document.getElementById('dlTeamsTemplateBtn').onclick=function(){
   const data=[['اسم الفريق','الاسم المختصر'],['نادي مدينة أبوظبي للجولف','MJD'],['دائرة القضاء','JUD']];
   const ws=XLSX.utils.aoa_to_sheet(data);
   ws['!cols']=[{wch:30},{wch:14}];
+  ws['!views']=[{RTL:true}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'الفرق');
   XLSX.writeFile(wb,'نموذج-الفرق.xlsx');

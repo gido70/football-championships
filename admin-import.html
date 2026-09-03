@@ -430,6 +430,7 @@ function downloadImportTemplate(){
     ['ريال مدريد','خالد سالم','مغربي','لاعب مقيم',1,'']
   ];
   const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!views']=[{RTL:true}];
   XLSX.utils.book_append_sheet(wb, ws, 'نموذج');
   XLSX.writeFile(wb, 'نموذج استيراد الفرق واللاعبين.xlsx');
 }
