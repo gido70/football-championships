@@ -157,6 +157,11 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
         </div>
       </div>
 
+      <div class="field full" style="display:flex;align-items:center;gap:10px;margin-top:8px">
+        <input type="checkbox" id="hide_logo_overlay" style="width:20px;height:20px">
+        <label style="margin:0;cursor:pointer" for="hide_logo_overlay">الخلفية تحتوي الشعارين مسبقاً داخل التصميم — أخفِ الشعارين المنفصلين فوقها</label>
+      </div>
+
       <!-- ألوان السمة -->
       <div class="form-grid" style="margin-top:10px">
         <div class="field">
@@ -364,6 +369,7 @@ async function editTour(id){
   if(r.primary_color) document.getElementById('primary_color').value=r.primary_color;
   if(r.secondary_color) document.getElementById('secondary_color').value=r.secondary_color;
   document.getElementById('logo_layout').value=r.logo_layout||'normal';
+  document.getElementById('hide_logo_overlay').checked=!!r.hide_logo_overlay;
 
   // الخلفية
   if(r.bg_image_url){
@@ -449,6 +455,7 @@ document.getElementById('tForm').addEventListener('submit',async e=>{
     cup_logo_url:document.getElementById('cup_logo_url').value||null,
     committee_logo_url:document.getElementById('committee_logo_url').value||null,
     logo_layout:document.getElementById('logo_layout').value||'normal',
+    hide_logo_overlay:document.getElementById('hide_logo_overlay').checked,
     notes:document.getElementById('notes').value.trim()||null,
     instagram_url:document.getElementById('instagram_url').value.trim()||null,
     youtube_url:document.getElementById('youtube_url').value.trim()||null,

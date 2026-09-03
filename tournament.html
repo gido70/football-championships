@@ -645,8 +645,11 @@ async function loadTournament(){
       style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))"
       onerror="this.style.display='none'">`;
 
-  // ترتيب الشعارين قابل للعكس من إعدادات البطولة
-  if(t.logo_layout==='swapped'){
+  // ترتيب الشعارين قابل للعكس من إعدادات البطولة (أو إخفاء كامل إن كانت الخلفية تحتويهما مسبقاً)
+  if(t.hide_logo_overlay){
+    document.getElementById('committeeLogoWrap').innerHTML='';
+    document.getElementById('cupLogoWrap').innerHTML='';
+  }else if(t.logo_layout==='swapped'){
     document.getElementById('committeeLogoWrap').innerHTML=cupImg;
     document.getElementById('cupLogoWrap').innerHTML=committeeImg;
   }else{
