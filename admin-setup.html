@@ -157,6 +157,15 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
           <div class="upload-zone-status" id="committee-status"></div>
           <div class="upload-zone-preview" id="committee-preview"><img id="committee-img"></div>
         </div>
+
+        <!-- ترويسة تقارير مخصَّصة كاملة -->
+        <div class="upload-zone zone-header">
+          <input type="file" accept="image/*" onchange="handleUpload(this,'reportheader')">
+          <div class="upload-zone-icon">📋</div>
+          <div class="upload-zone-label">ترويسة التقارير (اختياري)<br><small>صورة كاملة تحل محل الشعارين تلقائياً</small></div>
+          <div class="upload-zone-status" id="reportheader-status"></div>
+          <div class="upload-zone-preview" id="reportheader-preview"><img id="reportheader-img"></div>
+        </div>
       </div>
 
       <!-- ترتيب الشعارين -->
@@ -235,6 +244,7 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
     <!-- حقول مخفية -->
     <input type="hidden" id="bg_image_url">
     <input type="hidden" id="cup_logo_url">
+    <input type="hidden" id="report_header_image_url">
     <input type="hidden" id="committee_logo_url">
     <input type="hidden" id="editing_id">
 
@@ -325,6 +335,8 @@ async function handleUpload(input,type){
       document.getElementById('idComLogo').src=e.target.result;
       document.getElementById('idComLogo').style.display='block';
       document.getElementById('idComPh').style.display='none';
+    } else if(type==='reportheader'){
+      document.getElementById('report_header_image_url').value=e.target.result;
     }
   };
   reader.readAsDataURL(file);
@@ -340,7 +352,7 @@ async function handleUpload(input,type){
     if(error) throw error;
     const {data:u}=sb.storage.from(SB_BUCKET).getPublicUrl(fname);
     // حفظ الرابط الدائم
-    document.getElementById(type==='bg'?'bg_image_url':type==='cup'?'cup_logo_url':'committee_logo_url').value=u.publicUrl;
+    document.getElementById(type==='bg'?'bg_image_url':type==='cup'?'cup_logo_url':type==='committee'?'committee_logo_url':'report_header_image_url').value=u.publicUrl;
     statusEl.textContent='✅ تم';
     statusEl.style.color='#34d399';
   } catch(e){
@@ -432,6 +444,12 @@ async function editTour(id){
     document.getElementById('idComLogo').src=r.committee_logo_url;
     document.getElementById('idComLogo').style.display='block';
     document.getElementById('idComPh').style.display='none';
+  }
+  // ترويسة التقارير المخصَّصة
+  if(r.report_header_image_url){
+    document.getElementById('report_header_image_url').value=r.report_header_image_url;
+    document.getElementById('reportheader-img').src=r.report_header_image_url;
+    document.getElementById('reportheader-preview').style.display='block';
   }
 
   updatePreview();
@@ -532,6 +550,7 @@ document.getElementById('tForm').addEventListener('submit',async e=>{
     logo_url:document.getElementById('cup_logo_url').value||null,
     cup_logo_url:document.getElementById('cup_logo_url').value||null,
     committee_logo_url:document.getElementById('committee_logo_url').value||null,
+    report_header_image_url:document.getElementById('report_header_image_url').value||null,
     logo_layout:document.getElementById('logo_layout').value||'normal',
     hide_logo_overlay:document.getElementById('hide_logo_overlay').checked,
     is_public:document.getElementById('is_public').checked,

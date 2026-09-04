@@ -596,8 +596,8 @@ async function exportMatchesWord(){
   setMsg('⏳ جاري التجهيز...');
   const matches=await getMatches();
   const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
-  const headers=['رقم المباراة','الجولة','الفريق الأول','النتيجة','الفريق الثاني','الملعب','الحالة'];
-  const rows=matches.map(m=>[m.match_no,rl[m.round_name]||m.round_name,teamName[m.home_team_id]||'',(m.home_score??'')+' - '+(m.away_score??''),teamName[m.away_team_id]||'',m.venue_name||'',m.status||'']);
+  const headers=['رقم المباراة','الجولة','التاريخ','الوقت','الفريق الأول','النتيجة','الفريق الثاني','الملعب','الحالة'];
+  const rows=matches.map(m=>[m.match_no,rl[m.round_name]||m.round_name,m.match_date||'—',m.match_time||'—',teamName[m.home_team_id]||'',(m.home_score??'')+' - '+(m.away_score??''),teamName[m.away_team_id]||'',m.venue_name||'',m.status||'']);
   downloadWordSingle('جدول مباريات '+TNAME+'.doc','جدول المباريات — '+TNAME,[{title:'📅 جدول المباريات والنتائج',headers,rows}]);
   setMsg('✅ تم التحميل','ok');
 }
@@ -821,33 +821,38 @@ async function printOfficialStandings(){
   setMsg('⏳ جاري التجهيز...');
   const matches=await getMatches();
   const {data:teams}=await sb.from('teams').select('id,name,name_ar,group_code').eq('tournament_id',TID);
-  const {data:tour}=await sb.from('tournaments').select('name_ar,name,committee_logo_url,cup_logo_url,logo_url').eq('id',TID).single();
+  const {data:tour}=await sb.from('tournaments').select('name_ar,name,committee_logo_url,cup_logo_url,logo_url,primary_color,secondary_color,report_header_image_url').eq('id',TID).single();
   const groups=computeGroupStandings(matches,teams||[]);
   const tourName=tour?.name_ar||tour?.name||TNAME;
   const c1=tour?.committee_logo_url, c2=tour?.cup_logo_url||tour?.logo_url;
+  const themeColor=tour?.primary_color||'#1a5c3a';
+  const accentColor=tour?.secondary_color||'#c9e4b0';
 
   const selectedGroup=document.getElementById('standingsGroupSel')?.value||'__all__';
   const groupEntries=Object.entries(groups).filter(([g])=>selectedGroup==='__all__'||g===selectedGroup);
   if(!groupEntries.length){setMsg('⚠️ لا توجد بيانات مجموعات بعد','warn');return;}
 
   const groupTable=(g,list)=>`
-    <div style="background:#c9e4b0;padding:6px 14px;font-weight:900;text-align:center;font-size:13px;margin-bottom:0">المجموعة (${escS(g)})</div>
+    <div style="background:${accentColor};padding:6px 14px;font-weight:900;text-align:center;font-size:13px;margin-bottom:0;color:#0d1117">المجموعة (${escS(g)})</div>
     <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:12.5px" dir="rtl">
       <tr style="background:#ffffff">
         <th style="padding:7px;color:#000">النقاط</th><th style="padding:7px;color:#000">الفرق</th><th style="padding:7px;color:#000">عليه</th><th style="padding:7px;color:#000">له</th><th style="padding:7px;color:#000">الخسارة</th><th style="padding:7px;color:#000">التعادل</th><th style="padding:7px;color:#000">الفوز</th><th style="padding:7px;color:#000">عدد المباريات</th><th style="padding:7px;color:#000">أسم الفريق</th>
       </tr>
       ${list.map(t=>{
         const pts=t.w*3+t.d, gd=t.gf-t.ga;
-        return `<tr style="background:#1c1c1c;color:#fff"><td style="padding:7px;text-align:center">${pts}</td><td style="padding:7px;text-align:center">${gd}</td><td style="padding:7px;text-align:center">${t.ga}</td><td style="padding:7px;text-align:center">${t.gf}</td><td style="padding:7px;text-align:center">${t.l}</td><td style="padding:7px;text-align:center">${t.d}</td><td style="padding:7px;text-align:center">${t.w}</td><td style="padding:7px;text-align:center">${t.p}</td><td style="padding:7px;text-align:right;font-weight:800">${escS(t.name)}</td></tr>`;
+        return `<tr style="background:${themeColor};color:#fff"><td style="padding:7px;text-align:center">${pts}</td><td style="padding:7px;text-align:center">${gd}</td><td style="padding:7px;text-align:center">${t.ga}</td><td style="padding:7px;text-align:center">${t.gf}</td><td style="padding:7px;text-align:center">${t.l}</td><td style="padding:7px;text-align:center">${t.d}</td><td style="padding:7px;text-align:center">${t.w}</td><td style="padding:7px;text-align:center">${t.p}</td><td style="padding:7px;text-align:right;font-weight:800">${escS(t.name)}</td></tr>`;
       }).join('')}
     </table>`;
 
-  const header=`<table style="width:100%;border:none;margin-bottom:0"><tr>
+  const header=tour?.report_header_image_url
+    ? `<div style="text-align:center;margin-bottom:0"><img src="${tour.report_header_image_url}" style="max-width:100%;max-height:140px"></div>
+       <div style="background:${themeColor};color:#fff;text-align:center;font-weight:900;font-size:16px;padding:10px;margin-bottom:0">جدول المجموعات</div>`
+    : `<table style="width:100%;border:none;margin-bottom:0"><tr>
     <td style="width:33%;text-align:right;border:none">${c1?`<img src="${c1}" style="height:75px">`:''}</td>
-    <td style="width:34%;text-align:center;border:none;font-weight:900;color:#8a1c1c;font-size:20px">${escS(tourName)}</td>
+    <td style="width:34%;text-align:center;border:none;font-weight:900;color:${themeColor};font-size:20px">${escS(tourName)}</td>
     <td style="width:33%;text-align:left;border:none">${c2?`<img src="${c2}" style="height:75px">`:''}</td>
   </tr></table>
-  <div style="background:#8a1c1c;color:#fff;text-align:center;font-weight:900;font-size:16px;padding:10px;margin-bottom:0">جدول المجموعات</div>`;
+  <div style="background:${themeColor};color:#fff;text-align:center;font-weight:900;font-size:16px;padding:10px;margin-bottom:0">جدول المجموعات</div>`;
 
   const body=groupEntries.map(([g,list])=>groupTable(g,list)).join('');
   downloadReportDoc('جدول الترتيب الرسمي - '+tourName+'.doc','',body,header);
