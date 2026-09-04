@@ -17,7 +17,9 @@
 body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh}
 a{text-decoration:none;color:inherit}
 .nav{background:#161b22;border-bottom:1px solid #21262d;padding:calc(8px + env(safe-area-inset-top,0px)) 18px 8px;min-height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.nav-back{color:#8b949e;font-size:14px;font-weight:700;padding:7px 14px;border-radius:8px;border:1px solid #30363d}
+.nav-back{color:#eef5ff;text-decoration:none;font-size:14px;font-weight:800;padding:9px 20px;border-radius:12px;background:linear-gradient(180deg,#2a4a70,#1B3A5C);border:1px solid rgba(255,255,255,.15);box-shadow:0 3px 0 rgba(0,0,0,.35),0 4px 10px rgba(0,0,0,.25);transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.nav-back:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.35),0 2px 5px rgba(0,0,0,.2)}
+@media(max-width:480px){.nav-back{font-size:13px;padding:8px 16px}}
 .nav-title{font-size:15px;font-weight:800;color:#c9a84c;display:flex;align-items:center;gap:8px}
 
 .hero{text-align:center;padding:26px 16px 16px;background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.15),transparent 65%)}
