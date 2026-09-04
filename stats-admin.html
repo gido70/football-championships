@@ -97,6 +97,7 @@
     <div class="actions">
       <button class="btn" id="fullReportBtn" style="background:linear-gradient(135deg,#c9a84c,#a8842e)" onclick="exportFullReport()">📦 التقرير الشامل — إكسل</button>
       <button class="btn" id="fullReportWordBtn" style="background:linear-gradient(135deg,#1d4e89,#153a66)" onclick="exportFullReportWord()">📄 التقرير الشامل — وورد</button>
+      <button class="btn" style="background:linear-gradient(135deg,#8b5a2b,#5a3a1c)" onclick="runAsPDF(exportFullReportWord)">🖨️ التقرير الشامل — PDF</button>
     </div>
     <div style="font-size:11px;color:#8b949e;margin-top:6px">💡 وورد مناسب للعربية بالكامل بلا مشاكل ترميز (بدلاً من PDF)</div>
   </section>
@@ -364,23 +365,22 @@ async function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
 function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
   const w=window.open('','_blank');
   if(!w){alert('فضلاً اسمح للمتصفح بفتح النوافذ المنبثقة لهذه الصفحة');return;}
-  const fontFamilyMap={'Cairo':'Cairo','Amiri':'Amiri','Almarai':'Almarai','Tajawal':'Tajawal'};
-  const googleFontName=fontFamilyMap[REPORT_FONT]||'Tajawal';
-  const fontLink='<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family='+googleFontName.replace(' ','+')+':wght@400;700;800;900&display=swap" rel="stylesheet">';
-  const printScript='<'+'script>window.onload=()=>setTimeout(()=>window.print(),900)<'+'/script>';
+  const printScript='<'+'script>window.onload=()=>setTimeout(()=>window.print(),400)<'+'/script>';
   w.document.write('<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8">'
-    +fontLink
     +'<title>'+escW2(pageTitle)+'</title>'
     +'<style>'
-    +'body{font-family:"'+googleFontName+'",Tajawal,Arial;padding:20px;color:#111}'
+    +'*{font-family:-apple-system,"Segoe UI","Arial",sans-serif !important}'
+    +'body{padding:20px;color:#111;direction:rtl}'
     +'h1{text-align:center;color:'+REPORT_PRIMARY+'}'
     +'h2{color:'+REPORT_PRIMARY+';border-bottom:2px solid #c9a84c;padding-bottom:4px}'
     +'table{width:100%;border-collapse:collapse;margin-bottom:20px;direction:rtl}'
     +'th,td{border:1px solid #999;padding:6px;text-align:center}'
     +'th{background:'+REPORT_PRIMARY+';color:#fff}'
     +'img{max-width:100%}'
-    +'@media print{ body{padding:0} }'
-    +'</style></head><body>'
+    +'@media print{ body{padding:0} .no-print{display:none !important} }'
+    +'</style></head><body dir="rtl">'
+    +'<div style="position:fixed;top:0;right:0;left:0;background:#0d1117;padding:10px;text-align:center;z-index:999" class="no-print"><button onclick="window.close()" style="background:#c9302c;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-weight:800;font-size:14px;cursor:pointer">✕ إغلاق والعودة</button></div>'
+    +'<div style="height:50px"></div>'
     +(headerHtml||'')
     +(pageTitle?('<h1>'+escW2(pageTitle)+'</h1>'):'')
     +bodyHtml
@@ -873,7 +873,7 @@ async function exportFullReportWord(){
 
   const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
 
-  let body=`<h1 style="text-align:center;color:${REPORT_PRIMARY}">تقرير إحصائيات شامل — ${escW(TNAME)}</h1>`;
+  let body='';
   body+=wTable('⚽ الهدافون',['الترتيب','اللاعب','الرقم','الفريق','الأهداف'],scorers.map((p,i)=>[i+1,p.name,p.number,p.team,p.count]));
   body+=wTable('🟨 البطاقات الصفراء',['الترتيب','اللاعب','الرقم','الفريق','العدد'],yellow.map((p,i)=>[i+1,p.name,p.number,p.team,p.count]));
   body+=wTable('🟥 البطاقات الحمراء',['الترتيب','اللاعب','الرقم','الفريق','العدد'],red.map((p,i)=>[i+1,p.name,p.number,p.team,p.count]));
@@ -887,14 +887,12 @@ async function exportFullReportWord(){
   body+=wTable('👥 كل اللاعبين المسجَّلين',['الاسم','الفريق','الرقم','الجنسية','حارس مرمى'],(allPlayersFull||[]).map(p=>[p.full_name_ar||p.name||'—',p.teams?.name_ar||p.teams?.name||'—',p.number??'',p.nationality||'—',p.is_goalkeeper?'نعم':'لا']));
   body+=wTable('📅 جدول المباريات والنتائج',['رقم المباراة','الجولة','الفريق الأول','النتيجة','الفريق الثاني','الحالة'],matches.map(m=>[m.match_no,rl[m.round_name]||m.round_name,teamName[m.home_team_id]||'',(m.home_score??'')+' - '+(m.away_score??''),teamName[m.away_team_id]||'',m.status||'']));
 
-  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:Tajawal,Arial">${body}</body></html>`;
-  const blob=new Blob(['\ufeff',html],{type:'application/msword'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download=`تقرير-شامل-${TNAME.replace(/[^ء-ي0-9a-zA-Z]/g,'')}.doc`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const header=await buildLetterheadHtml();
+  if(CURRENT_EXPORT_MODE==='pdf'){
+    printReportAsPDF('تقرير إحصائيات شامل — '+TNAME,body,header);
+    return;
+  }
+  await downloadReportDoc('تقرير-شامل-'+TNAME.replace(/[^ء-ي0-9a-zA-Z]/g,'')+'.doc','تقرير إحصائيات شامل — '+TNAME,body,header);
   setMsg('✅ تم تنزيل تقرير الوورد');
 }
 window.exportFullReportWord=exportFullReportWord;
