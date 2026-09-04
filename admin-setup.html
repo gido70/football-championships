@@ -157,15 +157,6 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
           <div class="upload-zone-status" id="committee-status"></div>
           <div class="upload-zone-preview" id="committee-preview"><img id="committee-img"></div>
         </div>
-
-        <!-- ترويسة تقارير مخصَّصة كاملة -->
-        <div class="upload-zone zone-header">
-          <input type="file" accept="image/*" onchange="handleUpload(this,'reportheader')">
-          <div class="upload-zone-icon">📋</div>
-          <div class="upload-zone-label">ترويسة التقارير (اختياري)<br><small>صورة كاملة تحل محل الشعارين تلقائياً</small></div>
-          <div class="upload-zone-status" id="reportheader-status"></div>
-          <div class="upload-zone-preview" id="reportheader-preview"><img id="reportheader-img"></div>
-        </div>
       </div>
 
       <!-- ترتيب الشعارين -->
@@ -182,6 +173,42 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
       <div class="field full" style="display:flex;align-items:center;gap:10px;margin-top:8px">
         <input type="checkbox" id="hide_logo_overlay" style="width:20px;height:20px">
         <label style="margin:0;cursor:pointer" for="hide_logo_overlay">الخلفية تحتوي الشعارين مسبقاً داخل التصميم — أخفِ الشعارين المنفصلين فوقها</label>
+      </div>
+
+      <!-- إعداد تصميم التقارير — مستقل تماماً عن ألوان الموقع -->
+      <div style="margin-top:20px;padding:16px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.3);border-radius:14px">
+        <div style="font-size:14px;font-weight:800;color:#c9a84c;margin-bottom:6px">🎨 إعداد تصميم التقارير (وورد)</div>
+        <div style="font-size:11.5px;color:#8fa3c0;margin-bottom:14px">مستقل تماماً عن ألوان الموقع أعلاه — إن لم تُخصّص شيئاً هنا، ستُستخدَم تصميم أخضر جاهز مضمون الوضوح لكل البطولات. خصّص فقط إن أردت شكلاً مختلفاً لهذه البطولة تحديداً.</div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label>لون التقارير (اختياري)</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="color" id="report_color" value="#1a5c3a" style="height:42px;width:60px;cursor:pointer">
+              <input type="hidden" id="report_color_customized" value="0">
+              <button type="button" class="btn secondary" onclick="document.getElementById('report_color_customized').value='0';document.getElementById('reportColorLabel').textContent='التصميم الافتراضي (أخضر)'" style="font-size:12px">↺ إلغاء التخصيص</button>
+            </div>
+            <div id="reportColorLabel" style="font-size:11px;color:#8fa3c0;margin-top:4px">التصميم الافتراضي (أخضر)</div>
+          </div>
+          <div class="field">
+            <label>خط التقارير (اختياري)</label>
+            <select id="report_font">
+              <option value="">الخط الافتراضي (Tajawal)</option>
+              <option value="Arial">Arial</option>
+              <option value="Cairo">Cairo</option>
+              <option value="Amiri">Amiri (تقليدي)</option>
+              <option value="Almarai">Almarai</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="upload-zone zone-header" style="margin-top:14px">
+          <input type="file" accept="image/*" onchange="handleUpload(this,'reportheader')">
+          <div class="upload-zone-icon">📋</div>
+          <div class="upload-zone-label">ترويسة كاملة مخصَّصة (اختياري)<br><small>صورة عريضة قصيرة — بارتفاع 2 إلى 2.5 سم فقط (نسبة عرض إلى ارتفاع تقريبية 8:1) — تحل محل الشعارين تلقائياً في كل تقارير هذه البطولة</small></div>
+          <div class="upload-zone-status" id="reportheader-status"></div>
+          <div class="upload-zone-preview" id="reportheader-preview"><img id="reportheader-img"></div>
+        </div>
       </div>
 
       <!-- الخصوصية وأكواد الدخول -->
@@ -451,6 +478,15 @@ async function editTour(id){
     document.getElementById('reportheader-img').src=r.report_header_image_url;
     document.getElementById('reportheader-preview').style.display='block';
   }
+  if(r.report_color){
+    document.getElementById('report_color').value=r.report_color;
+    document.getElementById('report_color_customized').value='1';
+    document.getElementById('reportColorLabel').textContent='لون مخصَّص: '+r.report_color;
+  }else{
+    document.getElementById('report_color_customized').value='0';
+    document.getElementById('reportColorLabel').textContent='التصميم الافتراضي (أخضر)';
+  }
+  document.getElementById('report_font').value=r.report_font||'';
 
   updatePreview();
   document.getElementById('formTitle').textContent='✏️ تعديل البطولة';
@@ -465,6 +501,11 @@ async function delTour(id){
   if(error){setMsg('فشل الحذف','err');return;}
   setMsg('تم الحذف','ok');loadRows();
 }
+
+document.getElementById('report_color').addEventListener('input',function(){
+  document.getElementById('report_color_customized').value='1';
+  document.getElementById('reportColorLabel').textContent='لون مخصَّص: '+this.value;
+});
 
 function toggleSwissFields(){
   const isSwiss=document.getElementById('tournament_type').value==='swiss_league';
@@ -512,7 +553,10 @@ function resetForm(){
   document.getElementById('bg_image_url').value='';
   document.getElementById('cup_logo_url').value='';
   document.getElementById('committee_logo_url').value='';
-  ['bg','cup','committee'].forEach(t=>{
+  document.getElementById('report_header_image_url').value='';
+  document.getElementById('report_color_customized').value='0';
+  document.getElementById('reportColorLabel').textContent='التصميم الافتراضي (أخضر)';
+  ['bg','cup','committee','reportheader'].forEach(t=>{
     document.getElementById(t+'-preview').style.display='none';
     document.getElementById(t+'-status').textContent='';
   });
@@ -551,6 +595,8 @@ document.getElementById('tForm').addEventListener('submit',async e=>{
     cup_logo_url:document.getElementById('cup_logo_url').value||null,
     committee_logo_url:document.getElementById('committee_logo_url').value||null,
     report_header_image_url:document.getElementById('report_header_image_url').value||null,
+    report_color:document.getElementById('report_color_customized').value==='1'?document.getElementById('report_color').value:null,
+    report_font:document.getElementById('report_font').value||null,
     logo_layout:document.getElementById('logo_layout').value||'normal',
     hide_logo_overlay:document.getElementById('hide_logo_overlay').checked,
     is_public:document.getElementById('is_public').checked,

@@ -1366,7 +1366,7 @@ async function saveLineups(){
 
 
 window.openEvt=openEvt;window.closeEvt=closeEvt;window.submitEvt=submitEvt;window.delEvt=delEvt;
-let REPORT_PRIMARY='#1a5c3a', REPORT_ACCENT='#c9a84c';
+let REPORT_PRIMARY='#1a5c3a', REPORT_ACCENT='#c9a84c', REPORT_FONT='Tajawal';
 function escR(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 function rTable(title,headers,rows){
   if(!rows||!rows.length)return `<h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid ${REPORT_ACCENT};padding-bottom:4px">${title}</h2><p style="color:#888">لا توجد بيانات</p>`;
@@ -1377,7 +1377,7 @@ function rTable(title,headers,rows){
     </table>`;
 }
 function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
-  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:Tajawal,Arial">
+  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:${REPORT_FONT},Tajawal,Arial">
     ${headerHtml||''}
     <h1 style="text-align:center;color:${REPORT_PRIMARY}">${escR(pageTitle)}</h1>${bodyHtml}</body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/msword'});
@@ -1391,9 +1391,10 @@ async function fetchReportData(){
   const {data:aTeam}=await sb.from('teams').select('name,name_ar,submitted_by_name,coach_name,logo_url').eq('id',cur.away_team_id).single();
   const {data:hRoster}=await sb.from('players').select('name,full_name_ar,number,nationality,is_goalkeeper').eq('team_id',cur.home_team_id).order('number');
   const {data:aRoster}=await sb.from('players').select('name,full_name_ar,number,nationality,is_goalkeeper').eq('team_id',cur.away_team_id).order('number');
-  const {data:tour}=await sb.from('tournaments').select('name_ar,name,committee_logo_url,cup_logo_url,logo_url,primary_color,secondary_color,report_header_image_url').eq('id',cur.tournament_id).single();
-  REPORT_PRIMARY=tour?.primary_color||'${REPORT_PRIMARY}';
-  REPORT_ACCENT=tour?.secondary_color||'${REPORT_ACCENT}';
+  const {data:tour}=await sb.from('tournaments').select('name_ar,name,committee_logo_url,cup_logo_url,logo_url,report_color,report_font,report_header_image_url').eq('id',cur.tournament_id).single();
+  REPORT_PRIMARY=tour?.report_color||'#1a5c3a';
+  REPORT_ACCENT='#c9a84c';
+  REPORT_FONT=tour?.report_font||'Tajawal';
   const {data:events}=await sb.from('match_events').select('event_type,minute').eq('match_id',cur.id).eq('event_type','goal').order('minute');
   const hName=cur.ht?.name_ar||cur.ht?.name||'الفريق الأول';
   const aName=cur.at?.name_ar||cur.at?.name||'الفريق الثاني';
@@ -1404,7 +1405,7 @@ async function fetchReportData(){
 
 function reportLetterhead(tour,tourName){
   if(tour?.report_header_image_url){
-    return `<div style="text-align:center;margin-bottom:8px"><img src="${tour.report_header_image_url}" style="max-width:100%;max-height:140px"></div>
+    return `<div style="text-align:center;margin-bottom:8px"><img src="${tour.report_header_image_url}" style="max-height:95px;width:auto"></div>
     <div style="border-bottom:3px solid ${REPORT_PRIMARY};margin-bottom:16px"></div>`;
   }
   const c1=tour?.committee_logo_url, c2=tour?.cup_logo_url||tour?.logo_url;

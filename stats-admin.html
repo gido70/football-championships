@@ -250,11 +250,12 @@ function sheetFromRows(rows,headers){
   return ws;
 }
 
-let REPORT_PRIMARY='#1a5c3a';
+let REPORT_PRIMARY='#1a5c3a', REPORT_FONT='Tajawal';
 async function updateReportColor(){
   if(!TID)return;
-  const {data:t}=await sb.from('tournaments').select('primary_color').eq('id',TID).single();
-  REPORT_PRIMARY=t?.primary_color||'#1a5c3a';
+  const {data:t}=await sb.from('tournaments').select('report_color,report_font').eq('id',TID).single();
+  REPORT_PRIMARY=t?.report_color||'#1a5c3a';
+  REPORT_FONT=t?.report_font||'Tajawal';
 }
 function escW2(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 function wTable2(title,headers,rows){
@@ -266,7 +267,7 @@ function wTable2(title,headers,rows){
     </table>`;
 }
 function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
-  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:Tajawal,Arial">
+  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:${REPORT_FONT},Tajawal,Arial">
     ${headerHtml||''}
     ${pageTitle?`<h1 style="text-align:center;color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`:''}${bodyHtml}</body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/msword'});
@@ -278,7 +279,7 @@ function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
 function downloadWordSingle(filename,pageTitle,sections){
   let body=`<h1 style="text-align:center;color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`;
   sections.forEach(s=>{body+=wTable2(s.title,s.headers,s.rows);});
-  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:Tajawal,Arial">${body}</body></html>`;
+  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:${REPORT_FONT},Tajawal,Arial">${body}</body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/msword'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -821,12 +822,12 @@ async function printOfficialStandings(){
   setMsg('⏳ جاري التجهيز...');
   const matches=await getMatches();
   const {data:teams}=await sb.from('teams').select('id,name,name_ar,group_code').eq('tournament_id',TID);
-  const {data:tour}=await sb.from('tournaments').select('name_ar,name,committee_logo_url,cup_logo_url,logo_url,primary_color,secondary_color,report_header_image_url').eq('id',TID).single();
+  const {data:tour}=await sb.from('tournaments').select('name_ar,name,committee_logo_url,cup_logo_url,logo_url,report_color,report_header_image_url').eq('id',TID).single();
   const groups=computeGroupStandings(matches,teams||[]);
   const tourName=tour?.name_ar||tour?.name||TNAME;
   const c1=tour?.committee_logo_url, c2=tour?.cup_logo_url||tour?.logo_url;
-  const themeColor=tour?.primary_color||'#1a5c3a';
-  const accentColor=tour?.secondary_color||'#c9e4b0';
+  const themeColor=tour?.report_color||'#1a5c3a';
+  const accentColor='#c9e4b0';
 
   const selectedGroup=document.getElementById('standingsGroupSel')?.value||'__all__';
   const groupEntries=Object.entries(groups).filter(([g])=>selectedGroup==='__all__'||g===selectedGroup);
@@ -845,7 +846,7 @@ async function printOfficialStandings(){
     </table>`;
 
   const header=tour?.report_header_image_url
-    ? `<div style="text-align:center;margin-bottom:0"><img src="${tour.report_header_image_url}" style="max-width:100%;max-height:140px"></div>
+    ? `<div style="text-align:center;margin-bottom:0"><img src="${tour.report_header_image_url}" style="max-height:95px;width:auto"></div>
        <div style="background:${themeColor};color:#fff;text-align:center;font-weight:900;font-size:16px;padding:10px;margin-bottom:0">جدول المجموعات</div>`
     : `<table style="width:100%;border:none;margin-bottom:0"><tr>
     <td style="width:33%;text-align:right;border:none">${c1?`<img src="${c1}" style="height:75px">`:''}</td>
