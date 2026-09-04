@@ -1523,7 +1523,7 @@ async function fetchReportData(){
   const {data:aTeam}=await sb.from('teams').select('name,name_ar,submitted_by_name,coach_name,logo_url').eq('id',cur.away_team_id).single();
   const {data:hRoster}=await sb.from('players').select('name,full_name_ar,number,nationality,is_goalkeeper').eq('team_id',cur.home_team_id).order('number');
   const {data:aRoster}=await sb.from('players').select('name,full_name_ar,number,nationality,is_goalkeeper').eq('team_id',cur.away_team_id).order('number');
-  const {data:tour}=await sb.from('tournaments').select('name_ar,name,committee_logo_url,cup_logo_url,logo_url,report_color,report_font,report_header_image_url').eq('id',cur.tournament_id).single();
+  const {data:tour}=await sb.from('tournaments').select('name_ar,name,committee_logo_url,cup_logo_url,logo_url,report_color,report_font,report_header_image_url,show_committee_logo,show_cup_logo').eq('id',cur.tournament_id).single();
   REPORT_PRIMARY=tour?.report_color||'#1a5c3a';
   REPORT_ACCENT='#c9a84c';
   REPORT_FONT=tour?.report_font||'Tajawal';
@@ -1537,10 +1537,9 @@ async function fetchReportData(){
 
 function reportLetterhead(tour,tourName){
   if(tour?.report_header_image_url){
-    return `<div style="text-align:center;margin-bottom:8px"><img src="${tour.report_header_image_url}" style="max-height:95px;width:auto"></div>
-    <div style="border-bottom:3px solid ${REPORT_PRIMARY};margin-bottom:16px"></div>`;
+    return `<div style="margin-bottom:8px;border-bottom:4px solid #c9a84c"><img src="${tour.report_header_image_url}" style="width:100%;height:auto;display:block"></div>`;
   }
-  const c1=tour?.committee_logo_url, c2=tour?.cup_logo_url||tour?.logo_url;
+  const c1=tour?.show_committee_logo!==false?tour?.committee_logo_url:null, c2=tour?.show_cup_logo!==false?(tour?.cup_logo_url||tour?.logo_url):null;
   return `<table style="width:100%;border:none;margin-bottom:8px"><tr>
     <td style="width:33%;text-align:right;border:none">${c1?`<img src="${c1}" style="height:70px">`:''}</td>
     <td style="width:34%;text-align:center;border:none;font-weight:900;color:${REPORT_PRIMARY};font-size:14px">${escR(tourName)}</td>
