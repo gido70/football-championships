@@ -40,11 +40,6 @@
   </section>
 
   <section class="panel" style="margin-top:24px">
-    <h3>🌍 الجنسيات المشاركة <span id="natCount" style="font-size:12px;color:#8b949e;font-weight:400"></span></h3>
-    <div id="natList" style="margin-top:10px"><div class="note">جاري التحميل...</div></div>
-  </section>
-
-  <section class="panel" style="margin-top:24px">
     <h3>📥 تصدير حسب الفئة</h3>
     <div class="cards-row" style="grid-template-columns:repeat(3,1fr)">
       <div class="feature-card" style="text-align:right">
@@ -121,8 +116,8 @@ async function initTournaments(){
   if(error){sel.innerHTML=`<option value="">⚠️ خطأ: ${error.message}</option>`;setMsg('فشل تحميل البطولات: '+error.message,'err');return;}
   if(!data||!data.length){sel.innerHTML='<option value="">لا توجد بطولات</option>';return;}
   sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name} ${t.season_label?'- '+t.season_label:''}</option>`).join('');
-  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;loadTeamNames();loadAwards();loadNationalitiesLive();loadGroupOptions();};
-  if(data&&data.length){TID=data[0].id;TNAME=sel.options[0].text;await loadTeamNames();await loadAwards();await loadNationalitiesLive();await loadGroupOptions();}
+  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;loadTeamNames();loadAwards();loadGroupOptions();};
+  if(data&&data.length){TID=data[0].id;TNAME=sel.options[0].text;await loadTeamNames();await loadAwards();await loadGroupOptions();}
 }
 
 async function loadNationalitiesLive(){
