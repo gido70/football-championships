@@ -679,7 +679,7 @@ async function init(){
   const {data:m,error}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(*),at:teams!matches_away_team_id_fkey(*)').eq('id',MID).single();
   if(error||!m){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>تعذر تحميل بيانات المباراة</p></div>';return;}
 
-  document.getElementById('backLink').href='tournament.html?id='+m.tournament_id;
+  document.getElementById('backLink').href='tournament.html?id='+m.tournament_id+'&tab=ma';
 
   const {data:t}=await sb.from('tournaments').select('*').eq('id',m.tournament_id).single();
   if(t){
@@ -996,7 +996,6 @@ sb.channel('match-live-'+MID)
 // شبكة أمان احتياطية لو تعطّل الاتصال اللحظي لأي سبب
 setInterval(()=>{ if(MID) init(); }, 30000);
 </script>
-<a class="float-back" id="floatBack" href="index.html">← رجوع للبطولة</a>
 
 <script>
 if('serviceWorker' in navigator){

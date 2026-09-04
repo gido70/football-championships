@@ -358,6 +358,7 @@ img[src=""], img:not([src]) { display:none !important; }
 <script>
 const sb=supabase.createClient("https://npoowwdjpbvhyjrmeqkv.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY");
 const TID=new URLSearchParams(location.search).get('id');
+const REQUESTED_TAB=new URLSearchParams(location.search).get('tab');
 
 async function checkTournamentAccess(){
   const {data:t}=await sb.from('tournaments').select('is_public').eq('id',TID).single();
@@ -1037,9 +1038,9 @@ async function loadTeams(){
 
 sb.channel('rt-t').on('postgres_changes',{event:'*',schema:'public',table:'matches',filter:`tournament_id=eq.${TID}`},()=>{loadMatches();loadStandings();}).subscribe();
 if(TID){loadTournament();loadStandings();loadMatches();loadScorers();loadTeams();}
+if(REQUESTED_TAB)setTimeout(()=>jumpToTab(REQUESTED_TAB),400);
 else document.getElementById('heroTitle').textContent='لم يتم تحديد البطولة — ارجع للصفحة الرئيسية';
 </script>
-<a class="float-back" href="index.html">← جميع البطولات</a>
 
 <script>
 if('serviceWorker' in navigator){
