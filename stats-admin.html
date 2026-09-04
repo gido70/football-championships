@@ -88,8 +88,9 @@
         <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportShootouts()">📊 إكسل</button><button class="btn secondary" onclick="exportShootoutsWord()">📄 وورد</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
-        <div class="feature-icon">🏆</div><h3>ترتيب المجموعات</h3><p>جدول ترتيب كامل لكل مجموعة على حدة (نقاط، فارق أهداف)</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportGroupStandings()">📊 إكسل</button><button class="btn secondary" onclick="exportGroupStandingsWord()">📄 وورد</button></div>
+        <div class="feature-icon">🏆</div><h3>جدول الترتيب الرسمي (للنشر)</h3><p>بنفس التصميم الرسمي المعتمد — شعارا اللجنة والكأس، شريط أحمر، جدول داكن</p>
+        <div style="margin-top:8px"><select id="standingsGroupSel" style="width:100%"><option value="__all__">كل المجموعات</option></select></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportGroupStandings()">📊 إكسل</button><button class="btn secondary" onclick="printOfficialStandings()">📄 وورد (رسمي)</button></div>
       </div>
     </div>
   </section>
@@ -120,8 +121,8 @@ async function initTournaments(){
   if(error){sel.innerHTML=`<option value="">⚠️ خطأ: ${error.message}</option>`;setMsg('فشل تحميل البطولات: '+error.message,'err');return;}
   if(!data||!data.length){sel.innerHTML='<option value="">لا توجد بطولات</option>';return;}
   sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name} ${t.season_label?'- '+t.season_label:''}</option>`).join('');
-  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;loadTeamNames();loadAwards();loadNationalitiesLive();};
-  if(data&&data.length){TID=data[0].id;TNAME=sel.options[0].text;await loadTeamNames();await loadAwards();await loadNationalitiesLive();}
+  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;loadTeamNames();loadAwards();loadNationalitiesLive();loadGroupOptions();};
+  if(data&&data.length){TID=data[0].id;TNAME=sel.options[0].text;await loadTeamNames();await loadAwards();await loadNationalitiesLive();await loadGroupOptions();}
 }
 
 async function loadNationalitiesLive(){
@@ -262,6 +263,16 @@ function wTable2(title,headers,rows){
       <tr>${headers.map(h=>`<th style="background:#1a5c3a;color:#fff;padding:6px">${escW2(h)}</th>`).join('')}</tr>
       ${rows.map(r=>`<tr>${r.map(c=>`<td style="padding:6px;text-align:center">${escW2(c)}</td>`).join('')}</tr>`).join('')}
     </table>`;
+}
+function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
+  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:Tajawal,Arial">
+    ${headerHtml||''}
+    ${pageTitle?`<h1 style="text-align:center;color:#1a5c3a">${escW2(pageTitle)}</h1>`:''}${bodyHtml}</body></html>`;
+  const blob=new Blob(['\ufeff',html],{type:'application/msword'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;a.click();
+  URL.revokeObjectURL(url);
 }
 function downloadWordSingle(filename,pageTitle,sections){
   let body=`<h1 style="text-align:center;color:#1a5c3a">${escW2(pageTitle)}</h1>`;
@@ -794,6 +805,55 @@ async function exportGroupStandingsWord(){
   setMsg('✅ تم التحميل','ok');
 }
 window.exportGroupStandingsWord=exportGroupStandingsWord;
+
+async function loadGroupOptions(){
+  const {data:teams}=await sb.from('teams').select('group_code').eq('tournament_id',TID);
+  const groups=[...new Set((teams||[]).map(t=>t.group_code).filter(Boolean))].sort();
+  const sel=document.getElementById('standingsGroupSel');
+  if(!sel)return;
+  sel.innerHTML='<option value="__all__">كل المجموعات</option>'+groups.map(g=>`<option value="${g}">المجموعة ${g} فقط</option>`).join('');
+}
+
+function escS(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+
+async function printOfficialStandings(){
+  setMsg('⏳ جاري التجهيز...');
+  const matches=await getMatches();
+  const {data:teams}=await sb.from('teams').select('id,name,name_ar,group_code').eq('tournament_id',TID);
+  const {data:tour}=await sb.from('tournaments').select('name_ar,name,committee_logo_url,cup_logo_url,logo_url').eq('id',TID).single();
+  const groups=computeGroupStandings(matches,teams||[]);
+  const tourName=tour?.name_ar||tour?.name||TNAME;
+  const c1=tour?.committee_logo_url, c2=tour?.cup_logo_url||tour?.logo_url;
+
+  const selectedGroup=document.getElementById('standingsGroupSel')?.value||'__all__';
+  const groupEntries=Object.entries(groups).filter(([g])=>selectedGroup==='__all__'||g===selectedGroup);
+  if(!groupEntries.length){setMsg('⚠️ لا توجد بيانات مجموعات بعد','warn');return;}
+
+  const groupTable=(g,list)=>`
+    <div style="background:#c9e4b0;padding:6px 14px;font-weight:900;text-align:center;font-size:13px;margin-bottom:0">المجموعة (${escS(g)})</div>
+    <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:12.5px" dir="rtl">
+      <tr style="background:#ffffff">
+        <th style="padding:7px;color:#000">النقاط</th><th style="padding:7px;color:#000">الفرق</th><th style="padding:7px;color:#000">عليه</th><th style="padding:7px;color:#000">له</th><th style="padding:7px;color:#000">الخسارة</th><th style="padding:7px;color:#000">التعادل</th><th style="padding:7px;color:#000">الفوز</th><th style="padding:7px;color:#000">عدد المباريات</th><th style="padding:7px;color:#000">أسم الفريق</th>
+      </tr>
+      ${list.map(t=>{
+        const pts=t.w*3+t.d, gd=t.gf-t.ga;
+        return `<tr style="background:#1c1c1c;color:#fff"><td style="padding:7px;text-align:center">${pts}</td><td style="padding:7px;text-align:center">${gd}</td><td style="padding:7px;text-align:center">${t.ga}</td><td style="padding:7px;text-align:center">${t.gf}</td><td style="padding:7px;text-align:center">${t.l}</td><td style="padding:7px;text-align:center">${t.d}</td><td style="padding:7px;text-align:center">${t.w}</td><td style="padding:7px;text-align:center">${t.p}</td><td style="padding:7px;text-align:right;font-weight:800">${escS(t.name)}</td></tr>`;
+      }).join('')}
+    </table>`;
+
+  const header=`<table style="width:100%;border:none;margin-bottom:0"><tr>
+    <td style="width:33%;text-align:right;border:none">${c1?`<img src="${c1}" style="height:75px">`:''}</td>
+    <td style="width:34%;text-align:center;border:none;font-weight:900;color:#8a1c1c;font-size:20px">${escS(tourName)}</td>
+    <td style="width:33%;text-align:left;border:none">${c2?`<img src="${c2}" style="height:75px">`:''}</td>
+  </tr></table>
+  <div style="background:#8a1c1c;color:#fff;text-align:center;font-weight:900;font-size:16px;padding:10px;margin-bottom:0">جدول المجموعات</div>`;
+
+  const body=groupEntries.map(([g,list])=>groupTable(g,list)).join('');
+  downloadReportDoc('جدول الترتيب الرسمي - '+tourName+'.doc','',body,header);
+  setMsg('✅ تم التحميل','ok');
+}
+window.printOfficialStandings=printOfficialStandings;
+window.loadGroupOptions=loadGroupOptions;
 </script>
 
 <script>
