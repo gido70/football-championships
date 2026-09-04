@@ -535,8 +535,8 @@ async function onMatchChange(){
   if(error||!m){setMsg('تعذر تحميل المباراة: '+(error?.message||''),'err');return;}
   cur=m;
 
-  const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_injured').eq('team_id',m.home_team_id).or('submission_status.eq.approved,submission_status.is.null').order('number');
-  const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured').eq('team_id',m.away_team_id).or('submission_status.eq.approved,submission_status.is.null').order('number');
+  const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.home_team_id).or('submission_status.eq.approved,submission_status.is.null').order('number');
+  const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.away_team_id).or('submission_status.eq.approved,submission_status.is.null').order('number');
   hPl=hp||[];aPl=ap||[];
   fillSel('hPlayer',hPl);fillSel('aPlayer',aPl);
   fillManOfMatch([...hPl,...aPl]);
@@ -717,8 +717,12 @@ async function logVarEvent(){
   const minute=parseInt(document.getElementById('varLogMinute').value)||null;
   const msg=document.getElementById('varLogMsg');
   if(team_id){
-    const {data:existing}=await sb.from('match_var_events').select('id').eq('match_id',cur.id).eq('team_id',team_id);
-    if((existing||[]).length>=2){msg.style.color='#ff6b6b';msg.textContent='⚠️ هذا الفريق وصل للحد الأقصى (فرصتان فقط) من مراجعات الفار';return;}
+    const {data:tourCfg}=await sb.from('tournaments').select('var_limit_per_team').eq('id',cur.tournament_id).single();
+    const limit=tourCfg?.var_limit_per_team;
+    if(limit){
+      const {data:existing}=await sb.from('match_var_events').select('id').eq('match_id',cur.id).eq('team_id',team_id);
+      if((existing||[]).length>=limit){msg.style.color='#ff6b6b';msg.textContent='⚠️ هذا الفريق وصل للحد الأقصى ('+limit+' فقط) المحدَّد لهذه البطولة تحديداً من مراجعات الفار';return;}
+    }
   }
   const {error}=await sb.from('match_var_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,team_id,var_type,var_result,minute});
   if(error){msg.style.color='#ff6b6b';msg.textContent='❌ فشل: '+error.message;return;}
@@ -1299,9 +1303,13 @@ async function loadLineupAdmin(m){
   document.getElementById('injAName').textContent=m.at?.name_ar||m.at?.name||'الفريق الثاني';
   const {data:lu}=await sb.from('match_lineups').select('player_id,is_starting').eq('match_id',m.id);
   const luMap={};(lu||[]).forEach(x=>luMap[x.player_id]=x.is_starting);
-  const row=p=>`<div class="lu-row" data-pid="${p.id}">
+  const row=p=>{
+    const susp=p.suspended_matches_remaining>0;
+    return `<div class="lu-row" data-pid="${p.id}" style="${susp?'background:rgba(248,81,73,.12);border-radius:8px;padding:4px 8px':''}">
     <label><input type="checkbox" class="lu-start" ${luMap[p.id]?'checked':''}><span>${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</span></label>
+    ${susp?`<span style="color:#f85149;font-size:11px;font-weight:900;margin-right:6px">🚫 موقوف (${p.suspended_matches_remaining} مباراة متبقية)</span>`:''}
   </div>`;
+  };
   document.getElementById('luHList').innerHTML=hPl.map(row).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
   document.getElementById('luAList').innerHTML=aPl.map(row).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
   renderInjuryCheckboxes();
