@@ -473,9 +473,12 @@ select option{background:#0f2a45;color:#ffffff}
       <div class="collapsible-body" id="reportsPanel">
       <div style="font-size:11.5px;color:#8fa3c0;margin-bottom:12px">مستندان جاهزان للطباعة قبل المباراة — تشكيلة كل فريق كاملة، توقيع الإداري، وبيانات المعلّق.</div>
       <div class="actions">
-        <button class="btn secondary" onclick="printRefereeReport()">⚖️ تقرير الحكم</button>
-        <button class="btn secondary" onclick="printCommentatorReport()">🎙️ تقرير المعلّق</button>
-        <button class="btn secondary" onclick="printFullMatchReport()">📰 محضر المباراة الشامل</button>
+        <button class="btn secondary" onclick="printRefereeReport()">⚖️ تقرير الحكم (Word)</button>
+        <button class="btn secondary" onclick="printRefereeReport('pdf')">🖨️ تقرير الحكم (PDF)</button>
+        <button class="btn secondary" onclick="printCommentatorReport()">🎙️ تقرير المعلّق (Word)</button>
+        <button class="btn secondary" onclick="printCommentatorReport('pdf')">🖨️ تقرير المعلّق (PDF)</button>
+        <button class="btn secondary" onclick="printFullMatchReport()">📰 محضر المباراة (Word)</button>
+        <button class="btn secondary" onclick="printFullMatchReport('pdf')">🖨️ محضر المباراة (PDF)</button>
       </div>
       <div class="status" id="reportMsg"></div>
       </div>
@@ -1489,6 +1492,29 @@ async function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
   a.href=url;a.download=filename.replace(/\.doc$/,'.docx');a.click();
   URL.revokeObjectURL(url);
 }
+
+function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
+  const w=window.open('','_blank');
+  if(!w){alert('فضلاً اسمح للمتصفح بفتح النوافذ المنبثقة لهذه الصفحة');return;}
+  w.document.write(`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8">
+    <title>${escR(pageTitle)}</title>
+    <style>
+      body{font-family:${REPORT_FONT},Tajawal,Arial;padding:20px;color:#111}
+      h1{text-align:center;color:${REPORT_PRIMARY}}
+      h2{color:${REPORT_PRIMARY};border-bottom:2px solid ${REPORT_ACCENT};padding-bottom:4px}
+      table{width:100%;border-collapse:collapse;margin-bottom:20px;direction:rtl}
+      th,td{border:1px solid #999;padding:6px;text-align:center}
+      th{background:${REPORT_PRIMARY};color:#fff}
+      img{max-width:100%}
+      @media print{ body{padding:0} }
+    </style></head><body>
+    ${headerHtml||''}
+    ${pageTitle?`<h1>${escR(pageTitle)}</h1>`:''}
+    ${bodyHtml}
+    <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script>
+    </body></html>`);
+  w.document.close();
+}
 async function fetchReportData(){
   const {data:hTeam}=await sb.from('teams').select('name,name_ar,submitted_by_name,coach_name,logo_url').eq('id',cur.home_team_id).single();
   const {data:aTeam}=await sb.from('teams').select('name,name_ar,submitted_by_name,coach_name,logo_url').eq('id',cur.away_team_id).single();
@@ -1520,7 +1546,7 @@ function reportLetterhead(tour,tourName){
   <div style="border-bottom:3px solid ${REPORT_PRIMARY};margin-bottom:16px"></div>`;
 }
 
-async function printRefereeReport(){
+async function printRefereeReport(mode='docx'){
   document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
   const {hName,aName,hLineup,aLineup,tour,events}=await fetchReportData();
   const tourName=tour?.name_ar||tour?.name||'';
@@ -1573,12 +1599,13 @@ async function printRefereeReport(){
     </table>`;
   const header=reportLetterhead(tour,tourName);
   const body=infoTable+rosterTable(hName,hLineup)+rosterTable(aName,aLineup)+eventsTable+sigTable;
+  if(mode==='pdf'){printReportAsPDF('تقرير حكم المباراة',body,header);document.getElementById('reportMsg').textContent='✅ فُتحت نافذة الطباعة';return;}
   await downloadReportDoc('تقرير الحكم - '+hName+' × '+aName+'.doc','تقرير حكم المباراة',body,header);
   document.getElementById('reportMsg').textContent='✅ تم التحميل';
 }
 window.printRefereeReport=printRefereeReport;
 
-async function printCommentatorReport(){
+async function printCommentatorReport(mode='docx'){
   document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
   const {hTeam,aTeam,hName,aName,hLineup,aLineup,tour}=await fetchReportData();
   const tourName=tour?.name_ar||tour?.name||'';
@@ -1596,12 +1623,13 @@ async function printCommentatorReport(){
   const header=reportLetterhead(tour,tourName);
   const body=`<p style="text-align:center;color:#555;margin-bottom:6px">${escR(document.getElementById('venueName').value||'')} — ${escR(document.getElementById('commentator').value||'المعلّق')}</p>`
     +teamBlock(hName,hLineup,hTeam)+teamBlock(aName,aLineup,aTeam);
+  if(mode==='pdf'){printReportAsPDF('قائمة المعلّق',body,header);document.getElementById('reportMsg').textContent='✅ فُتحت نافذة الطباعة';return;}
   await downloadReportDoc('قائمة المعلق - '+hName+' × '+aName+'.doc','قائمة المعلّق',body,header);
   document.getElementById('reportMsg').textContent='✅ تم التحميل';
 }
 window.printCommentatorReport=printCommentatorReport;
 
-async function printFullMatchReport(){
+async function printFullMatchReport(mode='docx'){
   document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
   const {hName,aName,tour}=await fetchReportData();
   const tourName=tour?.name_ar||tour?.name||'';
@@ -1643,6 +1671,7 @@ async function printFullMatchReport(){
 
   const header=reportLetterhead(tour,tourName);
   const body=summaryTable+eventsTable+varTable+missedTable;
+  if(mode==='pdf'){printReportAsPDF('محضر المباراة الشامل',body,header);document.getElementById('reportMsg').textContent='✅ فُتحت نافذة الطباعة';return;}
   await downloadReportDoc('محضر المباراة - '+hName+' × '+aName+'.doc','محضر المباراة الشامل',body,header);
   document.getElementById('reportMsg').textContent='✅ تم التحميل';
 }

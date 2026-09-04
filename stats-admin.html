@@ -45,48 +45,48 @@
     <div class="cards-row" style="grid-template-columns:repeat(3,1fr)">
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">⚽</div><h3>الهدافون</h3><p>قائمة كاملة بالأهداف لكل لاعب</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportScorers()">📊 إكسل</button><button class="btn secondary" onclick="exportScorersWord()">📄 وورد</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportScorers()">📊 إكسل</button><button class="btn secondary" onclick="exportScorersWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportScorersWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🟨🟥</div><h3>البطاقات</h3><p>الصفراء والحمراء لكل لاعب</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportCards()">📊 إكسل</button><button class="btn secondary" onclick="exportCardsWord()">📄 وورد</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportCards()">📊 إكسل</button><button class="btn secondary" onclick="exportCardsWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportCardsWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">⭐</div><h3>أفضل اللاعبين</h3><p>عدد مرات اختيار نجم المباراة</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMotm()">📊 إكسل</button><button class="btn secondary" onclick="exportMotmWord()">📄 وورد</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMotm()">📊 إكسل</button><button class="btn secondary" onclick="exportMotmWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportMotmWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">👨‍⚖️</div><h3>الحكام والمعلقون</h3><p>عدد المباريات لكل حكم/معلّق</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportOfficials()">📊 إكسل</button><button class="btn secondary" onclick="exportOfficialsWord()">📄 وورد</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportOfficials()">📊 إكسل</button><button class="btn secondary" onclick="exportOfficialsWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportOfficialsWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">📺</div><h3>إحصائيات الـ VAR</h3><p>سجل قرارات الفار وعدد كل نوع لكل فريق</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportVAR()">📊 إكسل</button><button class="btn secondary" onclick="exportVARWord()">📄 وورد</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportVAR()">📊 إكسل</button><button class="btn secondary" onclick="exportVARWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportVARWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🏅</div><h3>أفضل لاعب في كل مباراة</h3><p>سجل رجل المباراة لكل مباراة على حدة</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMotmByMatch()">📊 إكسل</button><button class="btn secondary" onclick="exportMotmByMatchWord()">📄 وورد</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMotmByMatch()">📊 إكسل</button><button class="btn secondary" onclick="exportMotmByMatchWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportMotmByMatchWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">📅</div><h3>جدول المباريات والنتائج</h3><p>كل المباريات بتفاصيلها الكاملة</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMatches()">📊 إكسل</button><button class="btn secondary" onclick="exportMatchesWord()">📄 وورد</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMatches()">📊 إكسل</button><button class="btn secondary" onclick="exportMatchesWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportMatchesWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🌍</div><h3>الجنسيات المشاركة</h3><p>عدد اللاعبين لكل جنسية</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportNationalities()">📊 إكسل</button><button class="btn secondary" onclick="exportNationalitiesWord()">📄 وورد</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportNationalities()">📊 إكسل</button><button class="btn secondary" onclick="exportNationalitiesWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportNationalitiesWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🎯</div><h3>ضربات الجزاء</h3><p>الأهداف المُحرَزة والضائعة من ركلات الجزاء أثناء اللعب</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportPenalties()">📊 إكسل</button><button class="btn secondary" onclick="exportPenaltiesWord()">📄 وورد</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportPenalties()">📊 إكسل</button><button class="btn secondary" onclick="exportPenaltiesWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportPenaltiesWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🥅</div><h3>ركلات الترجيح</h3><p>عدد المباريات المحسومة بالترجيح، وتفاصيل كل ضربة</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportShootouts()">📊 إكسل</button><button class="btn secondary" onclick="exportShootoutsWord()">📄 وورد</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportShootouts()">📊 إكسل</button><button class="btn secondary" onclick="exportShootoutsWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportShootoutsWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🏆</div><h3>جدول الترتيب الرسمي (للنشر)</h3><p>بنفس التصميم الرسمي المعتمد — شعارا اللجنة والكأس، شريط أحمر، جدول داكن</p>
         <div style="margin-top:8px"><select id="standingsGroupSel" style="width:100%"><option value="__all__">كل المجموعات</option></select></div>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportGroupStandings()">📊 إكسل</button><button class="btn secondary" onclick="printOfficialStandings()">📄 وورد (رسمي)</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportGroupStandings()">📊 إكسل</button><button class="btn secondary" onclick="printOfficialStandings()">📄 وورد (رسمي)</button><button class="btn secondary" onclick="runAsPDF(printOfficialStandings)">🖨️ PDF</button></div>
       </div>
     </div>
   </section>
@@ -252,6 +252,7 @@ function sheetFromRows(rows,headers){
 }
 
 let REPORT_PRIMARY='#1a5c3a', REPORT_FONT='Tajawal';
+let CURRENT_EXPORT_MODE='docx';
 async function updateReportColor(){
   if(!TID)return;
   const {data:t}=await sb.from('tournaments').select('report_color,report_font').eq('id',TID).single();
@@ -345,6 +346,10 @@ async function domToDocxChildren(container){
   return out;
 }
 async function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
+  if(CURRENT_EXPORT_MODE==='pdf'){
+    printReportAsPDF(pageTitle,bodyHtml,headerHtml);
+    return;
+  }
   const {Document,Packer}=docx;
   const wrap=document.createElement('div');
   wrap.innerHTML=(headerHtml||'')+(pageTitle?`<h1 style="color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`:'')+bodyHtml;
@@ -356,10 +361,44 @@ async function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
   a.href=url;a.download=filename.replace(/\.doc$/,'.docx');a.click();
   URL.revokeObjectURL(url);
 }
+function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
+  const w=window.open('','_blank');
+  if(!w){alert('فضلاً اسمح للمتصفح بفتح النوافذ المنبثقة لهذه الصفحة');return;}
+  const printScript='<'+'script>window.onload=()=>setTimeout(()=>window.print(),400)<'+'/script>';
+  w.document.write('<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8">'
+    +'<title>'+escW2(pageTitle)+'</title>'
+    +'<style>'
+    +'body{font-family:'+REPORT_FONT+',Tajawal,Arial;padding:20px;color:#111}'
+    +'h1{text-align:center;color:'+REPORT_PRIMARY+'}'
+    +'h2{color:'+REPORT_PRIMARY+';border-bottom:2px solid #c9a84c;padding-bottom:4px}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:20px;direction:rtl}'
+    +'th,td{border:1px solid #999;padding:6px;text-align:center}'
+    +'th{background:'+REPORT_PRIMARY+';color:#fff}'
+    +'img{max-width:100%}'
+    +'@media print{ body{padding:0} }'
+    +'</style></head><body>'
+    +(headerHtml||'')
+    +(pageTitle?('<h1>'+escW2(pageTitle)+'</h1>'):'')
+    +bodyHtml
+    +printScript
+    +'</body></html>');
+  w.document.close();
+}
+async function runAsPDF(fn){
+  CURRENT_EXPORT_MODE='pdf';
+  await fn();
+  CURRENT_EXPORT_MODE='docx';
+}
+window.runAsPDF=runAsPDF;
 async function downloadWordSingle(filename,pageTitle,sections){
+  let bodyOnly='';
+  sections.forEach(s=>{bodyOnly+=wTable2(s.title,s.headers,s.rows);});
+  if(CURRENT_EXPORT_MODE==='pdf'){
+    printReportAsPDF(pageTitle,bodyOnly,'');
+    return;
+  }
   const {Document,Packer}=docx;
-  let body=`<h1 style="color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`;
-  sections.forEach(s=>{body+=wTable2(s.title,s.headers,s.rows);});
+  let body=`<h1 style="color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`+bodyOnly;
   const wrap=document.createElement('div');
   wrap.innerHTML=body;
   const children=await domToDocxChildren(wrap);
