@@ -402,7 +402,7 @@ async function buildLetterheadHtml(){
   const {data:tour}=await sb.from('tournaments').select('report_header_image_url,committee_logo_url,cup_logo_url,logo_url,show_committee_logo,show_cup_logo').eq('id',TID).single();
   if(!tour)return '';
   if(tour.report_header_image_url){
-    return `<div style="margin-bottom:8px;border-bottom:4px solid #c9a84c"><img src="${tour.report_header_image_url}" style="width:100%;height:auto;display:block"></div>`;
+    return `<div style="width:100%;height:70px;overflow:hidden;margin-bottom:8px;border-bottom:4px solid #c9a84c"><img src="${tour.report_header_image_url}" style="width:100%;height:100%;object-fit:cover;display:block"></div>`;
   }
   const c1=tour.show_committee_logo!==false?tour.committee_logo_url:null, c2=tour.show_cup_logo!==false?(tour.cup_logo_url||tour.logo_url):null;
   if(!c1&&!c2)return '';
@@ -990,7 +990,7 @@ async function printOfficialStandings(){
     </table>`;
 
   const header=tour?.report_header_image_url
-    ? `<div style="margin-bottom:0;border-bottom:4px solid #c9a84c"><img src="${tour.report_header_image_url}" style="width:100%;height:auto;display:block"></div>
+    ? `<div style="width:100%;height:70px;overflow:hidden;margin-bottom:0;border-bottom:4px solid #c9a84c"><img src="${tour.report_header_image_url}" style="width:100%;height:100%;object-fit:cover;display:block"></div>
        <div style="background:${themeColor};color:#fff;text-align:center;font-weight:900;font-size:16px;padding:10px;margin-bottom:0">جدول المجموعات</div>`
     : `<table style="width:100%;border:none;margin-bottom:0"><tr>
     <td style="width:33%;text-align:right;border:none">${c1?`<img src="${c1}" style="height:75px">`:''}</td>
