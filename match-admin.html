@@ -1550,38 +1550,61 @@ function reportLetterhead(tour,tourName){
 
 async function printRefereeReport(mode='docx'){
   document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
-  const {hName,aName,hLineup,aLineup,tour,events}=await fetchReportData();
+  const {hName,aName,hLineup,aLineup,tour}=await fetchReportData();
   const tourName=tour?.name_ar||tour?.name||'';
-  const hHalf=events.filter(e=>e.minute<=45).length, aHalf=events.length-hHalf; // تقديري وفق دقيقة كل هدف
+  const {data:shots}=await sb.from('match_penalty_shootout').select('team_id,result').eq('match_id',cur.id);
+  let shootoutScore='';
+  if(shots?.length){
+    const hScore=shots.filter(s=>s.team_id===cur.home_team_id&&s.result==='scored').length;
+    const aScore=shots.filter(s=>s.team_id===cur.away_team_id&&s.result==='scored').length;
+    shootoutScore=hScore+' - '+aScore;
+  }
+
   const infoTable=`
+    <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px" dir="rtl">
+      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800;width:22%">رقم المباراة</td><td style="padding:8px" colspan="3">${escR(cur.match_no||'—')}</td></tr>
+      <tr>
+        <td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">فريق / فريق</td>
+        <td style="padding:8px;font-weight:800" colspan="3">${escR(hName)} × ${escR(aName)}</td>
+      </tr>
+      <tr>
+        <td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">البطولة</td><td style="padding:8px">${escR(tourName)}</td>
+        <td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">التاريخ</td><td style="padding:8px">${escR(cur.match_date||'—')} ${escR(cur.match_time||'')}</td>
+      </tr>
+    </table>`;
+
+  const resultTable=`
+    <h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid ${REPORT_ACCENT};padding-bottom:4px">🏆 نتيجة المباراة</h2>
+    <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px" dir="rtl">
+      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800;width:30%">الشوط الأول</td><td style="padding:16px"></td></tr>
+      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">الشوط الثاني (النتيجة النهائية)</td><td style="padding:16px;font-weight:800;text-align:center;font-size:16px">${cur.home_score??''} - ${cur.away_score??''}</td></tr>
+      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">الوقت الإضافي</td><td style="padding:16px"></td></tr>
+      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">الركلات الترجيحية</td><td style="padding:16px;text-align:center;font-weight:800">${escR(shootoutScore)}</td></tr>
+    </table>`;
+
+  const kitTable=`
+    <h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid ${REPORT_ACCENT};padding-bottom:4px">👕 لون الملابس</h2>
     <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px" dir="rtl">
-      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800;width:20%">رقم المباراة</td><td style="padding:8px" colspan="3">${escR(cur.match_no||'—')}</td></tr>
-      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">التاريخ</td><td style="padding:8px">${escR(cur.match_date||'—')} ${escR(cur.match_time||'')}</td>
-          <td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">البطولة</td><td style="padding:8px">${escR(tourName)}</td></tr>
-      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">الملعب</td><td style="padding:8px" colspan="3">${escR(document.getElementById('venueName').value||'—')}</td></tr>
-      <tr>
-        <td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">الفريق</td><td style="padding:8px;font-weight:800">${escR(hName)}</td>
-        <td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">الفريق</td><td style="padding:8px;font-weight:800">${escR(aName)}</td>
-      </tr>
-      <tr>
-        <td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">النتيجة النهائية</td><td style="padding:8px;text-align:center" colspan="3"><b style="font-size:16px">${cur.home_score??0} - ${cur.away_score??0}</b></td>
-      </tr>
+      <tr><th style="background:${REPORT_PRIMARY};color:#fff;padding:8px" colspan="3">${escR(hName)}</th><th style="background:${REPORT_PRIMARY};color:#fff;padding:8px" colspan="3">${escR(aName)}</th></tr>
+      <tr><td style="padding:6px;text-align:center;font-weight:800">قميص</td><td style="padding:6px;text-align:center;font-weight:800">شورت</td><td style="padding:6px;text-align:center;font-weight:800">جوارب</td><td style="padding:6px;text-align:center;font-weight:800">قميص</td><td style="padding:6px;text-align:center;font-weight:800">شورت</td><td style="padding:6px;text-align:center;font-weight:800">جوارب</td></tr>
+      <tr><td style="padding:18px"></td><td style="padding:18px"></td><td style="padding:18px"></td><td style="padding:18px"></td><td style="padding:18px"></td><td style="padding:18px"></td></tr>
     </table>`;
+
   const rosterTable=(name,roster)=>`
-    <h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid ${REPORT_ACCENT};padding-bottom:4px">👥 قائمة ${escR(name)} الكاملة (${roster.length} لاعباً) — يُؤشَّر عليها حسب المشاركين فعلياً</h2>
-    <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:16px;font-size:12.5px" dir="rtl">
-      <tr><th style="background:${REPORT_PRIMARY};color:#fff;padding:6px;width:12%">مشارك؟</th><th style="background:${REPORT_PRIMARY};color:#fff;padding:6px;width:12%">الرقم</th><th style="background:${REPORT_PRIMARY};color:#fff;padding:6px">الاسم</th></tr>
-      ${roster.map(p=>`<tr><td style="text-align:center;font-size:20px;padding:6px">☐</td><td style="text-align:center;padding:6px">${p.number??''}</td><td style="padding:6px">${escR(p.full_name_ar||p.name||'—')}</td></tr>`).join('')}
+    <table border="1" style="width:100%;border-collapse:collapse;font-size:12px" dir="rtl">
+      <tr><th style="background:${REPORT_PRIMARY};color:#fff;padding:5px" colspan="5">${escR(name)}</th></tr>
+      <tr><th style="background:#eee;padding:5px;width:12%">رقم</th><th style="background:#eee;padding:5px">اسم اللاعب</th><th style="background:#eee;padding:5px;width:12%">هدف</th><th style="background:#eee;padding:5px;width:12%">انذار</th><th style="background:#eee;padding:5px;width:12%">طرد</th></tr>
+      ${roster.map(p=>`<tr><td style="text-align:center;padding:5px">${p.number??''}</td><td style="padding:5px">${escR(p.full_name_ar||p.name||'—')}</td><td style="padding:5px"></td><td style="padding:5px"></td><td style="padding:5px"></td></tr>`).join('')}
     </table>`;
-  const blankRows=Array.from({length:16}).map(()=>`<tr><td style="padding:14px;border:1px solid #999"></td><td style="padding:14px;border:1px solid #999"></td><td style="padding:14px;border:1px solid #999"></td><td style="padding:14px;border:1px solid #999"></td></tr>`).join('');
-  const eventsTable=`
-    <h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid ${REPORT_ACCENT};padding-bottom:4px">📝 سجل يدوي احتياطي لأحداث المباراة</h2>
-    <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:12.5px" dir="rtl">
-      <tr><th style="background:${REPORT_PRIMARY};color:#fff;padding:8px">الدقيقة</th><th style="background:${REPORT_PRIMARY};color:#fff;padding:8px">الحدث</th><th style="background:${REPORT_PRIMARY};color:#fff;padding:8px">رقم اللاعب</th><th style="background:${REPORT_PRIMARY};color:#fff;padding:8px">الفريق</th></tr>
-      ${blankRows}
-    </table>`;
+  const rostersRow=`
+    <h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid ${REPORT_ACCENT};padding-bottom:4px">👥 قوائم اللاعبين</h2>
+    <table style="width:100%;border:none;margin-bottom:20px"><tr>
+      <td style="width:50%;vertical-align:top;padding-left:6px;border:none">${rosterTable(hName,hLineup)}</td>
+      <td style="width:50%;vertical-align:top;padding-right:6px;border:none">${rosterTable(aName,aLineup)}</td>
+    </tr></table>`;
+
   const sigTable=`
-    <table border="1" style="width:100%;border-collapse:collapse;margin-top:30px;font-size:13px" dir="rtl">
+    <table border="1" style="width:100%;border-collapse:collapse;margin-top:20px;font-size:13px" dir="rtl">
       <tr>
         <td style="background:${REPORT_PRIMARY};color:#fff;padding:10px;font-weight:800;width:25%">حكم المباراة</td><td style="padding:16px 10px">${escR(document.getElementById('referee1').value||'')}</td>
         <td style="background:${REPORT_PRIMARY};color:#fff;padding:10px;font-weight:800;width:25%">الحكم المساعد</td><td style="padding:16px 10px">${escR(document.getElementById('referee2').value||'')}</td>
@@ -1591,8 +1614,8 @@ async function printRefereeReport(mode='docx'){
         <td style="background:#f0f0f0;padding:10px;font-weight:800">التوقيع</td><td style="padding:20px 10px"></td>
       </tr>
       <tr>
-        <td style="background:${REPORT_PRIMARY};color:#fff;padding:10px;font-weight:800">مشرف المباراة</td><td style="padding:16px 10px"></td>
         <td style="background:${REPORT_PRIMARY};color:#fff;padding:10px;font-weight:800">مراقب المباراة</td><td style="padding:16px 10px"></td>
+        <td style="background:${REPORT_PRIMARY};color:#fff;padding:10px;font-weight:800">مشرف المباراة</td><td style="padding:16px 10px"></td>
       </tr>
       <tr>
         <td style="background:#f0f0f0;padding:10px;font-weight:800">التوقيع</td><td style="padding:20px 10px"></td>
@@ -1600,7 +1623,7 @@ async function printRefereeReport(mode='docx'){
       </tr>
     </table>`;
   const header=reportLetterhead(tour,tourName);
-  const body=infoTable+rosterTable(hName,hLineup)+rosterTable(aName,aLineup)+eventsTable+sigTable;
+  const body=infoTable+resultTable+kitTable+rostersRow+sigTable;
   if(mode==='pdf'){printReportAsPDF('تقرير حكم المباراة',body,header);document.getElementById('reportMsg').textContent='✅ فُتحت نافذة الطباعة';return;}
   await downloadReportDoc('تقرير الحكم - '+hName+' × '+aName+'.doc','تقرير حكم المباراة',body,header);
   document.getElementById('reportMsg').textContent='✅ تم التحميل';
