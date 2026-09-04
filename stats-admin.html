@@ -116,8 +116,8 @@ async function initTournaments(){
   if(error){sel.innerHTML=`<option value="">⚠️ خطأ: ${error.message}</option>`;setMsg('فشل تحميل البطولات: '+error.message,'err');return;}
   if(!data||!data.length){sel.innerHTML='<option value="">لا توجد بطولات</option>';return;}
   sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name} ${t.season_label?'- '+t.season_label:''}</option>`).join('');
-  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;loadTeamNames();loadAwards();loadGroupOptions();};
-  if(data&&data.length){TID=data[0].id;TNAME=sel.options[0].text;await loadTeamNames();await loadAwards();await loadGroupOptions();}
+  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;loadTeamNames();loadAwards();loadGroupOptions();updateReportColor();};
+  if(data&&data.length){TID=data[0].id;TNAME=sel.options[0].text;await loadTeamNames();await loadAwards();await loadGroupOptions();await updateReportColor();}
 }
 
 async function loadNationalitiesLive(){
@@ -250,19 +250,25 @@ function sheetFromRows(rows,headers){
   return ws;
 }
 
+let REPORT_PRIMARY='#1a5c3a';
+async function updateReportColor(){
+  if(!TID)return;
+  const {data:t}=await sb.from('tournaments').select('primary_color').eq('id',TID).single();
+  REPORT_PRIMARY=t?.primary_color||'#1a5c3a';
+}
 function escW2(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 function wTable2(title,headers,rows){
-  if(!rows||!rows.length)return `<h2 style="color:#1a5c3a;border-bottom:2px solid #c9a84c;padding-bottom:4px">${title}</h2><p style="color:#888">لا توجد بيانات</p>`;
-  return `<h2 style="color:#1a5c3a;border-bottom:2px solid #c9a84c;padding-bottom:4px">${title}</h2>
+  if(!rows||!rows.length)return `<h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid #c9a84c;padding-bottom:4px">${title}</h2><p style="color:#888">لا توجد بيانات</p>`;
+  return `<h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid #c9a84c;padding-bottom:4px">${title}</h2>
     <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:20px" dir="rtl">
-      <tr>${headers.map(h=>`<th style="background:#1a5c3a;color:#fff;padding:6px">${escW2(h)}</th>`).join('')}</tr>
+      <tr>${headers.map(h=>`<th style="background:${REPORT_PRIMARY};color:#fff;padding:6px">${escW2(h)}</th>`).join('')}</tr>
       ${rows.map(r=>`<tr>${r.map(c=>`<td style="padding:6px;text-align:center">${escW2(c)}</td>`).join('')}</tr>`).join('')}
     </table>`;
 }
 function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
   const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:Tajawal,Arial">
     ${headerHtml||''}
-    ${pageTitle?`<h1 style="text-align:center;color:#1a5c3a">${escW2(pageTitle)}</h1>`:''}${bodyHtml}</body></html>`;
+    ${pageTitle?`<h1 style="text-align:center;color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`:''}${bodyHtml}</body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/msword'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -270,7 +276,7 @@ function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
   URL.revokeObjectURL(url);
 }
 function downloadWordSingle(filename,pageTitle,sections){
-  let body=`<h1 style="text-align:center;color:#1a5c3a">${escW2(pageTitle)}</h1>`;
+  let body=`<h1 style="text-align:center;color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`;
   sections.forEach(s=>{body+=wTable2(s.title,s.headers,s.rows);});
   const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:Tajawal,Arial">${body}</body></html>`;
   const blob=new Blob(['\ufeff',html],{type:'application/msword'});
@@ -687,10 +693,10 @@ initTournaments();
 
 function escW(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 function wTable(title,headers,rows){
-  if(!rows||!rows.length)return `<h2 style="color:#1a5c3a;border-bottom:2px solid #c9a84c;padding-bottom:4px">${title}</h2><p style="color:#888">لا توجد بيانات</p>`;
-  return `<h2 style="color:#1a5c3a;border-bottom:2px solid #c9a84c;padding-bottom:4px">${title}</h2>
+  if(!rows||!rows.length)return `<h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid #c9a84c;padding-bottom:4px">${title}</h2><p style="color:#888">لا توجد بيانات</p>`;
+  return `<h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid #c9a84c;padding-bottom:4px">${title}</h2>
     <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:20px" dir="rtl">
-      <tr>${headers.map(h=>`<th style="background:#1a5c3a;color:#fff;padding:6px">${escW(h)}</th>`).join('')}</tr>
+      <tr>${headers.map(h=>`<th style="background:${REPORT_PRIMARY};color:#fff;padding:6px">${escW(h)}</th>`).join('')}</tr>
       ${rows.map(r=>`<tr>${r.map(c=>`<td style="padding:6px;text-align:center">${escW(c)}</td>`).join('')}</tr>`).join('')}
     </table>`;
 }
@@ -723,7 +729,7 @@ async function exportFullReportWord(){
 
   const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
 
-  let body=`<h1 style="text-align:center;color:#1a5c3a">تقرير إحصائيات شامل — ${escW(TNAME)}</h1>`;
+  let body=`<h1 style="text-align:center;color:${REPORT_PRIMARY}">تقرير إحصائيات شامل — ${escW(TNAME)}</h1>`;
   body+=wTable('⚽ الهدافون',['الترتيب','اللاعب','الرقم','الفريق','الأهداف'],scorers.map((p,i)=>[i+1,p.name,p.number,p.team,p.count]));
   body+=wTable('🟨 البطاقات الصفراء',['الترتيب','اللاعب','الرقم','الفريق','العدد'],yellow.map((p,i)=>[i+1,p.name,p.number,p.team,p.count]));
   body+=wTable('🟥 البطاقات الحمراء',['الترتيب','اللاعب','الرقم','الفريق','العدد'],red.map((p,i)=>[i+1,p.name,p.number,p.team,p.count]));
