@@ -1496,10 +1496,14 @@ async function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
 function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
   const w=window.open('','_blank');
   if(!w){alert('فضلاً اسمح للمتصفح بفتح النوافذ المنبثقة لهذه الصفحة');return;}
+  const fontFamilyMap={'Cairo':'Cairo','Amiri':'Amiri','Almarai':'Almarai','Tajawal':'Tajawal'};
+  const googleFontName=fontFamilyMap[REPORT_FONT]||'Tajawal';
   w.document.write(`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=${googleFontName.replace(' ','+')}:wght@400;700;800;900&display=swap" rel="stylesheet">
     <title>${escR(pageTitle)}</title>
     <style>
-      body{font-family:${REPORT_FONT},Tajawal,Arial;padding:20px;color:#111}
+      body{font-family:"${googleFontName}",Tajawal,Arial;padding:20px;color:#111}
       h1{text-align:center;color:${REPORT_PRIMARY}}
       h2{color:${REPORT_PRIMARY};border-bottom:2px solid ${REPORT_ACCENT};padding-bottom:4px}
       table{width:100%;border-collapse:collapse;margin-bottom:20px;direction:rtl}
@@ -1511,7 +1515,7 @@ function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
     ${headerHtml||''}
     ${pageTitle?`<h1>${escR(pageTitle)}</h1>`:''}
     ${bodyHtml}
-    <script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script>
+    <script>window.onload=()=>setTimeout(()=>window.print(),900)<\/script>
     </body></html>`);
   w.document.close();
 }

@@ -364,11 +364,15 @@ async function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
 function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
   const w=window.open('','_blank');
   if(!w){alert('فضلاً اسمح للمتصفح بفتح النوافذ المنبثقة لهذه الصفحة');return;}
-  const printScript='<'+'script>window.onload=()=>setTimeout(()=>window.print(),400)<'+'/script>';
+  const fontFamilyMap={'Cairo':'Cairo','Amiri':'Amiri','Almarai':'Almarai','Tajawal':'Tajawal'};
+  const googleFontName=fontFamilyMap[REPORT_FONT]||'Tajawal';
+  const fontLink='<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family='+googleFontName.replace(' ','+')+':wght@400;700;800;900&display=swap" rel="stylesheet">';
+  const printScript='<'+'script>window.onload=()=>setTimeout(()=>window.print(),900)<'+'/script>';
   w.document.write('<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8">'
+    +fontLink
     +'<title>'+escW2(pageTitle)+'</title>'
     +'<style>'
-    +'body{font-family:'+REPORT_FONT+',Tajawal,Arial;padding:20px;color:#111}'
+    +'body{font-family:"'+googleFontName+'",Tajawal,Arial;padding:20px;color:#111}'
     +'h1{text-align:center;color:'+REPORT_PRIMARY+'}'
     +'h2{color:'+REPORT_PRIMARY+';border-bottom:2px solid #c9a84c;padding-bottom:4px}'
     +'table{width:100%;border-collapse:collapse;margin-bottom:20px;direction:rtl}'
@@ -390,15 +394,31 @@ async function runAsPDF(fn){
   CURRENT_EXPORT_MODE='docx';
 }
 window.runAsPDF=runAsPDF;
+async function buildLetterheadHtml(){
+  if(!TID)return '';
+  const {data:tour}=await sb.from('tournaments').select('report_header_image_url,committee_logo_url,cup_logo_url,logo_url').eq('id',TID).single();
+  if(!tour)return '';
+  if(tour.report_header_image_url){
+    return `<div style="text-align:center;margin-bottom:8px"><img src="${tour.report_header_image_url}" style="max-height:95px;width:auto"></div>`;
+  }
+  const c1=tour.committee_logo_url, c2=tour.cup_logo_url||tour.logo_url;
+  if(!c1&&!c2)return '';
+  return `<table style="width:100%;border:none;margin-bottom:8px"><tr>
+    <td style="width:33%;text-align:right;border:none">${c1?`<img src="${c1}" style="height:70px">`:''}</td>
+    <td style="width:34%;text-align:center;border:none"></td>
+    <td style="width:33%;text-align:left;border:none">${c2?`<img src="${c2}" style="height:70px">`:''}</td>
+  </tr></table>`;
+}
 async function downloadWordSingle(filename,pageTitle,sections){
+  const header=await buildLetterheadHtml();
   let bodyOnly='';
   sections.forEach(s=>{bodyOnly+=wTable2(s.title,s.headers,s.rows);});
   if(CURRENT_EXPORT_MODE==='pdf'){
-    printReportAsPDF(pageTitle,bodyOnly,'');
+    printReportAsPDF(pageTitle,bodyOnly,header);
     return;
   }
   const {Document,Packer}=docx;
-  let body=`<h1 style="color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`+bodyOnly;
+  let body=header+`<h1 style="color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`+bodyOnly;
   const wrap=document.createElement('div');
   wrap.innerHTML=body;
   const children=await domToDocxChildren(wrap);
