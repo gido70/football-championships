@@ -289,6 +289,7 @@ img[src=""], img:not([src]) { display:none !important; }
 <nav class="nav">
   <div class="nav-title">
     <span id="navName">البطولة</span>
+    <span id="socialLinks" style="display:none;align-items:center;gap:8px;margin-right:8px"></span>
     <span class="nav-status" id="navStatus"></span>
     <span id="liveHeaderBadge" onclick="jumpToTab('ma')" style="display:none;cursor:pointer;align-items:center;gap:6px;background:rgba(255,59,59,.15);border:1px solid rgba(255,59,59,.4);color:#ff5c5c;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800;margin-right:8px">
       <span style="width:8px;height:8px;border-radius:50%;background:#ff3b3b;display:inline-block;animation:livepulse 1.5s infinite"></span>
@@ -757,6 +758,12 @@ async function loadTournament(){
 
   document.title=name;
   document.getElementById('navName').textContent=name;
+  if(t.instagram_url||t.youtube_url){
+    const sl=document.getElementById('socialLinks');
+    sl.style.display='inline-flex';
+    sl.innerHTML=(t.instagram_url?`<a href="${t.instagram_url}" target="_blank" style="color:#E1306C;font-size:18px;text-decoration:none">📷</a>`:'')
+      +(t.youtube_url?`<a href="${t.youtube_url}" target="_blank" style="color:#FF0000;font-size:18px;text-decoration:none">▶️</a>`:'');
+  }
   if(t.notes){
     const nEl=document.getElementById('scopeNotice');
     nEl.textContent=t.notes;

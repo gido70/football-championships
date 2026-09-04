@@ -390,8 +390,11 @@ function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
 }
 async function runAsPDF(fn){
   CURRENT_EXPORT_MODE='pdf';
-  await fn();
-  CURRENT_EXPORT_MODE='docx';
+  try{
+    await fn();
+  }finally{
+    CURRENT_EXPORT_MODE='docx';
+  }
 }
 window.runAsPDF=runAsPDF;
 async function buildLetterheadHtml(){
