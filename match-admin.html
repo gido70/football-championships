@@ -494,6 +494,7 @@ select option{background:#0f2a45;color:#ffffff}
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
 <script src="supabase-config.js"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
@@ -1376,14 +1377,116 @@ function rTable(title,headers,rows){
       ${rows.map(r=>`<tr>${r.map(c=>`<td style="padding:6px;text-align:center">${escR(c)}</td>`).join('')}</tr>`).join('')}
     </table>`;
 }
-function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
-  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:${REPORT_FONT},Tajawal,Arial">
-    ${headerHtml||''}
-    <h1 style="text-align:center;color:${REPORT_PRIMARY}">${escR(pageTitle)}</h1>${bodyHtml}</body></html>`;
-  const blob=new Blob(['\ufeff',html],{type:'application/msword'});
+
+// ===== محوّل HTML إلى مستند Word حقيقي (native OOXML) =====
+function hex6(c){
+  if(!c)return null;
+  c=c.trim();
+  if(c.startsWith('#'))return c.slice(1);
+  return null;
+}
+async function imgUrlToBuffer(url){
+  try{
+    const res=await fetch(url);
+    const buf=await res.arrayBuffer();
+    return new Uint8Array(buf);
+  }catch(e){return null;}
+}
+function styleOf(el){
+  const s=el.getAttribute('style')||'';
+  const m={};
+  s.split(';').forEach(p=>{
+    const [k,v]=p.split(':');
+    if(k&&v)m[k.trim()]=v.trim();
+  });
+  return m;
+}
+async function domToDocxChildren(container){
+  const {Paragraph,TextRun,Table,TableRow,TableCell,ImageRun,AlignmentType,WidthType,BorderStyle,ShadingType}=docx;
+  const out=[];
+  for(const el of Array.from(container.children)){
+    const st=styleOf(el);
+    const tag=el.tagName;
+    if(tag==='IMG'){
+      const buf=await imgUrlToBuffer(el.getAttribute('src'));
+      if(buf){
+        const h=parseInt(st['max-height'])||parseInt(st['height'])||70;
+        out.push(new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:buf,transformation:{width:h*2,height:h}})]}));
+      }
+      continue;
+    }
+    if(tag==='H1'||tag==='H2'){
+      out.push(new Paragraph({
+        alignment:AlignmentType.CENTER,bidirectional:true,spacing:{before:200,after:200},
+        children:[new TextRun({text:el.textContent,bold:true,size:tag==='H1'?32:26,color:hex6(st.color)||'1a5c3a',font:REPORT_FONT})]
+      }));
+      continue;
+    }
+    if(tag==='P'||tag==='DIV'){
+      if(el.children.length&&!el.textContent.trim()){ // حاوية تجميعية بلا نص مباشر (مثل صف شعارين)
+        out.push(...await domToDocxChildren(el));
+        continue;
+      }
+      if(!el.textContent.trim())continue;
+      out.push(new Paragraph({
+        alignment:AlignmentType.RIGHT,bidirectional:true,spacing:{after:120},
+        children:[new TextRun({text:el.textContent,size:22,bold:(st['font-weight']==='800'||st['font-weight']==='900'||st['font-weight']==='bold'),color:hex6(st.color),font:REPORT_FONT})]
+      }));
+      continue;
+    }
+    if(tag==='TABLE'){
+      const trs=Array.from(el.querySelectorAll('tr'));
+      const rows=[];
+      for(const tr of trs){
+        const cells=Array.from(tr.children);
+        const trStyle=styleOf(tr);
+        const cellObjs=[];
+        for(const cell of cells){
+          const cst=styleOf(cell);
+          const isHeaderCell=cell.tagName==='TH';
+          const bg=hex6(cst.background)||(isHeaderCell?REPORT_PRIMARY.replace('#',''):null);
+          const fg=hex6(cst.color)||(isHeaderCell?'FFFFFF':'000000');
+          const colspan=parseInt(cell.getAttribute('colspan'))||1;
+          const imgInCell=cell.querySelector('img');
+          let cellPara;
+          if(imgInCell){
+            const buf=await imgUrlToBuffer(imgInCell.getAttribute('src'));
+            const ist=styleOf(imgInCell);
+            const h=parseInt(ist['max-height'])||parseInt(ist['height'])||60;
+            cellPara=buf
+              ? new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:buf,transformation:{width:h*2,height:h}})]})
+              : new Paragraph({text:''});
+          }else{
+            cellPara=new Paragraph({
+              alignment:AlignmentType.CENTER,bidirectional:true,
+              children:[new TextRun({text:cell.textContent||' ',bold:isHeaderCell||cst['font-weight']==='800',color:fg,font:REPORT_FONT,size:20})]
+            });
+          }
+          cellObjs.push(new TableCell({
+            columnSpan:colspan,
+            shading:bg?{type:ShadingType.CLEAR,fill:bg}:undefined,
+            children:[cellPara]
+          }));
+        }
+        rows.push(new TableRow({children:cellObjs}));
+      }
+      out.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows}));
+      out.push(new Paragraph({text:''}));
+      continue;
+    }
+  }
+  return out;
+}
+async function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
+  const {Document,Packer,Paragraph,AlignmentType,TextRun}=docx;
+  const wrap=document.createElement('div');
+  wrap.innerHTML=(headerHtml||'')+(pageTitle?`<h1 style="color:${REPORT_PRIMARY}">${escR(pageTitle)}</h1>`:'')+bodyHtml;
+  const children=await domToDocxChildren(wrap);
+  const doc=new Document({sections:[{children}]});
+  const blob=await Packer.toBlob(doc);
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=url;a.download=filename;a.click();
+  a.href=url;a.download=filename.replace(/\.doc$/,'.docx');a.click();
   URL.revokeObjectURL(url);
 }
 async function fetchReportData(){
@@ -1470,7 +1573,7 @@ async function printRefereeReport(){
     </table>`;
   const header=reportLetterhead(tour,tourName);
   const body=infoTable+rosterTable(hName,hLineup)+rosterTable(aName,aLineup)+eventsTable+sigTable;
-  downloadReportDoc('تقرير الحكم - '+hName+' × '+aName+'.doc','تقرير حكم المباراة',body,header);
+  await downloadReportDoc('تقرير الحكم - '+hName+' × '+aName+'.doc','تقرير حكم المباراة',body,header);
   document.getElementById('reportMsg').textContent='✅ تم التحميل';
 }
 window.printRefereeReport=printRefereeReport;
@@ -1493,7 +1596,7 @@ async function printCommentatorReport(){
   const header=reportLetterhead(tour,tourName);
   const body=`<p style="text-align:center;color:#555;margin-bottom:6px">${escR(document.getElementById('venueName').value||'')} — ${escR(document.getElementById('commentator').value||'المعلّق')}</p>`
     +teamBlock(hName,hLineup,hTeam)+teamBlock(aName,aLineup,aTeam);
-  downloadReportDoc('قائمة المعلق - '+hName+' × '+aName+'.doc','قائمة المعلّق',body,header);
+  await downloadReportDoc('قائمة المعلق - '+hName+' × '+aName+'.doc','قائمة المعلّق',body,header);
   document.getElementById('reportMsg').textContent='✅ تم التحميل';
 }
 window.printCommentatorReport=printCommentatorReport;
@@ -1540,7 +1643,7 @@ async function printFullMatchReport(){
 
   const header=reportLetterhead(tour,tourName);
   const body=summaryTable+eventsTable+varTable+missedTable;
-  downloadReportDoc('محضر المباراة - '+hName+' × '+aName+'.doc','محضر المباراة الشامل',body,header);
+  await downloadReportDoc('محضر المباراة - '+hName+' × '+aName+'.doc','محضر المباراة الشامل',body,header);
   document.getElementById('reportMsg').textContent='✅ تم التحميل';
 }
 window.printFullMatchReport=printFullMatchReport;

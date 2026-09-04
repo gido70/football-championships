@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="admin.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
 <script src="supabase-config.js"></script>
 </head>
 <body>
@@ -266,24 +267,107 @@ function wTable2(title,headers,rows){
       ${rows.map(r=>`<tr>${r.map(c=>`<td style="padding:6px;text-align:center">${escW2(c)}</td>`).join('')}</tr>`).join('')}
     </table>`;
 }
-function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
-  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:${REPORT_FONT},Tajawal,Arial">
-    ${headerHtml||''}
-    ${pageTitle?`<h1 style="text-align:center;color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`:''}${bodyHtml}</body></html>`;
-  const blob=new Blob(['\ufeff',html],{type:'application/msword'});
+
+// ===== محوّل HTML إلى مستند Word حقيقي (native OOXML) — مطابق لملف إدارة المباراة =====
+function hex6(c){if(!c)return null;c=c.trim();return c.startsWith('#')?c.slice(1):null;}
+async function imgUrlToBuffer(url){
+  try{const res=await fetch(url);const buf=await res.arrayBuffer();return new Uint8Array(buf);}catch(e){return null;}
+}
+function styleOf(el){
+  const s=el.getAttribute('style')||'';const m={};
+  s.split(';').forEach(p=>{const [k,v]=p.split(':');if(k&&v)m[k.trim()]=v.trim();});
+  return m;
+}
+async function domToDocxChildren(container){
+  const {Paragraph,TextRun,Table,TableRow,TableCell,ImageRun,AlignmentType,WidthType,ShadingType}=docx;
+  const out=[];
+  for(const el of Array.from(container.children)){
+    const st=styleOf(el);
+    const tag=el.tagName;
+    if(tag==='IMG'){
+      const buf=await imgUrlToBuffer(el.getAttribute('src'));
+      if(buf){
+        const h=parseInt(st['max-height'])||parseInt(st['height'])||70;
+        out.push(new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:buf,transformation:{width:h*2,height:h}})]}));
+      }
+      continue;
+    }
+    if(tag==='H1'||tag==='H2'){
+      out.push(new Paragraph({
+        alignment:AlignmentType.CENTER,bidirectional:true,spacing:{before:200,after:200},
+        children:[new TextRun({text:el.textContent,bold:true,size:tag==='H1'?32:26,color:hex6(st.color)||'1a5c3a',font:REPORT_FONT})]
+      }));
+      continue;
+    }
+    if(tag==='P'||tag==='DIV'){
+      if(el.children.length&&!el.textContent.trim()){out.push(...await domToDocxChildren(el));continue;}
+      if(!el.textContent.trim())continue;
+      out.push(new Paragraph({
+        alignment:AlignmentType.RIGHT,bidirectional:true,spacing:{after:120},
+        children:[new TextRun({text:el.textContent,size:22,bold:(st['font-weight']==='800'||st['font-weight']==='900'||st['font-weight']==='bold'),color:hex6(st.color),font:REPORT_FONT})]
+      }));
+      continue;
+    }
+    if(tag==='TABLE'){
+      const trs=Array.from(el.querySelectorAll('tr'));
+      const rows=[];
+      for(const tr of trs){
+        const cells=Array.from(tr.children);
+        const cellObjs=[];
+        for(const cell of cells){
+          const cst=styleOf(cell);
+          const isHeaderCell=cell.tagName==='TH';
+          const bg=hex6(cst.background)||(isHeaderCell?REPORT_PRIMARY.replace('#',''):null);
+          const fg=hex6(cst.color)||(isHeaderCell?'FFFFFF':'000000');
+          const colspan=parseInt(cell.getAttribute('colspan'))||1;
+          const imgInCell=cell.querySelector('img');
+          let cellPara;
+          if(imgInCell){
+            const buf=await imgUrlToBuffer(imgInCell.getAttribute('src'));
+            const ist=styleOf(imgInCell);
+            const h=parseInt(ist['max-height'])||parseInt(ist['height'])||60;
+            cellPara=buf?new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:buf,transformation:{width:h*2,height:h}})]}):new Paragraph({text:''});
+          }else{
+            cellPara=new Paragraph({
+              alignment:AlignmentType.CENTER,bidirectional:true,
+              children:[new TextRun({text:cell.textContent||' ',bold:isHeaderCell||cst['font-weight']==='800',color:fg,font:REPORT_FONT,size:20})]
+            });
+          }
+          cellObjs.push(new TableCell({columnSpan:colspan,shading:bg?{type:ShadingType.CLEAR,fill:bg}:undefined,children:[cellPara]}));
+        }
+        rows.push(new TableRow({children:cellObjs}));
+      }
+      out.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows}));
+      out.push(new Paragraph({text:''}));
+      continue;
+    }
+  }
+  return out;
+}
+async function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
+  const {Document,Packer}=docx;
+  const wrap=document.createElement('div');
+  wrap.innerHTML=(headerHtml||'')+(pageTitle?`<h1 style="color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`:'')+bodyHtml;
+  const children=await domToDocxChildren(wrap);
+  const doc=new Document({sections:[{children}]});
+  const blob=await Packer.toBlob(doc);
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=url;a.download=filename;a.click();
+  a.href=url;a.download=filename.replace(/\.doc$/,'.docx');a.click();
   URL.revokeObjectURL(url);
 }
-function downloadWordSingle(filename,pageTitle,sections){
-  let body=`<h1 style="text-align:center;color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`;
+async function downloadWordSingle(filename,pageTitle,sections){
+  const {Document,Packer}=docx;
+  let body=`<h1 style="color:${REPORT_PRIMARY}">${escW2(pageTitle)}</h1>`;
   sections.forEach(s=>{body+=wTable2(s.title,s.headers,s.rows);});
-  const html=`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"></head><body style="font-family:${REPORT_FONT},Tajawal,Arial">${body}</body></html>`;
-  const blob=new Blob(['\ufeff',html],{type:'application/msword'});
+  const wrap=document.createElement('div');
+  wrap.innerHTML=body;
+  const children=await domToDocxChildren(wrap);
+  const doc=new Document({sections:[{children}]});
+  const blob=await Packer.toBlob(doc);
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=url;a.download=filename;a.click();
+  a.href=url;a.download=filename.replace(/\.doc$/,'.docx');a.click();
   URL.revokeObjectURL(url);
 }
 function rowsToArrays(rows,headers){return (rows||[]).map(r=>headers.map(h=>r[h]));}
@@ -306,7 +390,7 @@ async function exportScorersWord(){
   const list=tally(events,'goal');
   const headers=['الترتيب','اللاعب','الرقم','الفريق','الأهداف'];
   const rows=rowsToArrays(list.map((p,i)=>({الترتيب:i+1,اللاعب:p.name,الرقم:p.number,الفريق:p.team,الأهداف:p.count})),headers);
-  downloadWordSingle('هدافو '+TNAME+'.doc','هدافو '+TNAME,[{title:'⚽ الهدافون',headers,rows}]);
+  await downloadWordSingle('هدافو '+TNAME+'.doc','هدافو '+TNAME,[{title:'⚽ الهدافون',headers,rows}]);
   setMsg('✅ تم التحميل','ok');
 }
 
@@ -329,7 +413,7 @@ async function exportCardsWord(){
   const headers=['الترتيب','اللاعب','الرقم','الفريق','العدد'];
   const yRows=yellow.map((p,i)=>[i+1,p.name,p.number,p.team,p.count]);
   const rRows=red.map((p,i)=>[i+1,p.name,p.number,p.team,p.count]);
-  downloadWordSingle('بطاقات '+TNAME+'.doc','بطاقات '+TNAME,[{title:'🟨 البطاقات الصفراء',headers,rows:yRows},{title:'🟥 البطاقات الحمراء',headers,rows:rRows}]);
+  await downloadWordSingle('بطاقات '+TNAME+'.doc','بطاقات '+TNAME,[{title:'🟨 البطاقات الصفراء',headers,rows:yRows},{title:'🟥 البطاقات الحمراء',headers,rows:rRows}]);
   setMsg('✅ تم التحميل','ok');
 }
 
@@ -356,7 +440,7 @@ async function exportMotmWord(){
   const count={};ids.forEach(id=>count[id]=(count[id]||0)+1);
   const headers=['الترتيب','اللاعب','الرقم','مرات الاختيار كنجم'];
   const rows=Object.entries(count).sort((a,b)=>b[1]-a[1]).map(([id,c],i)=>[i+1,pMap[id]?.full_name_ar||pMap[id]?.name||'—',pMap[id]?.number||'',c]);
-  downloadWordSingle('أفضل لاعبي '+TNAME+'.doc','أفضل اللاعبين — '+TNAME,[{title:'⭐ أفضل اللاعبين (نجوم المباريات)',headers,rows}]);
+  await downloadWordSingle('أفضل لاعبي '+TNAME+'.doc','أفضل اللاعبين — '+TNAME,[{title:'⭐ أفضل اللاعبين (نجوم المباريات)',headers,rows}]);
   setMsg('✅ تم التحميل','ok');
 }
 
@@ -386,7 +470,7 @@ async function exportOfficialsWord(){
   const refRows=Object.entries(refCount).sort((a,b)=>b[1]-a[1]).map(([n,c],i)=>[i+1,n,c]);
   const comHeaders=['الترتيب','المعلق','عدد المباريات'];
   const comRows=Object.entries(comCount).sort((a,b)=>b[1]-a[1]).map(([n,c],i)=>[i+1,n,c]);
-  downloadWordSingle('الحكام والمعلقون - '+TNAME+'.doc','الحكام والمعلقون — '+TNAME,[{title:'🧑‍⚖️ الحكام',headers:refHeaders,rows:refRows},{title:'🎙️ المعلقون',headers:comHeaders,rows:comRows}]);
+  await downloadWordSingle('الحكام والمعلقون - '+TNAME+'.doc','الحكام والمعلقون — '+TNAME,[{title:'🧑‍⚖️ الحكام',headers:refHeaders,rows:refRows},{title:'🎙️ المعلقون',headers:comHeaders,rows:comRows}]);
   setMsg('✅ تم التحميل','ok');
 }
 
@@ -432,7 +516,7 @@ async function exportVARWord(){
   const resultLabels={awarded:'✅ تم احتسابه',cancelled:'❌ أُلغي',confirmed:'☑️ تأكيد قرار الحكم'};
   const headers=['رقم المباراة','الدقيقة','الفريق','النوع','القرار'];
   const rows=varEvents.map(e=>[mByI[e.match_id]?.match_no||'',e.minute||'',teamName[e.team_id]||'بدون تحديد فريق',typeLabels[e.var_type]||e.var_type,resultLabels[e.var_result]||e.var_result]);
-  downloadWordSingle('VAR '+TNAME+'.doc','سجل الفار — '+TNAME,[{title:'📺 سجل قرارات الفار',headers,rows}]);
+  await downloadWordSingle('VAR '+TNAME+'.doc','سجل الفار — '+TNAME,[{title:'📺 سجل قرارات الفار',headers,rows}]);
   setMsg('✅ تم التحميل','ok');
 }
 
@@ -453,7 +537,7 @@ async function exportNationalitiesWord(){
   const headers=['الترتيب','الجنسية','عدد اللاعبين'];
   const rows=Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([nat,c],i)=>[i+1,nat,c]);
   if(!rows.length){setMsg('⚠️ لا توجد بيانات جنسيات بعد','warn');return;}
-  downloadWordSingle('جنسيات لاعبي '+TNAME+'.doc','الجنسيات المشاركة — '+TNAME,[{title:'🌍 الجنسيات المشاركة',headers,rows}]);
+  await downloadWordSingle('جنسيات لاعبي '+TNAME+'.doc','الجنسيات المشاركة — '+TNAME,[{title:'🌍 الجنسيات المشاركة',headers,rows}]);
   setMsg('✅ تم التحميل','ok');
 }
 
@@ -490,7 +574,7 @@ async function exportPenaltiesWord(){
   const scRows=scored.map(e=>[e.player?.full_name_ar||e.player?.name||'—',e.player?.number||'',teamName[e.team_id]||'',mByI[e.match_id]?.match_no||'',e.minute||'']);
   const msHeaders=['اللاعب','الرقم','الفريق','رقم المباراة'];
   const msRows=missed.map(e=>[e.player?.full_name_ar||e.player?.name||'—',e.player?.number||'',teamName[e.team_id]||'',mByI[e.match_id]?.match_no||'']);
-  downloadWordSingle('ضربات الجزاء - '+TNAME+'.doc','ضربات الجزاء — '+TNAME,[
+  await downloadWordSingle('ضربات الجزاء - '+TNAME+'.doc','ضربات الجزاء — '+TNAME,[
     {title:'📊 ملخص عام',headers:sumHeaders,rows:sumRows},
     {title:'✅ أهداف من ركلات الجزاء',headers:scHeaders,rows:scRows},
     {title:'❌ ركلات جزاء ضائعة',headers:msHeaders,rows:msRows}
@@ -540,7 +624,7 @@ async function exportShootoutsWord(){
   });
   const detHeaders=['رقم المباراة','الفريق','اللاعب','الرقم','النتيجة'];
   const detRows=shots.map(s=>[mByI[s.match_id]?.match_no||'',teamName[s.team_id]||'',s.player?.full_name_ar||s.player?.name||'—',s.player?.number||'',s.result==='scored'?'✅ هدف':'❌ ضائعة']);
-  downloadWordSingle('ركلات الترجيح - '+TNAME+'.doc','ركلات الترجيح — '+TNAME,[{title:'🥅 ملخص المباريات المحسومة بالترجيح',headers:sumHeaders,rows:sumRows},{title:'📋 تفاصيل كل ضربة',headers:detHeaders,rows:detRows}]);
+  await downloadWordSingle('ركلات الترجيح - '+TNAME+'.doc','ركلات الترجيح — '+TNAME,[{title:'🥅 ملخص المباريات المحسومة بالترجيح',headers:sumHeaders,rows:sumRows},{title:'📋 تفاصيل كل ضربة',headers:detHeaders,rows:detRows}]);
   setMsg('✅ تم التحميل','ok');
 }
 
@@ -575,7 +659,7 @@ async function exportMotmByMatchWord(){
     const p=pMap[m.player_of_match_id];
     return[m.match_no,rl[m.round_name]||m.round_name,teamName[m.home_team_id]||'',(m.home_score??'')+' - '+(m.away_score??''),teamName[m.away_team_id]||'',p?(p.full_name_ar||p.name):'— لم يُحدَّد —'];
   });
-  downloadWordSingle('أفضل لاعب لكل مباراة - '+TNAME+'.doc','أفضل لاعب لكل مباراة — '+TNAME,[{title:'🏅 رجل المباراة عبر كل المباريات',headers,rows}]);
+  await downloadWordSingle('أفضل لاعب لكل مباراة - '+TNAME+'.doc','أفضل لاعب لكل مباراة — '+TNAME,[{title:'🏅 رجل المباراة عبر كل المباريات',headers,rows}]);
   setMsg('✅ تم التحميل','ok');
 }
 
@@ -599,7 +683,7 @@ async function exportMatchesWord(){
   const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
   const headers=['رقم المباراة','الجولة','التاريخ','الوقت','الفريق الأول','النتيجة','الفريق الثاني','الملعب','الحالة'];
   const rows=matches.map(m=>[m.match_no,rl[m.round_name]||m.round_name,m.match_date||'—',m.match_time||'—',teamName[m.home_team_id]||'',(m.home_score??'')+' - '+(m.away_score??''),teamName[m.away_team_id]||'',m.venue_name||'',m.status||'']);
-  downloadWordSingle('جدول مباريات '+TNAME+'.doc','جدول المباريات — '+TNAME,[{title:'📅 جدول المباريات والنتائج',headers,rows}]);
+  await downloadWordSingle('جدول مباريات '+TNAME+'.doc','جدول المباريات — '+TNAME,[{title:'📅 جدول المباريات والنتائج',headers,rows}]);
   setMsg('✅ تم التحميل','ok');
 }
 
@@ -803,7 +887,7 @@ async function exportGroupStandingsWord(){
     title:'🏆 مجموعة '+g,headers,
     rows:list.map((t,i)=>[i+1,t.name,t.p,t.w,t.d,t.l,t.gf,t.ga,t.gf-t.ga,t.pts])
   }));
-  downloadWordSingle('ترتيب المجموعات - '+TNAME+'.doc','ترتيب المجموعات — '+TNAME,sections);
+  await downloadWordSingle('ترتيب المجموعات - '+TNAME+'.doc','ترتيب المجموعات — '+TNAME,sections);
   setMsg('✅ تم التحميل','ok');
 }
 window.exportGroupStandingsWord=exportGroupStandingsWord;
@@ -856,7 +940,7 @@ async function printOfficialStandings(){
   <div style="background:${themeColor};color:#fff;text-align:center;font-weight:900;font-size:16px;padding:10px;margin-bottom:0">جدول المجموعات</div>`;
 
   const body=groupEntries.map(([g,list])=>groupTable(g,list)).join('');
-  downloadReportDoc('جدول الترتيب الرسمي - '+tourName+'.doc','',body,header);
+  await downloadReportDoc('جدول الترتيب الرسمي - '+tourName+'.doc','',body,header);
   setMsg('✅ تم التحميل','ok');
 }
 window.printOfficialStandings=printOfficialStandings;
