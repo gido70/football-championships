@@ -281,8 +281,13 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
     <input type="hidden" id="editing_id">
 
     <div class="field full" style="margin-top:14px">
-      <label>ملاحظات</label>
-      <textarea id="notes" placeholder="أي ملاحظات إضافية" style="height:70px"></textarea>
+      <label>ملاحظات <span style="font-weight:400;color:#8b949e;font-size:12px">(خاصة بك فقط — لا تظهر للجمهور أبداً)</span></label>
+      <textarea id="notes" placeholder="أي ملاحظات إضافية خاصة بالإدارة" style="height:70px"></textarea>
+    </div>
+
+    <div class="field full" style="margin-top:14px">
+      <label>📢 إعلان عام <span style="font-weight:400;color:#d29922;font-size:12px">(يظهر كشريط بارز في أعلى صفحة البطولة للجميع — اتركه فارغاً لعدم إظهار شيء)</span></label>
+      <textarea id="public_notice" placeholder="مثلاً: تنبيه للجمهور، تعديل موعد مباراة، إلخ" style="height:70px"></textarea>
     </div>
 
     <div class="actions" style="margin-top:16px">
@@ -442,6 +447,7 @@ async function editTour(id){
   document.getElementById('group_count').value=r.group_count||4;
   document.getElementById('status').value=r.status||'draft';
   document.getElementById('notes').value=r.notes||'';
+  document.getElementById('public_notice').value=r.public_notice||'';
   document.getElementById('instagram_url').value=r.instagram_url||'';
   document.getElementById('youtube_url').value=r.youtube_url||'';
   if(r.primary_color) document.getElementById('primary_color').value=r.primary_color;
@@ -610,6 +616,7 @@ document.getElementById('tForm').addEventListener('submit',async e=>{
     show_cup_logo:document.getElementById('show_cup_logo').checked,
     is_public:document.getElementById('is_public').checked,
     notes:document.getElementById('notes').value.trim()||null,
+    public_notice:document.getElementById('public_notice').value.trim()||null,
     instagram_url:document.getElementById('instagram_url').value.trim()||null,
     youtube_url:document.getElementById('youtube_url').value.trim()||null,
     is_active:document.getElementById('status').value==='active',

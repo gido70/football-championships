@@ -289,7 +289,6 @@ img[src=""], img:not([src]) { display:none !important; }
 <nav class="nav">
   <div class="nav-title">
     <span id="navName">البطولة</span>
-    <span id="socialLinks" style="display:none;align-items:center;gap:8px;margin-right:8px"></span>
     <span class="nav-status" id="navStatus"></span>
     <span id="liveHeaderBadge" onclick="jumpToTab('ma')" style="display:none;cursor:pointer;align-items:center;gap:6px;background:rgba(255,59,59,.15);border:1px solid rgba(255,59,59,.4);color:#ff5c5c;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800;margin-right:8px">
       <span style="width:8px;height:8px;border-radius:50%;background:#ff3b3b;display:inline-block;animation:livepulse 1.5s infinite"></span>
@@ -520,8 +519,36 @@ window.closeFeedLightbox=closeFeedLightbox;
 
 async function loadFeed(){
   const sec=document.getElementById('feedSection');
+  const {data:tourSocial}=await sb.from('tournaments').select('instagram_url,youtube_url').eq('id',TID).single();
   const {data}=await sb.from('feed_posts').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(15);
-  if(!data?.length){sec.innerHTML='';return;}
+
+  let socialCard='';
+  if(tourSocial?.instagram_url){
+    socialCard+=`<div class="feed-post"><a href="${tourSocial.instagram_url}" target="_blank" style="display:block;text-decoration:none;color:inherit">
+      <div style="height:170px;background:linear-gradient(135deg,#833AB4,#E1306C,#F77737);display:flex;align-items:center;justify-content:center;font-size:44px">📷</div>
+      <div class="feed-post-body">
+        <div class="feed-post-ic">📷 إنستغرام</div>
+        <div class="feed-post-title">زيارة صفحة البطولة على إنستغرام</div>
+        <div class="feed-post-cap">اضغط لمشاهدة أحدث الصور والمنشورات</div>
+      </div>
+    </a></div>`;
+  }
+  if(tourSocial?.youtube_url){
+    const yid=feedYoutubeId(tourSocial.youtube_url);
+    socialCard+=`<div class="feed-post">
+      <div class="feed-post-vid" onclick='openFeedLightbox(${JSON.stringify(yid?`<div style="position:relative;width:100%;height:100%"><iframe src="https://www.youtube.com/embed/${yid}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>`:'')})'>
+        ${yid?`<img src="https://img.youtube.com/vi/${yid}/hqdefault.jpg">`:'<div class="ph">🎬</div>'}<div class="play"><span>▶</span></div>
+      </div>
+      <div class="feed-post-body">
+        <div class="feed-post-ic">▶️ يوتيوب</div>
+        <div class="feed-post-title">قناة البطولة على يوتيوب</div>
+        ${!yid?`<a href="${tourSocial.youtube_url}" target="_blank" class="feed-post-link-btn">فتح القناة كاملة ↗</a>`:''}
+      </div>
+    </div>`;
+  }
+
+  if(!data?.length&&!socialCard){sec.innerHTML='';return;}
+  if(!data?.length){sec.innerHTML=`<div class="feed-wrap" id="feedScrollWrap">${socialCard}</div>`;startFeedAutoScroll();return;}
 
   const cards=data.map((p)=>{
     const icMap={link:'🔗 رابط',image:'🖼️ صور',video:'🎬 فيديو'};
@@ -548,7 +575,7 @@ async function loadFeed(){
     </div>`;
   }).join('');
 
-  sec.innerHTML=`<div class="feed-wrap" id="feedScrollWrap">${cards}</div>`;
+  sec.innerHTML=`<div class="feed-wrap" id="feedScrollWrap">${socialCard}${cards}</div>`;
   startFeedAutoScroll();
 }
 
@@ -758,15 +785,9 @@ async function loadTournament(){
 
   document.title=name;
   document.getElementById('navName').textContent=name;
-  if(t.instagram_url||t.youtube_url){
-    const sl=document.getElementById('socialLinks');
-    sl.style.display='inline-flex';
-    sl.innerHTML=(t.instagram_url?`<a href="${t.instagram_url}" target="_blank" style="color:#E1306C;font-size:18px;text-decoration:none">📷</a>`:'')
-      +(t.youtube_url?`<a href="${t.youtube_url}" target="_blank" style="color:#FF0000;font-size:18px;text-decoration:none">▶️</a>`:'');
-  }
-  if(t.notes){
+  if(t.public_notice){
     const nEl=document.getElementById('scopeNotice');
-    nEl.textContent=t.notes;
+    nEl.textContent=t.public_notice;
     nEl.style.display='block';
   }
   document.getElementById('heroTitle').textContent=name;
