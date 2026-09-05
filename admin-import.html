@@ -400,10 +400,7 @@ section.active { display: block; }
 <div class="toast" id="toast"></div>
 
 <script>
-// ======== إعدادات Supabase ========
-const SUPABASE_URL = 'https://npoowwdjpbvhyjrmeqkv.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY'; // ← ضع مفتاحك هنا
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
 let parsedData = [];
 let allData = [];

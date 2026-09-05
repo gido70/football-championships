@@ -142,8 +142,9 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 @keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
 </style>
 
+<script src="supabase-config.js"></script>
 <script>
-const sb=supabase.createClient("https://npoowwdjpbvhyjrmeqkv.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY");
+const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const TID=new URLSearchParams(location.search).get('id');
 function relLum(hex){
   if(!hex)return 0;
