@@ -97,6 +97,14 @@ img{display:block}
 .hero h1 em{color:#c9a84c;font-style:normal}
 .hero-sub{font-size:14px;color:rgba(255,255,255,.5);margin-bottom:32px;line-height:1.7}
 
+/* حركات دخول */
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.hero-badge{animation:fadeSlideUp .55s ease-out both}
+.hero h1{animation:fadeSlideUp .55s ease-out .1s both}
+.hero-sub{animation:fadeSlideUp .55s ease-out .2s both}
+.hero-stats{animation:fadeSlideUp .55s ease-out .3s both}
+.t-card{animation:fadeSlideUp .5s ease-out both}
+
 /* إحصائيات Hero */
 .hero-stats{
   display:grid;grid-template-columns:repeat(4,1fr);
@@ -305,6 +313,20 @@ img{display:block}
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 
+function countUpTo(elId,target){
+  const el=document.getElementById(elId);
+  if(!el)return;
+  target=Number(target)||0;
+  const duration=900,startTime=performance.now();
+  function tick(now){
+    const p=Math.min((now-startTime)/duration,1);
+    const eased=1-Math.pow(1-p,3);
+    el.textContent=Math.round(target*eased);
+    if(p<1)requestAnimationFrame(tick);else el.textContent=target;
+  }
+  requestAnimationFrame(tick);
+}
+
 function ini(n){return(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
 function teamBg(c1,c2){return c2&&c2!==c1?`linear-gradient(135deg,${c1} 50%,${c2} 50%)`:c1;}
 
@@ -315,12 +337,11 @@ async function loadStats(){
     sb.from('players').select('id',{count:'exact',head:true}),
     sb.from('matches').select('id',{count:'exact',head:true}),
   ]);
-  document.getElementById('sT').textContent=t.count??0;
-  document.getElementById('sTm').textContent=tm.count??0;
-  document.getElementById('sP').textContent=p.count??0;
-  document.getElementById('sM').textContent=m.count??0;
+  countUpTo('sT',t.count??0);
+  countUpTo('sTm',tm.count??0);
+  countUpTo('sP',p.count??0);
+  countUpTo('sM',m.count??0);
 }
-
 async function loadLive(){
   const {data}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(name,name_ar,primary_color,secondary_color),tr:tournaments(name,name_ar)').eq('status','live');
   const sec=document.getElementById('liveSec');
@@ -364,13 +385,13 @@ async function loadTournaments(){
   const pc={active:'pill-active',completed:'pill-completed'};
   const tp={groups_knockout:'مجموعات + إقصاء',league:'دوري',knockout:'إقصاء'};
   const base='https://gido70.github.io/football-championships/';
-  g.innerHTML=data.map(t=>{
+  g.innerHTML=data.map((t,i)=>{
     const bg=t.bg_image_url
       ?`linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url('${t.bg_image_url}') center/cover`
       :`linear-gradient(135deg,${t.primary_color||'#0b1f3a'} 0%,${t.secondary_color||'#1a3a6e'} 100%)`;
     const s=t.season_label||'';
     const logo=t.cup_logo_url||t.logo_url||(s.includes('2027')?base+'logo_cup_2027.png':s.includes('2026')?base+'logo_cup_2026.png':'');
-    return `<a class="t-card" href="tournament.html?id=${t.id}">
+    return `<a class="t-card" href="tournament.html?id=${t.id}" style="animation-delay:${i*0.08}s">
       <div class="t-banner" style="background:${bg}">
         ${logo?`<img class="t-logo" src="${logo}" alt="" onerror="this.style.display='none';this.nextSibling.style.display='block'">`:''}
         <span class="t-logo-ph" style="${logo?'display:none':''}">🏆</span>
