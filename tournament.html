@@ -574,21 +574,20 @@ async function loadFeed(){
     const yid=feedYoutubeId(tourSocial.youtube_url);
     const chUploads=!yid?feedYoutubeChannelUploadsId(tourSocial.youtube_url):null;
     if(yid){
-      // فيديو محدَّد: صورة مصغّرة + زر تشغيل، وعند الضغط يفتح كتلفاز كامل الشاشة (نفس نمط بقية الفيديوهات)
-      const thumb=`https://img.youtube.com/vi/${yid}/hqdefault.jpg`;
-      const iframeTag=`<iframe src="https://www.youtube.com/embed/${yid}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+      // فيديو محدَّد: يُشغَّل كتلفاز مباشرة داخل البطاقة تلقائياً — بلا أي ضغط إضافي (الحجم/السلوك الذي كان يعمل بشكل ممتاز)
+      const iframeTag=`<iframe src="https://www.youtube.com/embed/${yid}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
       socialCard+=`<div class="feed-post">
-        <div class="feed-post-vid" onclick='openFeedLightbox(${JSON.stringify(`<div style="position:relative;width:100%;height:100%">${iframeTag}</div>`)})'><img src="${thumb}"><div class="play"><span>▶</span></div></div>
+        <div style="position:relative;width:100%;height:170px;background:#000">${iframeTag}</div>
         <div class="feed-post-body">
           <div class="feed-post-ic">▶️ يوتيوب</div>
           <div class="feed-post-title">فيديو قناة البطولة</div>
         </div>
       </div>`;
     }else if(chUploads){
-      // قناة بمعرّف حقيقي (UC): صورة مصغّرة + زر تشغيل، وعند الضغط تُفتح قائمة "آخر التحميلات" كتلفاز كامل الشاشة
-      const iframeTag=`<iframe src="https://www.youtube.com/embed/videoseries?list=${chUploads}&autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+      // قناة بمعرّف حقيقي (UC): تُضمَّن قائمة "آخر التحميلات" كتلفاز مباشرة داخل البطاقة تلقائياً — نفس حجم وسلوك الفيديو المحدَّد
+      const iframeTag=`<iframe src="https://www.youtube.com/embed/videoseries?list=${chUploads}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
       socialCard+=`<div class="feed-post">
-        <div class="feed-post-vid" onclick='openFeedLightbox(${JSON.stringify(`<div style="position:relative;width:100%;height:100%">${iframeTag}</div>`)})'><div class="ph">▶️</div><div class="play"><span>▶</span></div></div>
+        <div style="position:relative;width:100%;height:170px;background:#000">${iframeTag}</div>
         <div class="feed-post-body">
           <div class="feed-post-ic">▶️ يوتيوب</div>
           <div class="feed-post-title">آخر فيديوهات قناة البطولة</div>
@@ -624,10 +623,9 @@ async function loadFeed(){
       media=`<div class="feed-post-imgs n${n}">${p.image_urls.slice(0,3).map(u=>`<img src="${u}" onclick='openFeedLightbox("<img src=\\'${u}\\'>")'>`).join('')}</div>`;
     }else if(p.post_type==='video'){
       const yid=p.video_type==='youtube'?feedYoutubeId(p.video_url):null;
-      const thumb=yid?`https://img.youtube.com/vi/${yid}/hqdefault.jpg`:(p.thumbnail_url||null);
-      const embed=yid?`https://www.youtube.com/embed/${yid}?autoplay=1`:p.video_url;
-      const iframeTag=yid?`<iframe src="${embed}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`:`<video src="${embed}" controls autoplay style="position:absolute;inset:0;width:100%;height:100%"></video>`;
-      media=`<div class="feed-post-vid" onclick='openFeedLightbox(${JSON.stringify(`<div style="position:relative;width:100%;height:100%">${iframeTag}</div>`)})'>${thumb?`<img src="${thumb}">`:'<div class="ph">🎬</div>'}<div class="play"><span>▶</span></div></div>`;
+      const embed=yid?`https://www.youtube.com/embed/${yid}`:p.video_url;
+      const mediaTag=yid?`<iframe src="${embed}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`:`<video src="${embed}" controls style="position:absolute;inset:0;width:100%;height:100%"></video>`;
+      media=`<div style="position:relative;width:100%;height:170px;background:#000">${mediaTag}</div>`;
     }
     return `<div class="feed-post">
       ${p.post_type==='video'?media:''}

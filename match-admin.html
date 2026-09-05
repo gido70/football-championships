@@ -1390,8 +1390,10 @@ function rTable(title,headers,rows){
 function hex6(c){
   if(!c)return null;
   c=c.trim();
-  if(c.startsWith('#'))return c.slice(1);
-  return null;
+  if(!c.startsWith('#'))return null;
+  let h=c.slice(1);
+  if(h.length===3)h=h.split('').map(ch=>ch+ch).join(''); // توسيع صيغة مختصرة مثل #fff إلى ffffff
+  return /^[0-9a-fA-F]{6}$/.test(h)?h:null;
 }
 async function imgUrlToBuffer(url){
   try{
