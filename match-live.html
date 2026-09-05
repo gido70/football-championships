@@ -162,6 +162,7 @@ a{text-decoration:none;color:inherit}
 .pane{display:none;animation:fadeIn .25s ease}
 .pane.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scorePop{0%{transform:scale(1)}30%{transform:scale(1.45);color:#3fb950}60%{transform:scale(.92)}100%{transform:scale(1)}}
 .empty{text-align:center;padding:50px 0;color:#79786A}
 .empty span{font-size:36px;display:block;margin-bottom:8px}
 
@@ -294,6 +295,18 @@ a{text-decoration:none;color:inherit}
 <script src="supabase-config.js"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+
+function setScoreWithPop(elId,newVal){
+  const el=document.getElementById(elId);
+  if(!el)return;
+  const oldVal=el.textContent;
+  if(String(newVal)!==oldVal&&oldVal!==''&&oldVal!=='–'){
+    el.style.animation='none';
+    void el.offsetWidth;
+    el.style.animation='scorePop .5s ease';
+  }
+  el.textContent=newVal;
+}
 const qs=new URLSearchParams(location.search);
 const MID=qs.get('id');
 const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل',injury:'إصابة'};
@@ -710,15 +723,15 @@ async function init(){
   const sl=document.getElementById('statusLbl');
   if(m.status==='live'){
     sl.className='sb-status st-live'; sl.innerHTML='<span class="dot"></span> مباشر الآن';
-    document.getElementById('hScore').textContent=m.home_score??0;
-    document.getElementById('aScore').textContent=m.away_score??0;
+    setScoreWithPop('hScore',m.home_score??0);
+    setScoreWithPop('aScore',m.away_score??0);
     document.getElementById('liveMin').style.display='block';
     startClock(m);
   }else if(m.status==='completed'){
     stopClock();
     sl.className='sb-status st-done'; sl.textContent='انتهت المباراة';
-    document.getElementById('hScore').textContent=m.home_score??0;
-    document.getElementById('aScore').textContent=m.away_score??0;
+    setScoreWithPop('hScore',m.home_score??0);
+    setScoreWithPop('aScore',m.away_score??0);
   }else{
     stopClock();
     sl.className='sb-status st-sched'; sl.textContent='لم تبدأ بعد';
