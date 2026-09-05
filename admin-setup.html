@@ -248,10 +248,6 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
 
     <div class="form-grid" style="margin-top:10px">
       <div class="field">
-        <label>رابط إنستغرام (اختياري)</label>
-        <input id="instagram_url" placeholder="https://instagram.com/..." dir="ltr">
-      </div>
-      <div class="field">
         <label>رابط قناة يوتيوب (اختياري)</label>
         <input id="youtube_url" placeholder="https://youtube.com/@..." dir="ltr">
       </div>
@@ -447,7 +443,6 @@ async function editTour(id){
   document.getElementById('status').value=r.status||'draft';
   document.getElementById('notes').value=r.notes||'';
   document.getElementById('public_notice').value=r.public_notice||'';
-  document.getElementById('instagram_url').value=r.instagram_url||'';
   document.getElementById('youtube_url').value=r.youtube_url||'';
   if(r.primary_color) document.getElementById('primary_color').value=r.primary_color;
   if(r.secondary_color) document.getElementById('secondary_color').value=r.secondary_color;
@@ -560,7 +555,6 @@ window.addAccessCode=addAccessCode;window.deleteAccessCode=deleteAccessCode;
 function resetForm(){
   document.getElementById('tForm').reset();
   document.getElementById('editing_id').value='';
-  document.getElementById('instagram_url').value='';
   document.getElementById('youtube_url').value='';
   document.getElementById('bg_image_url').value='';
   document.getElementById('cup_logo_url').value='';
@@ -616,7 +610,6 @@ document.getElementById('tForm').addEventListener('submit',async e=>{
     is_public:document.getElementById('is_public').checked,
     notes:document.getElementById('notes').value.trim()||null,
     public_notice:document.getElementById('public_notice').value.trim()||null,
-    instagram_url:document.getElementById('instagram_url').value.trim()||null,
     youtube_url:document.getElementById('youtube_url').value.trim()||null,
     is_active:document.getElementById('status').value==='active',
   };
