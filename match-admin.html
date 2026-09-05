@@ -220,24 +220,28 @@ select option{background:#0f2a45;color:#ffffff}
         <button class="btn btn-start" id="btnStart" onclick="setMatchStatus('live')">▶ بدء المباراة</button>
         <button class="btn btn-end" id="btnEnd" onclick="setMatchStatus('completed')" disabled>⏹ إنهاء المباراة</button>
       </div>
-      <div class="min-row" style="gap:8px;flex-wrap:wrap">
-        <label style="color:#b7c6dc;font-size:14px">مرحلة المباراة:</label>
-        <button class="btn secondary half-btn" data-half="1" onclick="setHalf(1)" style="padding:8px 14px;font-size:13px">1️⃣ الشوط الأول</button>
-        <button class="btn secondary half-btn" data-half="2" onclick="setHalf(2)" style="padding:8px 14px;font-size:13px">2️⃣ الشوط الثاني</button>
-        <button class="btn secondary half-btn" data-half="3" onclick="setHalf(3)" style="padding:8px 14px;font-size:13px">⏱️ وقت إضافي 1</button>
-        <button class="btn secondary half-btn" data-half="4" onclick="setHalf(4)" style="padding:8px 14px;font-size:13px">⏱️ وقت إضافي 2</button>
-        <button class="btn secondary half-btn" data-half="5" onclick="setHalf(5)" style="padding:8px 14px;font-size:13px">🎯 ركلات الترجيح</button>
-        <button class="btn secondary" onclick="pauseHalf()" style="padding:8px 14px;font-size:13px;background:rgba(255,180,0,.1);border-color:rgba(255,180,0,.4);color:#ffb400">⏸ نهاية الشوط الحالي (استراحة)</button>
+      <div class="meta-title collapsible-head" onclick="toggleSection('phaseControlsBody')" style="margin-top:12px;color:#a78bfa">
+        <span>⏱️ مرحلة المباراة والتصحيح اليدوي</span><span class="chev">▾</span>
       </div>
-      <div id="pensRow" style="display:none;align-items:center;gap:14px;margin-top:10px;padding:12px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:10px">
-        <span style="color:#c9a84c;font-size:13px;font-weight:700">🎯 نتيجة ركلات الترجيح:</span>
-        <input type="number" id="homePensInput" min="0" max="20" placeholder="—" style="width:60px">
-        <span style="color:#b7c6dc">:</span>
-        <input type="number" id="awayPensInput" min="0" max="20" placeholder="—" style="width:60px">
-        <button class="btn secondary" onclick="savePens()" style="padding:6px 14px;font-size:12px">💾 حفظ</button>
-      </div>
-      <div class="min-row" style="gap:10px;flex-wrap:wrap">
-        <label style="color:#b7c6dc;font-size:14px">مدة الشوط (دقيقة):</label>
+      <div id="phaseControlsBody" style="display:none">
+        <div class="min-row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
+          <label style="color:#b7c6dc;font-size:14px">مرحلة المباراة:</label>
+          <button class="btn secondary half-btn" data-half="1" onclick="setHalf(1)" style="padding:8px 14px;font-size:13px">1️⃣ الشوط الأول</button>
+          <button class="btn secondary half-btn" data-half="2" onclick="setHalf(2)" style="padding:8px 14px;font-size:13px">2️⃣ الشوط الثاني</button>
+          <button class="btn secondary half-btn" data-half="3" onclick="setHalf(3)" style="padding:8px 14px;font-size:13px">⏱️ وقت إضافي 1</button>
+          <button class="btn secondary half-btn" data-half="4" onclick="setHalf(4)" style="padding:8px 14px;font-size:13px">⏱️ وقت إضافي 2</button>
+          <button class="btn secondary half-btn" data-half="5" onclick="setHalf(5)" style="padding:8px 14px;font-size:13px">🎯 ركلات الترجيح</button>
+          <button class="btn secondary" onclick="pauseHalf()" style="padding:8px 14px;font-size:13px;background:rgba(255,180,0,.1);border-color:rgba(255,180,0,.4);color:#ffb400">⏸ نهاية الشوط الحالي (استراحة)</button>
+        </div>
+        <div id="pensRow" style="display:none;align-items:center;gap:14px;margin-top:10px;padding:12px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:10px">
+          <span style="color:#c9a84c;font-size:13px;font-weight:700">🎯 نتيجة ركلات الترجيح:</span>
+          <input type="number" id="homePensInput" min="0" max="20" placeholder="—" style="width:60px">
+          <span style="color:#b7c6dc">:</span>
+          <input type="number" id="awayPensInput" min="0" max="20" placeholder="—" style="width:60px">
+          <button class="btn secondary" onclick="savePens()" style="padding:6px 14px;font-size:12px">💾 حفظ</button>
+        </div>
+        <div class="min-row" style="gap:10px;flex-wrap:wrap;margin-top:10px">
+          <label style="color:#b7c6dc;font-size:14px">مدة الشوط (دقيقة):</label>
         <input type="number" id="halfLenInput" min="5" max="60" value="20" style="width:70px">
         <button class="btn secondary" onclick="resetForTest()" style="padding:8px 16px;font-size:13px;background:#3a4150">🔄 إعادة فتح للاختبار</button>
       </div>
@@ -246,6 +250,7 @@ select option{background:#0f2a45;color:#ffffff}
         <input type="number" id="minInput" min="1" max="120" value="1">
         <button class="btn secondary" onclick="saveMin()" style="padding:8px 16px;font-size:14px">تحديث يدوي</button>
         <span style="color:#7d8694;font-size:12px">(تُحسب تلقائيًا بعد البدء — استخدم هذا فقط للتصحيح)</span>
+      </div>
       </div>
       <div id="statusMsg" class="status" style="margin-top:10px"></div>
     </div>
