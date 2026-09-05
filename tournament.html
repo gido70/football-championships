@@ -137,7 +137,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .feed-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.94);display:none;align-items:center;justify-content:center;z-index:999;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))}
 .feed-lightbox.open{display:flex;flex-direction:column}
 .feed-lightbox-top{display:flex;justify-content:flex-end;margin-bottom:10px}
-.feed-lightbox-close{background:none;border:1px solid #30363d;color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit}
+.feed-lightbox-close{background:#c9a84c;border:none;color:#0d1117;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(201,168,76,.4)}
 .feed-lightbox-body{flex:1;display:flex;align-items:center;justify-content:center}
 .feed-lightbox-body img{max-width:100%;max-height:100%;border-radius:8px}
 .feed-lightbox-body iframe{width:100%;height:100%;border:0;border-radius:8px}
@@ -359,7 +359,7 @@ img[src=""], img:not([src]) { display:none !important; }
 <div id="feedSection"></div>
 
 <div class="feed-lightbox" id="feedLightbox" onclick="if(event.target===this)closeFeedLightbox()">
-  <div class="feed-lightbox-top"><button class="feed-lightbox-close" onclick="closeFeedLightbox()">✕ إغلاق</button></div>
+  <div class="feed-lightbox-top"><button class="feed-lightbox-close" onclick="closeFeedLightbox()">→ الرجوع للمنصة</button></div>
   <div class="feed-lightbox-body" id="feedLightboxBody"></div>
 </div>
 
@@ -552,14 +552,20 @@ async function loadFeed(){
 
   let socialCard='';
   if(tourSocial?.instagram_url){
-    socialCard+=`<div class="feed-post"><a href="${tourSocial.instagram_url}" target="_blank" style="display:block;text-decoration:none;color:inherit">
+    const igContent=`<div style="max-width:420px;margin:0 auto;text-align:center;padding:30px 20px">
+      <div style="width:90px;height:90px;border-radius:24px;background:linear-gradient(135deg,#833AB4,#E1306C,#F77737);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 20px">📷</div>
+      <div style="color:#fff;font-weight:900;font-size:18px;margin-bottom:8px">صفحة البطولة على إنستغرام</div>
+      <div style="color:#8b949e;font-size:13px;margin-bottom:24px;line-height:1.7">سيفتح إنستغرام في نافذة جديدة خارج المنصة. يمكنك العودة إلى هنا في أي وقت من زر "الرجوع للمنصة" أعلى الشاشة.</div>
+      <a href="${tourSocial.instagram_url}" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#833AB4,#E1306C,#F77737);color:#fff;text-decoration:none;font-weight:900;font-size:14px;padding:14px 32px;border-radius:12px">📷 فتح إنستغرام ↗</a>
+    </div>`;
+    socialCard+=`<div class="feed-post" onclick='openFeedLightbox(${JSON.stringify(igContent)})' style="cursor:pointer">
       <div style="height:170px;background:linear-gradient(135deg,#833AB4,#E1306C,#F77737);display:flex;align-items:center;justify-content:center;font-size:44px">📷</div>
       <div class="feed-post-body">
         <div class="feed-post-ic">📷 إنستغرام</div>
         <div class="feed-post-title">زيارة صفحة البطولة على إنستغرام</div>
         <div class="feed-post-cap">اضغط لمشاهدة أحدث الصور والمنشورات</div>
       </div>
-    </a></div>`;
+    </div>`;
   }
   if(tourSocial?.youtube_url){
     const yid=feedYoutubeId(tourSocial.youtube_url);
@@ -574,14 +580,20 @@ async function loadFeed(){
         </div>
       </div>`;
     }else{
-      socialCard+=`<div class="feed-post"><a href="${tourSocial.youtube_url}" target="_blank" style="display:block;text-decoration:none;color:inherit">
+      const ytContent=`<div style="max-width:420px;margin:0 auto;text-align:center;padding:30px 20px">
+        <div style="width:90px;height:90px;border-radius:24px;background:linear-gradient(135deg,#c4302b,#8a211d);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 20px">▶️</div>
+        <div style="color:#fff;font-weight:900;font-size:18px;margin-bottom:8px">قناة البطولة على يوتيوب</div>
+        <div style="color:#8b949e;font-size:13px;margin-bottom:24px;line-height:1.7">سيفتح يوتيوب في نافذة جديدة خارج المنصة. يمكنك العودة إلى هنا في أي وقت من زر "الرجوع للمنصة" أعلى الشاشة.</div>
+        <a href="${tourSocial.youtube_url}" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#c4302b,#8a211d);color:#fff;text-decoration:none;font-weight:900;font-size:14px;padding:14px 32px;border-radius:12px">▶️ فتح يوتيوب ↗</a>
+      </div>`;
+      socialCard+=`<div class="feed-post" onclick='openFeedLightbox(${JSON.stringify(ytContent)})' style="cursor:pointer">
         <div style="height:170px;background:linear-gradient(135deg,#c4302b,#8a211d);display:flex;align-items:center;justify-content:center;font-size:44px">▶️</div>
         <div class="feed-post-body">
           <div class="feed-post-ic">▶️ يوتيوب</div>
           <div class="feed-post-title">فتح قناة البطولة على يوتيوب ↗</div>
           <div class="feed-post-cap">اضغط للانتقال مباشرة إلى القناة الكاملة</div>
         </div>
-      </a></div>`;
+      </div>`;
     }
   }
 
