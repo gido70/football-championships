@@ -35,22 +35,21 @@
   <div style="font-size:11px;color:#6e7b8f;margin-top:10px">إن لم يُرفع لوغو، تُستخدم ألوان الفريق أدناه لعرضه تلقائيًا</div>
 </div>
 <div class="form-grid">
-  <div class="field"><label>اللون الأساسي</label><input id="colorPick1" type="color" list="presetColors" value="#1f6feb" list="presetColors" style="height:46px;width:100%;cursor:pointer"></div>
-  <div class="field"><label>اللون الثانوي (اختياري)</label><input id="colorPick2" type="color" list="presetColors" value="#1f6feb" list="presetColors" style="height:46px;width:100%;cursor:pointer"></div>
+  <div class="field"><label>اللون الأساسي</label><input id="colorPick1" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div>
+  <div class="field"><label>اللون الثانوي (اختياري)</label><input id="colorPick2" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div>
 </div>
 <div class="actions"><button class="btn" id="saveColorBtn" style="background:#a855f7">💾 حفظ الهوية البصرية</button></div>
 <div class="status" id="colorMsg"></div>
 </section>
-<section class="panel" style="margin-top:24px;background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.25)"><h3>📋 نسخ فريق جاهز من بطولة أخرى (للتجربة)</h3><div class="form-grid"><div class="field"><label>انسخ من بطولة</label><select id="srcTournamentSelect"></select></div><div class="field"><label>الفريق</label><select id="srcTeamSelect"></select></div></div><div style="margin:10px 0"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="copyPlayersChk" checked> نسخ لاعبي الفريق أيضًا (بدون صورهم الخاصة، بحالة معتمدة مباشرة)</label></div><div class="actions"><button class="btn" id="copyBtn" style="background:#3fb950">نسخ هذا الفريق إلى البطولة الحالية</button></div><div class="status" id="copyMsg"></div></section>
 <section class="panel" style="margin-top:24px;background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.25)"><h3>📊 استيراد أسماء الفرق دفعة واحدة من إكسل</h3><p style="color:#9fb0c9;font-size:13px;margin-bottom:10px">ملف بعمود واحد "اسم الفريق" — يُنشئ كل الفرق دفعة واحدة في البطولة المختارة فوق، وكل فريق يحصل تلقائيًا على رابط إدخال خاص به (من صفحة "مراجعة بيانات الفرق")</p><div class="actions"><button class="btn secondary" id="dlTeamsTemplateBtn">⬇️ تحميل نموذج فارغ</button><button class="btn" id="importTeamsBtn" style="background:#58a6ff">📊 استيراد ملف إكسل</button><input type="file" id="teamsXlsxInput" accept=".xlsx,.xls,.csv" style="display:none"></div><div class="status" id="teamsImportMsg"></div></section>
-<section class="panel" style="margin-top:24px;"><h3>إضافة فريق</h3><div class="form-grid"><div class="field"><label>اسم الفريق</label><input id="teamName" placeholder="اسم الفريق"></div><div class="field"><label>اللون الأساسي</label><input id="teamColor1" type="color" list="presetColors" value="#1f6feb" list="presetColors" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>اللون الثانوي (اختياري — لمزيج كقميصين)</label><input id="teamColor2" type="color" list="presetColors" value="#1f6feb" list="presetColors" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>الاسم المختصر (اختياري)</label><input id="shortName" placeholder="مثال: MJD"></div></div><div class="actions"><button class="btn" id="addBtn">إضافة فريق</button><button class="btn secondary" id="reloadBtn">تحديث القائمة</button></div><div class="counter" id="counter"></div><div class="status" id="statusBox"></div></section>
+<section class="panel" style="margin-top:24px;"><h3>إضافة فريق</h3><div class="form-grid"><div class="field"><label>اسم الفريق</label><input id="teamName" placeholder="اسم الفريق"></div><div class="field"><label>اللون الأساسي</label><input id="teamColor1" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>اللون الثانوي (اختياري — لمزيج كقميصين)</label><input id="teamColor2" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>الاسم المختصر (اختياري)</label><input id="shortName" placeholder="مثال: MJD"></div></div><div class="actions"><button class="btn" id="addBtn">إضافة فريق</button><button class="btn secondary" id="reloadBtn">تحديث القائمة</button></div><div class="counter" id="counter"></div><div class="status" id="statusBox"></div></section>
 <section class="panel" style="margin-top:24px;"><h3>الفرق الحالية</h3><div class="table-wrap"><table><thead><tr><th>اسم الفريق</th><th>الألوان</th><th>كود الفريق</th><th>إجراء</th></tr></thead><tbody id="teamsRows"></tbody></table></div></section>
 </main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="supabase-config.js"></script>
 <script>
 const client=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);let selectedTournament=null,maxTeams=0,tournaments=[];
 function setMsg(t,c=''){const box=document.getElementById('statusBox');box.className='status '+c;box.textContent=t}
-async function loadTournaments(){const {data,error}=await client.from('tournaments').select('*').order('created_at',{ascending:false,nullsFirst:false});const select=document.getElementById('tournamentSelect');select.innerHTML='';tournaments=data||[];if(error||!data||!data.length){select.innerHTML='<option value="">لا توجد بطولات</option>';selectedTournament=null;maxTeams=0;updateCounter(0);return}data.forEach(t=>{const op=document.createElement('option');op.value=t.id;op.textContent=t.name+(t.season_label?' - '+t.season_label:'');select.appendChild(op)});selectedTournament=data[0].id;maxTeams=data[0].team_count||0;select.value=selectedTournament;select.onchange=()=>{selectedTournament=select.value;const t=tournaments.find(x=>x.id===selectedTournament);maxTeams=t?(t.team_count||0):0;loadTeams();populateSrcTournaments()};await loadTeams();populateSrcTournaments()}
+async function loadTournaments(){const {data,error}=await client.from('tournaments').select('*').order('created_at',{ascending:false,nullsFirst:false});const select=document.getElementById('tournamentSelect');select.innerHTML='';tournaments=data||[];if(error||!data||!data.length){select.innerHTML='<option value="">لا توجد بطولات</option>';selectedTournament=null;maxTeams=0;updateCounter(0);return}data.forEach(t=>{const op=document.createElement('option');op.value=t.id;op.textContent=t.name+(t.season_label?' - '+t.season_label:'');select.appendChild(op)});selectedTournament=data[0].id;maxTeams=data[0].team_count||0;select.value=selectedTournament;select.onchange=()=>{selectedTournament=select.value;const t=tournaments.find(x=>x.id===selectedTournament);maxTeams=t?(t.team_count||0):0;loadTeams()};await loadTeams()}
 function genCode(){return String(Math.floor(10000+Math.random()*90000));}
 
 async function loadTeams(){if(!selectedTournament){document.getElementById('teamsRows').innerHTML='<tr><td colspan="4">اختر بطولة أولًا</td></tr>';updateCounter(0);return}const {data,error}=await client.from('teams').select('*').eq('tournament_id',selectedTournament).order('created_at',{ascending:true,nullsFirst:false});if(error){document.getElementById('teamsRows').innerHTML='<tr><td colspan="4">'+error.message+'</td></tr>';updateCounter(0);return}const rows=data||[];updateCounter(rows.length);if(!rows.length){document.getElementById('teamsRows').innerHTML='<tr><td colspan="4">لا توجد فرق في هذه البطولة</td></tr>';populateColorTeams([]);return}document.getElementById('teamsRows').innerHTML=rows.map(team=>`<tr>
@@ -218,84 +217,6 @@ document.getElementById('teamsXlsxInput').onchange=function(){
   };
   reader.readAsArrayBuffer(f);
   this.value='';
-};
-
-function setCopyMsg(t,c=''){const box=document.getElementById('copyMsg');box.className='status '+c;box.textContent=t}
-
-function populateSrcTournaments(){
-  const sel=document.getElementById('srcTournamentSelect');
-  const others=tournaments.filter(t=>t.id!==selectedTournament);
-  if(!others.length){sel.innerHTML='<option value="">لا توجد بطولات أخرى للنسخ منها</option>';document.getElementById('srcTeamSelect').innerHTML='<option value="">—</option>';return}
-  sel.innerHTML=others.map(t=>`<option value="${t.id}">${t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
-  sel.onchange=loadSrcTeams;
-  loadSrcTeams();
-}
-
-async function loadSrcTeams(){
-  const tid=document.getElementById('srcTournamentSelect').value;
-  const sel=document.getElementById('srcTeamSelect');
-  sel.innerHTML='<option>جاري التحميل...</option>';
-  const {data,error}=await client.from('teams').select('*').eq('tournament_id',tid).order('name');
-  if(error||!data||!data.length){sel.innerHTML='<option value="">لا توجد فرق في هذه البطولة</option>';return}
-  sel.innerHTML=data.map(t=>`<option value="${t.id}">${t.name}</option>`).join('');
-  sel._teams=data;
-}
-
-document.getElementById('copyBtn').onclick=async()=>{
-  if(!selectedTournament){setCopyMsg('اختر البطولة الهدف أولًا من الأعلى','warn');return}
-  const srcTeamId=document.getElementById('srcTeamSelect').value;
-  if(!srcTeamId){setCopyMsg('اختر فريقًا للنسخ','warn');return}
-  const {data:existing}=await client.from('teams').select('id').eq('tournament_id',selectedTournament);
-  if((existing||[]).length>=maxTeams){setCopyMsg('تم الوصول إلى الحد الأقصى لعدد الفرق في هذه البطولة','warn');return}
-
-  setCopyMsg('⏳ جاري النسخ...');
-  const {data:srcTeam,error:e1}=await client.from('teams').select('*').eq('id',srcTeamId).single();
-  if(e1||!srcTeam){setCopyMsg('فشل قراءة الفريق المصدر: '+(e1?.message||''),'err');return}
-
-  const newTeam={...srcTeam};
-  delete newTeam.id;
-  delete newTeam.created_at;
-  delete newTeam.updated_at;
-  delete newTeam.submit_token;
-  delete newTeam.coach_name;
-  delete newTeam.coach_nationality;
-  delete newTeam.coach_id_url;
-  delete newTeam.coach_photo_url;
-  delete newTeam.coach_status;
-  delete newTeam.submitted_by_name;
-  delete newTeam.admin_nationality;
-  delete newTeam.admin_doc_url;
-  delete newTeam.admin_photo_url;
-  delete newTeam.access_code;
-  newTeam.access_code=genCode();
-  newTeam.tournament_id=selectedTournament;
-  newTeam.is_active=true;
-  const {data:inserted,error:e2}=await client.from('teams').insert([newTeam]).select().single();
-  if(e2){setCopyMsg('فشل إنشاء الفريق: '+e2.message,'err');return}
-
-  let playersMsg='';
-  if(document.getElementById('copyPlayersChk').checked){
-    const {data:srcPlayers}=await client.from('players').select('*').eq('team_id',srcTeamId);
-    if(srcPlayers&&srcPlayers.length){
-      const newPlayers=srcPlayers.map(p=>{
-        const np={...p};
-        delete np.id;
-        delete np.created_at;
-        delete np.team_id;
-        delete np.tournament_id;
-        delete np.id_photo_url;
-        delete np.passport_photo_url;
-        np.team_id=inserted.id;
-        np.tournament_id=selectedTournament;
-        np.submission_status='approved';
-        return np;
-      });
-      const {error:e3}=await client.from('players').insert(newPlayers);
-      playersMsg=e3?(' — لكن فشل نسخ اللاعبين: '+e3.message):(' مع '+newPlayers.length+' لاعبًا');
-    }
-  }
-  setCopyMsg('✅ تم نسخ الفريق "'+srcTeam.name+'"'+playersMsg,'ok');
-  loadTeams();
 };
 
 </script>
