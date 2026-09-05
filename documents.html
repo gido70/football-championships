@@ -14,7 +14,8 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 h1{font-size:19px;color:#c9a84c;margin:0 0 14px}
 
 .doc-list{display:flex;flex-direction:column;gap:10px}
-.doc-row{display:flex;align-items:center;gap:14px;background:#161b22;border:1px solid #21262d;border-radius:12px;padding:12px 14px;cursor:pointer;transition:.15s;text-align:right;color:inherit;font-family:inherit;width:100%}
+.doc-row{display:flex;align-items:center;gap:14px;background:#161b22;border:1px solid #21262d;border-radius:12px;padding:12px 14px;cursor:pointer;transition:.15s;text-align:right;color:inherit;font-family:inherit;width:100%;animation:fadeSlideUp .4s ease-out both}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 .doc-row:hover{border-color:#c9a84c}
 .doc-emoji{font-size:26px;flex-shrink:0}
 .doc-info{flex:1;min-width:0}
@@ -86,7 +87,7 @@ async function load(){
   if(!DOCS.length){app.innerHTML='<div class="empty-note">لا توجد نشرات مضافة بعد لهذه البطولة</div>';return;}
 
   app.innerHTML='<div class="doc-list">'+DOCS.map((d,i)=>`
-    <button class="doc-row" onclick="openViewer(${i})">
+    <button class="doc-row" onclick="openViewer(${i})" style="animation-delay:${i*0.06}s">
       <div class="doc-emoji">📄</div>
       <div class="doc-info">
         <div class="doc-title">${esc(d.title)}</div>
