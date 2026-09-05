@@ -534,6 +534,15 @@ function feedYoutubeId(url){
   return m?m[1]:null;
 }
 
+// يكتشف معرّف قناة حقيقي (UCxxxx) لتضمين "آخر فيديوهاتها" كتلفاز مباشر داخل الصفحة
+// (ملاحظة صادقة: هذا يعمل فقط لو كان الرابط بصيغة /channel/UCxxxx تحديداً؛
+//  روابط المعرّف المخصَّص @arabic_name أو /c/name لا يمكن تحويلها بلا استدعاء واجهة يوتيوب البرمجية)
+function feedYoutubeChannelUploadsId(url){
+  const m=(url||'').match(/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{20,})/);
+  if(!m)return null;
+  return 'UU'+m[1].slice(2); // قائمة تشغيل "التحميلات" الرسمية = نفس المعرّف مع استبدال UC بـ UU
+}
+
 function openFeedLightbox(html){
   document.getElementById('feedLightboxBody').innerHTML=html;
   document.getElementById('feedLightbox').classList.add('open');
@@ -569,17 +578,31 @@ async function loadFeed(){
   }
   if(tourSocial?.youtube_url){
     const yid=feedYoutubeId(tourSocial.youtube_url);
+    const chUploads=!yid?feedYoutubeChannelUploadsId(tourSocial.youtube_url):null;
     if(yid){
+      // فيديو محدَّد: يُشغَّل كتلفاز مباشرة داخل البطاقة، بلا أي ضغط إضافي
       socialCard+=`<div class="feed-post">
-        <div class="feed-post-vid" onclick='openFeedLightbox(${JSON.stringify(`<div style="position:relative;width:100%;height:100%"><iframe src="https://www.youtube.com/embed/${yid}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>`)})'>
-          <img src="https://img.youtube.com/vi/${yid}/hqdefault.jpg"><div class="play"><span>▶</span></div>
+        <div style="position:relative;width:100%;height:170px;background:#000">
+          <iframe src="https://www.youtube.com/embed/${yid}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
         </div>
         <div class="feed-post-body">
           <div class="feed-post-ic">▶️ يوتيوب</div>
-          <div class="feed-post-title">قناة البطولة على يوتيوب</div>
+          <div class="feed-post-title">فيديو قناة البطولة</div>
+        </div>
+      </div>`;
+    }else if(chUploads){
+      // قناة بمعرّف حقيقي (UC): تُضمَّن قائمة "آخر التحميلات" كتلفاز مباشرة داخل البطاقة
+      socialCard+=`<div class="feed-post">
+        <div style="position:relative;width:100%;height:170px;background:#000">
+          <iframe src="https://www.youtube.com/embed/videoseries?list=${chUploads}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
+        </div>
+        <div class="feed-post-body">
+          <div class="feed-post-ic">▶️ يوتيوب</div>
+          <div class="feed-post-title">آخر فيديوهات قناة البطولة</div>
         </div>
       </div>`;
     }else{
+      // رابط قناة بصيغة مخصَّصة (@اسم أو /c/) — يستحيل تضمينه داخلياً تقنياً بلا واجهة يوتيوب البرمجية
       const ytContent=`<div style="max-width:420px;margin:0 auto;text-align:center;padding:30px 20px">
         <div style="width:90px;height:90px;border-radius:24px;background:linear-gradient(135deg,#c4302b,#8a211d);display:flex;align-items:center;justify-content:center;font-size:40px;margin:0 auto 20px">▶️</div>
         <div style="color:#fff;font-weight:900;font-size:18px;margin-bottom:8px">قناة البطولة على يوتيوب</div>
