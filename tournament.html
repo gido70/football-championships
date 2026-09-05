@@ -563,16 +563,26 @@ async function loadFeed(){
   }
   if(tourSocial?.youtube_url){
     const yid=feedYoutubeId(tourSocial.youtube_url);
-    socialCard+=`<div class="feed-post">
-      <div class="feed-post-vid" onclick='openFeedLightbox(${JSON.stringify(yid?`<div style="position:relative;width:100%;height:100%"><iframe src="https://www.youtube.com/embed/${yid}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>`:'')})'>
-        ${yid?`<img src="https://img.youtube.com/vi/${yid}/hqdefault.jpg">`:'<div class="ph">🎬</div>'}<div class="play"><span>▶</span></div>
-      </div>
-      <div class="feed-post-body">
-        <div class="feed-post-ic">▶️ يوتيوب</div>
-        <div class="feed-post-title">قناة البطولة على يوتيوب</div>
-        ${!yid?`<a href="${tourSocial.youtube_url}" target="_blank" class="feed-post-link-btn">فتح القناة كاملة ↗</a>`:''}
-      </div>
-    </div>`;
+    if(yid){
+      socialCard+=`<div class="feed-post">
+        <div class="feed-post-vid" onclick='openFeedLightbox(${JSON.stringify(`<div style="position:relative;width:100%;height:100%"><iframe src="https://www.youtube.com/embed/${yid}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>`)})'>
+          <img src="https://img.youtube.com/vi/${yid}/hqdefault.jpg"><div class="play"><span>▶</span></div>
+        </div>
+        <div class="feed-post-body">
+          <div class="feed-post-ic">▶️ يوتيوب</div>
+          <div class="feed-post-title">قناة البطولة على يوتيوب</div>
+        </div>
+      </div>`;
+    }else{
+      socialCard+=`<div class="feed-post"><a href="${tourSocial.youtube_url}" target="_blank" style="display:block;text-decoration:none;color:inherit">
+        <div style="height:170px;background:linear-gradient(135deg,#c4302b,#8a211d);display:flex;align-items:center;justify-content:center;font-size:44px">▶️</div>
+        <div class="feed-post-body">
+          <div class="feed-post-ic">▶️ يوتيوب</div>
+          <div class="feed-post-title">فتح قناة البطولة على يوتيوب ↗</div>
+          <div class="feed-post-cap">اضغط للانتقال مباشرة إلى القناة الكاملة</div>
+        </div>
+      </a></div>`;
+    }
   }
 
   if(!data?.length&&!socialCard){sec.innerHTML='';return;}

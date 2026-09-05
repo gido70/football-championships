@@ -34,6 +34,19 @@
   <input type="hidden" id="logoUrlInput">
   <div style="font-size:11px;color:#6e7b8f;margin-top:10px">إن لم يُرفع لوغو، تُستخدم ألوان الفريق أدناه لعرضه تلقائيًا</div>
 </div>
+<div style="margin:14px 0;padding:14px;background:rgba(255,255,255,.03);border-radius:14px;border:1px solid rgba(255,255,255,.08)">
+  <div style="font-size:12px;font-weight:800;color:#8b949e;margin-bottom:14px;letter-spacing:1px">📸 الصورة الجماعية للفريق (اختياري)</div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <label style="display:inline-flex;align-items:center;gap:8px;background:rgba(63,185,80,.15);border:1px solid rgba(63,185,80,.3);color:#3fb950;padding:9px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700">
+      اختيار صورة الفريق الكاملة
+      <input type="file" id="teamPhotoFileInput" accept="image/*" style="display:none">
+    </label>
+    <div id="teamPhotoPreview" style="width:80px;height:48px;border-radius:8px;background:#21262d;border:2px solid #30363d;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden">👥</div>
+    <button class="btn secondary" id="clearTeamPhotoBtn" style="font-size:12px;padding:8px 12px">إزالة الصورة</button>
+  </div>
+  <input type="hidden" id="teamPhotoUrlInput">
+  <div style="font-size:11px;color:#6e7b8f;margin-top:10px">صورة جماعية حقيقية لكل لاعبي الفريق مع المدرب والإدارة — تظهر في صفحة الفريق العامة</div>
+</div>
 <div class="form-grid">
   <div class="field"><label>اللون الأساسي</label><input id="colorPick1" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div>
   <div class="field"><label>اللون الثانوي (اختياري)</label><input id="colorPick2" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div>
@@ -79,6 +92,12 @@ function populateColorTeams(rows){
     document.getElementById('logoUrlInput').removeAttribute('data-cleared');
     const preview=document.getElementById('logoPreview');
     preview.innerHTML=logoUrl?`<img src="${logoUrl}" style="width:100%;height:100%;object-fit:cover">`:'🏆';
+
+    const photoUrl=t?(t.team_photo_url||''):'';
+    document.getElementById('teamPhotoUrlInput').value=photoUrl;
+    document.getElementById('teamPhotoUrlInput').removeAttribute('data-cleared');
+    const photoPreview=document.getElementById('teamPhotoPreview');
+    photoPreview.innerHTML=photoUrl?`<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover">`:'👥';
   };
 }
 
@@ -122,6 +141,29 @@ document.getElementById('clearLogoBtn').onclick=function(){
   document.getElementById('logoPreview').innerHTML='🏆';
 };
 
+document.getElementById('teamPhotoFileInput').onchange=async function(){
+  const f=this.files[0];
+  if(!f)return;
+  const preview=document.getElementById('teamPhotoPreview');
+  preview.textContent='⏳';
+  try{
+    const dataUrl=await resizeImageToDataUrl(f,900);
+    document.getElementById('teamPhotoUrlInput').value=dataUrl;
+    document.getElementById('teamPhotoUrlInput').removeAttribute('data-cleared');
+    preview.innerHTML=`<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover">`;
+  }catch(err){
+    preview.textContent='👥';
+    alert('تعذرت قراءة الصورة، جرّب صورة أخرى');
+  }
+  this.value='';
+};
+
+document.getElementById('clearTeamPhotoBtn').onclick=function(){
+  document.getElementById('teamPhotoUrlInput').value='';
+  document.getElementById('teamPhotoUrlInput').setAttribute('data-cleared','1');
+  document.getElementById('teamPhotoPreview').innerHTML='👥';
+};
+
 document.getElementById('saveColorBtn').onclick=async()=>{
   const sel=document.getElementById('colorTeamSelect');
   const msg=document.getElementById('colorMsg');
@@ -129,14 +171,19 @@ document.getElementById('saveColorBtn').onclick=async()=>{
   const c1=document.getElementById('colorPick1').value;
   const c2=document.getElementById('colorPick2').value;
   const logoInput=document.getElementById('logoUrlInput');
+  const photoInput=document.getElementById('teamPhotoUrlInput');
   const update={primary_color:c1,secondary_color:c2};
   if(logoInput.value||logoInput.getAttribute('data-cleared')){
     update.logo_url=logoInput.value||null;
+  }
+  if(photoInput.value||photoInput.getAttribute('data-cleared')){
+    update.team_photo_url=photoInput.value||null;
   }
   msg.className='status';msg.textContent='⏳ جاري الحفظ...';
   const {error}=await client.from('teams').update(update).eq('id',sel.value);
   if(error){msg.className='status err';msg.textContent='فشل الحفظ: '+error.message;return}
   logoInput.removeAttribute('data-cleared');
+  photoInput.removeAttribute('data-cleared');
   msg.className='status ok';msg.textContent='✅ تم حفظ الهوية البصرية';
   loadTeams();
 };

@@ -112,6 +112,10 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
   </div>
 </div>
 
+<div id="teamPhotoSection" style="display:none;max-width:900px;margin:0 auto;padding:16px">
+  <img id="teamPhotoImg" style="width:100%;border-radius:16px;display:block;box-shadow:0 8px 30px rgba(0,0,0,.25)">
+</div>
+
 <div class="tabs-bar">
   <div class="tabs" id="tabsRow">
     <button class="tab active" onclick="showTab(this,'squad')">👥 القائمة</button>
@@ -186,6 +190,14 @@ async function loadTeam(){
   document.getElementById('heroBg').style.background=`linear-gradient(135deg,${color},${t.secondary_color||'#1a1a2e'})`;
   document.getElementById('teamInitial').style.background=`rgba(255,255,255,.15)`;
   document.getElementById('teamInitial').textContent=name.charAt(0);
+
+  const photoSection=document.getElementById('teamPhotoSection');
+  if(t.team_photo_url){
+    document.getElementById('teamPhotoImg').src=t.team_photo_url;
+    photoSection.style.display='block';
+  }else{
+    photoSection.style.display='none';
+  }
 
   // تطبيق لون الفريق على التبويبات (بتباين آمن)
   const textOnPage=safeText(color,'#FFFFFF');
