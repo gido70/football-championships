@@ -14,7 +14,8 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 
 .carousel{display:grid;grid-template-columns:1fr;gap:14px;padding:4px 16px 14px}
-.card{width:100%;background:#161b22;border:1px solid #21262d;border-radius:14px;overflow:hidden;cursor:pointer;transition:.2s;padding:0;text-align:right;color:inherit;font-family:inherit}
+.card{width:100%;background:#161b22;border:1px solid #21262d;border-radius:14px;overflow:hidden;cursor:pointer;transition:.2s;padding:0;text-align:right;color:inherit;font-family:inherit;animation:fadeSlideUp .45s ease-out both}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .card:hover{outline:2px solid #c9a84c}
 .thumb-wrap{position:relative}
 .thumb{width:100%;height:190px;object-fit:cover;display:block;background:#0d1117}
@@ -115,7 +116,7 @@ async function load(){
   if(!VIDEOS.length){app.innerHTML='<div class="empty-note">لا توجد فيديوهات مضافة بعد لهذه البطولة</div>';return;}
 
   app.innerHTML='<div class="carousel">'+VIDEOS.map((v,i)=>`
-    <button class="card" onclick="openPlayer(${i})">
+    <button class="card" onclick="openPlayer(${i})" style="animation-delay:${i*0.06}s">
       <div class="thumb-wrap">
         ${v.thumbnail_url?`<img class="thumb" src="${v.thumbnail_url}" alt="${esc(v.title)}">`:'<div class="thumb-ph">🎬</div>'}
         <div class="play-badge"><div class="play-icon">▶</div></div>
@@ -141,6 +142,7 @@ function openPlayer(i){
   }
   document.getElementById('playerTitle').textContent=v.title;
   document.getElementById('playerExternalLink').href=v.video_url;
+  document.getElementById('playerExternalLink').textContent=v.video_type==='youtube'?'فتح في يوتيوب ↗':'فتح الرابط مباشرة ↗';
   document.getElementById('playerHomeLink').href='tournament.html?id='+TID;
   document.getElementById('playerOverlay').classList.add('open');
 }

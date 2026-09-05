@@ -29,6 +29,10 @@ a{text-decoration:none;color:inherit}
 .wrap{max-width:900px;margin:0 auto;padding:20px 16px calc(40px + env(safe-area-inset-bottom,0px))}
 .award-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
 
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.award-card{animation:fadeSlideUp .5s ease-out both}
+.hero{animation:fadeSlideUp .5s ease-out both}
+
 .award-card{
   background:#FFFFFF;
   border:1px solid rgba(201,168,76,.35);
@@ -143,13 +147,13 @@ async function init(){
 
   const aMap={};(awards||[]).forEach(a=>aMap[a.award_key]=a);
 
-  document.getElementById('awardsGrid').innerHTML=AWARD_DEFS.map(def=>{
+  document.getElementById('awardsGrid').innerHTML=AWARD_DEFS.map((def,i)=>{
     const a=aMap[def.key];
     const photo=a?.winner_photo_url||null;
     const name=a?.winner_name||null;
     const team=a?.winner_team_id?teamName[a.winner_team_id]:'';
     const number=a?.winner_player_id?numberMap[a.winner_player_id]:null;
-    return `<div class="award-card${def.key==='top_scorer'||def.key==='best_player'?' top':''}">
+    return `<div class="award-card${def.key==='top_scorer'||def.key==='best_player'?' top':''}" style="animation-delay:${i*0.08}s">
       <div class="award-banner">
         <span class="award-ic">${def.ic}</span>
         ${photo

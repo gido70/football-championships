@@ -33,10 +33,13 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .lb-detail{font-size:11px;color:#8b949e;margin-top:3px}
 .lb-pts{font-weight:900;color:#c9a84c;font-size:17px}
 .loading{text-align:center;color:#6e7b8f;padding:40px 0}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.hero{animation:fadeSlideUp .5s ease-out both}
+.lb-row,.hof-badge{animation:fadeSlideUp .4s ease-out both}
 </style>
 </head>
 <body>
-<div class="nav"><span style="font-weight:800;color:#c9a84c">🏆 لوحة المتصدرين</span><a href="#" onclick="history.back();return false">‹ رجوع</a></div>
+<div class="nav"><span style="font-weight:800;color:#c9a84c">🏆 لوحة المتصدرين</span><a href="#" id="backLink" onclick="history.back();return false">‹ رجوع</a></div>
 <div class="wrap" id="app"><div class="loading">⏳ جاري التحميل...</div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -56,6 +59,9 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 
 async function load(){
   if(!TID){document.getElementById('app').innerHTML='<div class="empty-note">لم تُحدَّد بطولة</div>';return;}
+  const bl=document.getElementById('backLink');
+  bl.href='tournament.html?id='+TID;
+  bl.removeAttribute('onclick');
   const {data:matches}=await sb.from('matches').select('id,round_name,status,home_score,away_score').eq('tournament_id',TID);
   const decided=(matches||[]).filter(m=>m.status==='completed'&&m.home_score!=null&&m.away_score!=null);
   const matchIds=(matches||[]).map(m=>m.id);
