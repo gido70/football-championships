@@ -319,10 +319,9 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
 </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script>
-const sb=window.supabase.createClient("https://npoowwdjpbvhyjrmeqkv.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5wb293d2RqcGJ2aHlqcm1lcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NDM4MzYsImV4cCI6MjA4OTMxOTgzNn0.8Ii2TUvDDRr_L61WVTEQkgOl9VhAyO6ywoLmUUAadgY");
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const SB_BUCKET='tournament-assets';
 
 function setMsg(t,c=''){const b=document.getElementById('statusBox');b.className='status '+c;b.textContent=t;}
