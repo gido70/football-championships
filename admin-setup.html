@@ -294,6 +294,31 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
   </form>
 </section>
 
+<section class="panel" style="margin-top:20px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.3)">
+  <h3>🤝 رعاة البطولة (اختياري)</h3>
+  <p style="color:#9fb0c9;font-size:13px;margin-bottom:14px">تظهر شعارات الرعاة في شريط مخصَّص أسفل صفحة البطولة الرئيسية. احفظ البطولة أولاً قبل إضافة رعاة.</p>
+
+  <div class="form-grid">
+    <div class="field"><label>اسم الراعي</label><input id="sponsorName" placeholder="مثال: شركة الاتصالات"></div>
+    <div class="field"><label>رابط موقع الراعي (اختياري)</label><input id="sponsorWebsite" placeholder="https://..." dir="ltr"></div>
+  </div>
+  <div class="actions">
+    <button type="button" class="btn secondary" id="sponsorLogoBtn">🖼️ اختيار شعار الراعي</button>
+    <input type="file" id="sponsorLogoInput" accept="image/*" style="display:none">
+    <button type="button" class="btn" onclick="addSponsor()">➕ إضافة راعٍ</button>
+  </div>
+  <div id="sponsorLogoPreviewBox" style="margin:8px 0;display:none"><img id="sponsorLogoPreview" style="height:50px;border-radius:6px;background:#fff;padding:4px"></div>
+
+  <div class="actions" style="margin-top:10px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px">
+    <button type="button" class="btn secondary" id="bulkSponsorsBtn">📦 إضافة عدة رعاة دفعة واحدة (اسم الملف = اسم الراعي)</button>
+    <input type="file" id="bulkSponsorsInput" accept="image/*" multiple style="display:none">
+  </div>
+  <div class="status" id="bulkSponsorsMsg"></div>
+
+  <div id="sponsorsList" style="margin-top:16px;display:grid;gap:8px"></div>
+</section>
+
+
 <!-- قائمة البطولات -->
 <section class="panel">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -500,6 +525,7 @@ async function editTour(id){
   document.getElementById('submitBtn').textContent='💾 حفظ التعديلات';
   document.querySelector('.panel').scrollIntoView({behavior:'smooth'});
   setMsg('جاري تعديل: '+r.name,'ok');
+  loadSponsors();
 }
 
 async function delTour(id){
@@ -551,6 +577,96 @@ async function deleteAccessCode(id){
   loadAccessCodes();
 }
 window.addAccessCode=addAccessCode;window.deleteAccessCode=deleteAccessCode;
+
+// ===== رعاة البطولة =====
+function resizeImageToDataUrl(file,maxSize){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>h){ if(w>maxSize){h=Math.round(h*maxSize/w);w=maxSize;} }
+        else{ if(h>maxSize){w=Math.round(w*maxSize/h);h=maxSize;} }
+        const canvas=document.createElement('canvas');
+        canvas.width=w;canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror=reject;
+      img.src=e.target.result;
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+let sponsorLogoDataUrl=null;
+document.getElementById('sponsorLogoBtn').onclick=()=>document.getElementById('sponsorLogoInput').click();
+document.getElementById('sponsorLogoInput').onchange=async function(){
+  const f=this.files[0]; if(!f)return;
+  sponsorLogoDataUrl=await resizeImageToDataUrl(f,300);
+  document.getElementById('sponsorLogoPreview').src=sponsorLogoDataUrl;
+  document.getElementById('sponsorLogoPreviewBox').style.display='block';
+};
+
+async function loadSponsors(){
+  const tid=document.getElementById('editing_id').value;
+  const box=document.getElementById('sponsorsList');
+  if(!tid){box.innerHTML='';return;}
+  const {data}=await sb.from('sponsors').select('*').eq('tournament_id',tid).order('created_at',{ascending:true});
+  if(!data?.length){box.innerHTML='<div style="color:#7d8694">لا يوجد رعاة بعد</div>';return;}
+  box.innerHTML=data.map(s=>`<div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.04);border-radius:8px;padding:8px 12px">
+    <img src="${s.logo_url}" style="height:32px;background:#fff;border-radius:4px;padding:2px">
+    <span style="flex:1;font-weight:700;color:#eef5ff">${s.name}</span>
+    ${s.website_url?`<a href="${s.website_url}" target="_blank" style="color:#58a6ff;font-size:12px">الموقع ↗</a>`:''}
+    <button type="button" onclick="deleteSponsor('${s.id}')" style="background:none;border:none;color:#f85149;cursor:pointer;font-size:16px">✕</button>
+  </div>`).join('');
+}
+async function addSponsor(){
+  const tid=document.getElementById('editing_id').value;
+  if(!tid){alert('احفظ البطولة أولاً قبل إضافة رعاة');return;}
+  const name=document.getElementById('sponsorName').value.trim();
+  if(!name){alert('أدخل اسم الراعي');return;}
+  if(!sponsorLogoDataUrl){alert('اختر شعار الراعي');return;}
+  const website=document.getElementById('sponsorWebsite').value.trim()||null;
+  const {error}=await sb.from('sponsors').insert({tournament_id:tid,name,logo_url:sponsorLogoDataUrl,website_url:website});
+  if(error){alert('فشل: '+error.message);return;}
+  document.getElementById('sponsorName').value='';
+  document.getElementById('sponsorWebsite').value='';
+  document.getElementById('sponsorLogoPreviewBox').style.display='none';
+  sponsorLogoDataUrl=null;
+  loadSponsors();
+}
+async function deleteSponsor(id){
+  await sb.from('sponsors').delete().eq('id',id);
+  loadSponsors();
+}
+window.addSponsor=addSponsor;window.deleteSponsor=deleteSponsor;
+
+document.getElementById('bulkSponsorsBtn').onclick=()=>document.getElementById('bulkSponsorsInput').click();
+document.getElementById('bulkSponsorsInput').onchange=async function(){
+  const files=[...this.files];
+  const msg=document.getElementById('bulkSponsorsMsg');
+  if(!files.length)return;
+  const tid=document.getElementById('editing_id').value;
+  if(!tid){msg.className='status warn';msg.textContent='⚠️ احفظ البطولة أولاً قبل إضافة رعاة';this.value='';return;}
+  msg.className='status';msg.textContent='⏳ جاري الرفع...';
+  let ok=0;const fails=[];
+  for(const f of files){
+    const name=f.name.replace(/\.[^.]+$/,'').trim();
+    try{
+      const dataUrl=await resizeImageToDataUrl(f,300);
+      const {error}=await sb.from('sponsors').insert({tournament_id:tid,name,logo_url:dataUrl});
+      if(error){fails.push(name+': '+error.message);continue;}
+      ok++;
+    }catch(e){fails.push(name+': خطأ قراءة');}
+  }
+  msg.className='status '+(ok?'ok':'warn');
+  msg.innerHTML=`✅ أُضيف ${ok} راعياً من أصل ${files.length}`+(fails.length?`<br>⚠️ ${fails.join('، ')}`:'');
+  this.value='';
+  loadSponsors();
+};
 
 function resetForm(){
   document.getElementById('tForm').reset();
