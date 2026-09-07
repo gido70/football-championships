@@ -116,6 +116,20 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .feed-wrap::-webkit-scrollbar{height:6px}
 .feed-wrap::-webkit-scrollbar-thumb{background:#30363d;border-radius:10px}
 .feed-post{background:#161b22;border:1px solid #21262d;border-radius:14px;overflow:hidden;text-align:right;flex:0 0 300px;scroll-snap-align:start}
+
+/* ===== شريط رعاة البطولة ===== */
+.sponsors-strip{margin-top:22px;padding:16px 14px 14px;text-align:center}
+.sponsors-label{font-size:11px;font-weight:800;letter-spacing:.5px;color:#9C9784;margin-bottom:12px;position:relative}
+.sponsors-label::before,.sponsors-label::after{content:'';display:inline-block;width:28px;height:1px;background:#DDD8C9;vertical-align:middle;margin:0 8px}
+.sponsors-row{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center}
+.sponsor-chip{background:#fff;border:1px solid #EDEAE0;border-radius:10px;padding:8px 14px;display:flex;align-items:center;justify-content:center;transition:transform .15s,box-shadow .15s}
+.sponsor-chip:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(44,44,42,.08)}
+.sponsor-chip img{height:28px;max-width:100px;object-fit:contain;display:block}
+.sponsor-chip a{display:flex}
+@media(max-width:640px){
+  .sponsor-chip{padding:6px 10px}
+  .sponsor-chip img{height:22px;max-width:78px}
+}
 .feed-post-body{padding:12px 14px}
 .feed-post-ic{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:800;color:#8b949e;margin-bottom:6px}
 .feed-post-title{font-size:14px;font-weight:800;color:#e6edf3;margin-bottom:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -1141,12 +1155,14 @@ async function loadSponsors(){
   if(!TID){sec.innerHTML='';return;}
   const {data}=await sb.from('sponsors').select('*').eq('tournament_id',TID).order('created_at',{ascending:true});
   if(!data||!data.length){sec.innerHTML='';return;}
-  sec.innerHTML=`<div class="sec-hd" style="margin-top:18px">🤝 رعاة البطولة</div>
-    <div style="display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:center;padding:16px;background:rgba(255,255,255,.03);border-radius:14px">
-      ${data.map(s=>{
-        const img=`<img src="${s.logo_url}" alt="${s.name}" title="${s.name}" style="height:54px;max-width:140px;object-fit:contain;background:#fff;border-radius:8px;padding:6px">`;
-        return s.website_url?`<a href="${s.website_url}" target="_blank" rel="noopener">${img}</a>`:img;
-      }).join('')}
+  sec.innerHTML=`<div class="sponsors-strip">
+      <div class="sponsors-label">بدعم من</div>
+      <div class="sponsors-row">
+        ${data.map(s=>{
+          const img=`<img src="${s.logo_url}" alt="${s.name}" title="${s.name}" loading="lazy">`;
+          return `<div class="sponsor-chip">${s.website_url?`<a href="${s.website_url}" target="_blank" rel="noopener">${img}</a>`:img}</div>`;
+        }).join('')}
+      </div>
     </div>`;
 }
 </script>
