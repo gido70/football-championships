@@ -231,6 +231,30 @@ img{display:block}
 .t-btn.primary{background:linear-gradient(135deg,#c9a84c,#a8842e);color:#0d1117;border:none}
 .t-btn:active{opacity:.8}
 
+/* ===== بانر مميّز عند وجود بطولة واحدة فقط ===== */
+.t-grid-single{display:block}
+.t-featured{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+  position:relative;overflow:hidden;
+  min-height:70vh;border-radius:24px;
+  padding:40px 24px;gap:10px;
+  box-shadow:0 20px 50px rgba(0,0,0,.4);
+  text-decoration:none;
+  animation:fadeSlideUp .6s ease-out both;
+}
+.t-featured::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.08),transparent 60%)}
+.t-featured-logo{width:120px;height:120px;object-fit:contain;z-index:1;filter:drop-shadow(0 8px 24px rgba(0,0,0,.5));margin-bottom:6px}
+.t-featured-logo-ph{font-size:64px;z-index:1;opacity:.8;margin-bottom:6px}
+.t-featured-name{font-size:26px;font-weight:900;color:#fff;z-index:1;line-height:1.3}
+.t-featured-season{font-size:20px;font-weight:900;color:#c9a84c;letter-spacing:1px;z-index:1}
+.t-featured-meta{display:flex;gap:8px;z-index:1;margin-top:6px;flex-wrap:wrap;justify-content:center}
+.t-featured-cta{
+  z-index:1;margin-top:18px;background:#c9a84c;color:#0b1f3a;
+  font-weight:900;font-size:15px;padding:14px 36px;border-radius:14px;
+}
+.t-featured:active{transform:scale(.98)}
+@media(min-width:640px){.t-featured{min-height:50vh}}
+
 /* ===== Skeleton ===== */
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .skel{
@@ -301,7 +325,7 @@ img{display:block}
 </div>
 
 <div class="section" style="padding-top:28px;padding-bottom:40px">
-  <div class="sec-title">🏆 البطولات</div>
+  <div class="sec-title" id="tGridTitle">🏆 البطولات</div>
   <div class="t-grid" id="tGrid">
     <div class="skel"></div><div class="skel"></div>
   </div>
@@ -385,6 +409,33 @@ async function loadTournaments(){
   const pc={active:'pill-active',completed:'pill-completed'};
   const tp={groups_knockout:'مجموعات + إقصاء',league:'دوري',knockout:'إقصاء'};
   const base='https://gido70.github.io/football-championships/';
+
+  // حالة خاصة: بطولة واحدة فقط ظاهرة للعموم — بانر مميّز كبير بدل بطاقة صغيرة في شبكة
+  if(data.length===1){
+    const t=data[0];
+    const bg=t.bg_image_url
+      ?`linear-gradient(rgba(6,14,26,.55),rgba(6,14,26,.85)),url('${t.bg_image_url}') center/cover`
+      :`linear-gradient(160deg,${t.primary_color||'#0b1f3a'} 0%,${t.secondary_color||'#1a3a6e'} 100%)`;
+    const s=t.season_label||'';
+    const logo=t.cup_logo_url||t.logo_url||(s.includes('2027')?base+'logo_cup_2027.png':s.includes('2026')?base+'logo_cup_2026.png':'');
+    document.getElementById('tGridTitle').style.display='none';
+    g.className='t-grid t-grid-single';
+    g.innerHTML=`<a class="t-featured" href="tournament.html?id=${t.id}" style="background:${bg}">
+      ${t.status!=='draft'?`<span class="t-pill ${pc[t.status]||''}" style="position:absolute">${sl[t.status]||''}</span>`:''}
+      ${logo?`<img class="t-featured-logo" src="${logo}" alt="" onerror="this.style.display='none'">`:'<span class="t-featured-logo-ph">🏆</span>'}
+      <div class="t-featured-name">${t.name_ar||t.name||''}</div>
+      <div class="t-featured-season">${s}</div>
+      <div class="t-featured-meta">
+        <span class="t-chip">👥 ${t.team_count||0} فريق</span>
+        <span class="t-chip">📋 ${tp[t.tournament_type]||'—'}</span>
+      </div>
+      <div class="t-featured-cta">دخول البطولة ←</div>
+    </a>`;
+    return;
+  }
+
+  g.className='t-grid';
+  document.getElementById('tGridTitle').style.display='';
   g.innerHTML=data.map((t,i)=>{
     const bg=t.bg_image_url
       ?`linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url('${t.bg_image_url}') center/cover`
