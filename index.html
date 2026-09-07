@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#060e1a">
+<meta name="theme-color" content="#10254a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,14 +19,14 @@
 html{scroll-behavior:smooth}
 body{
   font-family:"Tajawal",sans-serif;
-  background:#060e1a;
+  background:#10254a;
   color:#e8f0ff;
   direction:rtl;
   min-height:100vh;
   overscroll-behavior-y:contain;
   background-image:
-    radial-gradient(ellipse 900px 500px at 80% 0%, rgba(74,130,255,.18), transparent 65%),
-    radial-gradient(ellipse 700px 400px at 10% 70%, rgba(201,168,76,.10), transparent 60%);
+    radial-gradient(ellipse 900px 500px at 80% 0%, rgba(90,150,255,.30), transparent 65%),
+    radial-gradient(ellipse 700px 400px at 10% 70%, rgba(201,168,76,.16), transparent 60%);
 }
 a{text-decoration:none;color:inherit}
 img{display:block}
@@ -34,7 +34,7 @@ img{display:block}
 /* ===== TOPBAR ===== */
 .topbar{
   position:sticky;top:0;z-index:100;
-  background:rgba(6,14,26,.85);
+  background:rgba(16,37,74,.85);
   backdrop-filter:blur(16px);
   -webkit-backdrop-filter:blur(16px);
   border-bottom:1px solid rgba(255,255,255,.07);
@@ -60,7 +60,7 @@ img{display:block}
 }
 .hero::before{
   content:"";position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(0,0,0,.3),transparent 60%,rgba(6,14,26,.8));
+  background:linear-gradient(180deg,rgba(0,0,0,.15),transparent 60%,rgba(16,37,74,.7));
   z-index:1;
 }
 .hero-bg-art{
@@ -173,7 +173,7 @@ img{display:block}
   gap:16px;margin-bottom:40px;
 }
 .t-card{
-  background:linear-gradient(160deg,#0f1f35,#091624);
+  background:linear-gradient(160deg,#1a3a6e,#132a52);
   border:1px solid rgba(255,255,255,.08);
   border-radius:20px;overflow:hidden;
   cursor:pointer;transition:.25s;
@@ -194,7 +194,7 @@ img{display:block}
 }
 .t-banner::after{
   content:"";position:absolute;inset:0;
-  background:linear-gradient(0deg,rgba(9,22,36,.8),transparent 50%);
+  background:linear-gradient(0deg,rgba(9,22,36,.65),transparent 50%),radial-gradient(circle at 50% 0%,rgba(255,255,255,.15),transparent 65%);
 }
 .t-logo{width:72px;height:72px;object-fit:contain;z-index:1;filter:drop-shadow(0 4px 14px rgba(0,0,0,.5))}
 .t-logo-ph{font-size:40px;z-index:1;opacity:.7}
@@ -242,7 +242,7 @@ img{display:block}
   text-decoration:none;
   animation:fadeSlideUp .6s ease-out both;
 }
-.t-featured::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.08),transparent 60%)}
+.t-featured::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(255,255,255,.22),transparent 65%),linear-gradient(rgba(255,255,255,.05),transparent 40%)}
 .t-featured-logo{width:120px;height:120px;object-fit:contain;z-index:1;filter:drop-shadow(0 8px 24px rgba(0,0,0,.5));margin-bottom:6px}
 .t-featured-logo-ph{font-size:64px;z-index:1;opacity:.8;margin-bottom:6px}
 .t-featured-name{font-size:26px;font-weight:900;color:#fff;z-index:1;line-height:1.3}
@@ -259,7 +259,7 @@ img{display:block}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .skel{
   border-radius:20px;height:200px;
-  background:linear-gradient(90deg,#0f1f35 25%,#152234 50%,#0f1f35 75%);
+  background:linear-gradient(90deg,#1a3a6e 25%,#22437a 50%,#1a3a6e 75%);
   background-size:200% 100%;
   animation:shimmer 1.5s infinite;
 }
@@ -415,7 +415,7 @@ async function loadTournaments(){
     const t=data[0];
     const bg=t.bg_image_url
       ?`linear-gradient(rgba(6,14,26,.55),rgba(6,14,26,.85)),url('${t.bg_image_url}') center/cover`
-      :`linear-gradient(160deg,${t.primary_color||'#0b1f3a'} 0%,${t.secondary_color||'#1a3a6e'} 100%)`;
+      :`linear-gradient(160deg,${t.primary_color||'#1e4a8a'} 0%,${t.secondary_color||'#2c5aa0'} 100%)`;
     const s=t.season_label||'';
     const logo=t.cup_logo_url||t.logo_url||(s.includes('2027')?base+'logo_cup_2027.png':s.includes('2026')?base+'logo_cup_2026.png':'');
     document.getElementById('tGridTitle').style.display='none';
@@ -439,7 +439,7 @@ async function loadTournaments(){
   g.innerHTML=data.map((t,i)=>{
     const bg=t.bg_image_url
       ?`linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url('${t.bg_image_url}') center/cover`
-      :`linear-gradient(135deg,${t.primary_color||'#0b1f3a'} 0%,${t.secondary_color||'#1a3a6e'} 100%)`;
+      :`linear-gradient(135deg,${t.primary_color||'#1e4a8a'} 0%,${t.secondary_color||'#2c5aa0'} 100%)`;
     const s=t.season_label||'';
     const logo=t.cup_logo_url||t.logo_url||(s.includes('2027')?base+'logo_cup_2027.png':s.includes('2026')?base+'logo_cup_2026.png':'');
     return `<a class="t-card" href="tournament.html?id=${t.id}" style="animation-delay:${i*0.08}s">
