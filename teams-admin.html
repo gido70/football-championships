@@ -64,7 +64,7 @@
 <div class="status" id="bulkLogosMsg"></div>
 </section>
 <section class="panel" style="margin-top:24px;background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.25)"><h3>📊 استيراد أسماء الفرق دفعة واحدة من إكسل</h3><p style="color:#9fb0c9;font-size:13px;margin-bottom:10px">ملف بعمود واحد "اسم الفريق" — يُنشئ كل الفرق دفعة واحدة في البطولة المختارة فوق، وكل فريق يحصل تلقائيًا على رابط إدخال خاص به (من صفحة "مراجعة بيانات الفرق")</p><div class="actions"><button class="btn secondary" id="dlTeamsTemplateBtn">⬇️ تحميل نموذج فارغ</button><button class="btn" id="importTeamsBtn" style="background:#58a6ff">📊 استيراد ملف إكسل</button><input type="file" id="teamsXlsxInput" accept=".xlsx,.xls,.csv" style="display:none"></div><div class="status" id="teamsImportMsg"></div></section>
-<section class="panel" style="margin-top:24px;"><h3>إضافة فريق</h3><div class="form-grid"><div class="field"><label>اسم الفريق</label><input id="teamName" placeholder="اسم الفريق"></div><div class="field"><label>اللون الأساسي</label><input id="teamColor1" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>اللون الثانوي (اختياري — لمزيج كقميصين)</label><input id="teamColor2" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>الاسم المختصر (اختياري)</label><input id="shortName" placeholder="مثال: MJD"></div></div><div class="actions"><button class="btn" id="addBtn">إضافة فريق</button><button class="btn secondary" id="reloadBtn">تحديث القائمة</button></div><div class="counter" id="counter"></div><div class="status" id="statusBox"></div></section>
+<section class="panel" style="margin-top:24px;"><h3>إضافة فريق</h3><div class="form-grid"><div class="field"><label>اسم الفريق</label><input id="teamName" placeholder="اسم الفريق"></div><div class="field"><label>اللون الأساسي</label><input id="teamColor1" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>اللون الثانوي (اختياري — لمزيج كقميصين)</label><input id="teamColor2" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>الاسم المختصر (اختياري)</label><input id="shortName" placeholder="مثال: MJD"></div></div><div class="actions"><button class="btn" id="addBtn">إضافة فريق</button><button class="btn secondary" id="reloadBtn">تحديث القائمة</button><button class="btn secondary" id="printNamesBtn">📋 تحميل أسماء فرق هذه البطولة (لتسمية الشعارات)</button></div><div class="counter" id="counter"></div><div class="status" id="statusBox"></div></section>
 <section class="panel" style="margin-top:24px;"><h3>الفرق الحالية</h3><div class="table-wrap"><table><thead><tr><th>اسم الفريق</th><th>الألوان</th><th>كود الفريق</th><th>إجراء</th></tr></thead><tbody id="teamsRows"></tbody></table></div></section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="supabase-config.js"></script>
@@ -219,6 +219,21 @@ async function removeTeam(id){if(!confirm('هل تريد حذف الفريق؟')
 function updateCounter(current){document.getElementById('counter').textContent=`المطلوب: ${maxTeams} | الحالي: ${current} | المتبقي: ${Math.max(maxTeams-current,0)}`}
 document.getElementById('addBtn').onclick=async()=>{const name=document.getElementById('teamName').value.trim();const short_name=document.getElementById('shortName').value.trim()||null;const primary_color=document.getElementById('teamColor1').value;const secondary_color=document.getElementById('teamColor2').value;if(!selectedTournament){setMsg('اختر بطولة أولًا','warn');return}if(!name){setMsg('أدخل اسم الفريق','warn');return}const {data:existing}=await client.from('teams').select('id').eq('tournament_id',selectedTournament);if((existing||[]).length>=maxTeams){setMsg('تم الوصول إلى الحد الأقصى للفرق','warn');return}const {error}=await client.from('teams').insert([{name, name_ar: name, short_name,primary_color,secondary_color,access_code:genCode(),tournament_id:selectedTournament,is_active:true}]);if(error){setMsg('فشل الإضافة: '+error.message,'err');return}document.getElementById('teamName').value='';document.getElementById('shortName').value='';setMsg('تمت إضافة الفريق بنجاح','ok');loadTeams()};
 document.getElementById('reloadBtn').onclick=loadTeams;loadTournaments();
+
+document.getElementById('printNamesBtn').onclick=async()=>{
+  if(!selectedTournament){alert('اختر بطولة أولًا');return}
+  const {data,error}=await client.from('teams').select('name').eq('tournament_id',selectedTournament).order('name',{ascending:true});
+  if(error){alert('فشل الجلب: '+error.message);return}
+  if(!data||!data.length){alert('لا توجد فرق في هذه البطولة بعد');return}
+  const t=tournaments.find(x=>x.id===selectedTournament);
+  const tourName=t?t.name:'البطولة';
+  const content=data.map(r=>r.name).join('\n');
+  const blob=new Blob([content],{type:'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`اسماء فرق ${tourName}.txt`;a.click();
+  URL.revokeObjectURL(url);
+};
 
 document.getElementById('bulkLogosBtn').onclick=()=>document.getElementById('bulkLogosInput').click();
 document.getElementById('bulkLogosInput').onchange=async function(){
