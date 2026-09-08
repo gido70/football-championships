@@ -612,7 +612,7 @@ async function loadFeed(){
         <div style="position:relative;width:100%;height:170px;background:#000">${iframeTag}</div>
         <div class="feed-post-body">
           <div class="feed-post-ic">▶️ يوتيوب</div>
-          <div class="feed-post-title">فيديو قناة البطولة</div.limit(4);
+          <div class="feed-post-title">فيديو قناة البطولة</div
         </div>
       </div>`;
     }else if(chUploads){
@@ -829,7 +829,7 @@ function showLocalNotification(title,body){
 
 async function loadLiveMatch(){
   const sec=document.getElementById('liveMatchSection');
-  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(2);
+  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(4);
   if(!matches?.length){sec.innerHTML='';return;}
 
   matches.forEach(m=>{
