@@ -171,6 +171,20 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .ticker-sep{margin:0 18px;color:#9C9A8D}
 .ticker-toggle{flex-shrink:0;background:transparent;border:none;color:#79786A;font-size:16px;cursor:pointer;padding:0 14px;height:100%}
 .ticker-toggle:hover{color:#2C2C2A}
+.ticker-sponsor-logo{height:24px;width:auto;max-width:60px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-left:8px}
+.ticker-sponsor-item{display:inline-flex;align-items:center;font-weight:800}
+.follow-wrap{max-width:900px;margin:0 auto;padding:4px 16px 14px}
+.follow-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.follow-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:22px 14px;border-radius:16px;color:#fff;text-decoration:none;font-weight:900;font-size:15px;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.18);transition:transform .18s ease,box-shadow .18s ease}
+.follow-tile:hover{transform:translateY(-4px) scale(1.04);box-shadow:0 10px 22px rgba(0,0,0,.24)}
+.follow-tile .follow-ic{font-size:30px;line-height:1}
+.follow-tile.ig{background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)}
+.follow-tile.yt{background:linear-gradient(135deg,#ff2e2e,#b30000)}
+@media (max-width:480px){
+  .follow-grid{grid-template-columns:1fr 1fr}
+  .follow-tile{padding:18px 10px;font-size:13px}
+  .follow-tile .follow-ic{font-size:26px}
+}
 .tabs{max-width:1200px;margin:0 auto;display:flex;padding:0 20px}
 @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,59,59,.6)}70%{box-shadow:0 0 0 8px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
 .tab{padding:14px 20px;font-size:15px;font-weight:700;cursor:pointer;border:none;background:transparent;color:#79786A;transition:.2s;border-bottom:3px solid transparent;white-space:nowrap;font-family:"Tajawal",sans-serif}
@@ -354,6 +368,8 @@ img[src=""], img:not([src]) { display:none !important; }
 
 <div id="newsBanner"></div>
 
+<div id="sponsorsTicker"></div>
+
 <div class="qlinks-wrap">
   <div class="qlinks-grid">
     <button class="qlink" style="background:#2d6a4f" onclick="jumpToTab('st')"><span class="qlink-ic">🏅</span> الترتيب</button>
@@ -368,10 +384,11 @@ img[src=""], img:not([src]) { display:none !important; }
   </div>
 </div>
 
+<div id="followSection"></div>
+
 <div id="motdSection"></div>
 
 <div id="feedSection"></div>
-<div id="sponsorsSection"></div>
 
 <div class="feed-lightbox" id="feedLightbox" onclick="if(event.target===this)closeFeedLightbox()">
   <div class="feed-lightbox-top"><button class="feed-lightbox-close" onclick="closeFeedLightbox()">→ الرجوع للمنصة</button></div>
@@ -1146,24 +1163,42 @@ async function loadTeams(){
 }
 
 sb.channel('rt-t').on('postgres_changes',{event:'*',schema:'public',table:'matches',filter:`tournament_id=eq.${TID}`},()=>{loadMatches();loadStandings();}).subscribe();
-if(TID){loadTournament();loadStandings();loadMatches();loadScorers();loadTeams();loadSponsors();}
+if(TID){loadTournament();loadStandings();loadMatches();loadScorers();loadTeams();loadSponsors();loadFollowSection();}
 if(REQUESTED_TAB)setTimeout(()=>jumpToTab(REQUESTED_TAB),400);
 else document.getElementById('heroTitle').textContent='لم يتم تحديد البطولة — ارجع للصفحة الرئيسية';
 
 async function loadSponsors(){
-  const sec=document.getElementById('sponsorsSection');
-  if(!TID){sec.innerHTML='';return;}
-  const {data}=await sb.from('sponsors').select('*').eq('tournament_id',TID).order('created_at',{ascending:true});
-  if(!data||!data.length){sec.innerHTML='';return;}
-  sec.innerHTML=`<div class="sponsors-strip">
-      <div class="sponsors-label">بدعم من</div>
-      <div class="sponsors-row">
-        ${data.map(s=>{
-          const img=`<img src="${s.logo_url}" alt="${s.name}" title="${s.name}" loading="lazy">`;
-          return `<div class="sponsor-chip">${s.website_url?`<a href="${s.website_url}" target="_blank" rel="noopener">${img}</a>`:img}</div>`;
-        }).join('')}
+  const wrap=document.getElementById('sponsorsTicker');
+  if(!TID){wrap.innerHTML='';return;}
+  const {data}=await sb.from('sponsors').select('*').eq('tournament_id',TID).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
+  if(!data||!data.length){wrap.innerHTML='';return;}
+
+  const color='#a5813a';
+  const sep='<span class="ticker-sep">رعاة البطولة</span>';
+  const items=data.map(s=>`<span class="ticker-item ticker-sponsor-item"><img class="ticker-sponsor-logo" src="${s.logo_url}" alt="${s.name}" loading="lazy">${s.name}</span>`);
+
+  wrap.innerHTML=`<div class="ticker-wrap"><div class="ticker-line" style="border-color:${color}55">
+      <div class="ticker-label" style="background:${color}22;color:${color};border-color:${color}55">🤝 رعاة البطولة</div>
+      <div class="ticker-viewport">
+        <div class="ticker-track" id="sponsorsTrack">${items.join(sep)}</div>
       </div>
-    </div>`;
+      <button class="ticker-toggle" id="sponsorsToggle" onclick="toggleTicker('sponsors')">⏸</button>
+    </div></div>`;
+
+  const track=document.getElementById('sponsorsTrack');
+  if(track)startTickerAnim('sponsors',track);
+}
+
+async function loadFollowSection(){
+  const sec=document.getElementById('followSection');
+  if(!TID){sec.innerHTML='';return;}
+  const {data}=await sb.from('tournaments').select('instagram_url,youtube_url').eq('id',TID).single();
+  const ig=data?.instagram_url, yt=data?.youtube_url;
+  if(!ig&&!yt){sec.innerHTML='';return;}
+  sec.innerHTML=`<div class="follow-wrap"><div class="follow-grid">
+      ${ig?`<a class="follow-tile ig" href="${ig}" target="_blank" rel="noopener"><span class="follow-ic">📷</span>إنستغرام البطولة</a>`:''}
+      ${yt?`<a class="follow-tile yt" href="${yt}" target="_blank" rel="noopener"><span class="follow-ic">▶️</span>يوتيوب البطولة</a>`:''}
+    </div></div>`;
 }
 </script>
 
