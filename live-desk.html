@@ -264,6 +264,7 @@ async function approveExternalResult(mid,home,away,rowId){
 }
 
 function normalizePerson(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')}
+function personTokens(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g,' ').trim().split(/\s+/).filter(Boolean).map(normalizePerson)}
 function externalEventType(e){
   const type=String(e.type||'').toLowerCase(),detail=String(e.detail||'').toLowerCase();
   if(type==='goal'&&!detail.includes('missed'))return 'goal';
@@ -273,8 +274,17 @@ function externalEventType(e){
   return null;
 }
 function findExternalPlayer(players,name){
-  const api=normalizePerson(name);if(!api)return null;
-  return players.find(p=>[p.full_name_ar,p.name].filter(Boolean).some(n=>{const local=normalizePerson(n);return local===api||(local.length>5&&api.length>5&&(local.includes(api)||api.includes(local))) }))||null;
+  const api=normalizePerson(name),apiTokens=personTokens(name);if(!api)return null;
+  const exact=players.find(p=>[p.full_name_ar,p.name].filter(Boolean).some(n=>{const local=normalizePerson(n);return local===api||(local.length>5&&api.length>5&&(local.includes(api)||api.includes(local))) }));if(exact)return exact;
+  const ranked=players.map(p=>{
+    let score=0;
+    for(const n of [p.full_name_ar,p.name].filter(Boolean))for(const a of apiTokens)for(const b of personTokens(n)){
+      if(a.length>=4&&a===b)score+=30;
+      else if(a.length>=6&&b.length>=6&&a.slice(0,4)===b.slice(0,4))score+=12;
+    }
+    return {p,score};
+  }).sort((a,b)=>b.score-a.score);
+  return ranked[0]?.score>=12&&ranked[0].score>Number(ranked[1]?.score||0)?ranked[0].p:null;
 }
 async function reviewExternalEvents(fixtureId){
   const ctx=externalFixtureCache.get(String(fixtureId)),box=$('apievents-'+fixtureId);if(!ctx||!box)return;
