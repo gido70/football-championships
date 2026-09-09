@@ -28,8 +28,9 @@
 .controls select,.controls input,.form input,.form select,.motm select{color:#fff;color-scheme:dark}
 input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(2);opacity:1;cursor:pointer}
 .api-panel{display:none;background:linear-gradient(135deg,rgba(32,201,151,.14),rgba(78,161,255,.08));border:1px solid rgba(52,211,153,.38);border-radius:18px;padding:13px;margin-bottom:14px}.api-panel.show{display:block}.api-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}.api-head h3{margin:0;font-size:15px}.api-note{font-size:11px;color:#fff}.api-list{display:grid;gap:7px}.api-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;background:rgba(7,20,38,.75);border:1px solid var(--line);border-radius:12px;padding:9px}.api-teams{font-weight:800;font-size:13px}.api-teams small{display:block;color:#fff;font-weight:400;margin-top:3px}.api-score{font-size:20px;font-weight:900;white-space:nowrap}.api-row .btn{min-width:95px}.api-unmatched{opacity:.72}.btn-api{background:#0f766e}.btn-approve{background:#166534}
+.api-block{background:rgba(7,20,38,.45);border-radius:12px}.api-actions{display:flex;gap:6px}.api-events{display:none;padding:0 9px 9px}.api-events.show{display:block}.api-event{display:grid;grid-template-columns:42px 24px 1fr auto;gap:7px;align-items:center;border-top:1px solid var(--line);padding:7px 2px;font-size:12px}.api-event small{color:#fff}.api-event .ok{color:#6ee7b7}.api-event .warn{color:#ffd54f}.api-event .skip{color:#ff9b9b}.api-events-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0}.api-events-head .btn{font-size:12px;padding:8px}
 @media(min-width:851px){.controls{grid-template-columns:1.4fr 1fr auto auto auto}}
-@media(max-width:520px){.api-panel{padding:9px;border-radius:14px}.api-head{align-items:flex-start}.api-row{grid-template-columns:1fr auto;padding:8px;gap:7px}.api-row .btn{grid-column:1/-1;width:100%;min-height:44px}.api-score{font-size:18px}.api-teams{font-size:12px}}
+@media(max-width:520px){.api-panel{padding:9px;border-radius:14px}.api-head{align-items:flex-start}.api-row{grid-template-columns:1fr auto;padding:8px;gap:7px}.api-row .api-actions{grid-column:1/-1}.api-row .btn{width:100%;min-height:44px}.api-score{font-size:18px}.api-teams{font-size:12px}.api-event{grid-template-columns:36px 20px 1fr}.api-event span:last-child{grid-column:1/-1}.api-events-head{align-items:flex-start}}
 </style>
 </head>
 <body>
@@ -71,7 +72,7 @@ const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_K
 const $=id=>document.getElementById(id);
 const typeIcon={goal:'⚽',yellow_card:'🟨',red_card:'🟥'};
 const typeLabel={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء'};
-let matches=[],eventCtx=null,playerCache=new Map(),refreshTimer=null,msgTimer=null,wakeLock=null;
+let matches=[],eventCtx=null,playerCache=new Map(),externalFixtureCache=new Map(),externalReviewCache=new Map(),refreshTimer=null,msgTimer=null,wakeLock=null;
 
 function localDate(){const d=new Date(),z=d.getTimezoneOffset()*60000;return new Date(d-z).toISOString().slice(0,10)}
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -240,12 +241,14 @@ async function fetchExternalResults(){
     const rows=(data?.fixtures||[]).map(f=>({fixture:f,local:findLocalFixture(f,date)})).filter(x=>x.local);
     $('apiNote').textContent=`معاينة فقط — ${rows.length} مباراة مطابقة${data?.remaining!=null?' — المتبقي اليوم: '+data.remaining+' طلب':''}.`;
     if(!rows.length){$('apiResults').innerHTML='<div class="empty">لم نجد تطابقًا آمنًا بين أسماء مباريات هذا التاريخ والمصدر. لم يتم تغيير أي بيانات.</div>';return}
+    externalFixtureCache.clear();externalReviewCache.clear();
     $('apiResults').innerHTML=rows.map(({fixture:f,local:m})=>{
+      externalFixtureCache.set(String(f.external_id),{fixture:f,local:m});
       const hasHome=f.goals?.home!==null&&f.goals?.home!==undefined;
       const hasAway=f.goals?.away!==null&&f.goals?.away!==undefined;
       const ready=hasHome&&hasAway&&Number.isFinite(Number(f.goals.home))&&Number.isFinite(Number(f.goals.away));
       const same=Number(m.home_score||0)===Number(f.goals?.home)&&Number(m.away_score||0)===Number(f.goals?.away);
-      return `<div class="api-row" id="apirow-${f.external_id}"><div class="api-teams">${esc(f.home?.name)} × ${esc(f.away?.name)}<small>مطابقة: ${esc(teamName(m,'home'))} × ${esc(teamName(m,'away'))} — ${esc(f.status_text||f.status||'')}</small></div><div class="api-score">${f.goals?.home??'—'} — ${f.goals?.away??'—'}</div><button class="btn btn-approve" ${!ready||same?'disabled':''} onclick="approveExternalResult('${m.id}',${Number(f.goals?.home)||0},${Number(f.goals?.away)||0},'${f.external_id}')">${same?'مطابقة بالفعل':ready?'اعتماد':'لا نتيجة'}</button></div>`;
+      return `<div class="api-block"><div class="api-row" id="apirow-${f.external_id}"><div class="api-teams">${esc(f.home?.name)} × ${esc(f.away?.name)}<small>مطابقة: ${esc(teamName(m,'home'))} × ${esc(teamName(m,'away'))} — ${esc(f.status_text||f.status||'')}</small></div><div class="api-score">${f.goals?.home??'—'} — ${f.goals?.away??'—'}</div><div class="api-actions"><button class="btn btn-approve" ${!ready||same?'disabled':''} onclick="approveExternalResult('${m.id}',${Number(f.goals?.home)||0},${Number(f.goals?.away)||0},'${f.external_id}')">${same?'مطابقة بالفعل':ready?'اعتماد النتيجة':'لا نتيجة'}</button><button class="btn" onclick="reviewExternalEvents('${f.external_id}')">مراجعة الأحداث</button></div></div><div class="api-events" id="apievents-${f.external_id}"></div></div>`;
     }).join('');
   }catch(e){$('apiResults').innerHTML='<div class="empty">تعذر جلب النتائج: '+esc(e.message||'خطأ غير معروف')+'</div>';toast('تعذر جلب نتائج المصدر','err')}
   finally{btn.disabled=false;btn.textContent='🌐 جلب النتائج'}
@@ -260,8 +263,66 @@ async function approveExternalResult(mid,home,away,rowId){
   toast('تم اعتماد النتيجة فقط');
 }
 
+function normalizePerson(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')}
+function externalEventType(e){
+  const type=String(e.type||'').toLowerCase(),detail=String(e.detail||'').toLowerCase();
+  if(type==='goal'&&!detail.includes('missed'))return 'goal';
+  if(type==='card'&&detail.includes('second yellow'))return 'red_card';
+  if(type==='card'&&detail.includes('red'))return 'red_card';
+  if(type==='card'&&detail.includes('yellow'))return 'yellow_card';
+  return null;
+}
+function findExternalPlayer(players,name){
+  const api=normalizePerson(name);if(!api)return null;
+  return players.find(p=>[p.full_name_ar,p.name].filter(Boolean).some(n=>{const local=normalizePerson(n);return local===api||(local.length>5&&api.length>5&&(local.includes(api)||api.includes(local))) }))||null;
+}
+async function reviewExternalEvents(fixtureId){
+  const ctx=externalFixtureCache.get(String(fixtureId)),box=$('apievents-'+fixtureId);if(!ctx||!box)return;
+  box.classList.add('show');box.innerHTML='<div class="empty">جاري جلب الأهداف والبطاقات…</div>';
+  try{
+    const {data,error}=await sb.functions.invoke('football-results',{body:{fixture_id:Number(fixtureId)}});
+    if(error)throw error;if(data?.error)throw new Error(data.error);
+    const {fixture:f,local:m}=ctx,used=new Set(),ops=[],shown=[];
+    for(const e of (data?.events||[])){
+      const eventType=externalEventType(e);if(!eventType)continue;
+      const side=String(e.team?.id)===String(f.home?.id)?'home':String(e.team?.id)===String(f.away?.id)?'away':null;if(!side)continue;
+      const teamId=side==='home'?m.home_team_id:m.away_team_id;
+      const player=findExternalPlayer(await playersFor(teamId),e.player?.name),minute=Math.max(0,Number(e.minute)||0);
+      if(!player){shown.push({minute,icon:typeIcon[eventType],name:e.player?.name||'لاعب غير معروف',state:'skip',text:'اللاعب غير مطابق — راجعه يدويًا'});continue}
+      let existing=(m.events||[]).filter(x=>!used.has(x.id)&&x.team_id===teamId&&x.player_id===player.id&&x.event_type===eventType).sort((a,b)=>Math.abs(Number(a.minute||0)-minute)-Math.abs(Number(b.minute||0)-minute))[0];
+      if(!existing)existing=(m.events||[]).find(x=>!used.has(x.id)&&x.team_id===teamId&&x.player_id===player.id&&Math.abs(Number(x.minute||0)-minute)<=2);
+      if(existing){
+        used.add(existing.id);
+        if(Number(existing.minute)===minute&&existing.event_type===eventType){shown.push({minute,icon:typeIcon[eventType],name:player.full_name_ar||player.name,state:'ok',text:'مطابق بالفعل'});continue}
+        ops.push({kind:'update',id:existing.id,payload:{minute,event_type:eventType}});
+        shown.push({minute,icon:typeIcon[eventType],name:player.full_name_ar||player.name,state:'warn',text:'سيُصحح النوع أو الدقيقة'});
+      }else{
+        ops.push({kind:'insert',payload:{match_id:m.id,tournament_id:m.tournament_id,team_id:teamId,player_id:player.id,event_type:eventType,minute}});
+        shown.push({minute,icon:typeIcon[eventType],name:player.full_name_ar||player.name,state:'warn',text:'حدث ناقص — سيُضاف'});
+      }
+    }
+    for(const local of (m.events||[]).filter(x=>!used.has(x.id))){shown.push({minute:Number(local.minute||0),icon:typeIcon[local.event_type]||'•',name:local.player?.full_name_ar||local.player?.name||'بدون لاعب',state:'skip',text:'موجود محليًا وغير موجود في بيانات المصدر — لن يُحذف'})}
+    externalReviewCache.set(String(fixtureId),{mid:m.id,ops});
+    const skipped=shown.filter(x=>x.state==='skip').length;
+    const list=shown.length?shown.map(x=>`<div class="api-event"><b>${x.minute}'</b><span>${x.icon}</span><span>${esc(x.name)}</span><small class="${x.state}">${esc(x.text)}</small></div>`).join(''):'<div class="empty">لم يُرجع المصدر أهدافًا أو بطاقات لهذه المباراة.</div>';
+    box.innerHTML=`<div class="api-events-head"><b>مراجعة الأحداث (${shown.length})</b><button class="btn btn-approve" ${ops.length?'':'disabled'} onclick="approveExternalEvents('${fixtureId}')">اعتماد ${ops.length} تعديل/إضافة</button></div>${list}${skipped?`<div class="api-note">لم تُعتمد ${skipped} حالة لأن اسم اللاعب لم يتطابق مع قائمة فريقك.</div>`:''}`;
+  }catch(e){box.innerHTML='<div class="empty">تعذر جلب الأحداث: '+esc(e.message||'خطأ غير معروف')+'</div>';toast('تعذر جلب أحداث المباراة','err')}
+}
+async function approveExternalEvents(fixtureId){
+  const review=externalReviewCache.get(String(fixtureId));if(!review||!review.ops.length)return;
+  if(!confirm(`اعتماد ${review.ops.length} تعديلًا أو إضافة للأهداف والبطاقات؟\nلن تُحذف أحداثك ولن تتغير النتيجة.`))return;
+  try{
+    const inserts=review.ops.filter(x=>x.kind==='insert').map(x=>x.payload);
+    for(const op of review.ops.filter(x=>x.kind==='update')){const {error}=await sb.from('match_events').update(op.payload).eq('id',op.id);if(error)throw error}
+    if(inserts.length){const {error}=await sb.from('match_events').insert(inserts);if(error)throw error}
+    await loadMatches(true);externalReviewCache.delete(String(fixtureId));
+    const box=$('apievents-'+fixtureId);if(box)box.innerHTML='<div class="api-events-head"><b class="ok">تم اعتماد الأحداث المطابقة بنجاح.</b></div>';
+    toast('تم اعتماد الأحداث دون تغيير النتيجة');
+  }catch(e){toast('تعذر اعتماد بعض الأحداث: '+e.message,'err')}
+}
+
 $('tournament').addEventListener('change',()=>loadMatches());$('matchDate').addEventListener('change',()=>loadMatches());$('statusFilter').addEventListener('change',()=>loadMatches());$('refreshBtn').addEventListener('click',()=>loadMatches());$('fetchResultsBtn').addEventListener('click',fetchExternalResults);$('closeApiBtn').addEventListener('click',()=>$('apiPanel').classList.remove('show'));$('wakeBtn').addEventListener('click',toggleWakeLock);$('playerSearch').addEventListener('input',()=>eventCtx&&renderPlayerOptions(eventCtx.players,$('playerSelect').value));$('cancelEvent').addEventListener('click',closeEvent);$('eventModal').addEventListener('click',e=>{if(e.target===$('eventModal'))closeEvent()});$('saveEvent').addEventListener('click',saveEvent);
-window.openEvent=openEvent;window.editEvent=editEvent;window.changeScore=changeScore;window.setStatus=setStatus;window.toggleMotm=toggleMotm;window.loadMotmPlayers=loadMotmPlayers;window.saveMotm=saveMotm;window.approveExternalResult=approveExternalResult;
+window.openEvent=openEvent;window.editEvent=editEvent;window.changeScore=changeScore;window.setStatus=setStatus;window.toggleMotm=toggleMotm;window.loadMotmPlayers=loadMotmPlayers;window.saveMotm=saveMotm;window.approveExternalResult=approveExternalResult;window.reviewExternalEvents=reviewExternalEvents;window.approveExternalEvents=approveExternalEvents;
 init();
 </script>
 </body>
