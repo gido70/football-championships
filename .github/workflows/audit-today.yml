@@ -1,0 +1,14 @@
+name: Audit today's fixtures
+on:
+  push:
+    paths:
+      - scripts/audit-today.mjs
+      - .github/workflows/audit-today.yml
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - run: node scripts/audit-today.mjs
