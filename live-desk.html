@@ -27,6 +27,9 @@
 .badge.scheduled{color:#fff;background:rgba(78,161,255,.32);border:1px solid rgba(145,197,255,.55)}
 .controls select,.controls input,.form input,.form select,.motm select{color:#fff;color-scheme:dark}
 input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(2);opacity:1;cursor:pointer}
+.api-panel{display:none;background:linear-gradient(135deg,rgba(32,201,151,.14),rgba(78,161,255,.08));border:1px solid rgba(52,211,153,.38);border-radius:18px;padding:13px;margin-bottom:14px}.api-panel.show{display:block}.api-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}.api-head h3{margin:0;font-size:15px}.api-note{font-size:11px;color:#fff}.api-list{display:grid;gap:7px}.api-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;background:rgba(7,20,38,.75);border:1px solid var(--line);border-radius:12px;padding:9px}.api-teams{font-weight:800;font-size:13px}.api-teams small{display:block;color:#fff;font-weight:400;margin-top:3px}.api-score{font-size:20px;font-weight:900;white-space:nowrap}.api-row .btn{min-width:95px}.api-unmatched{opacity:.72}.btn-api{background:#0f766e}.btn-approve{background:#166534}
+@media(min-width:851px){.controls{grid-template-columns:1.4fr 1fr auto auto auto}}
+@media(max-width:520px){.api-panel{padding:9px;border-radius:14px}.api-head{align-items:flex-start}.api-row{grid-template-columns:1fr auto;padding:8px;gap:7px}.api-row .btn{grid-column:1/-1;width:100%;min-height:44px}.api-score{font-size:18px}.api-teams{font-size:12px}}
 </style>
 </head>
 <body>
@@ -37,7 +40,12 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightnes
     <input id="matchDate" type="date" aria-label="تاريخ المباريات">
     <select id="statusFilter" aria-label="الحالة"><option value="today">مباريات اليوم</option><option value="active">المباشرة والمجدولة</option><option value="all">كل الحالات</option></select>
     <button class="btn" id="refreshBtn">↻ تنشيط</button>
+    <button class="btn btn-api" id="fetchResultsBtn">🌐 جلب النتائج</button>
   </div>
+  <section class="api-panel" id="apiPanel">
+    <div class="api-head"><div><h3>نتائج API‑Football — معاينة فقط</h3><div class="api-note" id="apiNote">لن تتغير أي مباراة قبل الضغط على «اعتماد».</div></div><button class="btn" id="closeApiBtn">إغلاق</button></div>
+    <div class="api-list" id="apiResults"></div>
+  </section>
   <div class="summary" id="summary"></div>
   <div class="grid" id="matches"><div class="empty">جاري تحميل المباريات…</div></div>
   <div class="footnote">تتحدث الشاشة تلقائيًا كل 30 ثانية. استخدم «إدارة المباراة الكاملة» فقط للتشكيلة وVAR والتقارير.</div>
@@ -211,8 +219,49 @@ function toggleMotm(mid){$('motm-'+mid).classList.toggle('show')}
 async function loadMotmPlayers(mid){const teamId=$('motmteam-'+mid).value,s=$('motmplayer-'+mid);if(!teamId){s.innerHTML='<option value="">اختر اللاعب</option>';return}try{const p=await playersFor(teamId);s.innerHTML='<option value="">اختر اللاعب</option>'+p.map(x=>`<option value="${x.id}">${x.number!=null?'#'+x.number+' ':''}${esc(x.full_name_ar||x.name)}</option>`).join('')}catch(e){toast('تعذر تحميل اللاعبين','err')}}
 async function saveMotm(mid){const pid=$('motmplayer-'+mid).value;if(!pid){toast('اختر اللاعب أولًا','err');return}const {error}=await sb.from('matches').update({player_of_match_id:pid}).eq('id',mid);if(error){toast('فشل حفظ نجم المباراة: '+error.message,'err');return}toast('تم حفظ نجم المباراة اختياريًا')}
 
-$('tournament').addEventListener('change',()=>loadMatches());$('matchDate').addEventListener('change',()=>loadMatches());$('statusFilter').addEventListener('change',()=>loadMatches());$('refreshBtn').addEventListener('click',()=>loadMatches());$('wakeBtn').addEventListener('click',toggleWakeLock);$('playerSearch').addEventListener('input',()=>eventCtx&&renderPlayerOptions(eventCtx.players,$('playerSelect').value));$('cancelEvent').addEventListener('click',closeEvent);$('eventModal').addEventListener('click',e=>{if(e.target===$('eventModal'))closeEvent()});$('saveEvent').addEventListener('click',saveEvent);
-window.openEvent=openEvent;window.editEvent=editEvent;window.changeScore=changeScore;window.setStatus=setStatus;window.toggleMotm=toggleMotm;window.loadMotmPlayers=loadMotmPlayers;window.saveMotm=saveMotm;
+function normalizeTeam(v){
+  return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
+    .replace(/\b(fc|cf|sc|afc|club|football|calcio)\b/g,'').replace(/[^a-z0-9\u0600-\u06ff]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي');
+}
+function teamMatches(apiName,team){
+  const api=normalizeTeam(apiName);if(!api)return false;
+  return [team?.name,team?.name_ar].filter(Boolean).some(n=>{const local=normalizeTeam(n);return local===api||(local.length>4&&api.length>4&&(local.includes(api)||api.includes(local)))});
+}
+function findLocalFixture(fixture,date){
+  return matches.find(m=>(!date||m.match_date===date)&&teamMatches(fixture.home?.name,m.ht)&&teamMatches(fixture.away?.name,m.at))||null;
+}
+async function fetchExternalResults(){
+  const date=$('matchDate').value;if(!date){toast('اختر تاريخ المباريات أولًا','err');return}
+  const btn=$('fetchResultsBtn');btn.disabled=true;btn.textContent='⏳ جاري الجلب…';
+  $('apiPanel').classList.add('show');$('apiResults').innerHTML='<div class="empty">جاري الاتصال بالمصدر…</div>';
+  try{
+    const {data,error}=await sb.functions.invoke('football-results',{body:{date}});
+    if(error)throw error;if(data?.error)throw new Error(data.error);
+    const rows=(data?.fixtures||[]).map(f=>({fixture:f,local:findLocalFixture(f,date)})).filter(x=>x.local);
+    $('apiNote').textContent=`معاينة فقط — ${rows.length} مباراة مطابقة${data?.remaining!=null?' — المتبقي اليوم: '+data.remaining+' طلب':''}.`;
+    if(!rows.length){$('apiResults').innerHTML='<div class="empty">لم نجد تطابقًا آمنًا بين أسماء مباريات هذا التاريخ والمصدر. لم يتم تغيير أي بيانات.</div>';return}
+    $('apiResults').innerHTML=rows.map(({fixture:f,local:m})=>{
+      const hasHome=f.goals?.home!==null&&f.goals?.home!==undefined;
+      const hasAway=f.goals?.away!==null&&f.goals?.away!==undefined;
+      const ready=hasHome&&hasAway&&Number.isFinite(Number(f.goals.home))&&Number.isFinite(Number(f.goals.away));
+      const same=Number(m.home_score||0)===Number(f.goals?.home)&&Number(m.away_score||0)===Number(f.goals?.away);
+      return `<div class="api-row" id="apirow-${f.external_id}"><div class="api-teams">${esc(f.home?.name)} × ${esc(f.away?.name)}<small>مطابقة: ${esc(teamName(m,'home'))} × ${esc(teamName(m,'away'))} — ${esc(f.status_text||f.status||'')}</small></div><div class="api-score">${f.goals?.home??'—'} — ${f.goals?.away??'—'}</div><button class="btn btn-approve" ${!ready||same?'disabled':''} onclick="approveExternalResult('${m.id}',${Number(f.goals?.home)||0},${Number(f.goals?.away)||0},'${f.external_id}')">${same?'مطابقة بالفعل':ready?'اعتماد':'لا نتيجة'}</button></div>`;
+    }).join('');
+  }catch(e){$('apiResults').innerHTML='<div class="empty">تعذر جلب النتائج: '+esc(e.message||'خطأ غير معروف')+'</div>';toast('تعذر جلب نتائج المصدر','err')}
+  finally{btn.disabled=false;btn.textContent='🌐 جلب النتائج'}
+}
+async function approveExternalResult(mid,home,away,rowId){
+  const m=matches.find(x=>x.id===mid);if(!m)return;
+  if(!confirm(`اعتماد نتيجة ${teamName(m,'home')} ${home} — ${away} ${teamName(m,'away')}؟\nسيتم تحديث هذين الرقمين فقط.`))return;
+  const {error}=await sb.from('matches').update({home_score:home,away_score:away}).eq('id',mid);
+  if(error){toast('فشل اعتماد النتيجة: '+error.message,'err');return}
+  m.home_score=home;m.away_score=away;render();
+  const row=$('apirow-'+rowId);if(row){const b=row.querySelector('button');b.disabled=true;b.textContent='تم الاعتماد'}
+  toast('تم اعتماد النتيجة فقط');
+}
+
+$('tournament').addEventListener('change',()=>loadMatches());$('matchDate').addEventListener('change',()=>loadMatches());$('statusFilter').addEventListener('change',()=>loadMatches());$('refreshBtn').addEventListener('click',()=>loadMatches());$('fetchResultsBtn').addEventListener('click',fetchExternalResults);$('closeApiBtn').addEventListener('click',()=>$('apiPanel').classList.remove('show'));$('wakeBtn').addEventListener('click',toggleWakeLock);$('playerSearch').addEventListener('input',()=>eventCtx&&renderPlayerOptions(eventCtx.players,$('playerSelect').value));$('cancelEvent').addEventListener('click',closeEvent);$('eventModal').addEventListener('click',e=>{if(e.target===$('eventModal'))closeEvent()});$('saveEvent').addEventListener('click',saveEvent);
+window.openEvent=openEvent;window.editEvent=editEvent;window.changeScore=changeScore;window.setStatus=setStatus;window.toggleMotm=toggleMotm;window.loadMotmPlayers=loadMotmPlayers;window.saveMotm=saveMotm;window.approveExternalResult=approveExternalResult;
 init();
 </script>
 </body>
