@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071426">
+<title>مركز إدارة المباريات الحية</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth-guard.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#071426;--panel:#102846;--panel2:#0b1e35;--line:rgba(255,255,255,.12);--text:#eef5ff;--muted:#aabbd0;--blue:#4ea1ff;--green:#34d399;--red:#ff6b6b;--yellow:#ffd54f;--gold:#c9a84c}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:"Tajawal",sans-serif;background:linear-gradient(145deg,#071426,#12355b);color:var(--text)}button,input,select{font:inherit}.top{position:sticky;top:0;z-index:20;background:rgba(7,20,38,.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:calc(12px + env(safe-area-inset-top,0px)) 14px 12px}.topin{max-width:1400px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}.title h1{font-size:20px;margin:0 0 3px}.title p{font-size:12px;color:var(--muted);margin:0}.top a{color:#fff;text-decoration:none;border:1px solid var(--line);border-radius:12px;padding:9px 12px}.wrap{max-width:1400px;margin:auto;padding:16px 14px 40px}.controls{display:grid;grid-template-columns:1.4fr 1fr auto auto;gap:10px;background:rgba(16,40,70,.92);border:1px solid var(--line);border-radius:18px;padding:13px;margin-bottom:14px}.controls select,.controls input{width:100%;background:#091b30;color:#fff;border:1px solid var(--line);border-radius:12px;padding:11px}.btn{border:1px solid var(--line);border-radius:12px;padding:10px 14px;color:#fff;background:#173b63;cursor:pointer;font-weight:800}.btn:disabled{opacity:.45;cursor:not-allowed}.btn-live{background:#166534}.btn-end{background:#8b1e2d}.btn-goal{background:#087f5b}.btn-yellow{background:#d9a500;color:#17202a}.btn-red{background:#b42333}.summary{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}.pill{background:rgba(255,255,255,.07);border:1px solid var(--line);padding:7px 11px;border-radius:999px;font-size:12px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.match{background:linear-gradient(180deg,rgba(16,40,70,.98),rgba(9,27,48,.98));border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.22)}.match.live{border-color:rgba(255,107,107,.65);box-shadow:0 0 0 1px rgba(255,107,107,.15),0 12px 30px rgba(0,0,0,.25)}.mh{display:flex;justify-content:space-between;gap:10px;padding:11px 13px;border-bottom:1px solid var(--line);font-size:12px;color:var(--muted)}.badge{padding:3px 9px;border-radius:999px;font-weight:800}.badge.live{background:rgba(255,107,107,.15);color:#ff8d8d}.badge.completed{background:rgba(52,211,153,.13);color:#5ce1ad}.badge.scheduled{background:rgba(78,161,255,.13);color:#91c5ff}.score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:15px 12px}.team{text-align:center;min-width:0}.team b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.team small{color:var(--muted)}.num{font-size:30px;font-weight:900;min-width:86px;text-align:center}.scorefix{display:flex;justify-content:center;gap:5px;margin-top:7px}.scorefix button{width:32px;height:30px;padding:0;border-radius:9px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 12px}.side{background:rgba(255,255,255,.035);border:1px solid var(--line);border-radius:13px;padding:8px}.sidehead{font-size:11px;color:var(--muted);margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sidebtns{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:5px}.sidebtns button{padding:8px 4px;font-size:12px}.statusbar{display:flex;gap:7px;flex-wrap:wrap;padding:0 12px 12px}.events{border-top:1px solid var(--line);padding:10px 12px}.events h4{margin:0 0 7px;font-size:12px;color:var(--muted)}.evt{display:grid;grid-template-columns:34px 25px 1fr auto;align-items:center;gap:6px;padding:6px 0;border-top:1px solid rgba(255,255,255,.06);font-size:12px}.evt:first-of-type{border-top:0}.evt button{font-size:11px;padding:5px 8px}.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px 10px}.msg{position:fixed;bottom:16px;right:16px;left:16px;max-width:620px;margin:auto;z-index:40;padding:12px 15px;border-radius:13px;background:#102846;border:1px solid var(--line);box-shadow:0 10px 30px #0008;display:none;text-align:center}.msg.ok{display:block;color:#6ee7b7}.msg.err{display:block;color:#ff8d8d}.modal{position:fixed;inset:0;background:#000a;z-index:30;display:none;align-items:flex-end;justify-content:center}.modal.show{display:flex}.sheet{width:min(620px,100%);background:#102846;border:1px solid var(--line);border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:88vh;overflow:auto}.sheet h3{margin:0 0 14px}.form{display:grid;gap:10px}.form label{font-size:12px;color:var(--muted)}.form input,.form select{width:100%;padding:12px;background:#081a2d;color:#fff;border:1px solid var(--line);border-radius:12px}.formrow{display:grid;grid-template-columns:1fr 1fr;gap:10px}.modal-actions{display:flex;gap:8px;margin-top:5px}.modal-actions .btn{flex:1}.motm{display:none;border-top:1px solid var(--line);padding:10px 12px}.motm.show{display:block}.motmrow{display:grid;grid-template-columns:1fr 1.6fr auto;gap:7px}.motm select{background:#081a2d;color:#fff;border:1px solid var(--line);border-radius:10px;padding:9px}.motm .btn{padding:8px}.footnote{color:var(--muted);font-size:11px;margin-top:14px;text-align:center}
+@media(max-width:850px){.grid{grid-template-columns:1fr}.controls{grid-template-columns:1fr 1fr}.controls .wide{grid-column:1/-1}}
+@media(max-width:520px){.wrap{padding:10px 8px 30px}.top{padding-right:10px;padding-left:10px}.title h1{font-size:17px}.title p{font-size:10.5px}.top a{padding:8px;font-size:12px}.controls{grid-template-columns:1fr 1fr;padding:9px;gap:7px;border-radius:14px}.controls .wide{grid-column:1/-1}.controls select,.controls input,.btn{padding:10px;font-size:13px}.grid{gap:10px}.match{border-radius:16px}.score{padding:12px 7px}.team b{font-size:13px}.num{font-size:27px;min-width:70px}.actions{padding:0 8px 9px;gap:6px}.side{padding:6px}.sidebtns button{font-size:11px}.statusbar{padding:0 8px 9px}.events{padding:8px}.motmrow{grid-template-columns:1fr}.formrow{grid-template-columns:1fr 90px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="topin"><div class="title"><h1>🔴 مركز إدارة المباريات الحية</h1><p>كل مباريات اليوم في شاشة واحدة — أهداف وبطاقات ونتائج فقط</p></div><a href="admin-home.html">← الأدمن</a></div></header>
+<main class="wrap">
+  <div class="controls">
+    <select id="tournament" class="wide" aria-label="البطولة"><option value="">جاري تحميل البطولات…</option></select>
+    <input id="matchDate" type="date" aria-label="تاريخ المباريات">
+    <select id="statusFilter" aria-label="الحالة"><option value="today">مباريات اليوم</option><option value="active">المباشرة والمجدولة</option><option value="all">كل الحالات</option></select>
+    <button class="btn" id="refreshBtn">↻ تنشيط</button>
+  </div>
+  <div class="summary" id="summary"></div>
+  <div class="grid" id="matches"><div class="empty">جاري تحميل المباريات…</div></div>
+  <div class="footnote">تتحدث الشاشة تلقائيًا كل 30 ثانية. استخدم «إدارة المباراة الكاملة» فقط للتشكيلة وVAR والتقارير.</div>
+</main>
+
+<div class="modal" id="eventModal" role="dialog" aria-modal="true">
+  <div class="sheet">
+    <h3 id="eventTitle">تسجيل حدث</h3>
+    <div class="form">
+      <label>ابحث باسم اللاعب أو رقمه</label>
+      <input id="playerSearch" inputmode="search" placeholder="مثال: 7 أو محمد">
+      <label>اللاعب</label>
+      <select id="playerSelect"><option value="">— بدون تحديد لاعب —</option></select>
+      <div class="formrow"><div><label>نوع الحدث</label><select id="eventType"><option value="goal">⚽ هدف</option><option value="yellow_card">🟨 بطاقة صفراء</option><option value="red_card">🟥 بطاقة حمراء</option></select></div><div><label>الدقيقة</label><input id="eventMinute" type="number" min="0" max="130" inputmode="numeric"></div></div>
+      <div class="modal-actions"><button class="btn" id="cancelEvent">إلغاء</button><button class="btn btn-goal" id="saveEvent">حفظ الحدث</button></div>
+    </div>
+  </div>
+</div>
+<div class="msg" id="msg"></div>
+
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const $=id=>document.getElementById(id);
+const typeIcon={goal:'⚽',yellow_card:'🟨',red_card:'🟥'};
+const typeLabel={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء'};
+let matches=[],eventCtx=null,playerCache=new Map(),refreshTimer=null,msgTimer=null;
+
+function localDate(){const d=new Date(),z=d.getTimezoneOffset()*60000;return new Date(d-z).toISOString().slice(0,10)}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function toast(text,kind='ok'){clearTimeout(msgTimer);$('msg').textContent=text;$('msg').className='msg '+kind;msgTimer=setTimeout(()=>$('msg').className='msg',3600)}
+function teamName(m,side){const t=side==='home'?m.ht:m.at;return t?.name_ar||t?.name||(side==='home'?'الفريق الأول':'الفريق الثاني')}
+function statusText(s){return s==='live'?'🔴 مباشر':s==='completed'?'✅ انتهت':'⏳ مجدولة'}
+
+async function init(){
+  $('matchDate').value=localDate();
+  const {data,error}=await sb.from('tournaments').select('id,name,season_label,status').order('created_at',{ascending:false});
+  if(error){toast('تعذر تحميل البطولات: '+error.message,'err');return}
+  const active=(data||[]).find(t=>t.status==='active')||(data||[])[0];
+  $('tournament').innerHTML=(data||[]).map(t=>`<option value="${t.id}">${esc(t.name)}${t.season_label?' — '+esc(t.season_label):''}</option>`).join('');
+  if(active)$('tournament').value=active.id;
+  await loadMatches();
+  refreshTimer=setInterval(()=>{if(!eventCtx)loadMatches(true)},30000);
+}
+
+async function loadMatches(silent=false){
+  const tid=$('tournament').value;if(!tid)return;
+  if(!silent)$('matches').innerHTML='<div class="empty">جاري تحميل المباريات…</div>';
+  let q=sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(id,name,name_ar),at:teams!matches_away_team_id_fkey(id,name,name_ar)').eq('tournament_id',tid).order('match_date').order('match_time').order('match_no');
+  const filter=$('statusFilter').value,date=$('matchDate').value;
+  if(filter==='today'&&date)q=q.eq('match_date',date);
+  if(filter==='active')q=q.in('status',['scheduled','live']);
+  const {data,error}=await q;
+  if(error){toast('فشل تحميل المباريات: '+error.message,'err');return}
+  matches=data||[];
+  await loadEvents();render();
+}
+
+async function loadEvents(){
+  const ids=matches.map(m=>m.id);if(!ids.length)return;
+  const {data}=await sb.from('match_events').select('id,match_id,team_id,player_id,event_type,event_subtype,minute,player:players!player_id(name,full_name_ar,number)').in('match_id',ids).in('event_type',['goal','yellow_card','red_card']).order('minute',{ascending:false});
+  const by={};(data||[]).forEach(e=>(by[e.match_id]??=[]).push(e));matches.forEach(m=>m.events=by[m.id]||[]);
+}
+
+function render(){
+  const live=matches.filter(m=>m.status==='live').length,done=matches.filter(m=>m.status==='completed').length;
+  $('summary').innerHTML=`<span class="pill">${matches.length} مباراة</span><span class="pill">🔴 ${live} مباشرة</span><span class="pill">✅ ${done} منتهية</span>`;
+  if(!matches.length){$('matches').innerHTML='<div class="empty">لا توجد مباريات في هذا التاريخ أو الفلتر.</div>';return}
+  $('matches').innerHTML=matches.map(matchCard).join('');
+}
+
+function matchCard(m){
+  const h=teamName(m,'home'),a=teamName(m,'away'),events=(m.events||[]).slice(0,8);
+  return `<article class="match ${m.status==='live'?'live':''}">
+    <div class="mh"><span>${esc(m.round_name||'')} ${m.match_no?'— مباراة '+m.match_no:''}</span><span class="badge ${m.status||'scheduled'}">${statusText(m.status)}</span></div>
+    <div class="score">
+      <div class="team"><b>${esc(h)}</b><div class="scorefix"><button class="btn" onclick="changeScore('${m.id}','home',1)">+</button><button class="btn" onclick="changeScore('${m.id}','home',-1)">−</button></div></div>
+      <div class="num">${m.home_score??0} — ${m.away_score??0}</div>
+      <div class="team"><b>${esc(a)}</b><div class="scorefix"><button class="btn" onclick="changeScore('${m.id}','away',1)">+</button><button class="btn" onclick="changeScore('${m.id}','away',-1)">−</button></div></div>
+    </div>
+    <div class="actions">
+      ${sideActions(m,'home',h)}${sideActions(m,'away',a)}
+    </div>
+    <div class="statusbar">
+      ${m.status!=='live'?`<button class="btn btn-live" onclick="setStatus('${m.id}','live')">▶ بدء</button>`:''}
+      ${m.status!=='completed'?`<button class="btn btn-end" onclick="setStatus('${m.id}','completed')">⏹ إنهاء</button>`:''}
+      <button class="btn" onclick="toggleMotm('${m.id}')">⭐ نجم اختياري</button>
+      <a class="btn" href="match-admin.html?match=${m.id}" style="text-decoration:none">إدارة كاملة</a>
+    </div>
+    <div class="motm" id="motm-${m.id}"><div class="motmrow"><select id="motmteam-${m.id}" onchange="loadMotmPlayers('${m.id}')"><option value="">اختر الفريق</option><option value="${m.home_team_id}">${esc(h)}</option><option value="${m.away_team_id}">${esc(a)}</option></select><select id="motmplayer-${m.id}"><option value="">اختر اللاعب</option></select><button class="btn" onclick="saveMotm('${m.id}')">حفظ</button></div></div>
+    <div class="events"><h4>آخر الأحداث</h4>${events.length?events.map(e=>`<div class="evt"><b>${e.minute??0}'</b><span>${typeIcon[e.event_type]||'•'}</span><span>${esc(e.player?.full_name_ar||e.player?.name||'بدون لاعب')} — ${esc(typeLabel[e.event_type]||e.event_type)}</span><button class="btn" onclick="editEvent('${m.id}','${e.id}')">✏️</button></div>`).join(''):'<div style="font-size:12px;color:var(--muted)">لا توجد أحداث</div>'}</div>
+  </article>`;
+}
+
+function sideActions(m,side,name){return `<div class="side"><div class="sidehead">${esc(name)}</div><div class="sidebtns"><button class="btn btn-goal" onclick="openEvent('${m.id}','${side}','goal')">⚽ هدف</button><button class="btn btn-yellow" onclick="openEvent('${m.id}','${side}','yellow_card')">🟨</button><button class="btn btn-red" onclick="openEvent('${m.id}','${side}','red_card')">🟥</button></div></div>`}
+
+async function playersFor(teamId){
+  if(playerCache.has(teamId))return playerCache.get(teamId);
+  const {data,error}=await sb.from('players').select('id,name,full_name_ar,number').eq('team_id',teamId).or('submission_status.eq.approved,submission_status.is.null').order('number');
+  if(error)throw error;playerCache.set(teamId,data||[]);return data||[];
+}
+
+async function openEvent(mid,side,type,eventId=null){
+  const m=matches.find(x=>x.id===mid);if(!m)return;
+  const teamId=side==='home'?m.home_team_id:m.away_team_id,players=await playersFor(teamId);
+  const existing=eventId?(m.events||[]).find(e=>e.id===eventId):null;
+  eventCtx={mid,side,teamId,eventId,players,existing};
+  $('eventTitle').textContent=(eventId?'تعديل ':'تسجيل ')+(typeLabel[type]||type)+' — '+teamName(m,side);
+  $('eventType').value=existing?.event_type||type;
+  $('eventMinute').value=existing?.minute??currentMinute(m);
+  $('playerSearch').value='';renderPlayerOptions(players,existing?.player_id||'');
+  $('eventModal').classList.add('show');
+}
+
+function currentMinute(m){
+  if(m.status!=='live'||!m.phase_started_at)return m.current_minute||0;
+  const offset=(m.current_half===2?(m.half_length_minutes||45):0);return Math.max(1,offset+Math.floor((Date.now()-new Date(m.phase_started_at).getTime())/60000)+1);
+}
+function normalize(v){return String(v||'').toLowerCase().replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').trim()}
+function renderPlayerOptions(players,selected=''){
+  const q=normalize($('playerSearch').value);let list=players;
+  if(q)list=players.filter(p=>normalize(p.full_name_ar||p.name).includes(q)||String(p.number??'').includes(q));
+  $('playerSelect').innerHTML='<option value="">— بدون تحديد لاعب —</option>'+list.map(p=>`<option value="${p.id}" ${p.id===selected?'selected':''}>${p.number!=null?'#'+p.number+' ':''}${esc(p.full_name_ar||p.name)}</option>`).join('');
+}
+
+async function saveEvent(){
+  if(!eventCtx)return;const m=matches.find(x=>x.id===eventCtx.mid),type=$('eventType').value,minute=Math.max(0,parseInt($('eventMinute').value)||0),playerId=$('playerSelect').value||null;
+  $('saveEvent').disabled=true;
+  try{
+    if(eventCtx.eventId){
+      const old=eventCtx.existing;
+      const {error}=await sb.from('match_events').update({player_id:playerId,event_type:type,minute}).eq('id',eventCtx.eventId);if(error)throw error;
+      if(old.event_type!==type){if(old.event_type==='goal')await adjustScore(m,eventCtx.side,-1,false);if(type==='goal')await adjustScore(m,eventCtx.side,1,false)}
+      toast('تم تعديل الحدث دون تغيير وقته إلا إذا عدلته');
+    }else{
+      const {data:created,error}=await sb.from('match_events').insert({match_id:m.id,tournament_id:m.tournament_id,team_id:eventCtx.teamId,player_id:playerId,event_type:type,minute}).select('id').single();if(error)throw error;
+      if(type==='goal'){try{await adjustScore(m,eventCtx.side,1,false)}catch(e){await sb.from('match_events').delete().eq('id',created.id);throw e}}
+      toast('تم تسجيل '+typeLabel[type]);
+    }
+    closeEvent();await loadMatches(true);
+  }catch(e){toast('فشل الحفظ: '+e.message,'err')}finally{$('saveEvent').disabled=false}
+}
+
+async function editEvent(mid,eid){
+  const m=matches.find(x=>x.id===mid),e=(m?.events||[]).find(x=>x.id===eid);if(!m||!e)return;
+  const side=e.team_id===m.home_team_id?'home':'away';await openEvent(mid,side,e.event_type,eid);
+}
+function closeEvent(){eventCtx=null;$('eventModal').classList.remove('show')}
+
+async function adjustScore(m,side,delta,rerender=true){
+  const field=side==='home'?'home_score':'away_score',value=Math.max(0,Number(m[field]||0)+delta);
+  const {error}=await sb.from('matches').update({[field]:value}).eq('id',m.id);if(error)throw error;m[field]=value;if(rerender)render();
+}
+async function changeScore(mid,side,delta){const m=matches.find(x=>x.id===mid);if(!m)return;try{await adjustScore(m,side,delta);toast('تم تصحيح النتيجة')}catch(e){toast('فشل تحديث النتيجة: '+e.message,'err')}}
+async function setStatus(mid,status){const m=matches.find(x=>x.id===mid);if(!m)return;const payload={status};if(status==='live'){payload.live_started_at=new Date().toISOString();payload.phase_started_at=new Date().toISOString();payload.current_half=m.current_half||1;payload.is_paused=false}if(status==='completed')payload.live_status='none';const {error}=await sb.from('matches').update(payload).eq('id',mid);if(error){toast('فشل تحديث الحالة: '+error.message,'err');return}Object.assign(m,payload);render();toast(status==='live'?'بدأت المباراة':'انتهت المباراة')}
+
+function toggleMotm(mid){$('motm-'+mid).classList.toggle('show')}
+async function loadMotmPlayers(mid){const teamId=$('motmteam-'+mid).value,s=$('motmplayer-'+mid);if(!teamId){s.innerHTML='<option value="">اختر اللاعب</option>';return}try{const p=await playersFor(teamId);s.innerHTML='<option value="">اختر اللاعب</option>'+p.map(x=>`<option value="${x.id}">${x.number!=null?'#'+x.number+' ':''}${esc(x.full_name_ar||x.name)}</option>`).join('')}catch(e){toast('تعذر تحميل اللاعبين','err')}}
+async function saveMotm(mid){const pid=$('motmplayer-'+mid).value;if(!pid){toast('اختر اللاعب أولًا','err');return}const {error}=await sb.from('matches').update({player_of_match_id:pid}).eq('id',mid);if(error){toast('فشل حفظ نجم المباراة: '+error.message,'err');return}toast('تم حفظ نجم المباراة اختياريًا')}
+
+$('tournament').addEventListener('change',()=>loadMatches());$('matchDate').addEventListener('change',()=>loadMatches());$('statusFilter').addEventListener('change',()=>loadMatches());$('refreshBtn').addEventListener('click',()=>loadMatches());$('playerSearch').addEventListener('input',()=>eventCtx&&renderPlayerOptions(eventCtx.players,$('playerSelect').value));$('cancelEvent').addEventListener('click',closeEvent);$('eventModal').addEventListener('click',e=>{if(e.target===$('eventModal'))closeEvent()});$('saveEvent').addEventListener('click',saveEvent);
+window.openEvent=openEvent;window.editEvent=editEvent;window.changeScore=changeScore;window.setStatus=setStatus;window.toggleMotm=toggleMotm;window.loadMotmPlayers=loadMotmPlayers;window.saveMotm=saveMotm;
+init();
+</script>
+</body>
+</html>
