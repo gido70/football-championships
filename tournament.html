@@ -715,7 +715,7 @@ async function loadMOTD(){
   const lastDate=completedDates?.[0]?.match_date;
   if(!lastDate){sec.innerHTML='';return;}
 
-  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(id,name,name_ar),at:teams!matches_away_team_id_fkey(id,name,name_ar)').eq('tournament_id',TID).eq('match_date',lastDate).eq('status','completed').order('match_no').limit(4);
+  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(id,name,name_ar),at:teams!matches_away_team_id_fkey(id,name,name_ar)').eq('tournament_id',TID).eq('match_date',lastDate).eq('status','completed').order('match_no').limit(50);
   if(!matches?.length){sec.innerHTML='';return;}
 
   const motmIds=matches.map(m=>m.player_of_match_id).filter(Boolean);
