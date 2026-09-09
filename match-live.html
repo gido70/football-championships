@@ -330,6 +330,8 @@ function getSessionKey(){
 }
 
 let voteLoaded=false;
+let voteTeamFilter='all';
+let voteSearch='';
 async function loadVote(){
   if(!cur){document.getElementById('voteWrap').innerHTML='<div class="vote-done">اختر مباراة أولاً لتصويت على نجمها</div>';return;}
   if(voteLoaded)return;
@@ -346,13 +348,21 @@ async function renderVote(){
   const MID=cur.id;
   const sk=getSessionKey();
 
-  // اجلب اللاعبين من الفريقين
-  const {data:lineups,error:lineupError}=await sb.from('match_lineups').select('player:players(id,name,full_name_ar,number,jersey_photo_url,team_id)').eq('match_id',MID).eq('is_starting',true);
-  if(lineupError)throw lineupError;
-  const players=(lineups||[]).map(l=>l.player).filter(Boolean);
+  // التشكيلة ترفع ترتيب المشاركين، لكنها ليست شرطاً للتصويت. عند غيابها
+  // نعرض قائمة الفريقين مع مرشح فريق وبحث حتى لا تظهر عشرات الأسماء دفعة واحدة.
+  const [{data:lineups},{data:squad,error:squadError}]=await Promise.all([
+    sb.from('match_lineups').select('player_id,is_starting').eq('match_id',MID),
+    sb.from('players').select('id,name,full_name_ar,number,jersey_photo_url,team_id').in('team_id',[cur.home_team_id,cur.away_team_id])
+  ]);
+  if(squadError)throw squadError;
+  const participantIds=new Set((lineups||[]).map(l=>l.player_id).filter(Boolean));
+  const players=(squad||[]).slice().sort((a,b)=>
+    (participantIds.has(b.id)?1:0)-(participantIds.has(a.id)?1:0)||
+    (Number(a.number)||999)-(Number(b.number)||999)
+  );
 
   if(!players.length){
-    wrap.innerHTML='<div class="vote-wrap"><div class="vote-title">⭐ صوّت على نجم المباراة</div><div class="vote-done">لم تُحفظ التشكيلة الأساسية بعد — اطلب من المشرف حفظها أولًا</div></div>';
+    wrap.innerHTML='<div class="vote-wrap"><div class="vote-title">⭐ صوّت على نجم المباراة</div><div class="vote-done">لا توجد أسماء لاعبين مسجلة للفريقين</div></div>';
     return;
   }
 
@@ -367,7 +377,9 @@ async function renderVote(){
   function initials(n){return(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
   function teamColorOf(teamId){return teamId===cur.home_team_id?cur.ht?.primary_color:(teamId===cur.away_team_id?cur.at?.primary_color:null);}
 
-  const cards=players.map(p=>{
+  const q=voteSearch.trim().toLowerCase();
+  const visiblePlayers=players.filter(p=>(voteTeamFilter==='all'||p.team_id===voteTeamFilter)&&(!q||`${p.full_name_ar||''} ${p.name||''} ${p.number||''}`.toLowerCase().includes(q)));
+  const cards=visiblePlayers.map(p=>{
     const cnt=countMap[p.id]||0;
     const pct=total?Math.round(cnt/total*100):0;
     const isMyVote=myVote===p.id;
@@ -377,22 +389,39 @@ async function renderVote(){
       ${p.jersey_photo_url?`<img class="vote-av" src="${p.jersey_photo_url}">`:`<div class="vote-av" style="overflow:hidden;padding:0">${genAvatarSvg(tColor,null,p.number)}</div>`}
       <div class="vote-info">
         <div class="vote-name">${p.full_name_ar||p.name}${isMyVote?' ✓':''}</div>
-        <div class="vote-team">${p.team_id===cur.home_team_id?(cur.ht?.name_ar||cur.ht?.name||'الفريق الأول'):(cur.at?.name_ar||cur.at?.name||'الفريق الثاني')} ${isWinner?'· 🏆 المتصدر الآن':''}</div>
+        <div class="vote-team">${p.team_id===cur.home_team_id?(cur.ht?.name_ar||cur.ht?.name||'الفريق الأول'):(cur.at?.name_ar||cur.at?.name||'الفريق الثاني')} ${participantIds.has(p.id)?'· ضمن قائمة المباراة':''} ${isWinner?'· 🏆 المتصدر الآن':''}</div>
       </div>
       <div class="vote-pct">${myVote?pct+'%':''}</div>
       <div class="vote-bar-bg"></div>
       <div class="vote-bar-fill" style="width:${myVote?pct:0}%"></div>
     </div>`;
-  }).join('');
+  }).join('')||'<div class="vote-done">لا يوجد لاعب مطابق للبحث</div>';
+
+  const hName=cur.ht?.name_ar||cur.ht?.name||'الفريق الأول';
+  const aName=cur.at?.name_ar||cur.at?.name||'الفريق الثاني';
 
   wrap.innerHTML=`<div class="vote-wrap">
     <div class="vote-title">⭐ صوّت على نجم المباراة</div>
     <div class="vote-sub">${myVote?'شكرًا — صوّتك سُجِّل. النتائج الآن:':'اختر اللاعب الأبرز في رأيك — صوت واحد فقط'}</div>
+    <div class="vote-sub">اختر لاعبًا شارك في المباراة. لاعبو قائمة المباراة يظهرون أولًا إن كانت محفوظة.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0">
+      <select onchange="setVoteTeam(this.value)" style="padding:11px;border:1px solid #ddd;border-radius:10px;background:#fff">
+        <option value="all" ${voteTeamFilter==='all'?'selected':''}>الفريقان</option>
+        <option value="${cur.home_team_id}" ${voteTeamFilter===cur.home_team_id?'selected':''}>${hName}</option>
+        <option value="${cur.away_team_id}" ${voteTeamFilter===cur.away_team_id?'selected':''}>${aName}</option>
+      </select>
+      <input value="${escapeHtmlPn(voteSearch)}" onchange="setVoteSearch(this.value)" placeholder="اكتب الاسم ثم اضغط إدخال" style="padding:11px;border:1px solid #ddd;border-radius:10px;min-width:0">
+    </div>
     <div class="vote-grid">${cards}</div>
     <div class="vote-total">${total?'إجمالي الأصوات: '+total+' صوت':'لا توجد أصوات بعد — كن أول المصوّتين'}</div>
   </div>`;
   requestAnimationFrame(()=>wrap.scrollIntoView({behavior:'smooth',block:'start'}));
 }
+
+function setVoteTeam(value){voteTeamFilter=value;renderVote();}
+function setVoteSearch(value){voteSearch=value;renderVote();}
+window.setVoteTeam=setVoteTeam;
+window.setVoteSearch=setVoteSearch;
 
 async function castVote(playerId,matchId){
   const sk=getSessionKey();
@@ -402,7 +431,12 @@ async function castVote(playerId,matchId){
     player_id:playerId,
     session_key:sk
   },{onConflict:'match_id,session_key'});
-  if(!error){voteLoaded=false;await renderVote();}
+  if(error){
+    console.error(error);
+    document.getElementById('voteWrap').insertAdjacentHTML('afterbegin','<div class="vote-wrap"><div class="vote-sub" style="color:#c9454d">تعذر حفظ التصويت — راجع تهيئة قاعدة البيانات</div></div>');
+    return;
+  }
+  voteLoaded=false;await renderVote();
 }
 window.castVote=castVote;
 
@@ -412,7 +446,8 @@ async function loadPredict(){
   if(!cur){document.getElementById('predictWrap').innerHTML='<div class="pred-wrap"><div class="empty"><span>🎯</span><p>اختر مباراة للتوقع</p></div></div>';return;}
   if(predictLoaded)return;
   predictLoaded=true;
-  await renderPredict();
+  document.getElementById('predictWrap').innerHTML='<div class="pred-wrap"><div class="pred-title">🎯 توقّع النتيجة</div><div class="pred-done">جاري تحميل التوقعات...</div></div>';
+  try{await renderPredict();}catch(e){console.error(e);predictLoaded=false;document.getElementById('predictWrap').innerHTML='<div class="pred-wrap"><div class="pred-title">🎯 توقّع النتيجة</div><div class="pred-done" style="color:#c9454d">تعذر تشغيل التوقعات — يجب تهيئة جدول التوقعات في قاعدة البيانات</div></div>';}
 }
 
 function getPlayerName(){return localStorage.getItem('wc_player_name')||'';}
@@ -436,7 +471,8 @@ async function renderPredict(){
     return;
   }
 
-  const {data:preds}=await sb.from('match_predictions').select('home_score_pred,away_score_pred,session_key,player_name,created_at').eq('match_id',MID);
+  const {data:preds,error:predError}=await sb.from('match_predictions').select('home_score_pred,away_score_pred,session_key,player_name,created_at').eq('match_id',MID);
+  if(predError)throw predError;
   const myPred=(preds||[]).find(p=>p.session_key===sk);
   const total=(preds||[]).length;
 
@@ -559,7 +595,12 @@ async function submitPredict(matchId){
     session_key:sk,
     player_name:getPlayerName()
   },{onConflict:'match_id,session_key'});
-  if(!error){predictLoaded=false;await renderPredict();}
+  if(error){
+    console.error(error);
+    document.getElementById('predictWrap').insertAdjacentHTML('afterbegin','<div class="pred-wrap"><div class="pred-done" style="color:#c9454d">تعذر حفظ التوقع — راجع تهيئة قاعدة البيانات</div></div>');
+    return;
+  }
+  predictLoaded=false;await renderPredict();
 }
 window.submitPredict=submitPredict;
 
@@ -586,13 +627,14 @@ async function loadReact(){
         ()=>renderReact())
       .subscribe();
   }
-  await renderReact();
+  try{await renderReact();}catch(e){console.error(e);reactLoaded=false;document.getElementById('reactWrap').innerHTML='<div class="react-wrap"><div class="react-title">⚡ تفاعل مع المباراة</div><div class="react-sub" style="color:#c9454d">تعذر تشغيل التفاعل — يجب تهيئة جدول التفاعلات في قاعدة البيانات</div></div>';}
 }
 
 async function renderReact(){
   const MID=cur?.id;
   if(!MID)return;
-  const {data}=await sb.from('match_reactions').select('reaction').eq('match_id',MID);
+  const {data,error}=await sb.from('match_reactions').select('reaction').eq('match_id',MID);
+  if(error)throw error;
   const total=(data||[]).length;
   const counts={fire:0,wow:0,clap:0,sad:0};
   (data||[]).forEach(r=>counts[r.reaction]=(counts[r.reaction]||0)+1);
@@ -632,11 +674,17 @@ async function sendReact(type,btn){
   setTimeout(()=>{
     btn.querySelector('.react-ic').style.transform='';
   },300);
-  await sb.from('match_reactions').insert({
+  const {error}=await sb.from('match_reactions').insert({
     match_id:cur.id,
     tournament_id:cur.tournament_id,
     reaction:type
   });
+  if(error){
+    console.error(error);
+    btn.classList.remove('fired');
+    document.getElementById('reactWrap').insertAdjacentHTML('afterbegin','<div class="react-wrap"><div class="react-sub" style="color:#c9454d">تعذر حفظ التفاعل — راجع تهيئة قاعدة البيانات</div></div>');
+    return;
+  }
   // تحديث العداد فوراً بدون انتظار Realtime
   const cnt=btn.querySelector('.react-cnt');
   cnt.textContent=parseInt(cnt.textContent||0)+1;
