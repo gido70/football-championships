@@ -222,10 +222,10 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .nc{color:#79786A;font-size:14px}
 .gd-p{color:#3fb950}.gd-n{color:#f85149}
 /* MATCHES */
-.m-group{margin-bottom:20px}
-.m-round{font-size:12px;font-weight:700;color:#79786A;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
-.m-card{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:14px;padding:14px 16px 16px;margin-bottom:10px;transition:.2s}
-.m-card:hover{border-color:#c9a84c;background:#EDEAE0}
+.m-group{margin-bottom:22px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.m-round{grid-column:1/-1;font-size:13px;font-weight:900;color:#315896;letter-spacing:.2px;margin:2px 0 0;padding:0 4px}
+.m-card{background:linear-gradient(155deg,#FFFFFF,#F8FAFD);border:1px solid #D8E1EE;border-top:3px solid #315896;border-radius:16px;padding:13px 16px 15px;min-height:166px;transition:.2s;box-shadow:0 4px 0 rgba(16,38,74,.08),0 9px 20px rgba(16,38,74,.06);text-decoration:none;color:inherit}
+.m-card:hover{border-color:#D3A52B;transform:translateY(-2px);box-shadow:0 5px 0 rgba(139,96,67,.13),0 12px 24px rgba(16,38,74,.1)}
 
 .live-pulse{display:inline-block;width:7px;height:7px;border-radius:50%;background:#f85149;animation:live-blink 1s infinite;vertical-align:middle;margin-left:4px}
 @keyframes live-blink{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(248,81,73,.4)}70%{opacity:.8;box-shadow:0 0 0 5px rgba(248,81,73,0)}}
@@ -240,11 +240,16 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .mt{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#2C2C2A;text-align:center;min-width:0}
 .mt-badge{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#FFFFFF;overflow:hidden}
 .mt-badge img{width:100%;height:100%;object-fit:contain;border-radius:50%}
-.mt-name{max-width:90px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
-.mt-score{font-size:26px;font-weight:900;color:#2C2C2A;margin-top:2px}
+.mt-name{max-width:150px;min-height:34px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.35;color:#10264A;font-size:14px;font-weight:900}
+.mt-score{font-size:27px;font-weight:900;color:#10264A;margin-top:0}
 .ms{text-align:center;display:flex;flex-direction:column;align-items:center;padding-top:6px;justify-content:flex-start}
 .ms-sep{color:#C7C3B4;font-size:20px;font-weight:700;margin-top:2px}
 .ms-sub{font-size:11px;font-weight:700;color:#79786A;margin-top:38px}
+@media(max-width:720px){
+  .m-group{grid-template-columns:1fr;gap:10px}
+  .m-card{min-height:158px;padding:12px 13px 14px}
+  .mt-name{max-width:125px;font-size:13.5px}
+}
 /* SCORERS */
 .sc-item{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:10px;padding:9px 12px;margin-bottom:7px;display:flex;align-items:center;gap:9px;transition:.2s}
 .sc-item:hover{background:#EDEAE0}
@@ -1052,10 +1057,16 @@ async function loadStandings(){
 async function loadMatches(){
   // جلب المباريات مستقلة عن علاقات الفرق يمنع ظهور «لا توجد مباريات» عند تعطل علاقة FK.
   const {data:matches,error:matchesError}=await sb.from('matches').select('*').eq('tournament_id',TID).order('match_no');
-  const {data:teams}=await sb.from('teams').select('id,name,name_ar,primary_color,color_primary,logo_url').eq('tournament_id',TID);
   countUpTo('hM',matches?.length||0);
   if(matchesError){document.getElementById('maWrap').innerHTML='<div class="empty"><span>⚠️</span><p>تعذر تحميل الجدول مؤقتًا — أعد المحاولة</p></div>';return;}
   if(!matches||!matches.length){document.getElementById('maWrap').innerHTML='<div class="empty"><span>📅</span><p>لا توجد مباريات بعد</p></div>';return;}
+
+  // اجلب الفرق المرتبطة فعليًا بالمباريات. بعض البطولات القديمة تشارك سجلات فرق
+  // لا يحمل صفّها tournament_id الحالي، وكان الشرط السابق يخفي الاسم والشعار.
+  const teamIds=[...new Set(matches.flatMap(m=>[m.home_team_id,m.away_team_id]).filter(Boolean))];
+  const {data:teams}=teamIds.length
+    ? await sb.from('teams').select('id,name,name_ar,primary_color,color_primary,secondary_color,logo_url').in('id',teamIds)
+    : {data:[]};
   
   // خريطة الفرق
   const tm={};
