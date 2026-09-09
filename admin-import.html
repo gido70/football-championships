@@ -617,10 +617,35 @@ async function startImport() {
     'لاعب بديل': 'player_sub', 'لاعب مستبدل': 'player_replaced',
   };
 
-  let playersDone = 0;
+  // جلب اللاعبين الموجودين مسبقاً في هذه الفرق لمنع التكرار (بالاسم داخل نفس الفريق)
+  const teamIds = [...new Set(Object.values(teamIdMap).filter(Boolean))];
+  const existingKey = new Set();
+  if (teamIds.length) {
+    const { data: existingPlayers, error: exErr } = await sb.from('players')
+      .select('team_id,name,full_name_ar').in('team_id', teamIds);
+    if (exErr) { log(`تحذير: تعذّر التحقق من اللاعبين الموجودين مسبقاً (${exErr.message}) — سيتابع الاستيراد دون فحص تكرار`, 'warn'); }
+    else {
+      (existingPlayers || []).forEach(p => {
+        const nm = (p.full_name_ar || p.name || '').trim().toLowerCase();
+        if (nm) existingKey.add(p.team_id + '|' + nm);
+      });
+    }
+  }
+
+  let playersDone = 0, playersSkipped = 0;
+  const toInsert = allData.filter(r => {
+    const tid = teamIdMap[r.team] || null;
+    const nm = (r.name || '').trim().toLowerCase();
+    const key = tid + '|' + nm;
+    if (tid && nm && existingKey.has(key)) { playersSkipped++; return false; }
+    if (tid && nm) existingKey.add(key); // منع تكرار داخل نفس الملف أيضاً
+    return true;
+  });
+  if (playersSkipped) log(`⏭️ تخطّي ${playersSkipped} لاعب موجود مسبقاً بنفس الاسم والفريق (لا تكرار)`, 'warn');
+
   const batchSize = 50;
-  for (let i = 0; i < allData.length; i += batchSize) {
-    const batch = allData.slice(i, i + batchSize).map(r => ({
+  for (let i = 0; i < toInsert.length; i += batchSize) {
+    const batch = toInsert.slice(i, i + batchSize).map(r => ({
       tournament_id: tournId,
       team_id: teamIdMap[r.team] || null,
       name: r.name,
@@ -639,12 +664,12 @@ async function startImport() {
     }
     setProgress('importBar', 'importText',
       Math.round((teamNames.length + playersDone) / (teamNames.length + allData.length) * 100),
-      `اللاعبون: ${playersDone}/${allData.length}`);
+      `اللاعبون: ${playersDone}/${toInsert.length}`);
   }
 
   setProgress('importBar', 'importText', 100, 'اكتمل الاستيراد!');
-  log(`✅ انتهى! ${teamNames.length} فريق + ${playersDone} لاعب`, 'ok');
-  showToast(`تم استيراد ${teamNames.length} فريق و ${playersDone} لاعب بنجاح`, 'success');
+  log(`✅ انتهى! ${teamNames.length} فريق + ${playersDone} لاعب جديد${playersSkipped ? ' (وتخطّي ' + playersSkipped + ' مكرر)' : ''}`, 'ok');
+  showToast(`تم استيراد ${teamNames.length} فريق و ${playersDone} لاعب${playersSkipped ? ' (وتخطّي ' + playersSkipped + ' مكرر)' : ''}`, 'success');
   document.getElementById('importBtn').disabled = false;
 }
 
