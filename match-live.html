@@ -378,15 +378,15 @@ async function renderVote(){
   function initials(n){return(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
   function teamColorOf(teamId){return teamId===cur.home_team_id?cur.ht?.primary_color:(teamId===cur.away_team_id?cur.at?.primary_color:null);}
 
-  const q=voteSearch.trim().toLowerCase();
-  const visiblePlayers=players.filter(p=>(voteTeamFilter==='all'||p.team_id===voteTeamFilter)&&(!q||`${p.full_name_ar||''} ${p.name||''} ${p.number||''}`.toLowerCase().includes(q)));
+  const visiblePlayers=players.filter(p=>voteTeamFilter==='all'||p.team_id===voteTeamFilter);
   const cards=visiblePlayers.map(p=>{
     const cnt=countMap[p.id]||0;
     const pct=total?Math.round(cnt/total*100):0;
     const isMyVote=myVote===p.id;
     const isWinner=p.id===topId&&total>0;
     const tColor=teamColorOf(p.team_id);
-    return `<div class="vote-card ${isMyVote?'voted':''} ${isWinner?'winner':''}" onclick="castVote('${p.id}','${MID}')">
+    const searchKey=`${p.full_name_ar||''} ${p.name||''} ${p.number||''}`.toLowerCase();
+    return `<div class="vote-card ${isMyVote?'voted':''} ${isWinner?'winner':''}" data-vote-search="${escapeHtmlPn(searchKey)}" onclick="castVote('${p.id}','${MID}')">
       ${p.jersey_photo_url?`<img class="vote-av" src="${p.jersey_photo_url}">`:`<div class="vote-av" style="overflow:hidden;padding:0">${genAvatarSvg(tColor,null,p.number)}</div>`}
       <div class="vote-info">
         <div class="vote-name">${p.full_name_ar||p.name}${isMyVote?' ✓':''}</div>
@@ -396,7 +396,7 @@ async function renderVote(){
       <div class="vote-bar-bg"></div>
       <div class="vote-bar-fill" style="width:${myVote?pct:0}%"></div>
     </div>`;
-  }).join('')||'<div class="vote-done">لا يوجد لاعب مطابق للبحث</div>';
+  }).join('');
 
   const hName=cur.ht?.name_ar||cur.ht?.name||'الفريق الأول';
   const aName=cur.at?.name_ar||cur.at?.name||'الفريق الثاني';
@@ -411,18 +411,32 @@ async function renderVote(){
         <option value="${cur.home_team_id}" ${voteTeamFilter===cur.home_team_id?'selected':''}>${hName}</option>
         <option value="${cur.away_team_id}" ${voteTeamFilter===cur.away_team_id?'selected':''}>${aName}</option>
       </select>
-      <input value="${escapeHtmlPn(voteSearch)}" onchange="setVoteSearch(this.value)" placeholder="اكتب الاسم ثم اضغط إدخال" style="padding:11px;border:1px solid #ddd;border-radius:10px;min-width:0">
+      <input value="${escapeHtmlPn(voteSearch)}" oninput="filterVoteCards(this.value)" placeholder="رقم اللاعب أو اسمه" aria-label="البحث برقم اللاعب أو اسمه" style="padding:11px;border:1px solid #ddd;border-radius:10px;min-width:0">
     </div>
     <div class="vote-grid">${cards}</div>
+    <div class="vote-done" id="voteNoResults" style="display:none">لا يوجد لاعب مطابق للرقم أو الاسم</div>
     <div class="vote-total">${total?'إجمالي الأصوات: '+total+' صوت':'لا توجد أصوات بعد — كن أول المصوّتين'}</div>
   </div>`;
+  filterVoteCards(voteSearch);
   requestAnimationFrame(()=>wrap.scrollIntoView({behavior:'smooth',block:'start'}));
 }
 
 function setVoteTeam(value){voteTeamFilter=value;renderVote();}
-function setVoteSearch(value){voteSearch=value;renderVote();}
+function filterVoteCards(value){
+  voteSearch=(value||'').trim().toLowerCase();
+  let shown=0;
+  document.querySelectorAll('#voteWrap .vote-card').forEach(card=>{
+    const ok=!voteSearch||(card.dataset.voteSearch||'').includes(voteSearch);
+    card.style.display=ok?'':'none';
+    if(ok)shown++;
+  });
+  const empty=document.getElementById('voteNoResults');
+  if(empty)empty.style.display=shown?'none':'block';
+}
+function setVoteSearch(value){filterVoteCards(value);}
 window.setVoteTeam=setVoteTeam;
 window.setVoteSearch=setVoteSearch;
+window.filterVoteCards=filterVoteCards;
 
 async function castVote(playerId,matchId){
   const sk=getSessionKey();
