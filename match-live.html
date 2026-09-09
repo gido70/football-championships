@@ -315,6 +315,10 @@ const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄',inju
 function showTab(p){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.p===p));
   document.querySelectorAll('.pane').forEach(el=>el.classList.toggle('active',el.id==='p-'+p));
+  const pane=document.getElementById('p-'+p);
+  // التبويبات في أسفل الهاتف بينما المحتوى أعلى منها؛ انقل المستخدم إلى
+  // اللوحة المفتوحة حتى لا يبدو الضغط وكأنه لم يفعل شيئًا.
+  if(pane)requestAnimationFrame(()=>pane.scrollIntoView({behavior:'smooth',block:'start'}));
 }
 window.showTab=showTab;
 
@@ -330,7 +334,11 @@ async function loadVote(){
   if(!cur){document.getElementById('voteWrap').innerHTML='<div class="vote-done">اختر مباراة أولاً لتصويت على نجمها</div>';return;}
   if(voteLoaded)return;
   voteLoaded=true;
-  await renderVote();
+  document.getElementById('voteWrap').innerHTML='<div class="vote-wrap"><div class="vote-title">⭐ صوّت على نجم المباراة</div><div class="vote-done">جاري تحميل اللاعبين...</div></div>';
+  try{await renderVote();}catch(e){
+    console.error(e);voteLoaded=false;
+    document.getElementById('voteWrap').innerHTML='<div class="vote-wrap"><div class="vote-title">⭐ صوّت على نجم المباراة</div><div class="vote-done">تعذر تحميل التصويت — أعد المحاولة</div></div>';
+  }
 }
 
 async function renderVote(){
@@ -339,18 +347,19 @@ async function renderVote(){
   const sk=getSessionKey();
 
   // اجلب اللاعبين من الفريقين
-  const {data:lineups}=await sb.from('match_lineups').select('player:players(id,name,full_name_ar,number,jersey_photo_url,team_id)').eq('match_id',MID);
+  const {data:lineups,error:lineupError}=await sb.from('match_lineups').select('player:players(id,name,full_name_ar,number,jersey_photo_url,team_id)').eq('match_id',MID).eq('is_starting',true);
+  if(lineupError)throw lineupError;
   const players=(lineups||[]).map(l=>l.player).filter(Boolean);
 
   if(!players.length){
-    wrap.innerHTML='<div class="vote-wrap"><div class="vote-title">⭐ صوّت على نجم المباراة</div><div class="vote-done">لم تُحمَّل التشكيلة بعد — لا يمكن التصويت الآن</div></div>';
+    wrap.innerHTML='<div class="vote-wrap"><div class="vote-title">⭐ صوّت على نجم المباراة</div><div class="vote-done">لم تُحفظ التشكيلة الأساسية بعد — اطلب من المشرف حفظها أولًا</div></div>';
     return;
   }
 
   // اجلب التصويتات الحالية
   const {data:votes}=await sb.from('match_votes').select('player_id,session_key').eq('match_id',MID);
   const myVote=(votes||[]).find(v=>v.session_key===sk)?.player_id||null;
-  const total=(votes||[]).length||1;
+  const total=(votes||[]).length;
   const countMap={};
   (votes||[]).forEach(v=>{if(v.player_id)countMap[v.player_id]=(countMap[v.player_id]||0)+1;});
   const topId=Object.entries(countMap).sort((a,b)=>b[1]-a[1])[0]?.[0];
@@ -360,15 +369,15 @@ async function renderVote(){
 
   const cards=players.map(p=>{
     const cnt=countMap[p.id]||0;
-    const pct=Math.round(cnt/total*100);
+    const pct=total?Math.round(cnt/total*100):0;
     const isMyVote=myVote===p.id;
-    const isWinner=p.id===topId&&total>1;
+    const isWinner=p.id===topId&&total>0;
     const tColor=teamColorOf(p.team_id);
     return `<div class="vote-card ${isMyVote?'voted':''} ${isWinner?'winner':''}" onclick="castVote('${p.id}','${MID}')">
       ${p.jersey_photo_url?`<img class="vote-av" src="${p.jersey_photo_url}">`:`<div class="vote-av" style="overflow:hidden;padding:0">${genAvatarSvg(tColor,null,p.number)}</div>`}
       <div class="vote-info">
         <div class="vote-name">${p.full_name_ar||p.name}${isMyVote?' ✓':''}</div>
-        <div class="vote-team">${isWinner?'🏆 المتصدر الآن':''}</div>
+        <div class="vote-team">${p.team_id===cur.home_team_id?(cur.ht?.name_ar||cur.ht?.name||'الفريق الأول'):(cur.at?.name_ar||cur.at?.name||'الفريق الثاني')} ${isWinner?'· 🏆 المتصدر الآن':''}</div>
       </div>
       <div class="vote-pct">${myVote?pct+'%':''}</div>
       <div class="vote-bar-bg"></div>
@@ -380,8 +389,9 @@ async function renderVote(){
     <div class="vote-title">⭐ صوّت على نجم المباراة</div>
     <div class="vote-sub">${myVote?'شكرًا — صوّتك سُجِّل. النتائج الآن:':'اختر اللاعب الأبرز في رأيك — صوت واحد فقط'}</div>
     <div class="vote-grid">${cards}</div>
-    <div class="vote-total">${total>1?'إجمالي الأصوات: '+(total-1)+' صوت':''}</div>
+    <div class="vote-total">${total?'إجمالي الأصوات: '+total+' صوت':'لا توجد أصوات بعد — كن أول المصوّتين'}</div>
   </div>`;
+  requestAnimationFrame(()=>wrap.scrollIntoView({behavior:'smooth',block:'start'}));
 }
 
 async function castVote(playerId,matchId){
