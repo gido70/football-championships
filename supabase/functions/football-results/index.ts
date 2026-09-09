@@ -26,21 +26,40 @@ Deno.serve(async (req) => {
   });
   if (!userCheck.ok) return json({ error: "Unauthorized" }, 401);
 
-  let input: { date?: string } = {};
+  let input: { date?: string; fixture_id?: number | string } = {};
   try { input = await req.json(); } catch { return json({ error: "Invalid request" }, 400); }
   const date = String(input.date || "");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: "Date must be YYYY-MM-DD" }, 400);
+  const fixtureId = Number(input.fixture_id || 0);
+  if (!fixtureId && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: "Date must be YYYY-MM-DD" }, 400);
 
   const apiKey = Deno.env.get("API_FOOTBALL_KEY");
   if (!apiKey) return json({ error: "API_FOOTBALL_KEY is not configured" }, 503);
 
   try {
-    const response = await fetch(`https://v3.football.api-sports.io/fixtures?date=${encodeURIComponent(date)}`, {
+    const endpoint = fixtureId
+      ? `https://v3.football.api-sports.io/fixtures/events?fixture=${fixtureId}`
+      : `https://v3.football.api-sports.io/fixtures?date=${encodeURIComponent(date)}`;
+    const response = await fetch(endpoint, {
       headers: { "x-apisports-key": apiKey },
     });
     const payload = await response.json();
     if (!response.ok || payload?.errors && Object.keys(payload.errors).length) {
       return json({ error: "Football provider rejected the request", details: payload?.errors || null }, 502);
+    }
+
+    if (fixtureId) {
+      const events = (payload?.response || []).map((row: any) => ({
+        external_id: `${fixtureId}-${row.time?.elapsed || 0}-${row.time?.extra || 0}-${row.team?.id || 0}-${row.player?.id || 0}-${row.type || ""}-${row.detail || ""}`,
+        minute: Number(row.time?.elapsed || 0) + Number(row.time?.extra || 0),
+        elapsed: row.time?.elapsed ?? null,
+        extra: row.time?.extra ?? null,
+        team: { id: row.team?.id ?? null, name: row.team?.name || null },
+        player: { id: row.player?.id ?? null, name: row.player?.name || null },
+        assist: { id: row.assist?.id ?? null, name: row.assist?.name || null },
+        type: row.type || null,
+        detail: row.detail || null,
+      })).filter((event: any) => event.type === "Goal" || event.type === "Card");
+      return json({ fixture_id: fixtureId, count: events.length, remaining: response.headers.get("x-ratelimit-requests-remaining"), events, read_only: true });
     }
 
     const fixtures = (payload?.response || []).map((row: any) => ({
