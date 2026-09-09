@@ -286,6 +286,15 @@ select option{background:#0f2a45;color:#ffffff}
         <div class="meta-field"><label>نجم المباراة (اختيارك)</label>
           <div style="display:flex;gap:6px"><select id="manOfMatch" style="flex:1"><option value="">— لاعب —</option></select><button type="button" class="voice-btn" onclick="startVoiceMotm()">🎤</button></div>
         </div>
+        <div class="meta-field">
+          <label>📸 صورة تكريم نجم المباراة <span style="font-weight:400;color:#8fa3c0;font-size:11px">(اختياري — إن لم تُرفع تُستخدم صورة بروفايل اللاعب تلقائياً)</span></label>
+          <div style="display:flex;align-items:center;gap:10px">
+            <img id="motmPhotoPreview" style="width:52px;height:52px;border-radius:10px;object-fit:cover;background:#161b22;display:none" alt="">
+            <input type="file" id="motmPhotoInput" accept="image/*" onchange="uploadMotmPhoto(this.files[0])" style="flex:1;font-size:12px">
+            <button type="button" id="motmPhotoClear" onclick="clearMotmPhoto()" style="display:none;background:#3a4150;color:#e6edf3;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">✕ إزالة</button>
+          </div>
+          <div id="motmPhotoStatus" style="font-size:11px;color:#8fa3c0;margin-top:4px"></div>
+        </div>
       </div>
       <div id="voteResultBox" style="display:none;margin:12px 0;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:12px 14px">
         <div style="font-size:12px;font-weight:800;color:#c9a84c;margin-bottom:8px">⭐ تصويت الجمهور على نجم المباراة</div>
@@ -510,6 +519,7 @@ select option{background:#0f2a45;color:#ffffff}
 <script src="supabase-config.js"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const SB_BUCKET='tournament-assets';
 let cur=null,hPl=[],aPl=[],evtType={h:null,a:null};
 
 async function pushNews(text){
@@ -618,7 +628,42 @@ function fillMeta(m){
   document.getElementById('streamUrl').value=m.stream_url||'';
   document.getElementById('highlightVideoUrl').value=m.highlight_video_url||'';
   document.getElementById('manOfMatch').value=m.player_of_match_id||'';
+  const motmPrev=document.getElementById('motmPhotoPreview'), motmClearBtn=document.getElementById('motmPhotoClear');
+  if(m.motm_photo_url){motmPrev.src=m.motm_photo_url;motmPrev.style.display='block';motmClearBtn.style.display='inline-block';}
+  else{motmPrev.style.display='none';motmClearBtn.style.display='none';}
   updateCollapsedSummaries();
+}
+
+async function uploadMotmPhoto(file){
+  if(!file||!cur)return;
+  const statusEl=document.getElementById('motmPhotoStatus');
+  statusEl.textContent='⏳ جاري الرفع...';statusEl.style.color='#ffd54f';
+  try{
+    const ext=file.name.split('.').pop();
+    const fname=`motm/motm_${cur.id}_${Date.now()}.${ext}`;
+    const {error}=await sb.storage.from(SB_BUCKET).upload(fname,file,{upsert:true,contentType:file.type});
+    if(error)throw error;
+    const {data:u}=sb.storage.from(SB_BUCKET).getPublicUrl(fname);
+    cur.motm_photo_url=u.publicUrl;
+    const {error:e2}=await sb.from('matches').update({motm_photo_url:u.publicUrl}).eq('id',cur.id);
+    if(e2)throw e2;
+    const prev=document.getElementById('motmPhotoPreview');
+    prev.src=u.publicUrl;prev.style.display='block';
+    document.getElementById('motmPhotoClear').style.display='inline-block';
+    statusEl.textContent='✅ تم الرفع والحفظ';statusEl.style.color='#34d399';
+  }catch(e){
+    statusEl.textContent='⚠️ فشل الرفع: '+(e.message||'خطأ غير معروف');statusEl.style.color='#f85149';
+  }
+}
+async function clearMotmPhoto(){
+  if(!cur)return;
+  cur.motm_photo_url=null;
+  await sb.from('matches').update({motm_photo_url:null}).eq('id',cur.id);
+  document.getElementById('motmPhotoPreview').style.display='none';
+  document.getElementById('motmPhotoClear').style.display='none';
+  document.getElementById('motmPhotoInput').value='';
+  document.getElementById('motmPhotoStatus').textContent='تمت إزالة الصورة — سيُستخدم بروفايل اللاعب تلقائياً';
+  document.getElementById('motmPhotoStatus').style.color='#8fa3c0';
 }
 
 async function saveMeta(){
@@ -635,6 +680,7 @@ async function saveMeta(){
     stream_url:document.getElementById('streamUrl').value.trim()||null,
     highlight_video_url:document.getElementById('highlightVideoUrl').value.trim()||null,
     player_of_match_id:motmId,
+    motm_photo_url:cur.motm_photo_url||null,
   };
 
   const prevRef1=cur.referee_1||null, prevRef2=cur.referee_2||null, prevComm=cur.commentator||null, prevMotm=cur.player_of_match_id||null;
