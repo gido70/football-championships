@@ -172,10 +172,12 @@ select option{background:#0f2a45;color:#ffffff}
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn-quick" style="background:#34d399" onclick="quickOpen('h','goal')">⚽ هدف للأول</button>
+        <button class="btn-quick" style="background:#6d28a8" onclick="quickOpen('h','own_goal')">↩️ عكسي على الأول</button>
         <button class="btn-quick" style="background:#ffd54f;color:#0d1117" onclick="quickOpen('h','yellow_card')">🟨</button>
         <button class="btn-quick" style="background:#ff6b6b" onclick="quickOpen('h','red_card')">🟥</button>
         <span style="width:1px;background:rgba(255,255,255,.2);margin:0 4px"></span>
         <button class="btn-quick" style="background:#34d399" onclick="quickOpen('a','goal')">⚽ هدف للثاني</button>
+        <button class="btn-quick" style="background:#6d28a8" onclick="quickOpen('a','own_goal')">↩️ عكسي على الثاني</button>
         <button class="btn-quick" style="background:#ffd54f;color:#0d1117" onclick="quickOpen('a','yellow_card')">🟨</button>
         <button class="btn-quick" style="background:#ff6b6b" onclick="quickOpen('a','red_card')">🟥</button>
       </div>
@@ -223,7 +225,7 @@ select option{background:#0f2a45;color:#ffffff}
       <div class="meta-title collapsible-head" onclick="toggleSection('phaseControlsBody')" style="margin-top:12px;color:#a78bfa">
         <span>⏱️ مرحلة المباراة والتصحيح اليدوي</span><span class="chev">▾</span>
       </div>
-      <div id="phaseControlsBody" style="display:none">
+      <div id="phaseControlsBody" class="collapsible-body">
         <div class="min-row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
           <label style="color:#b7c6dc;font-size:14px">مرحلة المباراة:</label>
           <button class="btn secondary half-btn" data-half="1" onclick="setHalf(1)" style="padding:8px 14px;font-size:13px">1️⃣ الشوط الأول</button>
@@ -976,14 +978,14 @@ function tickClock(){
 function quickOpen(side,type){
   const players=side==='h'?hPl:aPl;
   const teamName=side==='h'?(cur.ht?.name_ar||cur.ht?.name||''):(cur.at?.name_ar||cur.at?.name||'');
-  const labels={goal:'⚽ من سجّل الهدف؟',yellow_card:'🟨 من أخذ البطاقة الصفراء؟',red_card:'🟥 من أخذ البطاقة الحمراء؟'};
+  const labels={goal:'⚽ من سجّل الهدف؟',own_goal:'↩️ من سجّل الهدف العكسي في مرماه؟',yellow_card:'🟨 من أخذ البطاقة الصفراء؟',red_card:'🟥 من أخذ البطاقة الحمراء؟'};
   document.getElementById('quickPickerTitle').textContent=(labels[type]||'')+' — '+teamName;
   const grid=document.getElementById('quickPickerGrid');
   if(!players||!players.length){grid.innerHTML='<span style="color:#7d8694;font-size:12px">لا يوجد لاعبون محمّلون لهذا الفريق</span>';}
   else{
     grid.innerHTML=players.map(p=>`<button class="btn-quick" style="background:#21262d;color:#e6edf3" onclick="quickLog('${side}','${type}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}')">${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</button>`).join('');
   }
-  grid.innerHTML+=`<button class="btn-quick" style="background:#21262d;color:#7d8694" onclick="quickLog('${side}','${type}','','بدون تحديد لاعب')">بدون تحديد لاعب</button>`;
+  if(type!=='own_goal')grid.innerHTML+=`<button class="btn-quick" style="background:#21262d;color:#7d8694" onclick="quickLog('${side}','${type}','','بدون تحديد لاعب')">بدون تحديد لاعب</button>`;
   document.getElementById('quickPicker').style.display='block';
 }
 
@@ -992,10 +994,12 @@ function quickClose(){document.getElementById('quickPicker').style.display='none
 async function quickLog(side,type,playerId,playerName){
   const tid=side==='h'?cur.home_team_id:cur.away_team_id;
   const min=parseInt(document.getElementById('minInput').value)||0;
-  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:playerId||null,team_id:tid,event_type:type,minute:min});
+  const isOwnGoal=type==='own_goal';
+  if(isOwnGoal&&!playerId){setMsg('⚠️ اختر اللاعب الذي سجّل الهدف العكسي','warn');return;}
+  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:playerId||null,team_id:tid,event_type:isOwnGoal?'goal':type,minute:min,event_subtype:isOwnGoal?'own_goal':null});
   if(error){setMsg('❌ فشل: '+error.message,'err');return;}
-  if(type==='goal'){
-    const f=side==='h'?'home_score':'away_score';
+  if(type==='goal'||isOwnGoal){
+    const f=isOwnGoal?(side==='h'?'away_score':'home_score'):(side==='h'?'home_score':'away_score');
     const v=(cur[f]||0)+1;
     const {error:e2}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
     if(!e2){
@@ -1006,11 +1010,12 @@ async function quickLog(side,type,playerId,playerName){
   }
   quickClose();
   loadEvts();
-  setMsg('✅ تم تسجيل '+({goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء'}[type]||type)+' — '+playerName,'ok');
+  setMsg('✅ تم تسجيل '+({goal:'هدف',own_goal:'هدف عكسي',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء'}[type]||type)+' — '+playerName,'ok');
 
   const tn=side==='h'?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name);
   const min2=parseInt(document.getElementById('minInput').value)||0;
   if(type==='goal')pushNews('⚽ هدف! '+(playerName||'لاعب')+' يسجل لـ'+tn+' في الدقيقة '+min2+' — '+(cur.home_score??0)+' - '+(cur.away_score??0));
+  else if(isOwnGoal)pushNews('↩️ هدف عكسي على '+(playerName||'لاعب')+' ('+tn+') في الدقيقة '+min2+' — يُحتسب للفريق المنافس');
   else if(type==='yellow_card')pushNews('🟨 بطاقة صفراء لـ '+(playerName||'لاعب')+' ('+tn+')');
   else if(type==='red_card')pushNews('🟥 بطاقة حمراء لـ '+(playerName||'لاعب')+' ('+tn+')');
 }
