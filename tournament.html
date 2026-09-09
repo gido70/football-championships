@@ -511,10 +511,11 @@ async function generateAutoBulletin(){
 
 async function loadNews(){
   if(!TID)return;
-  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(30);
+  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(60);
   const banner=document.getElementById('newsBanner');
 
-  const matchItems=(data||[]).filter(n=>n.match_id);
+  const cutoff=Date.now()-24*3600*1000;
+  const matchItems=(data||[]).filter(n=>n.match_id && new Date(n.published_at||n.created_at).getTime()>=cutoff);
   const generalItems=(data||[]).filter(n=>!n.match_id);
   const {items:bulletinItems,color:bulletinColor}=await generateAutoBulletin();
 
@@ -829,7 +830,7 @@ function showLocalNotification(title,body){
 
 async function loadLiveMatch(){
   const sec=document.getElementById('liveMatchSection');
-  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live');
+  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(4);
   if(!matches?.length){sec.innerHTML='';return;}
 
   matches.forEach(m=>{
