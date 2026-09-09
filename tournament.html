@@ -94,8 +94,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .motd-score{font-size:14px;font-weight:900;color:#e6edf3;margin-bottom:8px;text-align:center}
 .motd-star{display:flex;align-items:center;gap:8px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:9px;padding:6px 8px}
 .motd-star-av{width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;background:#0d1117}
-.motd-star-av-ph{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#c9a84c,#8a6d23);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#1a1500;flex-shrink:0;position:relative;box-shadow:0 0 0 2px rgba(201,168,76,.25)}
-.motd-star-av-ic{position:absolute;bottom:-3px;left:-3px;font-size:11px;background:#0d1117;border-radius:50%;padding:1px}
+.motd-star-av-ph{width:32px;height:32px;border-radius:50%;background:#0d1117;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#c9a84c;flex-shrink:0}
 .motd-star-name{font-size:12px;font-weight:800;color:#e6edf3;line-height:1.3}
 .motd-star-lbl{font-size:9.5px;color:#c9a84c}
 .motd-star-none{font-size:11px;color:#6e7b8f;text-align:center;padding:4px 0}
@@ -169,8 +168,6 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .ticker-label{flex-shrink:0;width:118px;font-size:13px;font-weight:900;padding:0 10px;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;border-left:1px solid;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ticker-viewport{flex:1;overflow:hidden;position:relative;height:100%}
 .ticker-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:15px;font-weight:600;color:#2C2C2A;will-change:transform}
-.ticker-line{opacity:.45;transition:opacity .35s ease}
-.ticker-line.ticker-active{opacity:1}
 .ticker-sep{margin:0 18px;color:#9C9A8D}
 .ticker-toggle{flex-shrink:0;background:transparent;border:none;color:#79786A;font-size:16px;cursor:pointer;padding:0 14px;height:100%}
 .ticker-toggle:hover{color:#2C2C2A}
@@ -371,6 +368,8 @@ img[src=""], img:not([src]) { display:none !important; }
 
 <div id="newsBanner"></div>
 
+<div id="sponsorsTicker"></div>
+
 <div class="qlinks-wrap">
   <div class="qlinks-grid">
     <button class="qlink" style="background:#2d6a4f" onclick="jumpToTab('st')"><span class="qlink-ic">🏅</span> الترتيب</button>
@@ -512,95 +511,70 @@ async function generateAutoBulletin(){
 
 async function loadNews(){
   if(!TID)return;
-  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(60);
+  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(30);
   const banner=document.getElementById('newsBanner');
 
-  const cutoff=Date.now()-24*3600*1000;
-  const matchItems=(data||[]).filter(n=>n.match_id && new Date(n.published_at||n.created_at).getTime()>=cutoff);
-  const generalItems=(data||[]).filter(n=>!n.match_id);
+  // تجاهل السجلات الفارغة حتى لا يظهر شريط بلا نص لمجرد وجود صف في القاعدة.
+  const usableNews=(data||[]).filter(n=>String(n?.content||'').trim());
+  const matchItems=usableNews.filter(n=>n.match_id);
+  const generalItems=usableNews.filter(n=>!n.match_id);
   const {items:bulletinItems,color:bulletinColor}=await generateAutoBulletin();
+  const usableBulletins=(bulletinItems||[]).filter(n=>String(n||'').trim());
 
-  const {data:sponsorsData}=await sb.from('sponsors').select('*').eq('tournament_id',TID).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
-  const sponsorItems=(sponsorsData||[]).map(s=>`<span class="ticker-item ticker-sponsor-item"><img class="ticker-sponsor-logo" src="${s.logo_url}" alt="${s.name}" loading="lazy">${s.name}</span>`);
+  if(!matchItems.length&&!generalItems.length&&!usableBulletins.length){
+    Object.values(tickerState).forEach(state=>state?.raf&&cancelAnimationFrame(state.raf));
+    banner.innerHTML='';
+    banner.removeAttribute('data-ticker-markup');
+    return;
+  }
 
-  if(!matchItems.length&&!generalItems.length&&!bulletinItems.length&&!sponsorItems.length){banner.innerHTML='';return;}
-
-  const line=(id,label,items,color,sep)=>items.length?`
-    <div class="ticker-line" style="border-color:${color}55" id="${id}Line">
+  const line=(id,label,items,color)=>items.length?`
+    <div class="ticker-line" style="border-color:${color}55">
       <div class="ticker-label" style="background:${color}22;color:${color};border-color:${color}55">${label}</div>
       <div class="ticker-viewport">
-        <div class="ticker-track" id="${id}Track">${items.map(n=>`<span class="ticker-item">${n.content||n}</span>`).join(sep||'<span class="ticker-sep">•</span>')}</div>
+        <div class="ticker-track" id="${id}Track">${items.map(n=>`<span class="ticker-item">${n.content||n}</span>`).join('<span class="ticker-sep">•</span>')}</div>
       </div>
       <button class="ticker-toggle" id="${id}Toggle" onclick="toggleTicker('${id}')">⏸</button>
     </div>`:'';
 
-  // الترتيب: المباريات أولاً، الرعاة في المنتصف، ثم أخبار الكأس العامة، ونشرة البطولة أخيراً
-  banner.innerHTML=`<div class="ticker-wrap">${
-    line('match','⚽ أخبار المباريات',matchItems,'#1d4e89')
-  }${
-    line('sponsors','🤝 رعاة البطولة',sponsorItems,'#a5813a','<span class="ticker-sep">رعاة البطولة</span>')
-  }${
-    line('general','📢 أخبار الكأس',generalItems,'#a3364c')
-  }${
-    line('bulletin','📰 نشرة البطولة',bulletinItems,bulletinColor)
-  }</div>`;
+  const markup=`<div class="ticker-wrap">${line('bulletin','📰 نشرة البطولة',usableBulletins,bulletinColor)}${line('match','⚽ أخبار المباريات',matchItems,'#1d4e89')}${line('general','📢 أخبار الكأس',generalItems,'#a3364c')}</div>`;
 
-  // تشغيل تسلسلي: خط واحد فقط يتحرك في كل مرة، وعند اكتمال دورته الكاملة ينتقل للتالي
-  const activeIds=['match','sponsors','general','bulletin'].filter(id=>document.getElementById(id+'Track'));
-  startSequentialTickers(activeIds);
-}
+  // لا نُعيد إنشاء الشريط إذا لم تتغير أخباره؛ إعادة البناء كانت تصفّر
+  // موضع الحركة كل 25 ثانية وتجعل الشريط يبدو ثابتًا أو يقفز إلى البداية.
+  if(banner.dataset.tickerMarkup===markup)return;
+  banner.dataset.tickerMarkup=markup;
+  banner.innerHTML=markup;
 
-const tickerState={}; // فقط حالة الإيقاف المؤقت اليدوي لكل شريط: {paused:true/false}
-let tickerCycle={ids:[],idx:0,pos:null,driver:null};
-
-function startSequentialTickers(ids){
-  // إن كانت نفس مجموعة الأشرطة موجودة مسبقاً، حافظ على مكان الدور الحالي بدل العودة للشريط الأول
-  const sameSet=tickerCycle.ids.length===ids.length && tickerCycle.ids.every((v,i)=>v===ids[i]);
-  if(!sameSet)tickerCycle.idx=0;
-  tickerCycle.pos=null; // إعادة ضبط الموضع دائماً لتفادي أي قفزة بصرية بعد إعادة بناء عناصر الصفحة
-  tickerCycle.ids=ids;
-
-  ids.forEach((id,i)=>{
-    const line=document.getElementById(id+'Line');
-    if(line)line.classList.toggle('ticker-active', i===(tickerCycle.idx%ids.length));
+  ['bulletin','match','general'].forEach(id=>{
     const track=document.getElementById(id+'Track');
-    if(track && i!==(tickerCycle.idx%ids.length)) track.style.transform='translateX(0px)';
+    if(track)startTickerAnim(id,track);
   });
-
-  if(!tickerCycle.driver) tickerCycle.driver=setInterval(tickerDriverTick,16);
 }
 
-function tickerDriverTick(){
-  const {ids}=tickerCycle;
-  if(!ids.length)return;
-  const id=ids[tickerCycle.idx%ids.length];
-  const track=document.getElementById(id+'Track');
-  const viewport=track?track.parentElement:null;
-  if(!track||!viewport)return; // الشريط اختفى (لا يوجد محتوى حالياً) — ينتظر إعادة البناء التالية
-  if(tickerCycle.pos==null) tickerCycle.pos=viewport.offsetWidth;
-  if(tickerState[id]?.paused)return;
-
-  tickerCycle.pos-=1.6;
-  track.style.transform='translateX('+tickerCycle.pos+'px)';
-
-  if(tickerCycle.pos < -track.scrollWidth){
-    const line=document.getElementById(id+'Line');
-    if(line)line.classList.remove('ticker-active');
-    tickerCycle.idx=(tickerCycle.idx+1)%ids.length;
-    tickerCycle.pos=null;
-    const nextId=ids[tickerCycle.idx%ids.length];
-    const nextLine=document.getElementById(nextId+'Line');
-    if(nextLine)nextLine.classList.add('ticker-active');
-  }
+const tickerState={};
+function startTickerAnim(id,track){
+  if(tickerState[id]?.raf)cancelAnimationFrame(tickerState[id].raf);
+  const viewport=track.parentElement;
+  tickerState[id]={paused:false,pos:0,last:performance.now()};
+  const step=(now)=>{
+    const state=tickerState[id];
+    const elapsed=Math.min(64,now-state.last);
+    state.last=now;
+    if(!state.paused){
+      // سرعة ثابتة بصرف النظر عن معدل تحديث شاشة الهاتف.
+      state.pos-=elapsed*.045;
+      if(state.pos < -track.scrollWidth) state.pos=viewport.offsetWidth;
+      track.style.transform='translate3d('+state.pos+'px,0,0)';
+    }
+    state.raf=requestAnimationFrame(step);
+  };
+  tickerState[id].raf=requestAnimationFrame(step);
 }
-
 function toggleTicker(id){
-  tickerState[id]=tickerState[id]||{paused:false};
+  if(!tickerState[id])return;
   tickerState[id].paused=!tickerState[id].paused;
-  const btn=document.getElementById(id+'Toggle');
-  if(btn)btn.textContent=tickerState[id].paused?'▶':'⏸';
+  document.getElementById(id+'Toggle').textContent=tickerState[id].paused?'▶':'⏸';
 }
-
 
 // تحديث تلقائي للشريط كل 25 ثانية بلا حاجة لإعادة تحميل الصفحة
 setInterval(()=>{if(TID)loadNews();},25000);
@@ -796,13 +770,8 @@ async function loadMOTD(){
     if(!star)return '<div class="motd-star-none">لم يُحدَّد نجم بعد</div>';
     const name=star.full_name_ar||star.name||'—';
     const ini=(name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
-    // أولوية الصورة: 1) صورة تكريم خاصة بهذه المباراة  2) صورة بروفايل اللاعب  3) شكل افتراضي مزخرف
-    const photoUrl=m.motm_photo_url||star.jersey_photo_url;
-    const avatar=photoUrl
-      ?`<img class="motd-star-av" src="${photoUrl}">`
-      :`<div class="motd-star-av-ph"><span>${ini}</span><span class="motd-star-av-ic">⭐</span></div>`;
     return `<div class="motd-star">
-      ${avatar}
+      ${star.jersey_photo_url?`<img class="motd-star-av" src="${star.jersey_photo_url}">`:`<div class="motd-star-av-ph">${ini}</div>`}
       <div><div class="motd-star-name">${motdEsc(name)}</div><div class="motd-star-lbl">${lbl}</div></div>
     </div>`;
   }
@@ -1215,9 +1184,31 @@ async function loadTeams(){
 }
 
 sb.channel('rt-t').on('postgres_changes',{event:'*',schema:'public',table:'matches',filter:`tournament_id=eq.${TID}`},()=>{loadMatches();loadStandings();}).subscribe();
-if(TID){loadTournament();loadStandings();loadMatches();loadScorers();loadTeams();loadFollowSection();}
+if(TID){loadTournament();loadStandings();loadMatches();loadScorers();loadTeams();loadSponsors();loadFollowSection();}
 if(REQUESTED_TAB)setTimeout(()=>jumpToTab(REQUESTED_TAB),400);
 else document.getElementById('heroTitle').textContent='لم يتم تحديد البطولة — ارجع للصفحة الرئيسية';
+
+async function loadSponsors(){
+  const wrap=document.getElementById('sponsorsTicker');
+  if(!TID){wrap.innerHTML='';return;}
+  const {data}=await sb.from('sponsors').select('*').eq('tournament_id',TID).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
+  if(!data||!data.length){wrap.innerHTML='';return;}
+
+  const color='#a5813a';
+  const sep='<span class="ticker-sep">رعاة البطولة</span>';
+  const items=data.map(s=>`<span class="ticker-item ticker-sponsor-item"><img class="ticker-sponsor-logo" src="${s.logo_url}" alt="${s.name}" loading="lazy">${s.name}</span>`);
+
+  wrap.innerHTML=`<div class="ticker-wrap"><div class="ticker-line" style="border-color:${color}55">
+      <div class="ticker-label" style="background:${color}22;color:${color};border-color:${color}55">🤝 رعاة البطولة</div>
+      <div class="ticker-viewport">
+        <div class="ticker-track" id="sponsorsTrack">${items.join(sep)}</div>
+      </div>
+      <button class="ticker-toggle" id="sponsorsToggle" onclick="toggleTicker('sponsors')">⏸</button>
+    </div></div>`;
+
+  const track=document.getElementById('sponsorsTrack');
+  if(track)startTickerAnim('sponsors',track);
+}
 
 async function loadFollowSection(){
   const sec=document.getElementById('followSection');
