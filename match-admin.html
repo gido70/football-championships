@@ -284,16 +284,11 @@ select option{background:#0f2a45;color:#ffffff}
         <div class="meta-field"><label>المعلق</label><div style="display:flex;gap:6px"><input id="commentator" placeholder="اسم المعلق" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('commentator','commentator')">🎤</button></div></div>
         <div class="meta-field"><label>الملعب</label><div style="display:flex;gap:6px"><input id="venueName" placeholder="اسم الملعب" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('venueName','venue_name')">🎤</button></div></div>
         <div class="meta-field"><label>نجم المباراة (اختيارك)</label>
-          <div style="display:flex;gap:6px"><select id="manOfMatch" style="flex:1"><option value="">— لاعب —</option></select><button type="button" class="voice-btn" onclick="startVoiceMotm()">🎤</button></div>
-        </div>
-        <div class="meta-field">
-          <label>📸 صورة تكريم نجم المباراة <span style="font-weight:400;color:#8fa3c0;font-size:11px">(اختياري — إن لم تُرفع تُستخدم صورة بروفايل اللاعب تلقائياً)</span></label>
-          <div style="display:flex;align-items:center;gap:10px">
-            <img id="motmPhotoPreview" style="width:52px;height:52px;border-radius:10px;object-fit:cover;background:#161b22;display:none" alt="">
-            <input type="file" id="motmPhotoInput" accept="image/*" onchange="uploadMotmPhoto(this.files[0])" style="flex:1;font-size:12px">
-            <button type="button" id="motmPhotoClear" onclick="clearMotmPhoto()" style="display:none;background:#3a4150;color:#e6edf3;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">✕ إزالة</button>
+          <div style="display:grid;grid-template-columns:.8fr 1.2fr auto;gap:6px">
+            <select id="manOfMatchTeam" onchange="onMotmTeamChange()"><option value="">— اختر الفريق أولًا —</option></select>
+            <select id="manOfMatch"><option value="">— اختر اللاعب —</option></select>
+            <button type="button" class="voice-btn" onclick="startVoiceMotm()">🎤</button>
           </div>
-          <div id="motmPhotoStatus" style="font-size:11px;color:#8fa3c0;margin-top:4px"></div>
         </div>
       </div>
       <div id="voteResultBox" style="display:none;margin:12px 0;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:12px 14px">
@@ -345,10 +340,12 @@ select option{background:#0f2a45;color:#ffffff}
       <div class="lu-admin-grid">
         <div>
           <div class="lu-admin-team-hd" id="luHName">الفريق الأول</div>
+          <div style="display:flex;gap:6px;margin:7px 0 9px"><button type="button" class="btn-sm btn-sm-ok" onclick="setLineupTeam('h',true)">☑ تحديد الكل</button><button type="button" class="btn-sm btn-sm-x" onclick="setLineupTeam('h',false)">☐ تفريغ الكل</button></div>
           <div id="luHList"></div>
         </div>
         <div>
           <div class="lu-admin-team-hd" id="luAName">الفريق الثاني</div>
+          <div style="display:flex;gap:6px;margin:7px 0 9px"><button type="button" class="btn-sm btn-sm-ok" onclick="setLineupTeam('a',true)">☑ تحديد الكل</button><button type="button" class="btn-sm btn-sm-x" onclick="setLineupTeam('a',false)">☐ تفريغ الكل</button></div>
           <div id="luAList"></div>
         </div>
       </div>
@@ -519,7 +516,6 @@ select option{background:#0f2a45;color:#ffffff}
 <script src="supabase-config.js"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-const SB_BUCKET='tournament-assets';
 let cur=null,hPl=[],aPl=[],evtType={h:null,a:null};
 
 async function pushNews(text){
@@ -562,7 +558,8 @@ async function onMatchChange(){
   const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.away_team_id).or('submission_status.eq.approved,submission_status.is.null').order('number');
   hPl=hp||[];aPl=ap||[];
   fillSel('hPlayer',hPl);fillSel('aPlayer',aPl);
-  fillManOfMatch([...hPl,...aPl]);
+  fillManOfMatchTeams(m);
+  fillManOfMatch([]);
 
   renderMatch(m);
   fillMeta(m);
@@ -593,9 +590,20 @@ function fillSel(id,players){
 
 function fillManOfMatch(players){
   const s=document.getElementById('manOfMatch');
-  s.innerHTML='<option value="">— لاعب —</option>';
+  s.innerHTML='<option value="">— اختر اللاعب —</option>';
   players.forEach(p=>s.innerHTML+=`<option value="${p.id}">${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</option>`);
 }
+
+function fillManOfMatchTeams(m){
+  const s=document.getElementById('manOfMatchTeam');
+  s.innerHTML='<option value="">— اختر الفريق أولًا —</option>'+`<option value="h">${m.ht?.name_ar||m.ht?.name||'الفريق الأول'}</option><option value="a">${m.at?.name_ar||m.at?.name||'الفريق الثاني'}</option>`;
+}
+
+function onMotmTeamChange(){
+  const side=document.getElementById('manOfMatchTeam').value;
+  fillManOfMatch(side==='h'?hPl:side==='a'?aPl:[]);
+}
+window.onMotmTeamChange=onMotmTeamChange;
 
 async function renderMatch(m){
   document.getElementById('hName').textContent=m.ht?.name_ar||m.ht?.name||'الفريق الأول';
@@ -627,43 +635,12 @@ function fillMeta(m){
   document.getElementById('venueName').value=m.venue_name||m.venue||'';
   document.getElementById('streamUrl').value=m.stream_url||'';
   document.getElementById('highlightVideoUrl').value=m.highlight_video_url||'';
-  document.getElementById('manOfMatch').value=m.player_of_match_id||'';
-  const motmPrev=document.getElementById('motmPhotoPreview'), motmClearBtn=document.getElementById('motmPhotoClear');
-  if(m.motm_photo_url){motmPrev.src=m.motm_photo_url;motmPrev.style.display='block';motmClearBtn.style.display='inline-block';}
-  else{motmPrev.style.display='none';motmClearBtn.style.display='none';}
+  const motmId=m.player_of_match_id||'';
+  const motmTeam=hPl.some(p=>p.id===motmId)?'h':aPl.some(p=>p.id===motmId)?'a':'';
+  document.getElementById('manOfMatchTeam').value=motmTeam;
+  fillManOfMatch(motmTeam==='h'?hPl:motmTeam==='a'?aPl:[]);
+  document.getElementById('manOfMatch').value=motmId;
   updateCollapsedSummaries();
-}
-
-async function uploadMotmPhoto(file){
-  if(!file||!cur)return;
-  const statusEl=document.getElementById('motmPhotoStatus');
-  statusEl.textContent='⏳ جاري الرفع...';statusEl.style.color='#ffd54f';
-  try{
-    const ext=file.name.split('.').pop();
-    const fname=`motm/motm_${cur.id}_${Date.now()}.${ext}`;
-    const {error}=await sb.storage.from(SB_BUCKET).upload(fname,file,{upsert:true,contentType:file.type});
-    if(error)throw error;
-    const {data:u}=sb.storage.from(SB_BUCKET).getPublicUrl(fname);
-    cur.motm_photo_url=u.publicUrl;
-    const {error:e2}=await sb.from('matches').update({motm_photo_url:u.publicUrl}).eq('id',cur.id);
-    if(e2)throw e2;
-    const prev=document.getElementById('motmPhotoPreview');
-    prev.src=u.publicUrl;prev.style.display='block';
-    document.getElementById('motmPhotoClear').style.display='inline-block';
-    statusEl.textContent='✅ تم الرفع والحفظ';statusEl.style.color='#34d399';
-  }catch(e){
-    statusEl.textContent='⚠️ فشل الرفع: '+(e.message||'خطأ غير معروف');statusEl.style.color='#f85149';
-  }
-}
-async function clearMotmPhoto(){
-  if(!cur)return;
-  cur.motm_photo_url=null;
-  await sb.from('matches').update({motm_photo_url:null}).eq('id',cur.id);
-  document.getElementById('motmPhotoPreview').style.display='none';
-  document.getElementById('motmPhotoClear').style.display='none';
-  document.getElementById('motmPhotoInput').value='';
-  document.getElementById('motmPhotoStatus').textContent='تمت إزالة الصورة — سيُستخدم بروفايل اللاعب تلقائياً';
-  document.getElementById('motmPhotoStatus').style.color='#8fa3c0';
 }
 
 async function saveMeta(){
@@ -680,7 +657,6 @@ async function saveMeta(){
     stream_url:document.getElementById('streamUrl').value.trim()||null,
     highlight_video_url:document.getElementById('highlightVideoUrl').value.trim()||null,
     player_of_match_id:motmId,
-    motm_photo_url:cur.motm_photo_url||null,
   };
 
   const prevRef1=cur.referee_1||null, prevRef2=cur.referee_2||null, prevComm=cur.commentator||null, prevMotm=cur.player_of_match_id||null;
@@ -1127,20 +1103,22 @@ function startVoiceMotm(){
   rec.onresult=async(e)=>{
     const text=e.results[0][0].transcript;
     const sel=document.getElementById('manOfMatch');
-    const opts=[...sel.options].filter(o=>o.value);
     const norm=normalizeArabic(text);
-    let best=null,bestScore=0;
-    opts.forEach(o=>{
-      const oNorm=normalizeArabic(o.text);
+    let bestPlayer=null,bestScore=0,bestSide='';
+    [...hPl,...aPl].forEach(p=>{
+      const label=(p.number?'#'+p.number+' ':'')+(p.full_name_ar||p.name);
+      const oNorm=normalizeArabic(label);
       let score=0;
       if(oNorm.includes(norm)&&norm.length>=2)score+=10;
       norm.split(/\s+/).forEach(w=>{if(w.length>=2&&oNorm.includes(w))score+=2;});
-      if(score>bestScore){bestScore=score;best=o;}
+      if(score>bestScore){bestScore=score;bestPlayer=p;bestSide=hPl.some(x=>x.id===p.id)?'h':'a';}
     });
-    if(best&&cur){
-      sel.value=best.value;
-      const {error}=await sb.from('matches').update({player_of_match_id:best.value}).eq('id',cur.id);
-      if(!error){cur.player_of_match_id=best.value;setMsg('✅ سمعت: "'+text+'" — أفضل لاعب: '+best.text+' (حُفظ تلقائياً)','ok');}
+    if(bestPlayer&&cur){
+      document.getElementById('manOfMatchTeam').value=bestSide;
+      fillManOfMatch(bestSide==='h'?hPl:aPl);
+      sel.value=bestPlayer.id;
+      const {error}=await sb.from('matches').update({player_of_match_id:bestPlayer.id}).eq('id',cur.id);
+      if(!error){cur.player_of_match_id=bestPlayer.id;setMsg('✅ سمعت: "'+text+'" — أفضل لاعب: '+(bestPlayer.full_name_ar||bestPlayer.name)+' (حُفظ تلقائياً)','ok');}
       else setMsg('❌ فشل الحفظ: '+error.message,'err');
     }else{
       setMsg('⚠️ سمعت: "'+text+'" — لم أجد لاعباً مطابقاً، اختره يدوياً من القائمة','warn');
@@ -1381,10 +1359,12 @@ async function loadLineupAdmin(m){
   document.getElementById('injAName').textContent=m.at?.name_ar||m.at?.name||'الفريق الثاني';
   const {data:lu}=await sb.from('match_lineups').select('player_id,is_starting').eq('match_id',m.id);
   const luMap={};(lu||[]).forEach(x=>luMap[x.player_id]=x.is_starting);
+  const hasSavedLineup=(lu||[]).length>0;
   const row=p=>{
     const susp=p.suspended_matches_remaining>0;
+    const selected=hasSavedLineup?!!luMap[p.id]:!susp;
     return `<div class="lu-row" data-pid="${p.id}" style="${susp?'background:rgba(248,81,73,.12);border-radius:8px;padding:4px 8px':''}">
-    <label><input type="checkbox" class="lu-start" ${luMap[p.id]?'checked':''}><span>${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</span></label>
+    <label><input type="checkbox" class="lu-start" ${selected?'checked':''}><span>${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</span></label>
     ${susp?`<span style="color:#f85149;font-size:11px;font-weight:900;margin-right:6px">🚫 موقوف (${p.suspended_matches_remaining} مباراة متبقية)</span>`:''}
   </div>`;
   };
@@ -1392,6 +1372,13 @@ async function loadLineupAdmin(m){
   document.getElementById('luAList').innerHTML=aPl.map(row).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
   renderInjuryCheckboxes();
 }
+
+function setLineupTeam(side,checked){
+  const list=document.getElementById(side==='h'?'luHList':'luAList');
+  if(!list)return;
+  list.querySelectorAll('.lu-start').forEach(box=>box.checked=checked);
+}
+window.setLineupTeam=setLineupTeam;
 
 function renderInjuryCheckboxes(){
   const injRow=p=>`<div class="lu-row" data-pid="${p.id}">
@@ -1795,7 +1782,7 @@ function updateCollapsedSummaries(){
   const parts=[];
   if(ref1)parts.push('حكم: '+ref1);
   if(comm)parts.push('معلق: '+comm);
-  if(motmTxt&&motmTxt!=='— لاعب —')parts.push('نجم: '+motmTxt);
+  if(motmTxt&&motmTxt!=='— اختر اللاعب —')parts.push('نجم: '+motmTxt);
   const refSum=document.getElementById('refSummary');
   if(refSum)refSum.textContent=parts.length?'('+parts.join(' | ')+')':'';
 
