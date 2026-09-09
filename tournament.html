@@ -168,6 +168,8 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .ticker-label{flex-shrink:0;width:118px;font-size:13px;font-weight:900;padding:0 10px;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;border-left:1px solid;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ticker-viewport{flex:1;overflow:hidden;position:relative;height:100%}
 .ticker-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:15px;font-weight:600;color:#2C2C2A;will-change:transform}
+.ticker-line{opacity:.45;transition:opacity .35s ease}
+.ticker-line.ticker-active{opacity:1}
 .ticker-sep{margin:0 18px;color:#9C9A8D}
 .ticker-toggle{flex-shrink:0;background:transparent;border:none;color:#79786A;font-size:16px;cursor:pointer;padding:0 14px;height:100%}
 .ticker-toggle:hover{color:#2C2C2A}
@@ -368,8 +370,6 @@ img[src=""], img:not([src]) { display:none !important; }
 
 <div id="newsBanner"></div>
 
-<div id="sponsorsTicker"></div>
-
 <div class="qlinks-wrap">
   <div class="qlinks-grid">
     <button class="qlink" style="background:#2d6a4f" onclick="jumpToTab('st')"><span class="qlink-ic">🏅</span> الترتيب</button>
@@ -519,38 +519,78 @@ async function loadNews(){
   const generalItems=(data||[]).filter(n=>!n.match_id);
   const {items:bulletinItems,color:bulletinColor}=await generateAutoBulletin();
 
-  if(!matchItems.length&&!generalItems.length&&!bulletinItems.length){banner.innerHTML='';return;}
+  const {data:sponsorsData}=await sb.from('sponsors').select('*').eq('tournament_id',TID).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
+  const sponsorItems=(sponsorsData||[]).map(s=>`<span class="ticker-item ticker-sponsor-item"><img class="ticker-sponsor-logo" src="${s.logo_url}" alt="${s.name}" loading="lazy">${s.name}</span>`);
 
-  const line=(id,label,items,color)=>items.length?`
-    <div class="ticker-line" style="border-color:${color}55">
+  if(!matchItems.length&&!generalItems.length&&!bulletinItems.length&&!sponsorItems.length){banner.innerHTML='';return;}
+
+  const line=(id,label,items,color,sep)=>items.length?`
+    <div class="ticker-line" style="border-color:${color}55" id="${id}Line">
       <div class="ticker-label" style="background:${color}22;color:${color};border-color:${color}55">${label}</div>
       <div class="ticker-viewport">
-        <div class="ticker-track" id="${id}Track">${items.map(n=>`<span class="ticker-item">${n.content||n}</span>`).join('<span class="ticker-sep">•</span>')}</div>
+        <div class="ticker-track" id="${id}Track">${items.map(n=>`<span class="ticker-item">${n.content||n}</span>`).join(sep||'<span class="ticker-sep">•</span>')}</div>
       </div>
       <button class="ticker-toggle" id="${id}Toggle" onclick="toggleTicker('${id}')">⏸</button>
     </div>`:'';
 
-  banner.innerHTML=`<div class="ticker-wrap">${line('bulletin','📰 نشرة البطولة',bulletinItems,bulletinColor)}${line('match','⚽ أخبار المباريات',matchItems,'#1d4e89')}${line('general','📢 أخبار الكأس',generalItems,'#a3364c')}</div>`;
+  // الترتيب: المباريات أولاً، الرعاة في المنتصف، ثم أخبار الكأس العامة، ونشرة البطولة أخيراً
+  banner.innerHTML=`<div class="ticker-wrap">${
+    line('match','⚽ أخبار المباريات',matchItems,'#1d4e89')
+  }${
+    line('sponsors','🤝 رعاة البطولة',sponsorItems,'#a5813a','<span class="ticker-sep">رعاة البطولة</span>')
+  }${
+    line('general','📢 أخبار الكأس',generalItems,'#a3364c')
+  }${
+    line('bulletin','📰 نشرة البطولة',bulletinItems,bulletinColor)
+  }</div>`;
 
-  ['bulletin','match','general'].forEach(id=>{
-    const track=document.getElementById(id+'Track');
-    if(track)startTickerAnim(id,track);
-  });
+  // تشغيل تسلسلي: خط واحد فقط يتحرك في كل مرة، وعند اكتمال دورته الكاملة ينتقل للتالي
+  const activeIds=['match','sponsors','general','bulletin'].filter(id=>document.getElementById(id+'Track'));
+  startSequentialTickers(activeIds);
 }
 
 const tickerState={};
-function startTickerAnim(id,track){
+let tickerCycle={ids:[],idx:0,timer:null};
+function startTickerAnim(id,track,onCycleDone){
   if(tickerState[id]?.raf)cancelAnimationFrame(tickerState[id].raf);
-  tickerState[id]={paused:false,pos:track.parentElement.offsetWidth};
+  tickerState[id]={paused:false,pos:track.parentElement.offsetWidth,done:false};
   const step=()=>{
     if(!tickerState[id].paused){
       tickerState[id].pos-=1.6;
-      if(tickerState[id].pos < -track.scrollWidth) tickerState[id].pos=track.parentElement.offsetWidth;
+      if(tickerState[id].pos < -track.scrollWidth){
+        tickerState[id].pos=track.parentElement.offsetWidth;
+        if(onCycleDone&&!tickerState[id].done){tickerState[id].done=true;onCycleDone();return;}
+      }
       track.style.transform='translateX('+tickerState[id].pos+'px)';
     }
     tickerState[id].raf=requestAnimationFrame(step);
   };
   step();
+}
+function startSequentialTickers(ids){
+  if(tickerCycle.timer)clearTimeout(tickerCycle.timer);
+  Object.keys(tickerState).forEach(id=>{if(tickerState[id]?.raf)cancelAnimationFrame(tickerState[id].raf);});
+  ids.forEach(id=>{
+    const line=document.getElementById(id+'Line');
+    if(line)line.classList.remove('ticker-active');
+    const track=document.getElementById(id+'Track');
+    if(track)track.style.transform='translateX(0px)';
+  });
+  tickerCycle={ids,idx:0};
+  playActiveTicker();
+}
+function playActiveTicker(){
+  const {ids,idx}=tickerCycle;
+  if(!ids.length)return;
+  const id=ids[idx%ids.length];
+  const line=document.getElementById(id+'Line');
+  const track=document.getElementById(id+'Track');
+  ids.forEach(other=>{const l=document.getElementById(other+'Line');if(l)l.classList.remove('ticker-active');});
+  if(line)line.classList.add('ticker-active');
+  if(track)startTickerAnim(id,track,()=>{
+    tickerCycle.idx=(tickerCycle.idx+1)%ids.length;
+    tickerCycle.timer=setTimeout(playActiveTicker,300);
+  });
 }
 function toggleTicker(id){
   if(!tickerState[id])return;
@@ -1166,31 +1206,9 @@ async function loadTeams(){
 }
 
 sb.channel('rt-t').on('postgres_changes',{event:'*',schema:'public',table:'matches',filter:`tournament_id=eq.${TID}`},()=>{loadMatches();loadStandings();}).subscribe();
-if(TID){loadTournament();loadStandings();loadMatches();loadScorers();loadTeams();loadSponsors();loadFollowSection();}
+if(TID){loadTournament();loadStandings();loadMatches();loadScorers();loadTeams();loadFollowSection();}
 if(REQUESTED_TAB)setTimeout(()=>jumpToTab(REQUESTED_TAB),400);
 else document.getElementById('heroTitle').textContent='لم يتم تحديد البطولة — ارجع للصفحة الرئيسية';
-
-async function loadSponsors(){
-  const wrap=document.getElementById('sponsorsTicker');
-  if(!TID){wrap.innerHTML='';return;}
-  const {data}=await sb.from('sponsors').select('*').eq('tournament_id',TID).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
-  if(!data||!data.length){wrap.innerHTML='';return;}
-
-  const color='#a5813a';
-  const sep='<span class="ticker-sep">رعاة البطولة</span>';
-  const items=data.map(s=>`<span class="ticker-item ticker-sponsor-item"><img class="ticker-sponsor-logo" src="${s.logo_url}" alt="${s.name}" loading="lazy">${s.name}</span>`);
-
-  wrap.innerHTML=`<div class="ticker-wrap"><div class="ticker-line" style="border-color:${color}55">
-      <div class="ticker-label" style="background:${color}22;color:${color};border-color:${color}55">🤝 رعاة البطولة</div>
-      <div class="ticker-viewport">
-        <div class="ticker-track" id="sponsorsTrack">${items.join(sep)}</div>
-      </div>
-      <button class="ticker-toggle" id="sponsorsToggle" onclick="toggleTicker('sponsors')">⏸</button>
-    </div></div>`;
-
-  const track=document.getElementById('sponsorsTrack');
-  if(track)startTickerAnim('sponsors',track);
-}
 
 async function loadFollowSection(){
   const sec=document.getElementById('followSection');
