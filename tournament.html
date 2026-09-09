@@ -1055,8 +1055,16 @@ async function loadStandings(){
 }
 
 async function loadMatches(){
-  // جلب المباريات مستقلة عن علاقات الفرق يمنع ظهور «لا توجد مباريات» عند تعطل علاقة FK.
-  const {data:matches,error:matchesError}=await sb.from('matches').select('*').eq('tournament_id',TID).order('match_no');
+  // العلاقة نفسها المستخدمة في صفحة المباراة؛ تعيد الاسم والشعار حتى إذا كان
+  // سجل الفريق قديمًا أو لا يحمل tournament_id الحالي.
+  let {data:matches,error:matchesError}=await sb.from('matches')
+    .select('*,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color,color_primary,secondary_color,logo_url),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color,color_primary,secondary_color,logo_url)')
+    .eq('tournament_id',TID).order('match_no');
+  // مسار احتياطي فقط إذا تعذّر توسيع العلاقة لأي سبب.
+  if(matchesError){
+    const fallback=await sb.from('matches').select('*').eq('tournament_id',TID).order('match_no');
+    matches=fallback.data;matchesError=fallback.error;
+  }
   countUpTo('hM',matches?.length||0);
   if(matchesError){document.getElementById('maWrap').innerHTML='<div class="empty"><span>⚠️</span><p>تعذر تحميل الجدول مؤقتًا — أعد المحاولة</p></div>';return;}
   if(!matches||!matches.length){document.getElementById('maWrap').innerHTML='<div class="empty"><span>📅</span><p>لا توجد مباريات بعد</p></div>';return;}
