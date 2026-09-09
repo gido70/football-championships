@@ -1,0 +1,17 @@
+name: Repair match data 2026-09-08
+on:
+  push:
+    paths:
+      - scripts/repair-2026-09-08.mjs
+      - .github/workflows/repair-2026-09-08.yml
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/repair-2026-09-08.mjs
