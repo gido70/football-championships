@@ -21,6 +21,12 @@
   .grid{gap:9px}.match{border-radius:15px}.mh{padding:8px 10px;font-size:11px}.score{padding:10px 6px 7px;gap:4px}.team b{font-size:13px}.team small{font-size:9px}.num{font-size:26px;min-width:68px}.scorefix{gap:7px;margin-top:5px}.scorefix button{width:44px;height:44px;font-size:19px;padding:0}.actions{padding:0 7px 8px;gap:6px}.side{padding:6px;border-radius:11px}.sidehead{font-size:10.5px;margin-bottom:5px}.sidebtns{grid-template-columns:1.35fr 1fr 1fr;gap:5px}.sidebtns button{min-height:46px;padding:7px 3px;font-size:11px;border-radius:10px}.statusbar{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:0 7px 8px}.statusbar .btn{min-height:45px;padding:8px 4px;font-size:11.5px}.events{padding:7px 9px}.events h4{margin-bottom:4px}.evt{grid-template-columns:31px 22px 1fr 43px;min-height:40px;font-size:11px}.evt button{min-height:36px;padding:4px}.motm{padding:8px}.motmrow{grid-template-columns:1fr}.motm select,.motm .btn{min-height:44px}.sheet{padding:16px 12px calc(14px + env(safe-area-inset-bottom,0px));border-radius:20px 20px 0 0}.sheet h3{font-size:17px}.form input,.form select{min-height:48px;font-size:16px}.modal-actions .btn{min-height:50px}.msg{bottom:calc(10px + env(safe-area-inset-bottom,0px));right:8px;left:8px;font-size:13px}
 }
 @media(max-height:500px) and (orientation:landscape){.top{position:relative}.controls{position:relative;top:auto}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* تباين مرتفع للشاشات الداكنة — النصوص الثانوية وأيقونة التاريخ */
+.title p,.mh,.sidehead,.events h4,.footnote,.team small,.form label,.empty{color:#fff}
+.pill{color:#fff;border-color:rgba(255,255,255,.28)}
+.badge.scheduled{color:#fff;background:rgba(78,161,255,.32);border:1px solid rgba(145,197,255,.55)}
+.controls select,.controls input,.form input,.form select,.motm select{color:#fff;color-scheme:dark}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(2);opacity:1;cursor:pointer}
 </style>
 </head>
 <body>
