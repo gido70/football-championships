@@ -286,6 +286,14 @@ select,input:not([type=color]),textarea{font-family:"Tajawal",sans-serif!importa
       <textarea id="public_notice" placeholder="مثلاً: تنبيه للجمهور، تعديل موعد مباراة، إلخ" style="height:70px"></textarea>
     </div>
 
+    <div class="field full" style="margin-top:14px;display:flex;align-items:center;gap:10px;padding:12px;background:rgba(163,54,76,.06);border:1px solid rgba(163,54,76,.25);border-radius:12px">
+      <input type="checkbox" id="auto_news_enabled" checked style="width:20px;height:20px">
+      <label style="margin:0;cursor:pointer;flex:1" for="auto_news_enabled">
+        🤖 الأخبار العامة التلقائية (شريط "أخبار الكأس") — مفعّلة افتراضياً
+        <div style="font-weight:400;color:#8fa3c0;font-size:12px;margin-top:4px">أوقفها مؤقتاً قبل إضافة خبر إداري خاص بك حتى لا يُغطّى بأحداث تلقائية، ثم أعد تفعيلها بعد نشر خبرك.</div>
+      </label>
+    </div>
+
     <div class="actions" style="margin-top:16px">
       <button type="submit" class="btn" id="submitBtn">💾 حفظ البطولة</button>
       <button type="button" class="btn secondary" onclick="resetForm()">تفريغ</button>
@@ -468,6 +476,7 @@ async function editTour(id){
   document.getElementById('status').value=r.status||'draft';
   document.getElementById('notes').value=r.notes||'';
   document.getElementById('public_notice').value=r.public_notice||'';
+  document.getElementById('auto_news_enabled').checked=r.auto_news_enabled!==false;
   document.getElementById('youtube_url').value=r.youtube_url||'';
   if(r.primary_color) document.getElementById('primary_color').value=r.primary_color;
   if(r.secondary_color) document.getElementById('secondary_color').value=r.secondary_color;
@@ -726,6 +735,7 @@ document.getElementById('tForm').addEventListener('submit',async e=>{
     is_public:document.getElementById('is_public').checked,
     notes:document.getElementById('notes').value.trim()||null,
     public_notice:document.getElementById('public_notice').value.trim()||null,
+    auto_news_enabled:document.getElementById('auto_news_enabled').checked,
     youtube_url:document.getElementById('youtube_url').value.trim()||null,
     is_active:document.getElementById('status').value==='active',
   };
