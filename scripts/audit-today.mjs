@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+const config=fs.readFileSync(new URL('../supabase-config.js',import.meta.url),'utf8');
+const base=config.match(/SUPABASE_URL="([^"]+)"/)[1];
+const key=config.match(/SUPABASE_ANON_KEY="([^"]+)"/)[1];
+const headers={apikey:key,Authorization:`Bearer ${key}`};
+const get=async p=>{const r=await fetch(`${base}/rest/v1/${p}`,{headers});if(!r.ok)throw new Error(await r.text());return r.json();};
+const tid='eee33333-5d2a-4f3b-a981-d4b8f5f86143';
+const matches=await get(`matches?tournament_id=eq.${tid}&match_date=eq.2026-09-09&select=id,match_no,match_date,match_time,status,home_team_id,away_team_id&order=match_time`);
+const teams=await get(`teams?tournament_id=eq.${tid}&select=id,name,name_ar`);
+const players=await get(`players?tournament_id=eq.${tid}&select=id,team_id`);
+const tm=Object.fromEntries(teams.map(t=>[t.id,t.name_ar||t.name]));
+const counts={};for(const p of players)counts[p.team_id]=(counts[p.team_id]||0)+1;
+console.log(JSON.stringify(matches.map(m=>({...m,home:tm[m.home_team_id],away:tm[m.away_team_id],home_players:counts[m.home_team_id]||0,away_players:counts[m.away_team_id]||0})),null,2));
