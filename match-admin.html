@@ -423,6 +423,7 @@ select option{background:#0f2a45;color:#ffffff}
         <div class="evt-title" id="hEvtTitle">⚽ الفريق الأول</div>
         <div class="evt-btns">
           <button class="evt-btn g" onclick="openEvt('h','goal')">⚽ هدف</button>
+          <button class="evt-btn" style="background:rgba(168,85,247,.14);border-color:rgba(168,85,247,.4)" onclick="openEvt('h','own_goal')">↩️ هدف عكسي</button>
           <button class="evt-btn y" onclick="openEvt('h','yellow_card')">🟨 صفراء</button>
           <button class="evt-btn r" onclick="openEvt('h','red_card')">🟥 حمراء</button>
           <button class="evt-btn" onclick="openEvt('h','substitution')">🔄 تبديل</button>
@@ -447,6 +448,7 @@ select option{background:#0f2a45;color:#ffffff}
         <div class="evt-title" id="aEvtTitle">⚽ الفريق الثاني</div>
         <div class="evt-btns">
           <button class="evt-btn g" onclick="openEvt('a','goal')">⚽ هدف</button>
+          <button class="evt-btn" style="background:rgba(168,85,247,.14);border-color:rgba(168,85,247,.4)" onclick="openEvt('a','own_goal')">↩️ هدف عكسي</button>
           <button class="evt-btn y" onclick="openEvt('a','yellow_card')">🟨 صفراء</button>
           <button class="evt-btn r" onclick="openEvt('a','red_card')">🟥 حمراء</button>
           <button class="evt-btn" onclick="openEvt('a','substitution')">🔄 تبديل</button>
@@ -512,8 +514,8 @@ async function pushNews(text){
   if(!cur||!cur.tournament_id)return;
   await sb.from('news_items').insert({tournament_id:cur.tournament_id,match_id:cur.id,title:text.slice(0,80),content:text});
 }
-const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل',penalty_missed:'ركلة جزاء ضائعة'};
-const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
+const EL={goal:'هدف',own_goal:'هدف عكسي',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل',penalty_missed:'ركلة جزاء ضائعة'};
+const EI={goal:'⚽',own_goal:'↩️',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
 
 function setMsg(t,c=''){const b=document.getElementById('statusMsg');if(b){b.className='status '+c;b.textContent=t;}}
 
@@ -1261,11 +1263,14 @@ async function submitEvt(side){
   }
 
   const isPenalty=type==='goal'&&document.getElementById(side+'PenCheck')?.checked;
-  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:pid||null,team_id:tid,event_type:type,minute:min,event_subtype:isPenalty?'penalty':null});
+  const isOwnGoal=type==='own_goal';
+  if(isOwnGoal&&!pid){setMsg('⚠️ اختر لاعب الفريق الذي سجل الهدف العكسي','warn');return;}
+  const storedType=isOwnGoal?'goal':type;
+  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:pid||null,team_id:tid,event_type:storedType,minute:min,event_subtype:isOwnGoal?'own_goal':(isPenalty?'penalty':null)});
   if(error){setMsg('❌ فشل تسجيل الحدث: '+error.message,'err');return;}
 
-  if(type==='goal'){
-    const f=side==='h'?'home_score':'away_score';
+  if(type==='goal'||isOwnGoal){
+    const f=isOwnGoal?(side==='h'?'away_score':'home_score'):(side==='h'?'home_score':'away_score');
     const v=(cur[f]||0)+1;
     const {error:e2}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
     if(!e2){cur[f]=v;document.getElementById(side==='h'?'hScore':'aScore').textContent=v;}
@@ -1276,6 +1281,7 @@ async function submitEvt(side){
 
   const tn2=side==='h'?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name);
   if(type==='goal')pushNews((isPenalty?'⚽🎯 هدف من ركلة جزاء! ':'⚽ هدف! ')+playerLabel+' يسجل لـ'+tn2+' في الدقيقة '+min+' — '+(cur.home_score??0)+' - '+(cur.away_score??0));
+  else if(isOwnGoal)pushNews('↩️ هدف عكسي على '+playerLabel+' ('+tn2+') في الدقيقة '+min+' — يُحتسب للفريق المنافس');
   else if(type==='yellow_card')pushNews('🟨 بطاقة صفراء لـ '+playerLabel+' ('+tn2+')');
   else if(type==='red_card')pushNews('🟥 بطاقة حمراء لـ '+playerLabel+' ('+tn2+')');
 }
@@ -1287,17 +1293,29 @@ async function loadEvts(){
   list.innerHTML=data.map(e=>`
     <div class="evt-item">
       <span class="evt-mn">${e.minute||0}'</span>
-      <span class="evt-ic">${EI[e.event_type]||'📌'}</span>
-      <div class="evt-dt"><div class="evt-pl">${e.player?.full_name_ar||e.player?.name||'—'}</div><div>${e.team?.name_ar||e.team?.name||''} — ${EL[e.event_type]||e.event_type}</div></div>
-      <button class="evt-del" onclick="delEvt('${e.id}','${e.event_type}','${e.team_id}')">🗑</button>
+      <span class="evt-ic">${e.event_subtype==='own_goal'?'↩️':(EI[e.event_type]||'📌')}</span>
+      <div class="evt-dt"><div class="evt-pl">${e.player?.full_name_ar||e.player?.name||'—'}</div><div>${e.team?.name_ar||e.team?.name||''} — ${e.event_subtype==='own_goal'?'هدف عكسي (لصالح المنافس)':(EL[e.event_type]||e.event_type)}</div></div>
+      <button class="evt-del" onclick="delEvt('${e.id}','${e.event_type}','${e.team_id}','${e.event_subtype||''}',this)">🗑</button>
     </div>`).join('');
 }
 
-async function delEvt(id,type,teamId){
-  if(!confirm('حذف؟'))return;
+const armedEventDeletes=new Map();
+async function delEvt(id,type,teamId,subtype,btn){
+  if(!armedEventDeletes.has(id)){
+    armedEventDeletes.set(id,setTimeout(()=>{
+      armedEventDeletes.delete(id);
+      if(btn){btn.textContent='🗑';btn.classList.remove('armed');}
+    },5000));
+    if(btn){btn.textContent='⚠️ تأكيد';btn.classList.add('armed');}
+    setMsg('اضغط «تأكيد» مرة ثانية خلال 5 ثوانٍ لحذف الحدث','warn');
+    return;
+  }
+  clearTimeout(armedEventDeletes.get(id));
+  armedEventDeletes.delete(id);
   await sb.from('match_events').delete().eq('id',id);
   if(type==='goal'&&cur){
-    const f=teamId===cur.home_team_id?'home_score':'away_score';
+    const ownGoal=subtype==='own_goal';
+    const f=ownGoal?(teamId===cur.home_team_id?'away_score':'home_score'):(teamId===cur.home_team_id?'home_score':'away_score');
     const v=Math.max(0,(cur[f]||0)-1);
     const {error}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
     if(!error){cur[f]=v;document.getElementById(f==='home_score'?'hScore':'aScore').textContent=v;}
@@ -1687,7 +1705,7 @@ async function printFullMatchReport(mode='docx'){
       <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">⭐ نجم المباراة</td><td style="padding:8px" colspan="3">${motmP?escR((motmP.full_name_ar||motmP.name)+' (#'+(motmP.number??'')+')'):'— لم يُحدَّد —'}</td></tr>
     </table>`;
 
-  const eventsRows=(allEvents||[]).map(e=>[e.minute+"'",EL2[e.event_type]||e.event_type,e.player?.full_name_ar||e.player?.name||e.manual_player_name||'—',teamOf(e)]);
+  const eventsRows=(allEvents||[]).map(e=>[e.minute+"'",e.event_subtype==='own_goal'?'↩️ هدف عكسي (لصالح المنافس)':(EL2[e.event_type]||e.event_type),e.player?.full_name_ar||e.player?.name||e.manual_player_name||'—',teamOf(e)]);
   const eventsTable=rTable('⚡ سجل أحداث المباراة كاملاً',['الدقيقة','الحدث','اللاعب','الفريق'],eventsRows);
 
   let varTable='';

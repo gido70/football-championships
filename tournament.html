@@ -492,7 +492,7 @@ async function generateAutoBulletin(){
     }
   }
   // 3) الهداف الحالي (إن وُجد إسناد لاعب حقيقي لأي هدف)
-  const {data:goalEvents}=await sb.from('match_events').select('player_id,player:players(full_name_ar,name)').eq('tournament_id',TID).eq('event_type','goal').not('player_id','is',null);
+  const {data:goalEvents}=await sb.from('match_events').select('player_id,player:players(full_name_ar,name)').eq('tournament_id',TID).eq('event_type','goal').or('event_subtype.neq.own_goal,event_subtype.is.null').not('player_id','is',null);
   if(goalEvents?.length){
     const cnt={};goalEvents.forEach(e=>{const n=e.player?.full_name_ar||e.player?.name;if(n)cnt[n]=(cnt[n]||0)+1;});
     const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
@@ -1089,9 +1089,10 @@ async function loadMatches(){
 async function loadScorers(){
   // جلب مباشر بـ tournament_id — أسرع وأكثر موثوقية
   const {data:evts}=await sb.from('match_events')
-    .select('player_id,manual_player_name,team_id,player:players!player_id(name,full_name_ar,jersey_photo_url,number)')
+    .select('player_id,manual_player_name,team_id,event_subtype,player:players!player_id(name,full_name_ar,jersey_photo_url,number)')
     .eq('tournament_id',TID)
-    .eq('event_type','goal');
+    .eq('event_type','goal')
+    .or('event_subtype.neq.own_goal,event_subtype.is.null');
   
   // جلب بيانات الفرق منفصلة
   const {data:teams}=await sb.from('teams').select('id,name,name_ar,primary_color,secondary_color').eq('tournament_id',TID);

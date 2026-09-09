@@ -215,7 +215,7 @@ async function init(){
 
   // جلب مباشر بـ tournament_id — أسرع وأكثر موثوقية
   const {data:events}=await sb.from('match_events')
-    .select('event_type,player_id,team_id,manual_player_name,var_result,player:players!player_id(name,full_name_ar,number,jersey_photo_url)')
+    .select('event_type,event_subtype,player_id,team_id,manual_player_name,var_result,player:players!player_id(name,full_name_ar,number,jersey_photo_url)')
     .eq('tournament_id',TID);
 
   buildScorers(events,teamName);
@@ -263,7 +263,7 @@ function tally(events,type,teamName={}){
 }
 
 function buildScorers(events,teamName){
-  const list=tally(events,'goal',teamName);
+  const list=tally((events||[]).filter(e=>e.event_subtype!=='own_goal'),'goal',teamName);
   const wrap=document.getElementById('scorersWrap');
   if(!list.length){wrap.innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف مسجلة بعد</p></div>';return;}
   wrap.innerHTML=list.slice(0,20).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'هدف',p.photo,'goal',p.number)).join('');
