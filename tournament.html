@@ -550,54 +550,57 @@ async function loadNews(){
   startSequentialTickers(activeIds);
 }
 
-const tickerState={};
-let tickerCycle={ids:[],idx:0,timer:null};
-function startTickerAnim(id,track,onCycleDone){
-  if(tickerState[id]?.raf)cancelAnimationFrame(tickerState[id].raf);
-  tickerState[id]={paused:false,pos:track.parentElement.offsetWidth,done:false};
-  const step=()=>{
-    if(!tickerState[id].paused){
-      tickerState[id].pos-=1.6;
-      if(tickerState[id].pos < -track.scrollWidth){
-        tickerState[id].pos=track.parentElement.offsetWidth;
-        if(onCycleDone&&!tickerState[id].done){tickerState[id].done=true;onCycleDone();return;}
-      }
-      track.style.transform='translateX('+tickerState[id].pos+'px)';
-    }
-    tickerState[id].raf=requestAnimationFrame(step);
-  };
-  step();
-}
+const tickerState={}; // فقط حالة الإيقاف المؤقت اليدوي لكل شريط: {paused:true/false}
+let tickerCycle={ids:[],idx:0,pos:null,driver:null};
+
 function startSequentialTickers(ids){
-  if(tickerCycle.timer)clearTimeout(tickerCycle.timer);
-  Object.keys(tickerState).forEach(id=>{if(tickerState[id]?.raf)cancelAnimationFrame(tickerState[id].raf);});
-  ids.forEach(id=>{
+  // إن كانت نفس مجموعة الأشرطة موجودة مسبقاً، حافظ على مكان الدور الحالي بدل العودة للشريط الأول
+  const sameSet=tickerCycle.ids.length===ids.length && tickerCycle.ids.every((v,i)=>v===ids[i]);
+  if(!sameSet)tickerCycle.idx=0;
+  tickerCycle.pos=null; // إعادة ضبط الموضع دائماً لتفادي أي قفزة بصرية بعد إعادة بناء عناصر الصفحة
+  tickerCycle.ids=ids;
+
+  ids.forEach((id,i)=>{
+    const line=document.getElementById(id+'Line');
+    if(line)line.classList.toggle('ticker-active', i===(tickerCycle.idx%ids.length));
+    const track=document.getElementById(id+'Track');
+    if(track && i!==(tickerCycle.idx%ids.length)) track.style.transform='translateX(0px)';
+  });
+
+  if(!tickerCycle.driver) tickerCycle.driver=setInterval(tickerDriverTick,16);
+}
+
+function tickerDriverTick(){
+  const {ids}=tickerCycle;
+  if(!ids.length)return;
+  const id=ids[tickerCycle.idx%ids.length];
+  const track=document.getElementById(id+'Track');
+  const viewport=track?track.parentElement:null;
+  if(!track||!viewport)return; // الشريط اختفى (لا يوجد محتوى حالياً) — ينتظر إعادة البناء التالية
+  if(tickerCycle.pos==null) tickerCycle.pos=viewport.offsetWidth;
+  if(tickerState[id]?.paused)return;
+
+  tickerCycle.pos-=1.6;
+  track.style.transform='translateX('+tickerCycle.pos+'px)';
+
+  if(tickerCycle.pos < -track.scrollWidth){
     const line=document.getElementById(id+'Line');
     if(line)line.classList.remove('ticker-active');
-    const track=document.getElementById(id+'Track');
-    if(track)track.style.transform='translateX(0px)';
-  });
-  tickerCycle={ids,idx:0};
-  playActiveTicker();
-}
-function playActiveTicker(){
-  const {ids,idx}=tickerCycle;
-  if(!ids.length)return;
-  const id=ids[idx%ids.length];
-  const line=document.getElementById(id+'Line');
-  const track=document.getElementById(id+'Track');
-  ids.forEach(other=>{const l=document.getElementById(other+'Line');if(l)l.classList.remove('ticker-active');});
-  if(line)line.classList.add('ticker-active');
-  if(track)startTickerAnim(id,track,()=>{
     tickerCycle.idx=(tickerCycle.idx+1)%ids.length;
-    tickerCycle.timer=setTimeout(playActiveTicker,300);
-  });
+    tickerCycle.pos=null;
+    const nextId=ids[tickerCycle.idx%ids.length];
+    const nextLine=document.getElementById(nextId+'Line');
+    if(nextLine)nextLine.classList.add('ticker-active');
+  }
 }
+
 function toggleTicker(id){
-  if(!tickerState[id])return;
+  tickerState[id]=tickerState[id]||{paused:false};
   tickerState[id].paused=!tickerState[id].paused;
-  document.getElementById(id+'Toggle').textContent=tickerState[id].paused?'▶':'⏸';
+  const btn=document.getElementById(id+'Toggle');
+  if(btn)btn.textContent=tickerState[id].paused?'▶':'⏸';
 }
+
 
 // تحديث تلقائي للشريط كل 25 ثانية بلا حاجة لإعادة تحميل الصفحة
 setInterval(()=>{if(TID)loadNews();},25000);
