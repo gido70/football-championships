@@ -829,7 +829,7 @@ function showLocalNotification(title,body){
 
 async function loadLiveMatch(){
   const sec=document.getElementById('liveMatchSection');
-  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(4);
+  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live');
   if(!matches?.length){sec.innerHTML='';return;}
 
   matches.forEach(m=>{
