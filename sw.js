@@ -1,5 +1,5 @@
-// sw.js — network-first public shell — v8
-const VERSION = 'football-shell-v8';
+// sw.js — network-first public shell — v9
+const VERSION = 'football-shell-v9';
 const CORE = [
   './',
   './index.html',
@@ -10,7 +10,9 @@ const CORE = [
   './supabase-config.js',
   './tournament-scope.js',
   './vendor/supabase.min.js',
-  './icon-app.png'
+  './icon-app.png',
+  './uefa-champions-app-192.png',
+  './uefa-champions-app-512.png'
 ];
 
 self.addEventListener('install', e => {
