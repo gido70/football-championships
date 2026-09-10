@@ -294,6 +294,7 @@ a{text-decoration:none;color:inherit}
 </div>
 
 <script src="supabase-config.js"></script>
+<script src="tournament-scope.js?v=20260910-1"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 
@@ -310,6 +311,7 @@ function setScoreWithPop(elId,newVal){
 }
 const qs=new URLSearchParams(location.search);
 const MID=qs.get('id');
+const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
 let cur=null;
 const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل',injury:'إصابة'};
 const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄',injury:'🩹'};
@@ -769,7 +771,7 @@ async function init(){
   if(error||!m){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>تعذر تحميل بيانات المباراة</p></div>';return;}
   cur=m;
 
-  document.getElementById('backLink').href='tournament.html?id='+m.tournament_id+'&tab=ma';
+  document.getElementById('backLink').href=scopeUrl('tournament.html?id='+m.tournament_id+'&tab=ma');
 
   const {data:t}=await sb.from('tournaments').select('*').eq('id',m.tournament_id).single();
   if(t){
@@ -848,7 +850,7 @@ async function init(){
   }
 
   if(m.stream_url){
-    if(document.getElementById('floatBack'))document.getElementById('floatBack').href='tournament.html?id='+(m.tournament_id||'');
+    if(document.getElementById('floatBack'))document.getElementById('floatBack').href=scopeUrl('tournament.html?id='+(m.tournament_id||''));
   document.getElementById('streamWrap').innerHTML=`<div class="video-embed-wrap" id="videoEmbedBox">
       <iframe src="${youtubeEmbed(m.stream_url)}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe>
       <button class="video-fs-btn" onclick="toggleVideoFullscreen()" title="ملء الشاشة">⛶</button>
