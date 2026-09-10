@@ -424,6 +424,7 @@ img[src=""], img:not([src]) { display:none !important; }
 
 <script src="supabase-config.js"></script>
 <script src="tournament-scope.js?v=20260910-3"></script>
+<script src="public-date.js?v=20260910-1"></script>
 <script>
 const SUPABASE_READY=Boolean(window.supabase&&window.SUPABASE_URL&&window.SUPABASE_ANON_KEY);
 const sb=SUPABASE_READY?window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY):null;
@@ -546,10 +547,10 @@ async function generateAutoBulletin(){
   // 4) المباراة القادمة
   const {data:nextMatches}=await sb.from('matches').select('*').eq('tournament_id',TID).eq('status','scheduled').order('match_date').limit(1);
   const nextMatch=nextMatches?.[0];
-  if(nextMatch&&teams?.length){
+  if(nextMatch?.match_date&&nextMatch.home_team_id&&nextMatch.away_team_id&&teams?.length){
     const hn=teams.find(t=>t.id===nextMatch.home_team_id)?.name_ar||'';
     const an=teams.find(t=>t.id===nextMatch.away_team_id)?.name_ar||'';
-    items.push(`📅 المباراة القادمة: ${hn} × ${an} — ${nextMatch.match_date||''}`);
+    if(hn&&an)items.push(`📅 المباراة القادمة: ${hn} × ${an} — ${window.PublicDate.format(nextMatch.match_date)}`);
   }
   return {items,color:bulletinColor};
 }
@@ -821,7 +822,7 @@ async function loadMOTD(){
     </div>`;
   }
 
-  const dateLabel=new Date(lastDate).toLocaleDateString('ar-SA-u-nu-latn',{weekday:'long',day:'numeric',month:'long'});
+  const dateLabel=window.PublicDate.format(lastDate,{weekday:true});
   sec.innerHTML=`<div class="motd-wrap">
     <div class="motd-head"><h3>⭐ نجوم المباراة</h3><span class="motd-date">${dateLabel}</span></div>
     <div class="motd-scroll">${matches.map(m=>`
@@ -1158,7 +1159,7 @@ async function loadMatches(){
       const aBadgeInner=aLogo?`<img src="${aLogo}">`:initials(aName);
       html+=`<a class="m-card ${lv?'live':''}" href="match-live.html?id=${m.id}" style="display:block;cursor:pointer">
         <div class="m-top">
-          <span class="m-info">${m.match_date?new Date(m.match_date).toLocaleDateString('ar-SA-u-nu-latn',{weekday:'short',month:'short',day:'numeric'}):''} ${m.match_time||''}</span>
+          <span class="m-info">${m.match_date?window.PublicDate.format(m.match_date,{weekday:true}):''} ${m.match_time||''}</span>
           <span class="m-badge ${sm[m.status]||'b-sched'}">${lv?'<span class=live-pulse></span>':''} ${sl[m.status]||m.status}</span>
         </div>
         <div class="m-teams">
