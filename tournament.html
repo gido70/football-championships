@@ -364,7 +364,7 @@ img[src=""], img:not([src]) { display:none !important; }
   <div class="hero-overlay"></div>
   <div class="hero-content">
     <!-- صف الشعارات: يسار ويمين فقط -->
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:20px 28px;position:relative;z-index:2;width:100%">
+    <div id="heroLogosRow" style="display:flex;justify-content:space-between;align-items:flex-start;padding:20px 28px;position:relative;z-index:2;width:100%">
       <div id="committeeLogoWrap"></div>
       <div id="cupLogoWrap"></div>
     </div>
@@ -1006,10 +1006,15 @@ async function loadTournament(){
       style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))"
       onerror="this.style.display='none'">`;
 
-  // ترتيب الشعارين قابل للعكس من إعدادات البطولة (أو إخفاء كامل إن كانت الخلفية تحتويهما مسبقاً)
+  // ترتيب الشعارين قابل للعكس من إعدادات البطولة.
+  // عند طلب إخفاء الشعارات المكررة داخل الخلفية، يبقى شعار البطولة نفسه ظاهرًا
+  // في المنتصف حتى تظل هوية الرابط المستقل واضحة للجمهور.
+  const logosRow=document.getElementById('heroLogosRow');
+  logosRow.style.justifyContent='space-between';
   if(t.hide_logo_overlay){
     document.getElementById('committeeLogoWrap').innerHTML='';
-    document.getElementById('cupLogoWrap').innerHTML='';
+    document.getElementById('cupLogoWrap').innerHTML=cupImg;
+    logosRow.style.justifyContent='center';
   }else if(t.logo_layout==='swapped'){
     document.getElementById('committeeLogoWrap').innerHTML=cupImg;
     document.getElementById('cupLogoWrap').innerHTML=committeeImg;
