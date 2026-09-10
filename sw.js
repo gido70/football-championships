@@ -1,5 +1,5 @@
-// sw.js — network-first public shell — v4
-const VERSION = 'football-shell-v4';
+// sw.js — network-first public shell — v5
+const VERSION = 'football-shell-v5';
 const CORE = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const CORE = [
   './match-live.html',
   './public-ui.css',
   './supabase-config.js',
+  './tournament-scope.js',
   './vendor/supabase.min.js',
   './icon-app.png'
 ];
