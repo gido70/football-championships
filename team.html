@@ -179,6 +179,18 @@ function safeText(candidate,bg,dark,light){
 
 let teamColor='#c9a84c';
 let teamData=null;
+let teamPlayersPromise=null;
+
+function getTeamPlayers(){
+  if(!teamPlayersPromise){
+    teamPlayersPromise=sb.from('players')
+      .select('id,name,full_name_ar,number,shirt_number,role,nationality,jersey_photo_url')
+      .eq('team_id',TID)
+      .order('number')
+      .then(result=>result.data||[]);
+  }
+  return teamPlayersPromise;
+}
 
 function showTab(btn,name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -189,7 +201,7 @@ function showTab(btn,name){
 
 async function loadTeam(){
   if(!TID)return;
-  const {data:t}=await sb.from('teams').select('*').eq('id',TID).single();
+  const {data:t}=await sb.from('teams').select('id,tournament_id,name,name_ar,group_code,primary_color,secondary_color,logo_url').eq('id',TID).single();
   if(!t)return;
   teamData=t;
   const name=t.name_ar||t.name||'الفريق';
@@ -211,12 +223,12 @@ async function loadTeam(){
   }
 
   const photoSection=document.getElementById('teamPhotoSection');
-  if(t.team_photo_url){
-    document.getElementById('teamPhotoImg').src=t.team_photo_url;
+  photoSection.style.display='none';
+  sb.from('teams').select('team_photo_url').eq('id',TID).single().then(({data})=>{
+    if(!data?.team_photo_url)return;
+    document.getElementById('teamPhotoImg').src=data.team_photo_url;
     photoSection.style.display='block';
-  }else{
-    photoSection.style.display='none';
-  }
+  });
 
   // تطبيق لون الفريق على التبويبات (بتباين آمن)
   const textOnPage=safeText(color,'#FFFFFF');
@@ -231,10 +243,7 @@ async function loadTeam(){
 }
 
 async function loadSquad(){
-  const {data:players}=await sb.from('players')
-    .select('*')
-    .eq('team_id',TID)
-    .order('number');
+  const players=await getTeamPlayers();
 
   document.getElementById('tsP').textContent=players?.length||0;
   if(!players||!players.length){
@@ -267,7 +276,7 @@ async function loadStats(){
     .select('player_id,event_type,event_subtype')
     .eq('team_id',TID);
 
-  const {data:players}=await sb.from('players').select('*').eq('team_id',TID).order('number');
+  const players=await getTeamPlayers();
   if(!players||!players.length){
     document.getElementById('statsTable').innerHTML='<div class="empty"><span>📊</span><p>لا توجد إحصائيات بعد</p></div>';
     return;
@@ -308,7 +317,7 @@ async function loadMatches(){
   const tournamentId=teamData?.tournament_id||'';
   const [matchesRes,teamsRes,cardsRes]=await Promise.all([
     sb.from('matches').select('*').eq('tournament_id',tournamentId).order('match_date').order('match_time').order('match_no'),
-    sb.from('teams').select('id,name,name_ar,primary_color,color_primary,group_code').eq('tournament_id',tournamentId),
+    sb.from('teams').select('id,name,name_ar,primary_color,group_code').eq('tournament_id',tournamentId),
     sb.from('match_events').select('team_id,event_type').eq('tournament_id',tournamentId).in('event_type',['yellow_card','red_card'])
   ]);
   const allMatches=matchesRes.data||[];
@@ -433,9 +442,7 @@ async function init(){
     backBtn.href = window.TournamentScope?.scopedUrl(ref)||ref;
   }
   await loadTeam();
-  await loadSquad();
-  await loadStats();
-  await loadMatches();
+  await Promise.all([loadSquad(),loadStats(),loadMatches()]);
 }
 
 init();

@@ -53,7 +53,7 @@ const files={}; // key -> File
 
 async function init(){
   if(!TOKEN){showErr('الرابط غير صحيح — تأكد من نسخ الرابط كاملًا.');return;}
-  const {data,error}=await sb.from('teams').select('*').eq('submit_token',TOKEN).single();
+  const {data,error}=await sb.from('teams').select('id,tournament_id,name,name_ar,access_code,submitted_by_name,admin_nationality,admin_photo_url,admin_doc_url,coach_name,coach_nationality,coach_photo_url,coach_id_url').eq('submit_token',TOKEN).single();
   if(error||!data){showErr('لم يتم العثور على فريق مرتبط بهذا الرابط.');return;}
   TEAM=data;
   showCodeGate();
