@@ -348,7 +348,7 @@ if(window.supabase&&window.SUPABASE_URL&&window.SUPABASE_ANON_KEY){
   showStartupError();
 }
 
-function withTimeout(promise,ms=12000){
+function withTimeout(promise,ms=25000){
   return Promise.race([
     promise,
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('request-timeout')),ms))
