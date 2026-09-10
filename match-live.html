@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-app.png">
 <title>المباراة</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="vendor/supabase.min.js?v=20260910-1"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh;overscroll-behavior-y:contain;overflow-x:hidden}
@@ -1089,23 +1089,7 @@ setInterval(()=>{ if(MID) init(); }, 30000);
 
 <script>
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js')
-    .then(reg=>{
-      // تحقق من تحديثات فورياً
-      reg.update();
-      // إن وجد service worker جديد، فعّله وأعد التحميل
-      reg.addEventListener('updatefound',()=>{
-        const nw=reg.installing;
-        nw.addEventListener('statechange',()=>{
-          if(nw.state==='installed'&&navigator.serviceWorker.controller){
-            // إعادة تحميل تلقائية لتطبيق التحديث
-            window.location.reload();
-          }
-        });
-      });
-    });
-  // استمع لرسائل التحديث
-  navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 </script>
 </body>
