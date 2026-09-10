@@ -421,7 +421,7 @@ const sb=SUPABASE_READY?window.supabase.createClient(window.SUPABASE_URL,window.
 const TID=new URLSearchParams(location.search).get('id');
 let TOURNAMENT_CACHE=null;
 
-function withTimeout(promise,ms=12000){
+function withTimeout(promise,ms=25000){
   return Promise.race([
     promise,
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('request-timeout')),ms))
