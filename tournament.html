@@ -1027,14 +1027,24 @@ async function loadTournament(){
 }
 
 
+let teamsSummaryPromise=null;
+function getTournamentTeamsSummary(){
+  if(!teamsSummaryPromise){
+    teamsSummaryPromise=sb.from('teams').select('id,name,name_ar,group_code,primary_color,secondary_color').eq('tournament_id',TID)
+      .then(result=>result);
+  }
+  return teamsSummaryPromise;
+}
+
 async function loadStandings(){
-  const {data:teams}=await sb.from('teams').select('*').eq('tournament_id',TID);
-  const {data:matches}=await sb.from('matches').select('*').eq('tournament_id',TID).eq('status','completed');
+  const {data:teams,error:teamsError}=await getTournamentTeamsSummary();
+  const {data:matches}=await sb.from('matches').select('id,home_team_id,away_team_id,home_score,away_score,status').eq('tournament_id',TID).eq('status','completed');
   const {data:cardEvents}=await sb.from('match_events').select('team_id,event_type').eq('tournament_id',TID).in('event_type',['yellow_card','red_card']);
   const {data:tourCfg}=await sb.from('tournaments').select('tournament_type,swiss_auto_qualify,swiss_playoff_cutoff').eq('id',TID).single();
   const isSwiss=tourCfg?.tournament_type==='swiss_league';
   const autoQ=tourCfg?.swiss_auto_qualify||8, playoffCut=tourCfg?.swiss_playoff_cutoff||24;
   countUpTo('hT',teams?.length||0);
+  if(teamsError){document.getElementById('stWrap').innerHTML='<div class="empty"><span>⚠️</span><p>تعذر تحميل الترتيب مؤقتًا — حاول مرة أخرى</p></div>';return;}
   if(!teams||!teams.length){document.getElementById('stWrap').innerHTML='<div class="empty"><span>📊</span><p>لا يوجد ترتيب بعد<br>أضف الفرق وابدأ المباريات</p></div>';return;}
   const st={};
   teams.forEach(t=>{st[t.id]={t,p:0,w:0,d:0,l:0,gf:0,ga:0,yellow:0,red:0};  });
@@ -1110,7 +1120,7 @@ async function loadMatches(){
   // العلاقة نفسها المستخدمة في صفحة المباراة؛ تعيد الاسم والشعار حتى إذا كان
   // سجل الفريق قديمًا أو لا يحمل tournament_id الحالي.
   let {data:matches,error:matchesError}=await sb.from('matches')
-    .select('*,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color,secondary_color,logo_url),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color,secondary_color,logo_url)')
+    .select('id,status,match_date,match_time,round_name,match_no,home_team_id,away_team_id,home_score,away_score,match_minute,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color,secondary_color)')
     .eq('tournament_id',TID).order('match_no');
   // مسار احتياطي فقط إذا تعذّر توسيع العلاقة لأي سبب.
   if(matchesError){
@@ -1125,7 +1135,7 @@ async function loadMatches(){
   // لا يحمل صفّها tournament_id الحالي، وكان الشرط السابق يخفي الاسم والشعار.
   const teamIds=[...new Set(matches.flatMap(m=>[m.home_team_id,m.away_team_id]).filter(Boolean))];
   const {data:teams}=teamIds.length
-    ? await sb.from('teams').select('id,name,name_ar,primary_color,secondary_color,logo_url').in('id',teamIds)
+    ? await sb.from('teams').select('id,name,name_ar,primary_color,secondary_color').in('id',teamIds)
     : {data:[]};
   
   // خريطة الفرق
@@ -1152,29 +1162,28 @@ async function loadMatches(){
       const aName=at.name_ar||at.name||atE.name_ar||atE.name||'—';
       const hColor=ht.primary_color||ht.secondary_color||htE.primary_color||'#79786A';
       const aColor=at.primary_color||at.secondary_color||atE.primary_color||'#79786A';
-      const hLogo=ht.logo_url||htE.logo_url||'';
-      const aLogo=at.logo_url||atE.logo_url||'';
       const initials=n=>(n||'؟').trim().slice(0,2);
-      const hBadgeInner=hLogo?`<img src="${hLogo}">`:initials(hName);
-      const aBadgeInner=aLogo?`<img src="${aLogo}">`:initials(aName);
+      const hBadgeInner=initials(hName);
+      const aBadgeInner=initials(aName);
       html+=`<a class="m-card ${lv?'live':''}" href="match-live.html?id=${m.id}" style="display:block;cursor:pointer">
         <div class="m-top">
           <span class="m-info">${m.match_date?window.PublicDate.format(m.match_date,{weekday:true}):''} ${m.match_time||''}</span>
           <span class="m-badge ${sm[m.status]||'b-sched'}">${lv?'<span class=live-pulse></span>':''} ${sl[m.status]||m.status}</span>
         </div>
         <div class="m-teams">
-          <div class="mt"><div class="mt-badge" role="link" tabindex="0" title="فتح صفحة ${hName}" style="background:linear-gradient(135deg,${hColor} 50%,${ht.secondary_color||hColor} 50%)" onclick="event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.home_team_id}')||'team.html?id=${m.home_team_id}'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.home_team_id}')||'team.html?id=${m.home_team_id}'}">${hBadgeInner}</div><div class="mt-name">${hName}</div><div class="mt-score">${d||lv?m.home_score??0:'–'}</div></div>
+          <div class="mt"><div class="mt-badge" data-team-logo="${m.home_team_id}" role="link" tabindex="0" title="فتح صفحة ${hName}" style="background:linear-gradient(135deg,${hColor} 50%,${ht.secondary_color||hColor} 50%)" onclick="event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.home_team_id}')||'team.html?id=${m.home_team_id}'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.home_team_id}')||'team.html?id=${m.home_team_id}'}">${hBadgeInner}</div><div class="mt-name">${hName}</div><div class="mt-score">${d||lv?m.home_score??0:'–'}</div></div>
           <div class="ms">
             <div class="ms-sep">:</div>
             ${lv?`<div class="ms-sub" style="color:#D85A30">${m.match_minute||0}'</div>`:`<div class="ms-sub">${m.match_time||''}</div>`}
           </div>
-          <div class="mt"><div class="mt-badge" role="link" tabindex="0" title="فتح صفحة ${aName}" style="background:linear-gradient(135deg,${aColor} 50%,${at.secondary_color||aColor} 50%)" onclick="event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.away_team_id}')||'team.html?id=${m.away_team_id}'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.away_team_id}')||'team.html?id=${m.away_team_id}'}">${aBadgeInner}</div><div class="mt-name">${aName}</div><div class="mt-score">${d||lv?m.away_score??0:'–'}</div></div>
+          <div class="mt"><div class="mt-badge" data-team-logo="${m.away_team_id}" role="link" tabindex="0" title="فتح صفحة ${aName}" style="background:linear-gradient(135deg,${aColor} 50%,${at.secondary_color||aColor} 50%)" onclick="event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.away_team_id}')||'team.html?id=${m.away_team_id}'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.away_team_id}')||'team.html?id=${m.away_team_id}'}">${aBadgeInner}</div><div class="mt-name">${aName}</div><div class="mt-score">${d||lv?m.away_score??0:'–'}</div></div>
         </div>
       </a>`;
     });
     html+='</div>';
   });
   document.getElementById('maWrap').innerHTML=html;
+  queueTeamLogoHydration(teamIds);
 }
 
 async function loadScorers(){
@@ -1186,7 +1195,7 @@ async function loadScorers(){
     .or('event_subtype.neq.own_goal,event_subtype.is.null');
   
   // جلب بيانات الفرق منفصلة
-  const {data:teams}=await sb.from('teams').select('id,name,name_ar,primary_color,secondary_color').eq('tournament_id',TID);
+  const {data:teams}=await getTournamentTeamsSummary();
   const teamMap={};(teams||[]).forEach(t=>teamMap[t.id]=t);
   
   let tot=0;const cnt={};
@@ -1240,19 +1249,56 @@ async function loadScorers(){
   }).join('');
 }
 
+let teamLogoHydrationPromise=null;
+function queueTeamLogoHydration(teamIds){
+  const requested=new Set((teamIds||[]).filter(Boolean));
+  if(!requested.size)return;
+  const run=async()=>{
+    if(!teamLogoHydrationPromise){
+      teamLogoHydrationPromise=sb.from('teams').select('id,logo_url').eq('tournament_id',TID)
+        .then(result=>result.data||[])
+        .finally(()=>{teamLogoHydrationPromise=null;});
+    }
+    const logos=await teamLogoHydrationPromise;
+    logos.forEach(t=>{
+      if(!t.logo_url||!requested.has(t.id))return;
+      document.querySelectorAll(`[data-team-logo="${t.id}"]`).forEach(slot=>{
+        const imageClass=slot.classList.contains('tm-logo-slot')?'tm-logo':'';
+        slot.innerHTML=`<img class="${imageClass}" src="${t.logo_url}" alt="" loading="lazy">`;
+      });
+    });
+  };
+  if('requestIdleCallback' in window)requestIdleCallback(run,{timeout:900});
+  else setTimeout(run,120);
+}
+
 async function loadTeams(){
-  const {data}=await sb.from('teams').select('*').eq('tournament_id',TID).order('name');
+  const {data:unsorted,error}=await getTournamentTeamsSummary();
+  if(error){document.getElementById('tmWrap').innerHTML='<div class="empty"><span>⚠️</span><p>تعذر تحميل الفرق مؤقتًا — حاول مرة أخرى</p></div>';return;}
+  const data=[...(unsorted||[])].sort((a,b)=>(a.name_ar||a.name||'').localeCompare(b.name_ar||b.name||'','ar'));
   if(!data||!data.length){document.getElementById('tmWrap').innerHTML='<div class="empty"><span>👥</span><p>لا توجد فرق بعد</p></div>';return;}
-  const {data:pl}=await sb.from('players').select('team_id,tournament_id').eq('tournament_id',TID);
-  const cnt={};(pl||[]).forEach(p=>{cnt[p.team_id]=(cnt[p.team_id]||0)+1;});
-  countUpTo('hP',pl?.length||0);
   document.getElementById('tmWrap').innerHTML='<div class="sec-hd">👥 الفرق</div><div class="tm-grid">'+data.map(t=>`
     <a class="tm-card" href="team.html?id=${t.id}" style="--c1:${t.primary_color||t.color_primary||'#378ADD'};--c2:${t.secondary_color||t.primary_color||'#d7b348'}">
       ${t.group_code?`<span class="tm-grp">${t.group_code}</span>`:''}
-      ${t.logo_url?`<img class="tm-logo" src="${t.logo_url}" alt="">`:'<span class="tm-icon">⚽</span>'}
+      <span class="tm-logo-slot" data-team-logo="${t.id}"><span class="tm-icon">⚽</span></span>
       <div class="tm-name">${t.name_ar||t.name}</div>
-      <div class="tm-cnt">${cnt[t.id]||0} لاعب</div>
+      <div class="tm-cnt" data-team-count="${t.id}">— لاعب</div>
     </a>`).join('')+'</div>';
+  queueTeamLogoHydration(data.map(t=>t.id));
+  queueTeamPlayerCountsHydration();
+}
+
+async function queueTeamPlayerCountsHydration(){
+  const pages=await Promise.all([
+    sb.from('players').select('team_id').eq('tournament_id',TID).range(0,999),
+    sb.from('players').select('team_id').eq('tournament_id',TID).range(1000,1999)
+  ]);
+  const players=pages.flatMap(result=>result.data||[]);
+  const counts={};players.forEach(p=>{counts[p.team_id]=(counts[p.team_id]||0)+1;});
+  countUpTo('hP',players.length);
+  document.querySelectorAll('[data-team-count]').forEach(el=>{
+    el.textContent=(counts[el.dataset.teamCount]||0)+' لاعب';
+  });
 }
 
 async function loadSponsors(){
@@ -1337,6 +1383,7 @@ async function bootstrapTournament(){
   loadTournament();
   loadLiveMatch();
   loadHeaderCounts();
+  getTournamentTeamsSummary();
 
   const later=()=>{
     loadNews();
