@@ -49,6 +49,10 @@ body.public-match h1,body.public-match h2,body.public-match h3,
 .public-home .t-grid{gap:14px}
 .public-home .t-card{background:linear-gradient(145deg,#fff,#edf6ff);border:1px solid var(--public-line);border-radius:var(--public-radius);box-shadow:var(--public-shadow);color:var(--public-ink)}
 .public-home .t-card:hover{transform:translateY(-3px);border-color:#9fc5e6}
+.public-home .t-body{background:linear-gradient(145deg,#fff,#edf6ff)}
+.public-home .t-name{color:var(--public-ink)}
+.public-home .t-divider{background:var(--public-line)}
+.public-home .t-chip{background:#f1f6fb;border-color:#d5e2ed;color:#38536e}
 .public-home .footer{background:var(--public-navy);color:#c7d8e8}
 
 /* صفحة البطولة: يبقى رأس البطولة نفسه ديناميكياً من بياناتها */
