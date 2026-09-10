@@ -1,0 +1,40 @@
+:root{--content-navy:#0f2f52;--content-blue:#176b9a;--content-gold:#c6a142;--content-ink:#132d49;--content-muted:#667a8f;--content-line:#d7e3ec;--content-bg:#f4f9fc}
+body.content-page{background:linear-gradient(145deg,#f7fbfe,#edf7f6);color:var(--content-ink)}
+.content-page .wrap{max-width:980px;margin:0 auto;padding:18px 14px calc(72px + env(safe-area-inset-bottom,0px))}
+.content-hero{position:relative;overflow:hidden;border:1px solid var(--content-line);border-radius:22px;padding:20px;margin-bottom:16px;background:linear-gradient(135deg,#fff,#eaf5fb);box-shadow:0 10px 28px rgba(12,48,78,.1)}
+.content-hero::after{content:"";position:absolute;width:150px;height:150px;border-radius:50%;left:-45px;bottom:-75px;background:color-mix(in srgb,var(--theme-secondary,#c6a142) 17%,transparent)}
+.content-kicker{font-size:11px;font-weight:900;color:var(--theme-primary,#176b9a);margin-bottom:6px}
+.content-hero h1{font-size:22px!important;line-height:1.4;margin:0!important;padding:0!important;color:var(--content-ink)!important}
+.content-summary{font-size:13px;color:var(--content-muted);line-height:1.7;margin-top:6px;max-width:680px}
+.content-count{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:6px 11px;border-radius:999px;background:color-mix(in srgb,var(--theme-primary,#176b9a) 10%,#fff);border:1px solid color-mix(in srgb,var(--theme-primary,#176b9a) 22%,#dce8f0);font-size:12px;font-weight:900;color:var(--theme-primary,#176b9a)}
+.content-toolbar{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:2px 1px 12px;scrollbar-width:none}
+.content-toolbar::-webkit-scrollbar{display:none}
+.filter-chip{border:1px solid var(--content-line);background:#fff;color:#49627a;border-radius:999px;padding:8px 14px;white-space:nowrap;font:800 12px/1 "Tajawal",sans-serif;cursor:pointer;min-height:36px}
+.filter-chip.active{background:var(--theme-primary,#176b9a);border-color:var(--theme-primary,#176b9a);color:#fff;box-shadow:0 5px 13px color-mix(in srgb,var(--theme-primary,#176b9a) 25%,transparent)}
+.content-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.content-card{position:relative;overflow:hidden;background:#fff;border:1px solid var(--content-line);border-radius:18px;color:var(--content-ink);box-shadow:0 8px 22px rgba(12,48,78,.09)}
+.content-card:focus-visible{outline:3px solid color-mix(in srgb,var(--theme-secondary,#c6a142) 60%,#fff);outline-offset:3px}
+.content-card-body{padding:14px}
+.content-card-title{font-size:15px;font-weight:900;line-height:1.55;color:var(--content-ink)}
+.content-card-desc{font-size:12px;line-height:1.65;color:var(--content-muted);margin-top:5px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.content-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;font-size:11px;color:var(--content-muted)}
+.content-type{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:900;color:var(--theme-primary,#176b9a);background:color-mix(in srgb,var(--theme-primary,#176b9a) 9%,#fff);padding:5px 8px;border-radius:999px}
+.load-more{display:block;margin:18px auto 0;border:0;border-radius:13px;background:var(--theme-primary,#176b9a);color:#fff;padding:11px 24px;min-height:44px;font:900 13px "Tajawal",sans-serif;cursor:pointer;box-shadow:0 5px 0 color-mix(in srgb,var(--theme-primary,#176b9a) 72%,#041d34)}
+.load-more:active{transform:translateY(3px);box-shadow:0 2px 0 color-mix(in srgb,var(--theme-primary,#176b9a) 72%,#041d34)}
+.content-empty,.content-error{text-align:center;background:#fff;border:1px dashed var(--content-line);border-radius:18px;padding:42px 18px;color:var(--content-muted);font-size:13px;grid-column:1/-1}
+.content-error{color:#9b3c3c;border-color:#e2bcbc;background:#fff8f8}
+@media(max-width:760px){
+  .content-page .nav{padding-inline:12px;gap:8px}
+  .content-page .nav>span{font-size:12px!important;min-width:0}
+  .content-page .nav a{font-size:11px;padding:7px 11px;white-space:nowrap}
+  .content-page .wrap{padding:12px 10px calc(58px + env(safe-area-inset-bottom,0px))}
+  .content-hero{border-radius:18px;padding:16px;margin-bottom:12px}
+  .content-hero h1{font-size:19px!important}
+  .content-summary{font-size:12px}
+  .content-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .content-card{border-radius:15px}
+  .content-card-body{padding:11px}
+  .content-card-title{font-size:13px;line-height:1.5}
+  .content-card-desc{font-size:11px;-webkit-line-clamp:2}
+}
+@media(max-width:340px){.content-grid{grid-template-columns:1fr}}
