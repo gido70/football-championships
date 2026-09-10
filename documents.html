@@ -46,18 +46,36 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px}
 }
 .viewer-frame-wrap{flex:1;background:#fff;border-radius:10px;overflow:hidden}
 .viewer-frame-wrap iframe{width:100%;height:100%;border:0}
+.doc-cover{height:150px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:7px;background:linear-gradient(145deg,var(--theme-primary,#123f6c),color-mix(in srgb,var(--theme-primary,#123f6c) 72%,#061b33));color:#fff}
+.doc-cover-icon{font-size:38px;filter:drop-shadow(0 4px 7px rgba(0,0,0,.22))}
+.doc-issue{font-size:10px;font-weight:900;letter-spacing:.5px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);padding:4px 9px;border-radius:999px}
+.doc-new-card{padding:0;border:0;text-align:right;font-family:inherit;cursor:pointer;width:100%}
+.doc-new-card:first-child{grid-column:span 2}
+.doc-new-card:first-child .doc-cover{height:178px}
+.doc-open-label{color:var(--theme-primary,#176b9a);font-weight:900}
+@media(max-width:340px){.doc-new-card:first-child{grid-column:span 1}}
 </style>
 <link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
+<link rel="stylesheet" href="content-pages.css?v=20260910-1">
 </head>
-<body>
+<body class="content-page">
 <div class="nav"><span style="font-weight:800;color:#c9a84c">📰 نشرات البطولة</span><a href="#" id="backLink" onclick="history.back();return false">‹ رجوع للبطولة</a></div>
-<div class="wrap"><h1 id="tourName"></h1><div id="app"><div class="loading">⏳ جاري التحميل...</div></div></div>
+<div class="wrap">
+  <section class="content-hero">
+    <div class="content-kicker">🗂️ أرشيف البطولة الرسمي</div>
+    <h1 id="tourName">نشرات البطولة</h1>
+    <div class="content-summary">الأعداد والتقارير المنشورة مرتبة من الأحدث إلى الأقدم. اضغط على أي عدد لقراءته بحجم كامل.</div>
+    <div class="content-count" id="docsCount">⏳ جاري الحصر...</div>
+  </section>
+  <div id="app"><div class="loading">⏳ جاري التحميل...</div></div>
+</div>
 
 <div class="viewer-overlay" id="viewerOverlay">
   <div class="viewer-top">
     <div class="viewer-title" id="viewerTitle"></div>
     <div class="viewer-actions">
       <a id="viewerHomeLink" class="viewer-home" href="#">🏠 الرئيسية</a>
+      <a id="viewerExternalLink" href="#" target="_blank" rel="noopener">فتح PDF كاملًا ↗</a>
       <button class="viewer-close" onclick="closeViewer()">✕ إغلاق</button>
     </div>
   </div>
@@ -77,37 +95,48 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function fmtDate(d){return window.PublicDate.format(d,{year:true});}
 
 let DOCS=[];
+let visibleDocs=12;
 async function load(){
   if(!TID){document.getElementById('app').innerHTML='<div class="empty-note">لم تُحدَّد بطولة</div>';return;}
   const backLink=document.getElementById('backLink');
   backLink.href=scopeUrl('tournament.html?id='+TID);
   backLink.removeAttribute('onclick');
-  const {data:t}=await sb.from('tournaments').select('name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',TID).single();
+  const [{data:t},{data,error}]=await Promise.all([
+    sb.from('tournaments').select('name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',TID).single(),
+    sb.from('documents').select('id,title,description,publish_date,pdf_url,created_at').eq('tournament_id',TID).order('publish_date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false})
+  ]);
   window.TournamentScope?.applyTournamentTheme(t);
-  document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — النشرات';
+  document.getElementById('tourName').textContent=(t?.name||'البطولة')+' — النشرات';
 
-  const {data}=await sb.from('documents').select('*').eq('tournament_id',TID).order('publish_date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false});
   DOCS=data||[];
   const app=document.getElementById('app');
-  if(!DOCS.length){app.innerHTML='<div class="empty-note">لا توجد نشرات مضافة بعد لهذه البطولة</div>';return;}
-
-  app.innerHTML='<div class="doc-list">'+DOCS.map((d,i)=>`
-    <button class="doc-row" onclick="openViewer(${i})" style="animation-delay:${i*0.06}s">
-      <div class="doc-emoji">📄</div>
-      <div class="doc-info">
-        <div class="doc-title">${esc(d.title)}</div>
-        ${d.publish_date?`<div class="doc-date">${fmtDate(d.publish_date)}</div>`:''}
-        ${d.description?`<div class="doc-desc">${esc(d.description)}</div>`:''}
-      </div>
-      <div class="doc-arrow">قراءة ›</div>
-    </button>
-  `).join('')+'</div>';
+  if(error){app.innerHTML='<div class="content-error">تعذر تحميل النشرات مؤقتًا. أعد المحاولة بعد قليل.</div>';return;}
+  document.getElementById('docsCount').textContent=DOCS.length+' '+(DOCS.length===1?'نشرة منشورة':'نشرات منشورة');
+  if(!DOCS.length){app.innerHTML='<div class="content-empty">🗂️<br>لا توجد نشرات منشورة لهذه البطولة حتى الآن</div>';return;}
+  renderDocs();
 }
+
+function renderDocs(){
+  const shown=DOCS.slice(0,visibleDocs);
+  document.getElementById('app').innerHTML='<div class="content-grid">'+shown.map((d,i)=>`
+    <button class="content-card doc-new-card" onclick="openViewer(${i})" style="animation-delay:${Math.min(i,8)*0.04}s">
+      <div class="doc-cover"><span class="doc-cover-icon">📄</span><span class="doc-issue">${i===0?'أحدث عدد':'العدد '+String(DOCS.length-i).padStart(2,'0')}</span></div>
+      <div class="content-card-body">
+        <div class="content-card-title">${esc(d.title||'نشرة البطولة')}</div>
+        ${d.description?`<div class="content-card-desc">${esc(d.description)}</div>`:''}
+        <div class="content-meta"><span>${d.publish_date?fmtDate(d.publish_date):'دون تاريخ'}</span><span class="doc-open-label">قراءة ›</span></div>
+      </div>
+    </button>`).join('')+'</div>'+
+    (visibleDocs<DOCS.length?'<button class="load-more" onclick="showMoreDocs()">عرض المزيد ('+(DOCS.length-visibleDocs)+')</button>':'');
+}
+function showMoreDocs(){visibleDocs+=12;renderDocs();}
 
 function openViewer(i){
   const d=DOCS[i];
-  document.getElementById('viewerFrame').src=d.pdf_url;
+  if(!/^https:\/\//i.test(d.pdf_url||'')){alert('رابط النشرة غير صالح');return;}
+  document.getElementById('viewerFrame').src=d.pdf_url+'#view=FitH';
   document.getElementById('viewerTitle').textContent=d.title;
+  document.getElementById('viewerExternalLink').href=d.pdf_url;
   document.getElementById('viewerHomeLink').href=scopeUrl('tournament.html?id='+TID);
   document.getElementById('viewerOverlay').classList.add('open');
 }
@@ -117,6 +146,7 @@ function closeViewer(){
 }
 window.openViewer=openViewer;
 window.closeViewer=closeViewer;
+window.showMoreDocs=showMoreDocs;
 
 load().then(()=>{
   const openId=qs.get('open');
