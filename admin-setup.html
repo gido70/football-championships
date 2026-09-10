@@ -442,7 +442,7 @@ async function loadRows(){
           ${r.bg_image_url?`<div style="width:32px;height:32px;border-radius:6px;background:url('${r.bg_image_url}') center/cover;flex-shrink:0"></div>`:
             `<div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,${r.primary_color||'#0b1f3a'},${r.secondary_color||'#c9a84c'});flex-shrink:0"></div>`}
           <div>
-            <strong style="color:#eef5ff;font-family:Tajawal,sans-serif">${r.name||''}</strong>
+            <a href="tournament.html?id=${r.id}&standalone=1" target="_blank" rel="noopener" title="فتح صفحة الجمهور المنفصلة" style="color:#eef5ff;font-family:Tajawal,sans-serif;font-weight:800;text-decoration:none">${r.name||''}</a>
             <div style="font-size:12px;color:#b7c6dc">${r.season_label||''}</div>
           </div>
         </div>
@@ -452,6 +452,7 @@ async function loadRows(){
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn btn-edit" onclick="editTour('${r.id}')">✏️ تعديل</button>
+          <a class="btn btn-go" href="tournament.html?id=${r.id}&standalone=1" target="_blank" rel="noopener" style="font-size:12px;padding:7px 12px">↗ صفحة الجمهور</a>
           <a class="btn secondary" href="qr-generator.html?tournament=${r.id}" style="font-size:12px;padding:7px 12px">▦ QR مستقل</a>
           <a class="btn btn-go" href="teams-admin.html">→ الفرق</a>
           <button class="btn secondary" onclick="delTour('${r.id}')" style="font-size:12px;padding:6px 10px">حذف</button>

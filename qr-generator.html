@@ -27,6 +27,7 @@
     <div class="actions" style="justify-content:center">
       <button class="btn" onclick="downloadQR()">⬇️ تحميل الباركود كصورة</button>
       <button class="btn secondary" onclick="copyLink()">📋 نسخ الرابط</button>
+      <a class="btn secondary" id="openPublicPage" href="#" target="_blank" rel="noopener">↗ فتح صفحة الجمهور</a>
     </div>
     <div class="status" id="msg"></div>
   </section>
@@ -58,6 +59,7 @@ function renderQR(){
   currentName=sel.selectedOptions[0]?.dataset.name||'البطولة';
   currentUrl=`https://gido70.github.io/football-championships/tournament.html?id=${tid}&standalone=1`;
   document.getElementById('linkPreview').textContent=currentUrl;
+  document.getElementById('openPublicPage').href=currentUrl;
   document.getElementById('qrBox').innerHTML='';
   qrInstance=new QRCode(document.getElementById('qrBox'),{
     text:currentUrl,width:260,height:260,
