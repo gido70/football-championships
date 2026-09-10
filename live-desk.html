@@ -224,12 +224,25 @@ function normalizeTeam(v){
   return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
     .replace(/\b(fc|cf|sc|afc|club|football|calcio)\b/g,'').replace(/[^a-z0-9\u0600-\u06ff]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي');
 }
+function teamVariant(v){
+  const s=String(v||'').toLowerCase();
+  if(/\b(u|under)[ -]?(1[56789]|2[013])\b/.test(s))return 'youth';
+  if(/\b(women|woman|ladies|feminine|femenino|feminin)\b/.test(s))return 'women';
+  if(/\b(reserves?|reserve team|b team)\b/.test(s))return 'reserve';
+  return 'senior';
+}
 function teamMatches(apiName,team){
   const api=normalizeTeam(apiName);if(!api)return false;
-  return [team?.name,team?.name_ar].filter(Boolean).some(n=>{const local=normalizeTeam(n);return local===api||(local.length>4&&api.length>4&&(local.includes(api)||api.includes(local)))});
+  return [team?.name,team?.name_ar].filter(Boolean).some(n=>{
+    if(teamVariant(apiName)!==teamVariant(n))return false;
+    const local=normalizeTeam(n);return local===api||(local.length>4&&api.length>4&&(local.includes(api)||api.includes(local)));
+  });
 }
-function findLocalFixture(fixture,date){
-  return matches.find(m=>(!date||m.match_date===date)&&teamMatches(fixture.home?.name,m.ht)&&teamMatches(fixture.away?.name,m.at))||null;
+function competitionMatches(fixture){
+  const tournament=normalizeTeam($('tournament').selectedOptions?.[0]?.textContent||''),league=String(fixture.league||'').toLowerCase();
+  if(tournament.includes('ابطالاوروبا'))return league.includes('champions league')&&!league.includes('youth');
+  if(tournament.includes('الدوريالاوروبي'))return league.includes('europa league')&&!league.includes('youth');
+  return true;
 }
 async function fetchExternalResults(){
   const date=$('matchDate').value;if(!date){toast('اختر تاريخ المباريات أولًا','err');return}
@@ -238,17 +251,23 @@ async function fetchExternalResults(){
   try{
     const {data,error}=await sb.functions.invoke('football-results',{body:{date}});
     if(error)throw error;if(data?.error)throw new Error(data.error);
-    const rows=(data?.fixtures||[]).map(f=>({fixture:f,local:findLocalFixture(f,date)})).filter(x=>x.local);
-    $('apiNote').textContent=`معاينة فقط — ${rows.length} مباراة مطابقة${data?.remaining!=null?' — المتبقي اليوم: '+data.remaining+' طلب':''}.`;
+    const source=(data?.fixtures||[]).filter(competitionMatches),rows=[],ambiguous=[];
+    for(const local of matches.filter(m=>m.match_date===date)){
+      const candidates=source.filter(f=>teamMatches(f.home?.name,local.ht)&&teamMatches(f.away?.name,local.at));
+      if(candidates.length===1)rows.push({fixture:candidates[0],local});
+      else if(candidates.length>1)ambiguous.push(local);
+    }
+    $('apiNote').textContent=`معاينة فقط — ${rows.length} مباراة مطابقة آمنة${ambiguous.length?' — '+ambiguous.length+' مباراة ملتبسة لم تُعرض':''}${data?.remaining!=null?' — المتبقي اليوم: '+data.remaining+' طلب':''}.`;
     if(!rows.length){$('apiResults').innerHTML='<div class="empty">لم نجد تطابقًا آمنًا بين أسماء مباريات هذا التاريخ والمصدر. لم يتم تغيير أي بيانات.</div>';return}
     externalFixtureCache.clear();externalReviewCache.clear();
     $('apiResults').innerHTML=rows.map(({fixture:f,local:m})=>{
       externalFixtureCache.set(String(f.external_id),{fixture:f,local:m});
       const hasHome=f.goals?.home!==null&&f.goals?.home!==undefined;
       const hasAway=f.goals?.away!==null&&f.goals?.away!==undefined;
-      const ready=hasHome&&hasAway&&Number.isFinite(Number(f.goals.home))&&Number.isFinite(Number(f.goals.away));
+      const final=['FT','AET','PEN'].includes(String(f.status||'').toUpperCase());
+      const ready=final&&hasHome&&hasAway&&Number.isFinite(Number(f.goals.home))&&Number.isFinite(Number(f.goals.away));
       const same=Number(m.home_score||0)===Number(f.goals?.home)&&Number(m.away_score||0)===Number(f.goals?.away);
-      return `<div class="api-block"><div class="api-row" id="apirow-${f.external_id}"><div class="api-teams">${esc(f.home?.name)} × ${esc(f.away?.name)}<small>مطابقة: ${esc(teamName(m,'home'))} × ${esc(teamName(m,'away'))} — ${esc(f.status_text||f.status||'')}</small></div><div class="api-score">${f.goals?.home??'—'} — ${f.goals?.away??'—'}</div><div class="api-actions"><button class="btn btn-approve" ${!ready||same?'disabled':''} onclick="approveExternalResult('${m.id}',${Number(f.goals?.home)||0},${Number(f.goals?.away)||0},'${f.external_id}')">${same?'مطابقة بالفعل':ready?'اعتماد النتيجة':'لا نتيجة'}</button><button class="btn" onclick="reviewExternalEvents('${f.external_id}')">مراجعة الأحداث</button></div></div><div class="api-events" id="apievents-${f.external_id}"></div></div>`;
+      return `<div class="api-block"><div class="api-row" id="apirow-${f.external_id}"><div class="api-teams">${esc(f.home?.name)} × ${esc(f.away?.name)}<small>${esc(f.league||'')} — مطابقة: ${esc(teamName(m,'home'))} × ${esc(teamName(m,'away'))} — ${esc(f.status_text||f.status||'')}</small></div><div class="api-score">${f.goals?.home??'—'} — ${f.goals?.away??'—'}</div><div class="api-actions"><button class="btn btn-approve" ${!ready||same?'disabled':''} onclick="approveExternalResult('${m.id}',${Number(f.goals?.home)||0},${Number(f.goals?.away)||0},'${f.external_id}')">${same?'مطابقة بالفعل':ready?'اعتماد النتيجة':'بانتظار النهاية'}</button><button class="btn" ${final?'':'disabled'} onclick="reviewExternalEvents('${f.external_id}')">مراجعة الأحداث</button></div></div><div class="api-events" id="apievents-${f.external_id}"></div></div>`;
     }).join('');
   }catch(e){$('apiResults').innerHTML='<div class="empty">تعذر جلب النتائج: '+esc(e.message||'خطأ غير معروف')+'</div>';toast('تعذر جلب نتائج المصدر','err')}
   finally{btn.disabled=false;btn.textContent='🌐 جلب النتائج'}
