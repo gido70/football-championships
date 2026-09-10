@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#F5F3EE">
+<meta name="theme-color" content="#071b35">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -308,7 +308,7 @@ img[src=""], img:not([src]) { display:none !important; }
 }
 @media(max-width:760px){.float-back{display:flex;align-items:center;gap:6px}}
 </style>
-<link rel="stylesheet" href="public-ui.css?v=20260910-3">
+<link rel="stylesheet" href="public-ui.css?v=20260910-5">
 </head>
 <body class="public-tournament">
 <div id="accessGateOverlay" style="display:none;position:fixed;inset:0;background:#0F2A4A;z-index:9999;align-items:center;justify-content:center;padding:20px">
@@ -383,16 +383,16 @@ img[src=""], img:not([src]) { display:none !important; }
 <div id="sponsorsTicker"></div>
 
 <div class="qlinks-wrap">
-  <div class="qlinks-grid">
-    <button class="qlink" style="background:#2d6a4f" onclick="jumpToTab('st')"><span class="qlink-ic">🏅</span> الترتيب</button>
-    <button class="qlink" style="background:#1d4e89" onclick="jumpToTab('ma')"><span class="qlink-ic">📅</span> المباريات</button>
-    <button class="qlink" style="background:#8a4f2d" onclick="jumpToTab('sc')"><span class="qlink-ic">⚽</span> الهدافون</button>
-    <button class="qlink" style="background:#5b3a8e" onclick="jumpToTab('tm')"><span class="qlink-ic">👥</span> الفرق</button>
-    <a class="qlink" id="qlinkStats" style="background:#1a6e73" href="#"><span class="qlink-ic">📊</span> الإحصائيات</a>
-    <a class="qlink" id="qlinkAwards" style="background:#a5813a" href="#"><span class="qlink-ic">🏆</span> الجوائز</a>
-    <a class="qlink" id="qlinkVideos" style="background:#a3364c" href="#"><span class="qlink-ic">🎬</span> الفيديوهات</a>
-    <a class="qlink" id="qlinkDocs" style="background:#3a5a8e" href="#"><span class="qlink-ic">📰</span> النشرات</a>
-    <a class="qlink" id="qlinkPredictions" style="background:#6b4c9a;grid-column:1/-1" href="#"><span class="qlink-ic">🥇</span> توقعات الأصدقاء</a>
+  <div class="qlinks-grid" aria-label="أقسام البطولة">
+    <button class="qlink qlink--navy" onclick="jumpToTab('st')"><span class="qlink-orb"><span class="qlink-ic">🏅</span></span><span class="qlink-label">الترتيب</span></button>
+    <button class="qlink qlink--blue" onclick="jumpToTab('ma')"><span class="qlink-orb"><span class="qlink-ic">📅</span></span><span class="qlink-label">المباريات</span></button>
+    <button class="qlink qlink--azure" onclick="jumpToTab('sc')"><span class="qlink-orb"><span class="qlink-ic">⚽</span></span><span class="qlink-label">الهدافون</span></button>
+    <button class="qlink qlink--teal" onclick="jumpToTab('tm')"><span class="qlink-orb"><span class="qlink-ic">👥</span></span><span class="qlink-label">الفرق</span></button>
+    <a class="qlink qlink--navy" id="qlinkStats" href="#"><span class="qlink-orb"><span class="qlink-ic">📊</span></span><span class="qlink-label">الإحصائيات</span></a>
+    <a class="qlink qlink--gold" id="qlinkAwards" href="#"><span class="qlink-orb"><span class="qlink-ic">🏆</span></span><span class="qlink-label">الجوائز</span></a>
+    <a class="qlink qlink--blue" id="qlinkVideos" href="#"><span class="qlink-orb"><span class="qlink-ic">🎬</span></span><span class="qlink-label">الفيديوهات</span></a>
+    <a class="qlink qlink--azure" id="qlinkDocs" href="#"><span class="qlink-orb"><span class="qlink-ic">📰</span></span><span class="qlink-label">النشرات</span></a>
+    <a class="qlink qlink--gold" id="qlinkPredictions" href="#"><span class="qlink-orb"><span class="qlink-ic">🥇</span></span><span class="qlink-label">توقعات الأصدقاء</span></a>
   </div>
 </div>
 
@@ -1065,7 +1065,7 @@ async function loadMatches(){
   // العلاقة نفسها المستخدمة في صفحة المباراة؛ تعيد الاسم والشعار حتى إذا كان
   // سجل الفريق قديمًا أو لا يحمل tournament_id الحالي.
   let {data:matches,error:matchesError}=await sb.from('matches')
-    .select('*,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color,color_primary,secondary_color,logo_url),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color,color_primary,secondary_color,logo_url)')
+    .select('*,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color,secondary_color,logo_url),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color,secondary_color,logo_url)')
     .eq('tournament_id',TID).order('match_no');
   // مسار احتياطي فقط إذا تعذّر توسيع العلاقة لأي سبب.
   if(matchesError){
@@ -1080,7 +1080,7 @@ async function loadMatches(){
   // لا يحمل صفّها tournament_id الحالي، وكان الشرط السابق يخفي الاسم والشعار.
   const teamIds=[...new Set(matches.flatMap(m=>[m.home_team_id,m.away_team_id]).filter(Boolean))];
   const {data:teams}=teamIds.length
-    ? await sb.from('teams').select('id,name,name_ar,primary_color,color_primary,secondary_color,logo_url').in('id',teamIds)
+    ? await sb.from('teams').select('id,name,name_ar,primary_color,secondary_color,logo_url').in('id',teamIds)
     : {data:[]};
   
   // خريطة الفرق
