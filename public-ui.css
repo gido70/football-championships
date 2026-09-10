@@ -1,0 +1,165 @@
+:root{
+  --public-navy:#071b35;
+  --public-navy-2:#0e3158;
+  --public-blue:#19558b;
+  --public-sky:#eaf4ff;
+  --public-card:#fafdff;
+  --public-ink:#10243d;
+  --public-muted:#62758b;
+  --public-line:#d8e5f1;
+  --public-gold:#d4ad52;
+  --public-mint:#49c8a7;
+  --public-danger:#dc4d5c;
+  --public-radius:18px;
+  --public-shadow:0 12px 32px rgba(4,26,52,.12);
+}
+
+html{scroll-behavior:smooth;background:var(--public-navy)}
+body.public-home,body.public-tournament,body.public-match{
+  font-family:"Noto Naskh Arabic",serif;
+  color:var(--public-ink);
+  background:linear-gradient(155deg,#ddecfa 0%,#f6fbff 38%,#dcebf8 100%);
+  line-height:1.55;
+}
+body.public-home button,body.public-home input,body.public-home select,
+body.public-tournament button,body.public-tournament input,body.public-tournament select,
+body.public-match button,body.public-match input,body.public-match select{font-family:inherit}
+body.public-home h1,body.public-home h2,body.public-home h3,
+body.public-tournament h1,body.public-tournament h2,body.public-tournament h3,
+body.public-match h1,body.public-match h2,body.public-match h3,
+.public-home .sec-title,.public-tournament .g-title,.public-tournament .sec-title,
+.public-match .section-title{font-family:"Amiri",serif;letter-spacing:0}
+
+/* الصفحة الرئيسية */
+.public-home .topbar{background:rgba(7,27,53,.94);border-color:rgba(255,255,255,.12);backdrop-filter:blur(16px)}
+.public-home .topbar-inner{min-height:62px}
+.public-home .tb-name{color:#fff;font-family:"Amiri",serif;font-size:22px}
+.public-home .hero{min-height:auto;padding:58px 18px 52px;background:linear-gradient(145deg,#071b35,#124b7a 65%,#176e7d)}
+.public-home .hero-bg-art{opacity:.45}
+.public-home .hero-content{max-width:920px;margin:auto;text-align:center}
+.public-home .hero-badge{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);color:#d8ebfb}
+.public-home .hero h1{font-size:clamp(36px,8vw,68px);line-height:1.12;font-weight:700}
+.public-home .hero h1 em{color:#f1ce78}
+.public-home .hero-sub{color:#d8e7f5;font-size:clamp(15px,2vw,18px)}
+.public-home .hero-stats{max-width:620px;margin-inline:auto;background:rgba(5,22,43,.28);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:13px 8px}
+.public-home .section{max-width:1180px}
+.public-home .sec-title{color:var(--public-navy);font-size:25px;text-align:center}
+.public-home .live-card{background:#fff;border-color:rgba(220,77,92,.38);border-radius:var(--public-radius);box-shadow:var(--public-shadow)}
+.public-home .live-tourn,.public-home .live-team{color:var(--public-ink)}
+.public-home .t-grid{gap:14px}
+.public-home .t-card{background:linear-gradient(145deg,#fff,#edf6ff);border:1px solid var(--public-line);border-radius:var(--public-radius);box-shadow:var(--public-shadow);color:var(--public-ink)}
+.public-home .t-card:hover{transform:translateY(-3px);border-color:#9fc5e6}
+.public-home .footer{background:var(--public-navy);color:#c7d8e8}
+
+/* صفحة البطولة: يبقى رأس البطولة نفسه ديناميكياً من بياناتها */
+.public-tournament .nav{background:rgba(250,253,255,.94);border-color:var(--public-line);box-shadow:0 4px 18px rgba(8,34,66,.07)}
+.public-tournament .nav-title{color:var(--public-ink)}
+.public-tournament .nav-back{background:#eaf4ff;border-color:#bdd5e9;box-shadow:none;color:#123b63;min-height:42px}
+.public-tournament .hero{min-height:300px}
+.public-tournament .hero-overlay{background:linear-gradient(to bottom,rgba(4,20,40,.18),rgba(5,24,47,.9))}
+.public-tournament .hero-title{font-family:"Amiri",serif;font-weight:700;font-size:clamp(30px,6vw,52px)}
+.public-tournament .hero-season{font-family:"Noto Naskh Arabic",serif;letter-spacing:0;background:rgba(5,25,48,.35)}
+.public-tournament .hero-stats{background:rgba(4,22,43,.32);border:1px solid rgba(255,255,255,.12);border-radius:17px;padding:12px 6px}
+.public-tournament .tabs-bar{background:rgba(250,253,255,.97);border-color:var(--public-line);box-shadow:0 5px 18px rgba(7,34,64,.06)}
+.public-tournament .tab{font-family:inherit;color:#5e7186;min-height:50px}
+.public-tournament .tab.active{color:var(--public-navy)}
+.public-tournament .main{max-width:1120px}
+.public-tournament .quick-links{gap:10px}
+.public-tournament .qlink{border-radius:15px;min-height:54px;box-shadow:0 7px 16px rgba(8,37,69,.12)}
+.public-tournament .st-wrap,.public-tournament .bulletin-card,
+.public-tournament .feed-post,.public-tournament .motd-card,
+.public-tournament .m-card,.public-tournament .sc-item{
+  background:var(--public-card);border-color:var(--public-line);color:var(--public-ink);box-shadow:0 7px 20px rgba(7,35,67,.08)
+}
+.public-tournament .st-wrap,.public-tournament .bulletin-card,.public-tournament .feed-post,
+.public-tournament .motd-card,.public-tournament .m-card{border-radius:var(--public-radius)}
+.public-tournament .st-table{background:#fff;color:var(--public-ink)}
+.public-tournament .st-table thead{background:#dcebf7;color:#173a5e}
+.public-tournament .st-table td,.public-tournament .st-table th{border-color:#dce7f0}
+.public-tournament .t-name,.public-tournament .mt-name,.public-tournament .sc-name{color:var(--public-ink)}
+.public-tournament .m-date,.public-tournament .sc-team{color:var(--public-muted)}
+.public-tournament .tm-card{background:linear-gradient(145deg,#164b78,#0b2d50);border-color:#3d75a5;box-shadow:var(--public-shadow)}
+.public-tournament .live-score-box{background:var(--public-navy)}
+.public-tournament .sponsor-chip{border-color:var(--public-line);box-shadow:0 5px 14px rgba(7,35,67,.07)}
+
+/* صفحة المباراة العامة */
+.public-match .nav{background:rgba(250,253,255,.95);border-color:var(--public-line);box-shadow:0 4px 18px rgba(8,34,66,.07)}
+.public-match .nav-back{background:#eaf4ff;border-color:#bdd5e9;color:#123b63;box-shadow:none;min-height:42px}
+.public-match .nav-tname{color:var(--public-ink)}
+.public-match .scoreboard{background:linear-gradient(145deg,#071b35,#123f6c 68%,#176a78)}
+.public-match .scoreboard::before{opacity:.45}
+.public-match .sb-inner{max-width:920px}
+.public-match .teams-row{background:rgba(5,23,44,.24);border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:18px 12px}
+.public-match .team-name{color:#fff;text-shadow:0 2px 9px rgba(0,0,0,.35)}
+.public-match .team-score{color:#fff}
+.public-match .info-strip{color:#d8e8f7}
+.public-match .main{max-width:1060px}
+.public-match .pane>div>div,.public-match .event-card,.public-match .lineup-card,
+.public-match .vote-card,.public-match .pred-card,.public-match .reaction-card,
+.public-match .motm-card,.public-match .winner-card{
+  border-color:var(--public-line);box-shadow:0 8px 22px rgba(7,34,65,.09)
+}
+.public-match .tabbar{background:rgba(250,253,255,.97);border-color:var(--public-line);box-shadow:0 -5px 20px rgba(6,29,55,.1)}
+.public-match .tab{font-family:inherit;color:#62758b;min-height:58px}
+.public-match .tab.active{color:#0b5d87;background:#e7f5fb}
+.public-match .float-back{background:var(--public-navy);color:#f0cb72;border-color:rgba(240,203,114,.42)}
+
+@media(max-width:760px){
+  body.public-home,body.public-tournament,body.public-match{font-size:15px}
+  .public-home .topbar-inner{padding-inline:14px}
+  .public-home .hero{padding:38px 14px 34px}
+  .public-home .hero h1{font-size:40px}
+  .public-home .hero-sub{margin-bottom:22px}
+  .public-home .hero-stats{display:grid;grid-template-columns:repeat(4,1fr);width:100%}
+  .public-home .hs{padding-inline:5px}
+  .public-home .section{padding-inline:12px}
+  .public-home .t-grid{grid-template-columns:1fr}
+  .public-home .t-card{min-height:116px}
+
+  .public-tournament .nav{padding-inline:12px}
+  .public-tournament .nav-title{max-width:58%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .public-tournament .nav-back{padding:8px 12px;font-size:12px}
+  .public-tournament .hero{min-height:245px}
+  .public-tournament .hero-content{padding:28px 12px 20px}
+  .public-tournament .hero-logo{width:66px;height:66px;margin-bottom:8px}
+  .public-tournament .hero-title{font-size:30px}
+  .public-tournament .hero-season{font-size:15px;margin-bottom:16px;padding:4px 16px}
+  .public-tournament .hero-stats{width:100%;display:grid;grid-template-columns:repeat(4,1fr)}
+  .public-tournament .tabs{padding-inline:6px}
+  .public-tournament .tab{padding:12px 15px;font-size:14px}
+  .public-tournament .main{padding:18px 10px calc(34px + env(safe-area-inset-bottom,0px))}
+  .public-tournament .quick-links{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .public-tournament .qlink{padding:10px 7px;font-size:13px}
+  .public-tournament .st-scroll{overflow-x:auto;border-radius:0 0 16px 16px}
+  .public-tournament .st-table{min-width:650px}
+  .public-tournament .m-card{padding:11px 9px}
+  .public-tournament .m-teams{gap:5px}
+  .public-tournament .mt-name{font-size:13px;overflow-wrap:anywhere}
+  .public-tournament .mt-score{font-size:21px}
+
+  .public-match .nav{padding-inline:12px}
+  .public-match .nav-back{padding:8px 12px;font-size:12px}
+  .public-match .nav-tname{max-width:58%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .public-match .scoreboard{padding:22px 8px 18px}
+  .public-match .teams-row{padding:14px 7px;gap:5px}
+  .public-match .team-badge{width:62px;height:62px}
+  .public-match .team-name{font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+  .public-match .team-score{font-size:34px}
+  .public-match .score-sep{font-size:25px}
+  .public-match .main{padding-inline:10px}
+  .public-match .tabbar{padding-bottom:env(safe-area-inset-bottom,0px);overflow-x:auto;justify-content:flex-start}
+  .public-match .tab{flex:0 0 72px;padding:7px 5px;font-size:11px}
+  .public-match .tab-ic{font-size:18px}
+}
+
+@media(min-width:761px){
+  .public-home .t-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .public-home .live-card{max-width:860px;margin-inline:auto}
+  .public-tournament .tc.active{animation:publicFade .22s ease-out}
+  .public-tournament .m-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .public-match .pane.active{animation:publicFade .22s ease-out}
+  .public-match .tabbar{position:sticky;bottom:0;max-width:760px;margin:0 auto 18px;border:1px solid var(--public-line);border-radius:18px;overflow:hidden}
+}
+
+@keyframes publicFade{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.public-home *,.public-tournament *,.public-match *{animation-duration:.01ms;animation-iteration-count:1;transition-duration:.01ms}}
