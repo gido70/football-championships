@@ -268,14 +268,20 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .sc-gl{font-size:10px;color:#79786A}
 /* TEAMS */
 .tm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
-.tm-card{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:12px;padding:18px 14px;text-align:center;text-decoration:none;display:block;transition:.2s;position:relative;overflow:hidden}
-.tm-card::before{content:"";position:absolute;top:0;right:0;left:0;height:4px;background:var(--tab-accent,#378ADD)}
-.tm-card:hover{border-color:var(--tab-accent,#378ADD);transform:translateY(-3px)}
-.tm-grp{position:absolute;top:10px;left:10px;background:#F5F3EE;border:1px solid #E0DCCF;color:#79786A;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px}
+.tm-card{background:linear-gradient(145deg,#173f6d,#0f2a4a);border:1px solid #315896;border-radius:12px;padding:18px 14px;text-align:center;text-decoration:none;display:block;transition:.2s;position:relative;overflow:hidden;box-shadow:0 6px 16px rgba(15,42,74,.18)}
+.tm-card::before{content:"";position:absolute;top:0;right:0;left:0;height:4px;background:var(--c,var(--tab-accent,#378ADD))}
+.tm-card:hover{border-color:#5b9fe0;transform:translateY(-3px);box-shadow:0 9px 22px rgba(15,42,74,.25)}
+.tm-grp{position:absolute;top:10px;left:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.24);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px}
 .tm-logo{width:44px;height:44px;object-fit:contain;border-radius:50%;display:block;margin:0 auto 8px}
 .tm-icon{font-size:38px;margin-bottom:10px;display:block}
-.tm-name{font-size:14px;font-weight:800;color:#2C2C2A;margin-bottom:4px}
-.tm-cnt{font-size:13px;color:#79786A}
+.tm-name{font-size:14px;font-weight:800;color:#fff;margin-bottom:4px;text-shadow:0 1px 3px rgba(0,0,0,.35)}
+.tm-cnt{font-size:13px;color:#dbeafe}
+@media(max-width:520px){
+  .tm-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .tm-card{padding:16px 8px;min-width:0}
+  .tm-name{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tm-cnt{font-size:11px}
+}
 /* SHARED */
 .empty{text-align:center;padding:56px 20px;color:#79786A}
 .empty span{font-size:48px;display:block;margin-bottom:14px;opacity:.35}
