@@ -228,6 +228,7 @@ a{text-decoration:none;color:inherit}
 @media(max-width:760px){.float-back{display:flex;align-items:center;gap:6px}}
 </style>
 <link rel="stylesheet" href="public-ui.css?v=20260910-3">
+<link rel="stylesheet" href="tournament-theme.css?v=20260910-1">
 </head>
 <body class="public-match">
 
@@ -294,7 +295,7 @@ a{text-decoration:none;color:inherit}
 </div>
 
 <script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260910-1"></script>
+<script src="tournament-scope.js?v=20260910-2"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 
@@ -774,6 +775,7 @@ async function init(){
   document.getElementById('backLink').href=scopeUrl('tournament.html?id='+m.tournament_id+'&tab=ma');
 
   const {data:t}=await sb.from('tournaments').select('*').eq('id',m.tournament_id).single();
+  window.TournamentScope?.applyTournamentTheme(t);
   if(t){
     document.getElementById('navTName').innerHTML=(t.logo_url?`<img src="${t.logo_url}">`:'🏆')+' '+(t.name_ar||t.name||'');
     document.title=(m.ht?.name_ar||m.ht?.name||'')+' × '+(m.at?.name_ar||m.at?.name||'')+' — '+(t.name_ar||t.name||'');

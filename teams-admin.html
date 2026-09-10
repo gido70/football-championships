@@ -48,6 +48,7 @@
   <div style="font-size:11px;color:#6e7b8f;margin-top:10px">صورة جماعية حقيقية لكل لاعبي الفريق مع المدرب والإدارة — تظهر في صفحة الفريق العامة</div>
 </div>
 <div class="form-grid">
+  <div class="field full"><label style="display:flex;align-items:center;gap:9px"><input id="colorIdentityEnabled" type="checkbox" checked style="width:20px;height:20px"> تفعيل هوية اللونين لهذا الفريق</label><small style="color:#8b949e">عند إلغائها يستخدم الفريق ألوان البطولة العامة.</small></div>
   <div class="field"><label>اللون الأساسي</label><input id="colorPick1" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div>
   <div class="field"><label>اللون الثانوي (اختياري)</label><input id="colorPick2" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div>
 </div>
@@ -73,7 +74,7 @@
 <div class="status" id="bulkPhotosMsg"></div>
 </section>
 <section class="panel" style="margin-top:24px;background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.25)"><h3>📊 استيراد أسماء الفرق دفعة واحدة من إكسل</h3><p style="color:#9fb0c9;font-size:13px;margin-bottom:10px">ملف بعمود واحد "اسم الفريق" — يُنشئ كل الفرق دفعة واحدة في البطولة المختارة فوق، وكل فريق يحصل تلقائيًا على رابط إدخال خاص به (من صفحة "مراجعة بيانات الفرق")</p><div class="actions"><button class="btn secondary" id="dlTeamsTemplateBtn">⬇️ تحميل نموذج فارغ</button><button class="btn" id="importTeamsBtn" style="background:#58a6ff">📊 استيراد ملف إكسل</button><input type="file" id="teamsXlsxInput" accept=".xlsx,.xls,.csv" style="display:none"></div><div class="status" id="teamsImportMsg"></div></section>
-<section class="panel" style="margin-top:24px;"><h3>إضافة فريق</h3><div class="form-grid"><div class="field"><label>اسم الفريق</label><input id="teamName" placeholder="اسم الفريق"></div><div class="field"><label>اللون الأساسي</label><input id="teamColor1" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>اللون الثانوي (اختياري — لمزيج كقميصين)</label><input id="teamColor2" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>الاسم المختصر (اختياري)</label><input id="shortName" placeholder="مثال: MJD"></div></div><div class="actions"><button class="btn" id="addBtn">إضافة فريق</button><button class="btn secondary" id="reloadBtn">تحديث القائمة</button><button class="btn secondary" id="printNamesBtn">📋 تحميل أسماء فرق هذه البطولة (لتسمية الشعارات)</button></div><div class="counter" id="counter"></div><div class="status" id="statusBox"></div></section>
+<section class="panel" style="margin-top:24px;"><h3>إضافة فريق</h3><div class="form-grid"><div class="field"><label>اسم الفريق</label><input id="teamName" placeholder="اسم الفريق"></div><div class="field full"><label style="display:flex;align-items:center;gap:9px"><input id="newTeamIdentityEnabled" type="checkbox" checked style="width:20px;height:20px"> تفعيل هوية الفريق بلونين</label></div><div class="field"><label>اللون الأساسي</label><input id="teamColor1" type="color" list="presetColors" value="#1f6feb" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>اللون الثانوي</label><input id="teamColor2" type="color" list="presetColors" value="#f4c542" style="height:46px;width:100%;cursor:pointer"></div><div class="field"><label>الاسم المختصر (اختياري)</label><input id="shortName" placeholder="مثال: MJD"></div></div><div class="actions"><button class="btn" id="addBtn">إضافة فريق</button><button class="btn secondary" id="reloadBtn">تحديث القائمة</button><button class="btn secondary" id="printNamesBtn">📋 تحميل أسماء فرق هذه البطولة (لتسمية الشعارات)</button></div><div class="counter" id="counter"></div><div class="status" id="statusBox"></div></section>
 <section class="panel" style="margin-top:24px;"><h3>الفرق الحالية</h3><div class="table-wrap"><table><thead><tr><th>اسم الفريق</th><th>الألوان</th><th>كود الفريق</th><th>إجراء</th></tr></thead><tbody id="teamsRows"></tbody></table></div></section>
 </main>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="supabase-config.js"></script>
@@ -105,6 +106,8 @@ function populateColorTeams(rows){
     const t=rows.find(x=>x.id===sel.value);
     document.getElementById('colorPick1').value=t?(t.primary_color||'#1f6feb'):'#1f6feb';
     document.getElementById('colorPick2').value=t?(t.secondary_color||t.primary_color||'#1f6feb'):'#1f6feb';
+    document.getElementById('colorIdentityEnabled').checked=!!(t&&(t.primary_color||t.secondary_color));
+    toggleIdentityInputs();
     const logoUrl=t?(t.logo_url||''):'';
     document.getElementById('logoUrlInput').value=logoUrl;
     document.getElementById('logoUrlInput').removeAttribute('data-cleared');
@@ -190,7 +193,8 @@ document.getElementById('saveColorBtn').onclick=async()=>{
   const c2=document.getElementById('colorPick2').value;
   const logoInput=document.getElementById('logoUrlInput');
   const photoInput=document.getElementById('teamPhotoUrlInput');
-  const update={primary_color:c1,secondary_color:c2};
+  const identityEnabled=document.getElementById('colorIdentityEnabled').checked;
+  const update={primary_color:identityEnabled?c1:null,secondary_color:identityEnabled?c2:null};
   if(logoInput.value||logoInput.getAttribute('data-cleared')){
     update.logo_url=logoInput.value||null;
   }
@@ -212,6 +216,17 @@ async function saveTeamColor(id,field,value){
 }
 window.saveTeamColor=saveTeamColor;
 
+function toggleIdentityInputs(){
+  const enabled=document.getElementById('colorIdentityEnabled').checked;
+  document.getElementById('colorPick1').disabled=!enabled;
+  document.getElementById('colorPick2').disabled=!enabled;
+}
+document.getElementById('colorIdentityEnabled').addEventListener('change',toggleIdentityInputs);
+document.getElementById('newTeamIdentityEnabled').addEventListener('change',function(){
+  document.getElementById('teamColor1').disabled=!this.checked;
+  document.getElementById('teamColor2').disabled=!this.checked;
+});
+
 async function editTeam(id,currentName){
   const newName=prompt('اسم الفريق الجديد:',currentName);
   if(!newName||newName.trim()===currentName)return;
@@ -226,7 +241,7 @@ window.editTeam=editTeam;
 
 async function removeTeam(id){if(!confirm('هل تريد حذف الفريق؟'))return;const {error}=await client.from('teams').delete().eq('id',id);if(error){setMsg('فشل الحذف: '+error.message,'err');return}setMsg('تم حذف الفريق','ok');loadTeams()}
 function updateCounter(current){document.getElementById('counter').textContent=`المطلوب: ${maxTeams} | الحالي: ${current} | المتبقي: ${Math.max(maxTeams-current,0)}`}
-document.getElementById('addBtn').onclick=async()=>{const name=document.getElementById('teamName').value.trim();const short_name=document.getElementById('shortName').value.trim()||null;const primary_color=document.getElementById('teamColor1').value;const secondary_color=document.getElementById('teamColor2').value;if(!selectedTournament){setMsg('اختر بطولة أولًا','warn');return}if(!name){setMsg('أدخل اسم الفريق','warn');return}const {data:existing}=await client.from('teams').select('id').eq('tournament_id',selectedTournament);if((existing||[]).length>=maxTeams){setMsg('تم الوصول إلى الحد الأقصى للفرق','warn');return}const {error}=await client.from('teams').insert([{name, name_ar: name, short_name,primary_color,secondary_color,access_code:genCode(),tournament_id:selectedTournament,is_active:true}]);if(error){setMsg('فشل الإضافة: '+error.message,'err');return}document.getElementById('teamName').value='';document.getElementById('shortName').value='';setMsg('تمت إضافة الفريق بنجاح','ok');loadTeams()};
+document.getElementById('addBtn').onclick=async()=>{const name=document.getElementById('teamName').value.trim();const short_name=document.getElementById('shortName').value.trim()||null;const identityEnabled=document.getElementById('newTeamIdentityEnabled').checked;const primary_color=identityEnabled?document.getElementById('teamColor1').value:null;const secondary_color=identityEnabled?document.getElementById('teamColor2').value:null;if(!selectedTournament){setMsg('اختر بطولة أولًا','warn');return}if(!name){setMsg('أدخل اسم الفريق','warn');return}const {data:existing}=await client.from('teams').select('id').eq('tournament_id',selectedTournament);if((existing||[]).length>=maxTeams){setMsg('تم الوصول إلى الحد الأقصى للفرق','warn');return}const {error}=await client.from('teams').insert([{name,name_ar:name,short_name,primary_color,secondary_color,access_code:genCode(),tournament_id:selectedTournament,is_active:true}]);if(error){setMsg('فشل الإضافة: '+error.message,'err');return}document.getElementById('teamName').value='';document.getElementById('shortName').value='';setMsg('تمت إضافة الفريق بنجاح','ok');loadTeams()};
 document.getElementById('reloadBtn').onclick=loadTeams;loadTournaments();
 
 document.getElementById('printNamesBtn').onclick=async()=>{

@@ -1,0 +1,15 @@
+:root{--theme-primary:#0b4f7c;--theme-secondary:#d7b348;--theme-on-primary:#fff}
+.tournament-platform-mark{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;background:linear-gradient(135deg,var(--theme-primary),color-mix(in srgb,var(--theme-primary) 76%,#061b33));color:var(--theme-on-primary);font:800 12px/1.25 "Noto Naskh Arabic","Tajawal",sans-serif;border-bottom:1px solid rgba(255,255,255,.15)}
+.tournament-platform-mark img{width:29px;height:29px;border-radius:9px;object-fit:cover;filter:drop-shadow(0 3px 5px rgba(0,0,0,.25))}
+body.tournament-themed{background:linear-gradient(145deg,color-mix(in srgb,var(--theme-primary) 7%,#f7fbff),color-mix(in srgb,var(--theme-secondary) 7%,#f5fbf8));color:#10233c}
+body.tournament-themed .nav{background:linear-gradient(135deg,var(--theme-primary),color-mix(in srgb,var(--theme-primary) 76%,#061b33));border-bottom-color:rgba(255,255,255,.14);color:var(--theme-on-primary)}
+body.tournament-themed .nav>span,body.tournament-themed .nav-title,body.tournament-themed .nav-team{color:var(--theme-on-primary)!important}
+body.tournament-themed .nav a,body.tournament-themed .nav-back{color:var(--theme-on-primary);border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.1)}
+body.tournament-themed h1,body.tournament-themed .sec-hd,body.tournament-themed .hof-title{color:var(--theme-primary)}
+body.tournament-themed .card,body.tournament-themed .doc-row,body.tournament-themed .lb-row,body.tournament-themed .hof-badge,body.tournament-themed .award-card,body.tournament-themed .stats-table,body.tournament-themed .info-card,body.tournament-themed .lead-row{background:linear-gradient(145deg,#fff,color-mix(in srgb,var(--theme-primary) 5%,#fff));border-color:color-mix(in srgb,var(--theme-primary) 25%,#dce7ef);color:#10233c;box-shadow:0 5px 0 color-mix(in srgb,var(--theme-primary) 18%,#ccdce7),0 11px 25px rgba(10,39,68,.1)}
+body.tournament-themed .title,body.tournament-themed .doc-title,body.tournament-themed .lb-name,body.tournament-themed .hof-name{color:#10233c}
+body.tournament-themed .desc,body.tournament-themed .doc-date,body.tournament-themed .doc-desc,body.tournament-themed .lb-detail,body.tournament-themed .hof-sub{color:#607086}
+body.tournament-themed .hero{border-color:color-mix(in srgb,var(--theme-secondary) 45%,#d9e2ea);background:linear-gradient(145deg,color-mix(in srgb,var(--theme-primary) 12%,#fff),color-mix(in srgb,var(--theme-secondary) 12%,#fff))}
+body.tournament-themed .hero h1,body.tournament-themed .lb-rank,body.tournament-themed .lb-pts{color:var(--theme-primary)}
+@media(max-width:600px){.tournament-platform-mark{min-height:45px;font-size:11px}.tournament-platform-mark img{width:27px;height:27px}}
+@media(prefers-reduced-motion:reduce){body.tournament-themed *,body.tournament-themed *::before,body.tournament-themed *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}

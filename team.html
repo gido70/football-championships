@@ -19,7 +19,8 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .hero-bg{position:absolute;inset:0}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(13,17,23,.1),rgba(13,17,23,.95))}
 .hero-content{position:relative;z-index:1}
-.team-initial{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:white;margin:0 auto 16px;border:3px solid rgba(255,255,255,.2);box-shadow:0 8px 32px rgba(0,0,0,.5)}
+.team-initial{width:94px;height:94px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:white;margin:0 auto 16px;border:4px solid rgba(255,255,255,.78);box-shadow:0 0 0 5px var(--team-secondary,#c9a84c),0 10px 28px rgba(0,0,0,.4);overflow:hidden;background:linear-gradient(135deg,var(--team-primary,#0b4f7c) 50%,var(--team-secondary,#d7b348) 50%)}
+.team-initial img{width:100%;height:100%;object-fit:contain;padding:8px;background:rgba(255,255,255,.94)}
 .team-name{font-size:clamp(22px,4vw,40px);font-weight:900;color:white;margin-bottom:8px;text-shadow:0 2px 16px rgba(0,0,0,.5)}
 .team-group{font-size:14px;color:rgba(255,255,255,.55);margin-bottom:24px}
 .team-stats{display:flex;justify-content:center;gap:0;flex-wrap:wrap}
@@ -43,12 +44,12 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:24px}
 @media(max-width:480px){.players-grid{grid-template-columns:repeat(2,1fr);gap:10px}}
 .player-card{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:14px;padding:18px 14px;text-align:center;transition:.15s;position:relative;overflow:hidden;box-shadow:0 3px 0 rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.05)}
-.player-card::before{content:"";position:absolute;top:0;right:0;left:0;height:3px;background:var(--tc,#c9a84c)}
+.player-card::before{content:"";position:absolute;top:0;right:0;left:0;height:5px;background:linear-gradient(90deg,var(--team-primary,var(--tc,#c9a84c)) 50%,var(--team-secondary,var(--tc,#c9a84c)) 50%)}
 .player-card:hover{border-color:var(--tc,#c9a84c);background:#EDEAE0;transform:translateY(-3px);box-shadow:0 6px 0 rgba(0,0,0,.08),0 10px 22px rgba(0,0,0,.08)}
 .player-card:active{transform:translateY(0);box-shadow:0 1px 0 rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.05)}
 .player-photo{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #FFFFFF;box-shadow:0 0 0 2px var(--tc,#c9a84c),0 4px 10px rgba(0,0,0,.12);margin:0 auto 10px;display:block}
 .player-ph{width:72px;height:72px;border-radius:50%;background:#EDEAE0;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px;border:3px solid #FFFFFF;box-shadow:0 0 0 2px var(--tc,#c9a84c),0 4px 10px rgba(0,0,0,.12)}
-.player-number{position:absolute;top:10px;left:10px;background:var(--tc,#c9a84c);color:var(--tc-num,#2C2C2A);font-size:12px;font-weight:900;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,.2)}
+.player-number{position:absolute;top:10px;left:10px;background:linear-gradient(135deg,var(--team-primary,var(--tc,#c9a84c)),var(--team-secondary,var(--tc,#c9a84c)));color:#fff;font-size:12px;font-weight:900;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 3px 7px rgba(0,0,0,.22)}
 .player-name{font-size:14px;font-weight:700;color:#2C2C2A;margin-bottom:4px;line-height:1.3}
 .player-nat{font-size:12px;color:#79786A;margin-top:2px}
 
@@ -88,6 +89,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .b-sched{background:#EDEAE0;color:#79786A}
 .b-live{background:#f85149;color:white}
 </style>
+<link rel="stylesheet" href="tournament-theme.css?v=20260910-1">
 </head>
 <body>
 
@@ -147,7 +149,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 </style>
 
 <script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260910-1"></script>
+<script src="tournament-scope.js?v=20260910-2"></script>
 <script>
 const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const TID=new URLSearchParams(location.search).get('id');
@@ -182,15 +184,21 @@ async function loadTeam(){
   teamData=t;
   const name=t.name_ar||t.name||'الفريق';
   const color=t.primary_color||t.color_primary||'#c9a84c';
+  const color2=t.secondary_color||color;
   teamColor=color;
+  document.documentElement.style.setProperty('--team-primary',color);
+  document.documentElement.style.setProperty('--team-secondary',color2);
 
   document.title=name;
   document.getElementById('navTeam').textContent=name;
   document.getElementById('teamName').textContent=name;
   document.getElementById('teamGroup').textContent=t.group_code?'المجموعة '+t.group_code:'';
-  document.getElementById('heroBg').style.background=`linear-gradient(135deg,${color},${t.secondary_color||'#1a1a2e'})`;
-  document.getElementById('teamInitial').style.background=`rgba(255,255,255,.15)`;
-  document.getElementById('teamInitial').textContent=name.charAt(0);
+  document.getElementById('heroBg').style.background=`linear-gradient(135deg,${color},${color2})`;
+  document.getElementById('teamInitial').innerHTML=t.logo_url?`<img src="${t.logo_url}" alt="${name}">`:name.charAt(0);
+  if(t.tournament_id){
+    const {data:tour}=await sb.from('tournaments').select('primary_color,secondary_color').eq('id',t.tournament_id).single();
+    window.TournamentScope?.applyTournamentTheme(tour);
+  }
 
   const photoSection=document.getElementById('teamPhotoSection');
   if(t.team_photo_url){
