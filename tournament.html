@@ -7,9 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" id="appManifest">
 <link rel="apple-touch-icon" href="icon-app.png">
-<script>if(new URLSearchParams(location.search).get('standalone')==='1')document.querySelector('link[rel="manifest"]')?.remove();</script>
+<link rel="stylesheet" href="tournament-theme.css?v=20260910-1">
 <title>البطولة</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
@@ -18,6 +18,7 @@
 body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh;overflow-x:hidden}
 .nav{background:#FFFFFF;border-bottom:1px solid #EDEAE0;padding:calc(10px + env(safe-area-inset-top,0px)) 24px 10px;min-height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
 .nav-title{font-size:17px;font-weight:800;color:#2C2C2A;display:flex;align-items:center;gap:10px}
+.platform-mini-logo{width:30px;height:30px;object-fit:cover;border-radius:9px;box-shadow:0 3px 8px rgba(0,0,0,.2)}
 .nav-status{font-size:11px;padding:2px 10px;border-radius:20px;background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.2);display:none}
 .nav-back{color:#0F2A4A;text-decoration:none;font-size:14px;font-weight:800;padding:9px 20px;border-radius:12px;background:linear-gradient(180deg,#ffffff,#EDEAE0);border:1px solid #D8D2C0;box-shadow:0 3px 0 #C9C2AC,0 4px 8px rgba(0,0,0,.12);transition:.15s;display:inline-flex;align-items:center;gap:6px}
 .nav-back:active{transform:translateY(2px);box-shadow:0 1px 0 #C9C2AC,0 2px 4px rgba(0,0,0,.1)}
@@ -25,7 +26,6 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .nav-back:hover{background:#EDEAE0;color:#2C2C2A}
 .tournament-isolated .nav{justify-content:center;background:linear-gradient(135deg,var(--tournament-primary,#071b35),#0b2748);border-bottom-color:rgba(255,255,255,.12)}
 .tournament-isolated .nav-title{color:#fff;font-size:13px;letter-spacing:.2px}
-.tournament-isolated .nav-title::before{content:'⚽';font-size:16px}
 .tournament-isolated .nav-back{display:none}
 .tournament-isolated .nav-status{margin-right:6px}
 .hero{position:relative;overflow:hidden;padding:52px 24px 40px;text-align:center}
@@ -245,7 +245,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .m-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:start}
 .mt{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#2C2C2A;text-align:center;min-width:0}
 .mt-badge{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#FFFFFF;overflow:hidden}
-.mt-badge img{width:100%;height:100%;object-fit:contain;border-radius:50%}
+.mt-badge img{width:100%;height:100%;object-fit:contain;border-radius:50%;padding:4px;background:rgba(255,255,255,.92)}
 .mt-name{max-width:150px;min-height:34px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.35;color:#10264A;font-size:14px;font-weight:900}
 .mt-score{font-size:27px;font-weight:900;color:#10264A;margin-top:0}
 .ms{text-align:center;display:flex;flex-direction:column;align-items:center;padding-top:6px;justify-content:flex-start}
@@ -275,10 +275,10 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 /* TEAMS */
 .tm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
 .tm-card{background:linear-gradient(145deg,#173f6d,#0f2a4a);border:1px solid #315896;border-radius:12px;padding:18px 14px;text-align:center;text-decoration:none;display:block;transition:.2s;position:relative;overflow:hidden;box-shadow:0 6px 16px rgba(15,42,74,.18)}
-.tm-card::before{content:"";position:absolute;top:0;right:0;left:0;height:4px;background:var(--c,var(--tab-accent,#378ADD))}
+.tm-card::before{content:"";position:absolute;top:0;right:0;left:0;height:5px;background:linear-gradient(90deg,var(--c1,var(--tab-accent,#378ADD)) 50%,var(--c2,var(--c1,#d7b348)) 50%)}
 .tm-card:hover{border-color:#5b9fe0;transform:translateY(-3px);box-shadow:0 9px 22px rgba(15,42,74,.25)}
 .tm-grp{position:absolute;top:10px;left:10px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.24);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px}
-.tm-logo{width:44px;height:44px;object-fit:contain;border-radius:50%;display:block;margin:0 auto 8px}
+.tm-logo{width:50px;height:50px;object-fit:contain;border-radius:50%;display:block;margin:0 auto 8px;padding:5px;background:#fff;border:4px solid var(--c1,#378ADD);box-shadow:0 0 0 3px var(--c2,#d7b348),0 6px 12px rgba(0,0,0,.2)}
 .tm-icon{font-size:38px;margin-bottom:10px;display:block}
 .tm-name{font-size:14px;font-weight:800;color:#fff;margin-bottom:4px;text-shadow:0 1px 3px rgba(0,0,0,.35)}
 .tm-cnt{font-size:13px;color:#dbeafe}
@@ -329,7 +329,7 @@ img[src=""], img:not([src]) { display:none !important; }
 </div>
 <div id="pageBodyWrap" style="display:block">
 <div id="installBanner" style="display:none;position:sticky;top:0;z-index:200;background:linear-gradient(135deg,#0F2A4A,#1B3A5C);color:#fff;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.2)">
-  <span id="installBannerText">📲 احفظ المنصة كتطبيق على هاتفك بضغطة واحدة</span>
+  <span id="installBannerText">📲 ثبّت البطولة كتطبيق مستقل على هاتفك</span>
   <button id="installBannerBtn" onclick="handleInstallClick()" style="background:#C9A84C;color:#0F2A4A;border:none;border-radius:20px;padding:6px 16px;font-weight:900;font-size:12.5px;margin-right:10px;cursor:pointer">تثبيت الآن</button>
   <button onclick="dismissInstallBanner()" style="background:none;border:none;color:#fff;opacity:.7;font-size:16px;cursor:pointer;position:absolute;left:14px;top:8px">✕</button>
 </div>
@@ -346,7 +346,8 @@ img[src=""], img:not([src]) { display:none !important; }
   </div>
 </div>
 <nav class="nav" data-platform-brand>
-  <div class="nav-title">
+  <div class="nav-title" data-platform-brand>
+    <img src="icon-app.png" alt="" class="platform-mini-logo">
     <span id="navName">البطولة</span>
     <span class="nav-status" id="navStatus"></span>
     <span id="liveHeaderBadge" onclick="jumpToTab('ma')" style="display:none;cursor:pointer;align-items:center;gap:6px;background:rgba(255,59,59,.15);border:1px solid rgba(255,59,59,.4);color:#ff5c5c;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:800;margin-right:8px">
@@ -421,7 +422,7 @@ img[src=""], img:not([src]) { display:none !important; }
 </div>
 
 <script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260910-1"></script>
+<script src="tournament-scope.js?v=20260910-2"></script>
 <script>
 const SUPABASE_READY=Boolean(window.supabase&&window.SUPABASE_URL&&window.SUPABASE_ANON_KEY);
 const sb=SUPABASE_READY?window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY):null;
@@ -839,7 +840,8 @@ let deferredInstallPrompt=null;
 function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}
 function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent);}
 
-if(!isStandalone()&&!localStorage.getItem('installBannerDismissed')){
+const installDismissKey='installBannerDismissed_'+(TID||'platform');
+if(!isStandalone()&&!localStorage.getItem(installDismissKey)){
   window.addEventListener('beforeinstallprompt',(e)=>{
     e.preventDefault();
     deferredInstallPrompt=e;
@@ -861,7 +863,7 @@ async function handleInstallClick(){
 }
 function dismissInstallBanner(){
   document.getElementById('installBanner').style.display='none';
-  localStorage.setItem('installBannerDismissed','1');
+  localStorage.setItem(installDismissKey,'1');
 }
 window.handleInstallClick=handleInstallClick;
 window.dismissInstallBanner=dismissInstallBanner;
@@ -938,10 +940,12 @@ async function loadTournament(){
   const name=t.name_ar||t.name||'البطولة';
   const p=t.primary_color||'#0b1f3a';
   const s=t.secondary_color||'#c9a84c';
+  window.TournamentScope?.configureApp(t,TID);
   const season=t.season_label||'';
 
   document.title=name;
   document.getElementById('navName').textContent=window.TournamentScope?.isIsolated?'منصة البطولات الاحترافية':name;
+  document.getElementById('installBannerText').textContent='📲 ثبّت '+name+' كتطبيق مستقل على هاتفك';
   if(t.public_notice){
     const nEl=document.getElementById('scopeNotice');
     nEl.textContent=t.public_notice;
@@ -1151,12 +1155,12 @@ async function loadMatches(){
           <span class="m-badge ${sm[m.status]||'b-sched'}">${lv?'<span class=live-pulse></span>':''} ${sl[m.status]||m.status}</span>
         </div>
         <div class="m-teams">
-          <div class="mt"><div class="mt-badge" style="background:${hColor}">${hBadgeInner}</div><div class="mt-name">${hName}</div><div class="mt-score">${d||lv?m.home_score??0:'–'}</div></div>
+          <div class="mt"><div class="mt-badge" style="background:linear-gradient(135deg,${hColor} 50%,${ht.secondary_color||hColor} 50%)">${hBadgeInner}</div><div class="mt-name">${hName}</div><div class="mt-score">${d||lv?m.home_score??0:'–'}</div></div>
           <div class="ms">
             <div class="ms-sep">:</div>
             ${lv?`<div class="ms-sub" style="color:#D85A30">${m.match_minute||0}'</div>`:`<div class="ms-sub">${m.match_time||''}</div>`}
           </div>
-          <div class="mt"><div class="mt-badge" style="background:${aColor}">${aBadgeInner}</div><div class="mt-name">${aName}</div><div class="mt-score">${d||lv?m.away_score??0:'–'}</div></div>
+          <div class="mt"><div class="mt-badge" style="background:linear-gradient(135deg,${aColor} 50%,${at.secondary_color||aColor} 50%)">${aBadgeInner}</div><div class="mt-name">${aName}</div><div class="mt-score">${d||lv?m.away_score??0:'–'}</div></div>
         </div>
       </a>`;
     });
@@ -1234,7 +1238,7 @@ async function loadTeams(){
   const cnt={};(pl||[]).forEach(p=>{cnt[p.team_id]=(cnt[p.team_id]||0)+1;});
   countUpTo('hP',pl?.length||0);
   document.getElementById('tmWrap').innerHTML='<div class="sec-hd">👥 الفرق</div><div class="tm-grid">'+data.map(t=>`
-    <a class="tm-card" href="team.html?id=${t.id}" style="--c:${t.primary_color||t.color_primary||'#c9a84c'}">
+    <a class="tm-card" href="team.html?id=${t.id}" style="--c1:${t.primary_color||t.color_primary||'#378ADD'};--c2:${t.secondary_color||t.primary_color||'#d7b348'}">
       ${t.group_code?`<span class="tm-grp">${t.group_code}</span>`:''}
       ${t.logo_url?`<img class="tm-logo" src="${t.logo_url}" alt="">`:'<span class="tm-icon">⚽</span>'}
       <div class="tm-name">${t.name_ar||t.name}</div>
