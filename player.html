@@ -75,7 +75,7 @@ async function init(){
   const p=playerRes.data;
   if(!p){document.getElementById('loading').textContent='تعذر العثور على اللاعب';return;}
   const requests=[
-    sb.from('teams').select('*').eq('id',p.team_id).single(),
+    sb.from('teams').select('id,name,name_ar,primary_color,secondary_color,logo_url').eq('id',p.team_id).single(),
     sb.from('tournaments').select('id,name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',p.tournament_id).single(),
     sb.from('match_events').select('match_id,event_type,event_subtype,minute').eq('player_id',PID),
     sb.from('match_lineups').select('match_id,is_starting').eq('player_id',PID),
