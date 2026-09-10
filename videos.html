@@ -58,12 +58,39 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
   .player-title{flex:1 1 100%;order:1}
   .player-actions{order:2;width:100%;justify-content:space-between}
 }
+.content-page .carousel{grid-template-columns:repeat(3,minmax(0,1fr));padding:0;gap:14px}
+.content-page .card{border-radius:18px;border-color:var(--content-line);background:#fff;color:var(--content-ink);box-shadow:0 8px 22px rgba(12,48,78,.09)}
+.content-page .card.featured{grid-column:span 2}
+.content-page .thumb,.content-page .thumb-ph{height:auto;aspect-ratio:16/9}
+.content-page .video-type{display:inline-flex;margin-bottom:7px;padding:4px 8px;border-radius:999px;background:color-mix(in srgb,var(--theme-primary,#176b9a) 9%,#fff);color:var(--theme-primary,#176b9a);font-size:10px;font-weight:900}
+.content-page .video-date{font-size:10.5px;color:var(--content-muted);margin-top:7px}
+@media(max-width:760px){
+  .content-page .carousel{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .content-page .card.featured{grid-column:span 2}
+  .content-page .play-icon{width:40px;height:40px;font-size:15px}
+  .content-page .body{padding:10px}
+}
+@media(max-width:340px){.content-page .carousel{grid-template-columns:1fr}.content-page .card.featured{grid-column:span 1}}
 </style>
 <link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
+<link rel="stylesheet" href="content-pages.css?v=20260910-1">
 </head>
-<body>
+<body class="content-page">
 <div class="nav"><span style="font-weight:800;color:#c9a84c">🎬 فيديوهات البطولة</span><a href="#" id="backLink" onclick="history.back();return false">‹ رجوع للبطولة</a></div>
-<div class="wrap"><h1 id="tourName"></h1><div id="app"><div class="loading">⏳ جاري التحميل...</div></div></div>
+<div class="wrap">
+  <section class="content-hero">
+    <div class="content-kicker">▶️ المركز الإعلامي</div>
+    <h1 id="tourName">فيديوهات البطولة</h1>
+    <div class="content-summary">ملخصات المباريات والمؤتمرات والمواد المرئية في مكتبة واحدة مرتبة من الأحدث.</div>
+    <div class="content-count" id="videosCount">⏳ جاري الحصر...</div>
+  </section>
+  <div class="content-toolbar" id="videoFilters" style="display:none">
+    <button class="filter-chip active" data-filter="all" onclick="setVideoFilter('all',this)">الكل</button>
+    <button class="filter-chip" data-filter="matches" onclick="setVideoFilter('matches',this)">ملخصات المباريات</button>
+    <button class="filter-chip" data-filter="media" onclick="setVideoFilter('media',this)">المركز الإعلامي</button>
+  </div>
+  <div id="app"><div class="loading">⏳ جاري التحميل...</div></div>
+</div>
 
 <div class="player-overlay" id="playerOverlay" onclick="if(event.target===this)closePlayer()">
   <div class="player-box">
@@ -82,6 +109,7 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
 <script src="supabase-config.js"></script>
 <script src="tournament-scope.js?v=20260910-3"></script>
+<script src="public-date.js?v=20260910-1"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const qs=new URLSearchParams(location.search);
@@ -90,22 +118,25 @@ const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 
 function extractYoutubeId(url){
-  const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
+  const m=String(url||'').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
   return m?m[1]:null;
 }
 
 let VIDEOS=[];
+let videoFilter='all';
+let visibleVideos=12;
 async function load(){
   if(!TID){document.getElementById('app').innerHTML='<div class="empty-note">لم تُحدَّد بطولة</div>';return;}
   const backLink=document.getElementById('backLink');
   backLink.href=scopeUrl('tournament.html?id='+TID);
   backLink.removeAttribute('onclick');
-  const {data:t}=await sb.from('tournaments').select('name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',TID).single();
+  const [{data:t},{data:vidRows,error:videoError},{data:matchVids,error:matchVideoError}]=await Promise.all([
+    sb.from('tournaments').select('name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',TID).single(),
+    sb.from('videos').select('id,title,description,video_type,video_url,thumbnail_url,created_at').eq('tournament_id',TID).order('created_at',{ascending:false}),
+    sb.from('matches').select('id,home_score,away_score,match_date,highlight_video_url,home_team_id,away_team_id').eq('tournament_id',TID).eq('status','completed').not('highlight_video_url','is',null)
+  ]);
   window.TournamentScope?.applyTournamentTheme(t);
-  document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — الفيديوهات';
-
-  const {data:vidRows}=await sb.from('videos').select('*').eq('tournament_id',TID).order('created_at',{ascending:false});
-  const {data:matchVids}=await sb.from('matches').select('id,home_score,away_score,match_date,highlight_video_url,home_team_id,away_team_id').eq('tournament_id',TID).eq('status','completed').not('highlight_video_url','is',null);
+  document.getElementById('tourName').textContent=(t?.name||'البطولة')+' — الفيديوهات';
   let matchVideoItems=[];
   if(matchVids?.length){
     const {data:teams}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
@@ -115,23 +146,52 @@ async function load(){
       video_type:'youtube',video_url:m.highlight_video_url,description:'ملخص المباراة',created_at:m.match_date,_isMatch:true
     }));
   }
-  VIDEOS=[...matchVideoItems,...(vidRows||[])];
+  if(videoError&&matchVideoError){document.getElementById('app').innerHTML='<div class="content-error">تعذر تحميل الفيديوهات مؤقتًا. أعد المحاولة بعد قليل.</div>';return;}
+  VIDEOS=[...matchVideoItems,...(vidRows||[])].filter(v=>/^https:\/\//i.test(v.video_url||''))
+    .sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
   const app=document.getElementById('app');
-  if(!VIDEOS.length){app.innerHTML='<div class="empty-note">لا توجد فيديوهات مضافة بعد لهذه البطولة</div>';return;}
+  document.getElementById('videosCount').textContent=VIDEOS.length+' '+(VIDEOS.length===1?'فيديو':'فيديوهات');
+  if(!VIDEOS.length){app.innerHTML='<div class="content-empty">🎬<br>لا توجد فيديوهات منشورة لهذه البطولة حتى الآن</div>';return;}
+  document.getElementById('videoFilters').style.display='flex';
+  renderVideos();
+}
 
-  app.innerHTML='<div class="carousel">'+VIDEOS.map((v,i)=>`
-    <button class="card" onclick="openPlayer(${i})" style="animation-delay:${i*0.06}s">
+function filteredVideos(){
+  if(videoFilter==='matches')return VIDEOS.filter(v=>v._isMatch);
+  if(videoFilter==='media')return VIDEOS.filter(v=>!v._isMatch);
+  return VIDEOS;
+}
+function renderVideos(){
+  const filtered=filteredVideos();
+  const shown=filtered.slice(0,visibleVideos);
+  const app=document.getElementById('app');
+  if(!shown.length){app.innerHTML='<div class="content-empty">لا توجد مواد في هذا القسم</div>';return;}
+  app.innerHTML='<div class="carousel">'+shown.map((v,i)=>{
+    const originalIndex=VIDEOS.indexOf(v);
+    const yid=v.video_type==='youtube'?extractYoutubeId(v.video_url):null;
+    const thumb=v.thumbnail_url||(yid?`https://i.ytimg.com/vi/${yid}/hqdefault.jpg`:'');
+    const date=v.created_at?window.PublicDate.format(v.created_at,{year:true}):'';
+    return `
+    <button class="card content-card ${i===0?'featured':''}" onclick="openPlayer(${originalIndex})" style="animation-delay:${Math.min(i,8)*0.04}s">
       <div class="thumb-wrap">
-        ${v.thumbnail_url?`<img class="thumb" src="${v.thumbnail_url}" alt="${esc(v.title)}">`:'<div class="thumb-ph">🎬</div>'}
+        ${thumb?`<img class="thumb" src="${thumb}" alt="${esc(v.title)}" loading="lazy">`:'<div class="thumb-ph">🎬</div>'}
         <div class="play-badge"><div class="play-icon">▶</div></div>
       </div>
       <div class="body">
+        <div class="video-type">${v._isMatch?'⚽ ملخص مباراة':'🎥 مادة إعلامية'}</div>
         <div class="title">${esc(v.title)}</div>
         ${v.description?`<div class="desc">${esc(v.description)}</div>`:''}
+        ${date?`<div class="video-date">${date}</div>`:''}
       </div>
-    </button>
-  `).join('')+'</div>';
+    </button>`}).join('')+'</div>'+
+    (visibleVideos<filtered.length?'<button class="load-more" onclick="showMoreVideos()">عرض المزيد ('+(filtered.length-visibleVideos)+')</button>':'');
 }
+function setVideoFilter(filter,button){
+  videoFilter=filter;visibleVideos=12;
+  document.querySelectorAll('#videoFilters .filter-chip').forEach(x=>x.classList.toggle('active',x===button));
+  renderVideos();
+}
+function showMoreVideos(){visibleVideos+=12;renderVideos();}
 
 function openPlayer(i){
   const v=VIDEOS[i];
@@ -157,6 +217,8 @@ function closePlayer(){
 }
 window.openPlayer=openPlayer;
 window.closePlayer=closePlayer;
+window.setVideoFilter=setVideoFilter;
+window.showMoreVideos=showMoreVideos;
 
 load();
 </script>
