@@ -184,8 +184,19 @@ body.public-match h1,body.public-match h2,body.public-match h3,
 .public-tournament .st-table{background:#fff;color:var(--public-ink)}
 .public-tournament .st-table thead{background:#dcebf7;color:#173a5e}
 .public-tournament .st-table td,.public-tournament .st-table th{border-color:#dce7f0}
-.public-tournament .t-name,.public-tournament .mt-name,.public-tournament .sc-name{color:var(--public-ink)}
-.public-tournament .m-date,.public-tournament .sc-team{color:var(--public-muted)}
+.public-tournament .t-name,.public-tournament .mt-name,.public-tournament .sc-name{color:var(--public-ink);font-weight:800}
+.public-tournament .m-date,.public-tournament .m-info,.public-tournament .sc-team{color:var(--public-muted)}
+.public-tournament .motd-head h3{color:#9b7428}
+.public-tournament .motd-head .motd-date{color:var(--public-muted)}
+.public-tournament .motd-teams{color:#38536e;font-weight:700}
+.public-tournament .motd-score{color:#173a5e}
+.public-tournament .motd-star{
+  background:linear-gradient(145deg,#fffdf5,#f7edd0);
+  border-color:#dcc47e;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8)
+}
+.public-tournament .motd-star-name{color:#173a5e}
+.public-tournament .motd-star-lbl{color:#9b7428;font-weight:800}
 .public-tournament .tm-card{background:linear-gradient(145deg,#164b78,#0b2d50);border-color:#3d75a5;box-shadow:var(--public-shadow)}
 .public-tournament .live-score-box{background:var(--public-navy)}
 .public-tournament .sponsor-chip{border-color:var(--public-line);box-shadow:0 5px 14px rgba(7,35,67,.07)}
