@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-app.png">
+<script>if(new URLSearchParams(location.search).get('standalone')==='1')document.querySelector('link[rel="manifest"]')?.remove();</script>
 <title>البطولة</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
@@ -22,6 +23,11 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .nav-back:active{transform:translateY(2px);box-shadow:0 1px 0 #C9C2AC,0 2px 4px rgba(0,0,0,.1)}
 @media(max-width:480px){.nav-back{font-size:13px;padding:8px 16px}}
 .nav-back:hover{background:#EDEAE0;color:#2C2C2A}
+.tournament-isolated .nav{justify-content:center;background:linear-gradient(135deg,var(--tournament-primary,#071b35),#0b2748);border-bottom-color:rgba(255,255,255,.12)}
+.tournament-isolated .nav-title{color:#fff;font-size:13px;letter-spacing:.2px}
+.tournament-isolated .nav-title::before{content:'⚽';font-size:16px}
+.tournament-isolated .nav-back{display:none}
+.tournament-isolated .nav-status{margin-right:6px}
 .hero{position:relative;overflow:hidden;padding:52px 24px 40px;text-align:center}
 .hero-bg{position:absolute;inset:0}
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(13,17,23,.25) 0%,rgba(13,17,23,.92) 100%)}
@@ -339,7 +345,7 @@ img[src=""], img:not([src]) { display:none !important; }
     <button onclick="document.getElementById('iosInstallSheet').style.display='none'" style="margin-top:18px;background:#0F2A4A;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-weight:800;cursor:pointer">فهمت، شكراً</button>
   </div>
 </div>
-<nav class="nav">
+<nav class="nav" data-platform-brand>
   <div class="nav-title">
     <span id="navName">البطولة</span>
     <span class="nav-status" id="navStatus"></span>
@@ -415,6 +421,7 @@ img[src=""], img:not([src]) { display:none !important; }
 </div>
 
 <script src="supabase-config.js"></script>
+<script src="tournament-scope.js?v=20260910-1"></script>
 <script>
 const SUPABASE_READY=Boolean(window.supabase&&window.SUPABASE_URL&&window.SUPABASE_ANON_KEY);
 const sb=SUPABASE_READY?window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY):null;
@@ -490,11 +497,12 @@ async function submitAccessCode(){
 }
 window.submitAccessCode=submitAccessCode;
 let ACCESS_GRANTED=false;
-document.getElementById('qlinkStats').href='stats.html?id='+TID;
-  document.getElementById('qlinkAwards').href='awards.html?id='+TID;
-  document.getElementById('qlinkVideos').href='videos.html?id='+TID;
-  document.getElementById('qlinkDocs').href='documents.html?id='+TID;
-  document.getElementById('qlinkPredictions').href='leaderboard.html?tid='+TID;
+const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
+document.getElementById('qlinkStats').href=scopeUrl('stats.html?id='+TID);
+  document.getElementById('qlinkAwards').href=scopeUrl('awards.html?id='+TID);
+  document.getElementById('qlinkVideos').href=scopeUrl('videos.html?id='+TID);
+  document.getElementById('qlinkDocs').href=scopeUrl('documents.html?id='+TID);
+  document.getElementById('qlinkPredictions').href=scopeUrl('leaderboard.html?tid='+TID);
 
 async function generateAutoBulletin(){
   if(!TID)return[];
@@ -933,7 +941,7 @@ async function loadTournament(){
   const season=t.season_label||'';
 
   document.title=name;
-  document.getElementById('navName').textContent=name;
+  document.getElementById('navName').textContent=window.TournamentScope?.isIsolated?'منصة البطولات الاحترافية':name;
   if(t.public_notice){
     const nEl=document.getElementById('scopeNotice');
     nEl.textContent=t.public_notice;
@@ -942,6 +950,9 @@ async function loadTournament(){
   document.getElementById('heroTitle').textContent=name;
   document.getElementById('heroSeason').textContent=season;
   document.documentElement.style.setProperty('--season-color',s);
+  document.documentElement.style.setProperty('--tournament-primary',p);
+  document.documentElement.style.setProperty('--tournament-secondary',s);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',p);
 
   // حالة البطولة
   const ns=document.getElementById('navStatus');

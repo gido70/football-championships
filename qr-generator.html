@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>باركود المنصة</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="vendor/supabase.min.js?v=20260910-1"></script>
 <script src="supabase-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <link rel="stylesheet" href="admin.css">
@@ -41,17 +41,22 @@
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 let currentUrl='';
 let qrInstance=null;
+let currentName='البطولة';
 
 async function init(){
   const {data}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});
   const sel=document.getElementById('tSel');
-  sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
+  sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}" data-name="${t.name_ar||t.name}">${t.name_ar||t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
   sel.onchange=renderQR;
+  const requested=new URLSearchParams(location.search).get('tournament');
+  if(requested&&[...sel.options].some(o=>o.value===requested))sel.value=requested;
   if(data?.length)renderQR();
 }
 function renderQR(){
-  const tid=document.getElementById('tSel').value;
-  currentUrl=`https://gido70.github.io/football-championships/tournament.html?id=${tid}`;
+  const sel=document.getElementById('tSel');
+  const tid=sel.value;
+  currentName=sel.selectedOptions[0]?.dataset.name||'البطولة';
+  currentUrl=`https://gido70.github.io/football-championships/tournament.html?id=${tid}&standalone=1`;
   document.getElementById('linkPreview').textContent=currentUrl;
   document.getElementById('qrBox').innerHTML='';
   qrInstance=new QRCode(document.getElementById('qrBox'),{
@@ -64,7 +69,7 @@ function downloadQR(){
   const img=document.querySelector('#qrBox img')||document.querySelector('#qrBox canvas');
   const url=img.tagName==='CANVAS'?img.toDataURL('image/png'):img.src;
   const a=document.createElement('a');
-  a.href=url;a.download='باركود-المنصة.png';a.click();
+  a.href=url;a.download='باركود-'+currentName.replace(/[^\u0600-\u06FFa-zA-Z0-9_-]+/g,'-')+'.png';a.click();
   setMsg('✅ تم التحميل','ok');
 }
 function copyLink(){

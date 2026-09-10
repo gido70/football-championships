@@ -11,7 +11,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>الإحصائيات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="vendor/supabase.min.js?v=20260910-1"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh}
@@ -137,10 +137,12 @@ a{text-decoration:none;color:inherit}
 </div>
 
 <script src="supabase-config.js"></script>
+<script src="tournament-scope.js?v=20260910-1"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const qs=new URLSearchParams(location.search);
 const TID=qs.get('id');
+const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
 
 function showSec(s){
   document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.dataset.s===s));
@@ -185,8 +187,8 @@ function leadRow(rank,name,sub,val,unit,photo,extraClass,number){
 
 async function init(){
   if(!TID){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>لم يتم تحديد البطولة</p></div>';return;}
-  document.getElementById('backLink').href='tournament.html?id='+TID;
-  const fb=document.getElementById('floatBack');if(fb)fb.href='tournament.html?id='+TID;
+  document.getElementById('backLink').href=scopeUrl('tournament.html?id='+TID);
+  const fb=document.getElementById('floatBack');if(fb)fb.href=scopeUrl('tournament.html?id='+TID);
 
   const {data:t}=await sb.from('tournaments').select('*').eq('id',TID).single();
   if(t){
@@ -374,26 +376,6 @@ init().catch(err=>{
 });
 </script>
 
-<script>
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js')
-    .then(reg=>{
-      // تحقق من تحديثات فورياً
-      reg.update();
-      // إن وجد service worker جديد، فعّله وأعد التحميل
-      reg.addEventListener('updatefound',()=>{
-        const nw=reg.installing;
-        nw.addEventListener('statechange',()=>{
-          if(nw.state==='installed'&&navigator.serviceWorker.controller){
-            // إعادة تحميل تلقائية لتطبيق التحديث
-            window.location.reload();
-          }
-        });
-      });
-    });
-  // استمع لرسائل التحديث
-  navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
-}
-</script>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});</script>
 </body>
 </html>

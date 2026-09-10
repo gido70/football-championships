@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>صفحة الفريق</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="vendor/supabase.min.js?v=20260910-1"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh}
@@ -147,6 +147,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 </style>
 
 <script src="supabase-config.js"></script>
+<script src="tournament-scope.js?v=20260910-1"></script>
 <script>
 const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const TID=new URLSearchParams(location.search).get('id');
@@ -353,7 +354,7 @@ async function init(){
   const ref = document.referrer;
   const backBtn = document.getElementById('backBtn');
   if(ref && ref.includes('tournament.html')){
-    backBtn.href = ref;
+    backBtn.href = window.TournamentScope?.scopedUrl(ref)||ref;
   }
   await loadTeam();
   await loadSquad();

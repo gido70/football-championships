@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>جوائز البطولة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="vendor/supabase.min.js?v=20260910-1"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh;overflow-x:hidden;
@@ -115,9 +115,11 @@ a{text-decoration:none;color:inherit}
 </div>
 
 <script src="supabase-config.js"></script>
+<script src="tournament-scope.js?v=20260910-1"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const TID=new URLSearchParams(location.search).get('id');
+const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
 
 const AWARD_DEFS=[
   {key:'top_scorer',     title:'هداف البطولة',        ic:'⚽', color:'#f85149'},
@@ -129,7 +131,7 @@ const AWARD_DEFS=[
 
 async function init(){
   if(!TID){document.getElementById('awardsGrid').innerHTML='<div class="award-empty"><p>لم يتم تحديد البطولة</p></div>';return;}
-  document.getElementById('backLink').href='tournament.html?id='+TID;
+  document.getElementById('backLink').href=scopeUrl('tournament.html?id='+TID);
 
   const {data:t}=await sb.from('tournaments').select('name,name_ar').eq('id',TID).single();
   if(t)document.getElementById('tName').textContent='جوائز '+(t.name_ar||t.name||'');
@@ -172,26 +174,6 @@ async function init(){
 init();
 </script>
 
-<script>
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js')
-    .then(reg=>{
-      // تحقق من تحديثات فورياً
-      reg.update();
-      // إن وجد service worker جديد، فعّله وأعد التحميل
-      reg.addEventListener('updatefound',()=>{
-        const nw=reg.installing;
-        nw.addEventListener('statechange',()=>{
-          if(nw.state==='installed'&&navigator.serviceWorker.controller){
-            // إعادة تحميل تلقائية لتطبيق التحديث
-            window.location.reload();
-          }
-        });
-      });
-    });
-  // استمع لرسائل التحديث
-  navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
-}
-</script>
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});</script>
 </body>
 </html>
