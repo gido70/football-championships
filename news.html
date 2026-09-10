@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>أخبار البطولة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
+<link rel="stylesheet" href="content-pages.css?v=20260910-1">
+<style>
+*{box-sizing:border-box}
+body{font-family:"Tajawal",sans-serif;direction:rtl;margin:0;min-height:100vh}
+.nav{background:#fff;border-bottom:1px solid #d7e3ec;padding:calc(14px + env(safe-area-inset-top,0px)) 20px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.nav-title{font-weight:900;color:var(--content-ink)}
+.nav a{color:var(--theme-primary,#176b9a);text-decoration:none;font-size:13px;font-weight:800;border:1px solid #d7e3ec;padding:8px 16px;border-radius:20px;min-height:36px;display:inline-flex;align-items:center}
+.news-card{padding:0;width:100%;border:0;text-align:right;font-family:inherit;cursor:pointer;min-height:178px;display:flex;flex-direction:column}
+.news-card:first-child{grid-column:span 2;background:linear-gradient(145deg,#fff,color-mix(in srgb,var(--theme-primary,#176b9a) 7%,#fff))}
+.news-card:first-child .content-card-title{font-size:18px}
+.news-card .content-card-body{display:flex;flex:1;flex-direction:column}
+.news-card .content-meta{margin-top:auto;padding-top:12px}
+.news-text{font-size:13px;line-height:1.8;color:#405b73;margin-top:8px;white-space:pre-line;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.news-kind{align-self:flex-start}
+.news-match{color:#0d648f}
+.news-general{color:#8f4f32}
+@media(max-width:760px){
+  .news-card:first-child{grid-column:span 2;min-height:190px}
+  .news-card:first-child .content-card-title{font-size:15px}
+  .news-text{font-size:11.5px;-webkit-line-clamp:4}
+}
+@media(max-width:340px){.news-card:first-child{grid-column:span 1}}
+</style>
+</head>
+<body class="content-page">
+<div class="nav"><span class="nav-title">🗞️ أخبار البطولة</span><a id="backLink" href="#">‹ رجوع للبطولة</a></div>
+<main class="wrap">
+  <section class="content-hero">
+    <div class="content-kicker">📡 المركز الإخباري</div>
+    <h1 id="tourName">أخبار البطولة</h1>
+    <div class="content-summary">كل أخبار البطولة في صفحة مرتبة من الأحدث، بدل ازدحام الصفحة الرئيسية عند زيادة المنشورات.</div>
+    <div class="content-count" id="newsCount">⏳ جاري الحصر...</div>
+  </section>
+  <div class="content-toolbar" id="newsFilters" style="display:none">
+    <button class="filter-chip active" onclick="setNewsFilter('all',this)">الكل</button>
+    <button class="filter-chip" onclick="setNewsFilter('matches',this)">أخبار المباريات</button>
+    <button class="filter-chip" onclick="setNewsFilter('general',this)">أخبار البطولة</button>
+  </div>
+  <div id="app"><div class="content-empty">⏳ جاري تحميل الأخبار...</div></div>
+</main>
+
+<script src="vendor/supabase.min.js?v=20260910-1"></script>
+<script src="supabase-config.js"></script>
+<script src="tournament-scope.js?v=20260910-3"></script>
+<script src="public-date.js?v=20260910-1"></script>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const qs=new URLSearchParams(location.search);
+const TID=qs.get('id')||qs.get('tid');
+const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+let NEWS=[];
+let newsFilter='all';
+let totalNews=0;
+let loadingNews=false;
+const PAGE_SIZE=20;
+
+async function load(){
+  if(!TID){document.getElementById('app').innerHTML='<div class="content-error">لم تُحدَّد بطولة</div>';return;}
+  document.getElementById('backLink').href=scopeUrl('tournament.html?id='+TID);
+  const tournamentRequest=sb.from('tournaments').select('name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',TID).single();
+  const newsRequest=fetchNews(true);
+  const {data:t}=await tournamentRequest;
+  window.TournamentScope?.applyTournamentTheme(t);
+  document.getElementById('tourName').textContent=(t?.name||'البطولة')+' — الأخبار';
+  await newsRequest;
+}
+function newsQuery(){
+  let query=sb.from('news_items').select('id,title,content,match_id,created_at',{count:'exact'}).eq('tournament_id',TID);
+  if(newsFilter==='matches')query=query.not('match_id','is',null);
+  if(newsFilter==='general')query=query.is('match_id',null);
+  return query;
+}
+async function fetchNews(reset=false){
+  if(loadingNews)return;
+  loadingNews=true;
+  if(reset){NEWS=[];document.getElementById('app').innerHTML='<div class="content-empty">⏳ جاري تحميل الأخبار...</div>';}
+  const start=NEWS.length;
+  const {data,count,error}=await newsQuery().order('created_at',{ascending:false}).range(start,start+PAGE_SIZE-1);
+  loadingNews=false;
+  if(error){document.getElementById('app').innerHTML='<div class="content-error">تعذر تحميل الأخبار مؤقتًا. أعد المحاولة بعد قليل.</div>';return;}
+  NEWS.push(...(data||[]).filter(n=>String(n.content||n.title||'').trim()));
+  totalNews=count||0;
+  document.getElementById('newsCount').textContent=totalNews+' '+(totalNews===1?'خبر منشور':'خبرًا منشورًا');
+  document.getElementById('newsFilters').style.display=totalNews||newsFilter!=='all'?'flex':'none';
+  renderNews();
+}
+function renderNews(){
+  const app=document.getElementById('app');
+  if(!NEWS.length){app.innerHTML='<div class="content-empty">🗞️<br>لا توجد أخبار منشورة في هذا القسم حتى الآن</div>';return;}
+  app.innerHTML='<div class="content-grid">'+NEWS.map((n,i)=>{
+    const kind=n.match_id?'⚽ خبر مباراة':'📢 خبر البطولة';
+    const title=n.title||String(n.content||'').split(/\n|[.!؟]/)[0].slice(0,90)||'خبر البطولة';
+    const date=n.created_at?window.PublicDate.format(n.created_at,{year:true}):'';
+    return `<article class="content-card news-card" style="animation-delay:${Math.min(i,8)*0.04}s">
+      <div class="content-card-body">
+        <span class="content-type news-kind ${n.match_id?'news-match':'news-general'}">${kind}</span>
+        <div class="content-card-title">${esc(title)}</div>
+        <div class="news-text">${esc(n.content||n.title||'')}</div>
+        <div class="content-meta"><span>${date}</span><span>رقم ${NEWS.indexOf(n)+1}</span></div>
+      </div>
+    </article>`;
+  }).join('')+'</div>'+(NEWS.length<totalNews?'<button class="load-more" onclick="showMoreNews()">عرض المزيد ('+(totalNews-NEWS.length)+')</button>':'');
+}
+async function setNewsFilter(filter,button){
+  newsFilter=filter;
+  document.querySelectorAll('#newsFilters .filter-chip').forEach(x=>x.classList.toggle('active',x===button));
+  await fetchNews(true);
+}
+async function showMoreNews(){await fetchNews(false);}
+window.setNewsFilter=setNewsFilter;
+window.showMoreNews=showMoreNews;
+load();
+</script>
+</body>
+</html>
