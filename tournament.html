@@ -321,7 +321,7 @@ img[src=""], img:not([src]) { display:none !important; }
     <div id="accessGateMsg" style="color:#f85149;font-size:12.5px;margin-top:10px"></div>
   </div>
 </div>
-<div id="pageBodyWrap" style="display:none">
+<div id="pageBodyWrap" style="display:block">
 <div id="installBanner" style="display:none;position:sticky;top:0;z-index:200;background:linear-gradient(135deg,#0F2A4A,#1B3A5C);color:#fff;padding:10px 16px;text-align:center;font-size:13px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.2)">
   <span id="installBannerText">📲 احفظ المنصة كتطبيق على هاتفك بضغطة واحدة</span>
   <button id="installBannerBtn" onclick="handleInstallClick()" style="background:#C9A84C;color:#0F2A4A;border:none;border-radius:20px;padding:6px 16px;font-weight:900;font-size:12.5px;margin-right:10px;cursor:pointer">تثبيت الآن</button>
@@ -418,6 +418,7 @@ img[src=""], img:not([src]) { display:none !important; }
 <script>
 const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const TID=new URLSearchParams(location.search).get('id');
+let TOURNAMENT_CACHE=null;
 
 function countUpTo(elId,target){
   const el=document.getElementById(elId);
@@ -435,14 +436,17 @@ function countUpTo(elId,target){
 const REQUESTED_TAB=new URLSearchParams(location.search).get('tab');
 
 async function checkTournamentAccess(){
-  const {data:t}=await sb.from('tournaments').select('is_public').eq('id',TID).single();
+  const {data:t,error}=await sb.from('tournaments').select('*').eq('id',TID).single();
+  if(error||!t){
+    document.getElementById('heroTitle').textContent='تعذر تحميل البطولة — تحقق من الاتصال وحاول مجددًا';
+    return false;
+  }
+  TOURNAMENT_CACHE=t;
   if(!t||t.is_public!==false){
-    document.getElementById('pageBodyWrap').style.display='block';
     return true;
   }
   const grantedKey='tourAccess_'+TID;
   if(localStorage.getItem(grantedKey)==='1'){
-    document.getElementById('pageBodyWrap').style.display='block';
     return true;
   }
   document.getElementById('accessGateOverlay').style.display='flex';
@@ -465,8 +469,7 @@ async function submitAccessCode(){
   }
 }
 window.submitAccessCode=submitAccessCode;
-let ACCESS_GRANTED=true;
-(async()=>{ ACCESS_GRANTED=await checkTournamentAccess(); })();
+let ACCESS_GRANTED=false;
 document.getElementById('qlinkStats').href='stats.html?id='+TID;
   document.getElementById('qlinkAwards').href='awards.html?id='+TID;
   document.getElementById('qlinkVideos').href='videos.html?id='+TID;
@@ -588,8 +591,8 @@ function toggleTicker(id){
   document.getElementById(id+'Toggle').textContent=tickerState[id].paused?'▶':'⏸';
 }
 
-// تحديث تلقائي للشريط كل 25 ثانية بلا حاجة لإعادة تحميل الصفحة
-setInterval(()=>{if(TID)loadNews();},25000);
+// يبدأ التحديث الدوري بعد اكتمال التحميل الأولي، ويتوقف عندما تكون الصفحة مخفية.
+let newsRefreshTimer=null;
 function motdEsc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 
 function feedYoutubeId(url){
@@ -802,11 +805,6 @@ async function loadMOTD(){
 }
 
 
-loadNews();
-loadMOTD();
-loadLiveMatch();
-setInterval(loadLiveMatch,12000);
-requestNotifyPermissionOnce();
 
 // ===== شريط "احفظ كتطبيق" الذكي =====
 let deferredInstallPrompt=null;
@@ -839,10 +837,9 @@ function dismissInstallBanner(){
 }
 window.handleInstallClick=handleInstallClick;
 window.dismissInstallBanner=dismissInstallBanner;
-loadFeed();
-
 const TAB_ACCENT={st:'#639922',ma:'#c9a84c',sc:'#D85A30',tm:'#378ADD'};
 let lastKnownScores={};
+let liveRefreshTimer=null;
 function requestNotifyPermissionOnce(){
   if(!('Notification' in window))return;
   if(Notification.permission==='default'&&!localStorage.getItem('notifyAsked')){
@@ -900,7 +897,12 @@ document.documentElement.style.setProperty('--tab-accent',TAB_ACCENT.st);
 
 async function loadTournament(){
   if(!TID)return;
-  const {data:t,error:terr}=await sb.from('tournaments').select('*').eq('id',TID).single();
+  let t=TOURNAMENT_CACHE,terr=null;
+  if(!t){
+    const result=await sb.from('tournaments').select('*').eq('id',TID).single();
+    t=result.data;terr=result.error;
+    if(t)TOURNAMENT_CACHE=t;
+  }
   if(terr||!t){
     document.getElementById('heroTitle').textContent='تعذر تحميل البطولة';
     return;
@@ -1209,10 +1211,12 @@ async function loadTeams(){
     </a>`).join('')+'</div>';
 }
 
-sb.channel('rt-t').on('postgres_changes',{event:'*',schema:'public',table:'matches',filter:`tournament_id=eq.${TID}`},()=>{loadMatches();loadStandings();}).subscribe();
-if(TID){loadTournament();loadStandings();loadMatches();loadScorers();loadTeams();loadSponsors();loadFollowSection();}
-if(REQUESTED_TAB)setTimeout(()=>jumpToTab(REQUESTED_TAB),400);
-else document.getElementById('heroTitle').textContent='لم يتم تحديد البطولة — ارجع للصفحة الرئيسية';
+sb.channel('rt-t').on('postgres_changes',{event:'*',schema:'public',table:'matches',filter:`tournament_id=eq.${TID}`},()=>{
+  if(document.hidden)return;
+  loadLiveMatch();
+  if(document.getElementById('tc-ma')?.classList.contains('active'))loadMatches();
+  if(document.getElementById('tc-st')?.classList.contains('active'))loadStandings();
+}).subscribe();
 
 async function loadSponsors(){
   const wrap=document.getElementById('sponsorsTicker');
@@ -1247,27 +1251,93 @@ async function loadFollowSection(){
       ${yt?`<a class="follow-tile yt" href="${yt}" target="_blank" rel="noopener"><span class="follow-ic">▶️</span>يوتيوب البطولة</a>`:''}
     </div></div>`;
 }
+
+function stopBackgroundRefresh(){
+  if(liveRefreshTimer){clearInterval(liveRefreshTimer);liveRefreshTimer=null;}
+  if(newsRefreshTimer){clearInterval(newsRefreshTimer);newsRefreshTimer=null;}
+}
+function startBackgroundRefresh(){
+  stopBackgroundRefresh();
+  if(document.hidden||!TID||!ACCESS_GRANTED)return;
+  liveRefreshTimer=setInterval(loadLiveMatch,20000);
+  newsRefreshTimer=setInterval(loadNews,60000);
+}
+
+async function loadHeaderCounts(){
+  const queries=[
+    sb.from('teams').select('id',{count:'exact',head:true}).eq('tournament_id',TID),
+    sb.from('matches').select('id',{count:'exact',head:true}).eq('tournament_id',TID),
+    sb.from('players').select('id',{count:'exact',head:true}).eq('tournament_id',TID),
+    sb.from('match_events').select('id',{count:'exact',head:true}).eq('tournament_id',TID).eq('event_type','goal').or('event_subtype.neq.own_goal,event_subtype.is.null')
+  ];
+  const results=await Promise.allSettled(queries);
+  const ids=['hT','hM','hP','hG'];
+  results.forEach((result,index)=>{
+    if(result.status==='fulfilled'&&Number.isFinite(result.value.count))countUpTo(ids[index],result.value.count);
+  });
+}
+
+async function loadTabData(name){
+  if(loadTabData.state[name])return loadTabData.state[name];
+  const loaders={st:loadStandings,ma:loadMatches,sc:loadScorers,tm:loadTeams};
+  if(!loaders[name])return;
+  loadTabData.state[name]=loaders[name]().catch(error=>{
+    delete loadTabData.state[name];
+    throw error;
+  });
+  return loadTabData.state[name];
+}
+loadTabData.state={};
+
+async function bootstrapTournament(){
+  if(!TID){
+    document.getElementById('heroTitle').textContent='لم يتم تحديد البطولة — ارجع للصفحة الرئيسية';
+    return;
+  }
+  ACCESS_GRANTED=await checkTournamentAccess();
+  if(!ACCESS_GRANTED)return;
+
+  loadTournament();
+  loadLiveMatch();
+  loadHeaderCounts();
+
+  const later=()=>{
+    loadNews();
+    loadMOTD();
+    loadSponsors();
+    loadFollowSection();
+    loadFeed();
+    requestNotifyPermissionOnce();
+  };
+  if('requestIdleCallback' in window)requestIdleCallback(later,{timeout:1400});
+  else setTimeout(later,450);
+
+  if(REQUESTED_TAB)setTimeout(()=>jumpToTab(REQUESTED_TAB),150);
+  startBackgroundRefresh();
+}
+
+const originalJumpToTab=jumpToTab;
+jumpToTab=function(name){
+  if(!ACCESS_GRANTED)return;
+  originalJumpToTab(name);
+  loadTabData(name);
+};
+window.jumpToTab=jumpToTab;
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)stopBackgroundRefresh();
+  else{
+    loadLiveMatch();
+    startBackgroundRefresh();
+  }
+});
+
+bootstrapTournament();
 </script>
 
 <script>
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js')
-    .then(reg=>{
-      // تحقق من تحديثات فورياً
-      reg.update();
-      // إن وجد service worker جديد، فعّله وأعد التحميل
-      reg.addEventListener('updatefound',()=>{
-        const nw=reg.installing;
-        nw.addEventListener('statechange',()=>{
-          if(nw.state==='installed'&&navigator.serviceWorker.controller){
-            // إعادة تحميل تلقائية لتطبيق التحديث
-            window.location.reload();
-          }
-        });
-      });
-    });
-  // استمع لرسائل التحديث
-  navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 </script>
 </div>
