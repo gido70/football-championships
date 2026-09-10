@@ -296,6 +296,7 @@ a{text-decoration:none;color:inherit}
 
 <script src="supabase-config.js"></script>
 <script src="tournament-scope.js?v=20260910-3"></script>
+<script src="public-date.js?v=20260910-1"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 
@@ -834,7 +835,7 @@ async function init(){
 
   const chips=[];
   if(m.venue_name||m.venue) chips.push(`<div class="info-chip">🏟️ <b>الملعب</b> ${m.venue_name||m.venue}</div>`);
-  if(m.match_date) chips.push(`<div class="info-chip">📅 ${new Date(m.match_date).toLocaleDateString('ar-SA-u-nu-latn',{weekday:'long',day:'numeric',month:'long'})} ${m.match_time?'— '+m.match_time:''}</div>`);
+  if(m.match_date) chips.push(`<div class="info-chip">📅 ${window.PublicDate.format(m.match_date,{weekday:true})} ${m.match_time?'— '+m.match_time:''}</div>`);
   if(m.referee_1) chips.push(`<div class="info-chip">👨‍⚖️ <b>الحكم</b> ${m.referee_1}</div>`);
   if(m.referee_2) chips.push(`<div class="info-chip">🚩 <b>مساعد</b> ${m.referee_2}</div>`);
   if(m.commentator) chips.push(`<div class="info-chip">🎙️ <b>التعليق</b> ${m.commentator}</div>`);

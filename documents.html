@@ -67,13 +67,14 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px}
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
 <script src="supabase-config.js"></script>
 <script src="tournament-scope.js?v=20260910-3"></script>
+<script src="public-date.js?v=20260910-1"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const qs=new URLSearchParams(location.search);
 const TID=qs.get('id')||qs.get('tid');
 const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
-function fmtDate(d){if(!d)return'';const dt=new Date(d);return dt.toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric'});}
+function fmtDate(d){return window.PublicDate.format(d,{year:true});}
 
 let DOCS=[];
 async function load(){
