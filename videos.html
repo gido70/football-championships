@@ -78,12 +78,14 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="vendor/supabase.min.js?v=20260910-1"></script>
 <script src="supabase-config.js"></script>
+<script src="tournament-scope.js?v=20260910-1"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const qs=new URLSearchParams(location.search);
 const TID=qs.get('id')||qs.get('tid');
+const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 
 function extractYoutubeId(url){
@@ -95,7 +97,7 @@ let VIDEOS=[];
 async function load(){
   if(!TID){document.getElementById('app').innerHTML='<div class="empty-note">لم تُحدَّد بطولة</div>';return;}
   const backLink=document.getElementById('backLink');
-  backLink.href='tournament.html?id='+TID;
+  backLink.href=scopeUrl('tournament.html?id='+TID);
   backLink.removeAttribute('onclick');
   const {data:t}=await sb.from('tournaments').select('name,name_ar').eq('id',TID).single();
   document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — الفيديوهات';
@@ -143,7 +145,7 @@ function openPlayer(i){
   document.getElementById('playerTitle').textContent=v.title;
   document.getElementById('playerExternalLink').href=v.video_url;
   document.getElementById('playerExternalLink').textContent=v.video_type==='youtube'?'فتح في يوتيوب ↗':'فتح الرابط مباشرة ↗';
-  document.getElementById('playerHomeLink').href='tournament.html?id='+TID;
+  document.getElementById('playerHomeLink').href=scopeUrl('tournament.html?id='+TID);
   document.getElementById('playerOverlay').classList.add('open');
 }
 
