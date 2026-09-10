@@ -400,6 +400,7 @@ img[src=""], img:not([src]) { display:none !important; }
     <a class="qlink qlink--gold" id="qlinkAwards" href="#"><span class="qlink-orb"><span class="qlink-ic">🏆</span></span><span class="qlink-label">الجوائز</span></a>
     <a class="qlink qlink--blue" id="qlinkVideos" href="#"><span class="qlink-orb"><span class="qlink-ic">🎬</span></span><span class="qlink-label">الفيديوهات</span></a>
     <a class="qlink qlink--azure" id="qlinkDocs" href="#"><span class="qlink-orb"><span class="qlink-ic">📰</span></span><span class="qlink-label">النشرات</span></a>
+    <a class="qlink qlink--teal" id="qlinkNews" href="#"><span class="qlink-orb"><span class="qlink-ic">🗞️</span></span><span class="qlink-label">أرشيف الأخبار</span></a>
     <a class="qlink qlink--gold" id="qlinkPredictions" href="#"><span class="qlink-orb"><span class="qlink-ic">🥇</span></span><span class="qlink-label">توقعات الأصدقاء</span></a>
   </div>
 </div>
@@ -505,6 +506,7 @@ document.getElementById('qlinkStats').href=scopeUrl('stats.html?id='+TID);
   document.getElementById('qlinkAwards').href=scopeUrl('awards.html?id='+TID);
   document.getElementById('qlinkVideos').href=scopeUrl('videos.html?id='+TID);
   document.getElementById('qlinkDocs').href=scopeUrl('documents.html?id='+TID);
+  document.getElementById('qlinkNews').href=scopeUrl('news.html?id='+TID);
   document.getElementById('qlinkPredictions').href=scopeUrl('leaderboard.html?tid='+TID);
 
 async function generateAutoBulletin(){
