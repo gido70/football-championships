@@ -4,6 +4,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="auth-guard.js"></script>
+<script src="public-date.js?v=20260910-1"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#071426">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -40,6 +41,9 @@ select option{background:#0f2a45;color:#ffffff}
 .btn-end{background:linear-gradient(135deg,#ff6b6b,#cc3333)!important}
 .btn:disabled{background:#3a4150!important;color:#7d8694!important;cursor:not-allowed;opacity:.55;box-shadow:none!important}
 .btn-quick{border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:800;color:#0d1117;cursor:pointer;font-family:inherit;white-space:nowrap}
+.quick-player-chip{display:flex;align-items:center;gap:7px!important;background:#162941!important;color:#eef5ff!important;border:1px solid rgba(255,255,255,.1)!important;text-align:right}
+.quick-player-chip:hover{border-color:#4ea1ff!important;background:#1c3657!important}
+.qp-number{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:25px;padding:0 6px;border-radius:8px;background:#4ea1ff;color:#071426;font-weight:900;font-size:12px;direction:ltr}
 .lu-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
 .lu-admin-team-hd{font-size:13px;font-weight:800;color:#c9a84c;margin-bottom:8px}
 .lu-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;color:#e6edf3}
@@ -111,14 +115,16 @@ select option{background:#0f2a45;color:#ffffff}
 .no-evts{padding:24px;text-align:center;color:#b7c6dc;font-size:14px}
 @media(max-width:640px){
   .evt-grid,.meta-grid{grid-template-columns:1fr}
-  .sb{grid-template-columns:1fr;text-align:center}
-  .sb-nums{font-size:40px}
-  .match-board{padding:14px;border-radius:16px;position:sticky;top:0;z-index:50;box-shadow:0 8px 20px rgba(0,0,0,.35)}
-  .sb-team{display:flex;align-items:center;gap:8px;justify-content:center}
-  .sb-tname{font-size:15px;margin-bottom:0}
+  #quickBar{top:env(safe-area-inset-top,0px)!important;margin:0 -5px 12px!important;padding:9px!important;border-radius:0 0 15px 15px!important;z-index:80!important}
+  .quick-bar-inner{display:block!important}.quick-score-line{justify-content:center!important;font-size:13px!important;margin-bottom:8px}.quick-score-line #qbScore{font-size:22px!important}
+  .quick-actions{display:grid!important;grid-template-columns:repeat(4,1fr);gap:6px!important}.quick-actions .quick-sep{display:none}.quick-actions .btn-quick{padding:8px 4px;min-height:40px;font-size:11px;overflow:hidden;text-overflow:ellipsis}
+  .sb{grid-template-columns:1fr auto 1fr;text-align:center;gap:6px;margin:12px 0}
+  .sb-nums{font-size:37px;gap:7px}
+  .match-board{padding:13px;border-radius:16px;position:relative;top:auto;z-index:1;box-shadow:0 8px 20px rgba(0,0,0,.22)}
+  .sb-team{display:block}
+  .sb-tname{font-size:12.5px;margin-bottom:8px;line-height:1.25;min-height:32px;display:flex;align-items:center;justify-content:center}
   .sb-tbar{display:none}
-  .sb-btns{gap:16px}
-  .sb-btn{width:52px;height:52px;font-size:26px}
+  .sb-btns{gap:7px}.sb-btn{width:42px;height:42px;font-size:23px}
   .status-row .btn,.status-row button{flex:1;min-width:120px;padding:12px 10px;font-size:13px}
   .btn-quick{padding:12px 10px;font-size:13.5px;min-height:44px}
   .evt-btns button,.evt-btns .btn-quick{min-height:46px}
@@ -130,11 +136,16 @@ select option{background:#0f2a45;color:#ffffff}
   #varLogList .var-log-row,#varLogList>div{padding:10px 8px;font-size:12.5px}
   .stat-section,.export-bar{padding:14px}
   .export-btn{width:100%;justify-content:center;padding:13px}
+  #quickPicker{position:fixed!important;z-index:120!important;right:0;left:0;bottom:0;margin:0!important;padding:16px 14px calc(14px + env(safe-area-inset-bottom,0px))!important;background:linear-gradient(180deg,#16385f,#08182c)!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:20px 20px 0 0!important;box-shadow:0 -18px 45px rgba(0,0,0,.55);max-height:72vh;overflow:auto}
+  #quickPickerTitle{font-size:15px!important;font-weight:900;color:#eef5ff!important;margin-bottom:12px!important}
+  #quickPickerGrid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .quick-player-chip{width:100%;min-height:43px;padding:7px 8px!important;font-size:12px!important;white-space:normal;line-height:1.25}
+  .evt-form.show{animation:formReveal .24s ease-out}@keyframes formReveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 }
 @media(max-width:420px){
   .sb-btns{gap:10px}
   .sb-btn{width:46px;height:46px;font-size:22px}
-  .evt-btns{grid-template-columns:repeat(2,1fr)!important}
+  .evt-btns{grid-template-columns:repeat(3,1fr)!important}.evt-btn{font-size:11.5px;padding:9px 4px}
 }
 </style>
 </head>
@@ -163,19 +174,19 @@ select option{background:#0f2a45;color:#ffffff}
   </section>
 
   <div id="quickBar" style="display:none;position:sticky;top:0;z-index:50;background:linear-gradient(180deg,#0d1f3a,#0a1830);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:10px 14px;margin-bottom:16px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px">
+    <div class="quick-bar-inner" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div class="quick-score-line" style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px">
         <span id="qbHName" style="color:#9ecbff"></span>
         <span id="qbScore" style="font-size:20px;color:#fff">0 - 0</span>
         <span id="qbAName" style="color:#9ecbff"></span>
         <span id="qbMin" style="color:#ff6b6b;font-weight:900;margin-right:8px"></span>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <div class="quick-actions" style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn-quick" style="background:#34d399" onclick="quickOpen('h','goal')">⚽ هدف للأول</button>
         <button class="btn-quick" style="background:#6d28a8" onclick="quickOpen('h','own_goal')">↩️ عكسي على الأول</button>
         <button class="btn-quick" style="background:#ffd54f;color:#0d1117" onclick="quickOpen('h','yellow_card')">🟨</button>
         <button class="btn-quick" style="background:#ff6b6b" onclick="quickOpen('h','red_card')">🟥</button>
-        <span style="width:1px;background:rgba(255,255,255,.2);margin:0 4px"></span>
+        <span class="quick-sep" style="width:1px;background:rgba(255,255,255,.2);margin:0 4px"></span>
         <button class="btn-quick" style="background:#34d399" onclick="quickOpen('a','goal')">⚽ هدف للثاني</button>
         <button class="btn-quick" style="background:#6d28a8" onclick="quickOpen('a','own_goal')">↩️ عكسي على الثاني</button>
         <button class="btn-quick" style="background:#ffd54f;color:#0d1117" onclick="quickOpen('a','yellow_card')">🟨</button>
@@ -540,11 +551,16 @@ async function onTournChange(){
   s.innerHTML='<option value="">— اختر المباراة —</option>';
   document.getElementById('matchPanel').style.display='none';document.getElementById('quickBar').style.display='none';
   if(!tid)return;
-  const {data}=await sb.from('matches').select('id,match_no,round_name,status,home_team_id,away_team_id').eq('tournament_id',tid).order('match_no');
+  const {data}=await sb.from('matches').select('id,match_no,round_name,status,match_date,match_time,home_team_id,away_team_id,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',tid).order('match_date').order('match_time').order('match_no');
   (data||[]).forEach(m=>{
     const ic=m.status==='live'?'🔴 ':m.status==='completed'?'✅ ':'⏳ ';
-    s.innerHTML+=`<option value="${m.id}">${ic}مباراة ${m.match_no||''} — ${m.round_name||''}</option>`;
+    const home=m.ht?.name_ar||m.ht?.name||'الفريق الأول';
+    const away=m.at?.name_ar||m.at?.name||'الفريق الثاني';
+    const when=m.match_date?window.PublicDate.format(m.match_date)+(m.match_time?' '+m.match_time:''):'الموعد غير محدد';
+    s.innerHTML+=`<option value="${m.id}">${ic}${home} × ${away} — ${when}</option>`;
   });
+  const live=(data||[]).find(m=>m.status==='live');
+  if(live){s.value=live.id;await onMatchChange();}
 }
 
 async function onMatchChange(){
@@ -877,7 +893,7 @@ async function chScore(side,d){
   if(!cur)return;
   if(d>0){
     // لا نزيد النتيجة هنا — تُزاد تلقائيًا فقط بعد تأكيد اللاعب صاحب الهدف بالأسفل
-    openEvt(side==='home'?'h':'a','goal');
+    quickOpen(side==='home'?'h':'a','goal');
     return;
   }
   const f=side==='home'?'home_score':'away_score';
@@ -1005,9 +1021,9 @@ function quickOpen(side,type){
   const grid=document.getElementById('quickPickerGrid');
   if(!players||!players.length){grid.innerHTML='<span style="color:#7d8694;font-size:12px">لا يوجد لاعبون محمّلون لهذا الفريق</span>';}
   else{
-    grid.innerHTML=players.map(p=>`<button class="btn-quick" style="background:#21262d;color:#e6edf3" onclick="quickLog('${side}','${type}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}')">${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</button>`).join('');
+    grid.innerHTML=players.map(p=>`<button class="btn-quick quick-player-chip" onclick="quickLog('${side}','${type}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}')"><span class="qp-number">${p.number||'—'}</span><span>${p.full_name_ar||p.name}</span></button>`).join('');
   }
-  if(type!=='own_goal')grid.innerHTML+=`<button class="btn-quick" style="background:#21262d;color:#7d8694" onclick="quickLog('${side}','${type}','','بدون تحديد لاعب')">بدون تحديد لاعب</button>`;
+  if(type!=='own_goal')grid.innerHTML+=`<button class="btn-quick quick-player-chip" onclick="quickLog('${side}','${type}','','بدون تحديد لاعب')"><span class="qp-number">—</span><span>بدون تحديد لاعب</span></button>`;
   document.getElementById('quickPicker').style.display='block';
 }
 
@@ -1026,7 +1042,7 @@ async function quickLog(side,type,playerId,playerName){
     const {error:e2}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
     if(!e2){
       cur[f]=v;
-      document.getElementById(side==='h'?'hScore':'aScore').textContent=v;
+      document.getElementById(f==='home_score'?'hScore':'aScore').textContent=v;
       document.getElementById('qbScore').textContent=(cur.home_score??0)+' - '+(cur.away_score??0);
     }
   }
@@ -1302,7 +1318,7 @@ async function submitEvt(side){
     const f=isOwnGoal?(side==='h'?'away_score':'home_score'):(side==='h'?'home_score':'away_score');
     const v=(cur[f]||0)+1;
     const {error:e2}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
-    if(!e2){cur[f]=v;document.getElementById(side==='h'?'hScore':'aScore').textContent=v;}
+    if(!e2){cur[f]=v;document.getElementById(f==='home_score'?'hScore':'aScore').textContent=v;document.getElementById('qbScore').textContent=(cur.home_score??0)+' - '+(cur.away_score??0);}
   }
   closeEvt(side);
   loadEvts();
