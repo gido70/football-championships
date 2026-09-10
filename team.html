@@ -43,7 +43,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 /* بطاقات اللاعبين */
 .players-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:24px}
 @media(max-width:480px){.players-grid{grid-template-columns:repeat(2,1fr);gap:10px}}
-.player-card{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:14px;padding:18px 14px;text-align:center;transition:.15s;position:relative;overflow:hidden;box-shadow:0 3px 0 rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.05)}
+.player-card{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:14px;padding:18px 14px;text-align:center;transition:.15s;position:relative;overflow:hidden;box-shadow:0 3px 0 rgba(0,0,0,.06),0 6px 16px rgba(0,0,0,.05);text-decoration:none;color:inherit;cursor:pointer}
 .player-card::before{content:"";position:absolute;top:0;right:0;left:0;height:5px;background:linear-gradient(90deg,var(--team-primary,var(--tc,#c9a84c)) 50%,var(--team-secondary,var(--tc,#c9a84c)) 50%)}
 .player-card:hover{border-color:var(--tc,#c9a84c);background:#EDEAE0;transform:translateY(-3px);box-shadow:0 6px 0 rgba(0,0,0,.08),0 10px 22px rgba(0,0,0,.08)}
 .player-card:active{transform:translateY(0);box-shadow:0 1px 0 rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.05)}
@@ -60,7 +60,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .stats-table td{padding:11px 14px;border-bottom:1px solid #EDEAE0;font-size:14px;vertical-align:middle}
 .stats-table tr:last-child td{border-bottom:none}
 .stats-table tr:hover td{background:rgba(0,0,0,.025)}
-.player-cell{display:flex;align-items:center;gap:10px}
+.player-cell{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;font-weight:700}
 .player-mini-photo{width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid #E0DCCF}
 .player-mini-ph{width:34px;height:34px;border-radius:50%;background:#EDEAE0;display:flex;align-items:center;justify-content:center;font-size:14px;border:1px solid #E0DCCF;flex-shrink:0}
 .stat-num{font-weight:800;font-size:16px}
@@ -73,7 +73,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .tc{display:none}.tc.active{display:block}
 
 /* مباريات الفريق */
-.match-item{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:12px;padding:14px 16px;margin-bottom:8px;transition:.2s}
+.match-item{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:12px;padding:14px 16px;margin-bottom:8px;transition:.2s;text-decoration:none;color:inherit;display:block}
 .match-item:hover{border-color:#E0DCCF;background:#EDEAE0}
 .match-top{display:flex;justify-content:space-between;margin-bottom:10px;font-size:12px;color:#79786A}
 .match-score-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}
@@ -88,6 +88,11 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .b-done{background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.2)}
 .b-sched{background:#EDEAE0;color:#79786A}
 .b-live{background:#f85149;color:white}
+.team-highlights{max-width:1000px;margin:18px auto 0;padding:0 20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.team-highlight{background:#fff;border:1px solid #E0DCCF;border-top:4px solid var(--team-primary,#0b4f7c);border-radius:14px;padding:14px 16px;text-decoration:none;color:inherit;box-shadow:0 5px 16px rgba(0,0,0,.06);transition:.18s}
+.team-highlight:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.1)}
+.th-label{font-size:12px;color:#79786A;font-weight:700;margin-bottom:7px}.th-opponent{font-size:16px;font-weight:900}.th-result{font-size:22px;font-weight:900;color:var(--team-primary,#0b4f7c);margin-top:3px}.th-meta{font-size:12px;color:#79786A;margin-top:3px}
+@media(max-width:600px){.team-highlights{grid-template-columns:1fr;margin-top:12px}.team-highlight{padding:12px 14px}}
 </style>
 <link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
 </head>
@@ -117,6 +122,8 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 <div id="teamPhotoSection" style="display:none;max-width:900px;margin:0 auto;padding:16px">
   <img id="teamPhotoImg" style="width:100%;border-radius:16px;display:block;box-shadow:0 8px 30px rgba(0,0,0,.25)">
 </div>
+
+<section class="team-highlights" id="teamMatchHighlights" aria-label="آخر وموعد مباريات الفريق"></section>
 
 <div class="tabs-bar">
   <div class="tabs" id="tabsRow">
@@ -240,14 +247,14 @@ async function loadSquad(){
     const role=p.role||'player_resident';
     const photo=p.jersey_photo_url||null;
     const subtitle=roleLabel[role]||p.nationality||'';
-    return `<div class="player-card" style="--tc:${teamColor};--tc-num:${safeText('#2C2C2A',teamColor)}">
+    return `<a class="player-card" href="player.html?id=${p.id}" style="--tc:${teamColor};--tc-num:${safeText('#2C2C2A',teamColor)}" aria-label="فتح صفحة ${name}">
       ${num?`<div class="player-number" style="color:var(--tc-num)">${num}</div>`:''}
       ${photo
         ? `<img class="player-photo" src="${photo}" alt="${name}" onerror="this.outerHTML='<div class=player-ph>👤</div>'">`
         : '<div class="player-ph">👤</div>'}
       <div class="player-name">${name}</div>
       <div class="player-nat">${subtitle}</div>
-    </div>`;
+    </a>`;
   }).join('');
 }
 
@@ -282,10 +289,10 @@ async function loadStats(){
       const photo=p.jersey_photo_url||null;
       return `<tr>
         <td style="color:#79786A">${p.number||p.shirt_number||'—'}</td>
-        <td><div class="player-cell">
+        <td><a class="player-cell" href="player.html?id=${p.id}" aria-label="فتح صفحة ${name}">
           ${photo?`<img class="player-mini-photo" src="${photo}" onerror="this.outerHTML='<div class=player-mini-ph>👤</div>'">`:'<div class="player-mini-ph">👤</div>'}
           <span>${name}</span>
-        </div></td>
+        </a></td>
         <td><span class="stat-num stat-goals">${p.goals||0}</span></td>
         <td><span class="stat-num stat-yellow">${p.yellow||0}</span></td>
         <td><span class="stat-num stat-red">${p.red||0}</span></td>
@@ -304,6 +311,20 @@ async function loadMatches(){
     .eq('tournament_id',teamData?.tournament_id||'');
 
   const tm={};(teams||[]).forEach(t=>{tm[t.id]=t;});
+
+  const describeMatch=(label,m)=>{
+    if(!m)return `<div class="team-highlight" aria-disabled="true"><div class="th-label">${label}</div><div class="th-opponent">لا توجد مباراة</div></div>`;
+    const isHome=m.home_team_id===TID;
+    const opp=tm[isHome?m.away_team_id:m.home_team_id]||{};
+    const oppName=opp.name_ar||opp.name||'المنافس';
+    const finished=m.status==='completed';
+    const score=finished?`${isHome?m.home_score??0:m.away_score??0} — ${isHome?m.away_score??0:m.home_score??0}`:(m.status==='live'?'مباشر الآن':m.match_time||'الموعد لاحقًا');
+    const date=m.match_date?new Date(m.match_date).toLocaleDateString('ar-SA-u-nu-latn',{weekday:'long',day:'numeric',month:'long'}):'';
+    return `<a class="team-highlight" href="match-live.html?id=${m.id}"><div class="th-label">${label}</div><div class="th-opponent">أمام ${oppName}</div><div class="th-result">${score}</div><div class="th-meta">${date} ${m.round_name||''}</div></a>`;
+  };
+  const completed=(matches||[]).filter(m=>m.status==='completed');
+  const next=(matches||[]).find(m=>m.status==='live')||(matches||[]).find(m=>m.status==='scheduled');
+  document.getElementById('teamMatchHighlights').innerHTML=describeMatch('المباراة السابقة',completed[completed.length-1])+describeMatch('المباراة القادمة',next);
 
   // إحصائيات الفريق
   let gf=0,ga=0,mp=0;
@@ -333,7 +354,7 @@ async function loadMatches(){
     const theirScore=isHome?(m.away_score??'–'):(m.home_score??'–');
     const d=m.status==='completed';
 
-    return `<div class="match-item" style="--tc:${teamColor}">
+    return `<a class="match-item" href="match-live.html?id=${m.id}" style="--tc:${teamColor}">
       <div class="match-top">
         <span>${m.round_name||''} ${m.group_code?'— المجموعة '+m.group_code:''}</span>
         <span class="m-badge ${sl[m.status]||'b-sched'}">${sl2[m.status]||m.status}</span>
@@ -353,7 +374,7 @@ async function loadMatches(){
           <div class="mt-dot" style="background:${!isHome?teamColor:oppColor}"></div>
         </div>
       </div>
-    </div>`;
+    </a>`;
   }).join('');
 }
 

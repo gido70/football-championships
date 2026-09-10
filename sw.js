@@ -1,10 +1,12 @@
 // sw.js — network-first public shell — v9
-const VERSION = 'football-shell-v9';
+const VERSION = 'football-shell-v10';
 const CORE = [
   './',
   './index.html',
   './tournament.html',
   './match-live.html',
+  './team.html',
+  './player.html',
   './public-ui.css',
   './tournament-theme.css',
   './supabase-config.js',
