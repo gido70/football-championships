@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#153B5B">
+<title>صفحة اللاعب</title>
+<script src="vendor/supabase.min.js?v=20260910-1"></script>
+<link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(145deg,#eef7ff,#f7fbff 55%,#edf9f5);color:#10264A;font-family:"Noto Naskh Arabic","Tajawal",Arial,sans-serif}
+.nav{height:62px;padding:0 max(18px,env(safe-area-inset-left));display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #dbe7f1;position:sticky;top:0;z-index:20}
+.nav-title{display:flex;align-items:center;gap:9px;font-weight:900}.nav-title img{width:34px;height:34px;border-radius:50%;object-fit:contain;background:#fff}
+.back{color:#153B5B;text-decoration:none;border:1px solid #cadceb;border-radius:12px;padding:8px 13px;font-weight:800}
+.hero{position:relative;overflow:hidden;padding:38px 20px 30px;text-align:center;background:linear-gradient(135deg,var(--team-primary,#153B5B),var(--team-secondary,#3aa6a0));color:#fff}
+.hero:after{content:"";position:absolute;inset:auto -15% -70px;height:150px;border-radius:50%;background:rgba(255,255,255,.08)}
+.photo{position:relative;z-index:1;width:112px;height:112px;border-radius:50%;object-fit:cover;background:#fff;border:5px solid rgba(255,255,255,.92);box-shadow:0 0 0 5px var(--team-secondary,#d7b348),0 14px 30px rgba(0,0,0,.28)}
+.photo-fallback{position:relative;z-index:1;width:112px;height:112px;border-radius:50%;margin:auto;display:flex;align-items:center;justify-content:center;font-size:44px;background:rgba(255,255,255,.18);border:5px solid rgba(255,255,255,.9)}
+.player-name{position:relative;z-index:1;font-size:clamp(25px,6vw,40px);font-weight:900;margin:15px 0 3px}.player-sub{position:relative;z-index:1;opacity:.82;font-size:14px}
+.container{max-width:920px;margin:auto;padding:20px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:-2px}.stat{background:#fff;border:1px solid #dbe7f1;border-radius:16px;padding:14px 8px;text-align:center;box-shadow:0 6px 18px rgba(16,38,74,.07)}.stat strong{display:block;font-size:27px;line-height:1.1}.stat span{font-size:12px;color:#65758b}
+.stat.goal strong{color:#15805f}.stat.yellow strong{color:#c99912}.stat.red strong{color:#c33b44}
+.panel{background:#fff;border:1px solid #dbe7f1;border-radius:18px;padding:18px;margin-top:18px;box-shadow:0 7px 22px rgba(16,38,74,.06)}.panel h2{font-size:18px;margin:0 0 14px}
+.details{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.detail{background:#f4f8fc;border-radius:12px;padding:11px}.detail small{display:block;color:#718096;margin-bottom:3px}.detail b{font-size:15px}
+.match{display:block;text-decoration:none;color:inherit;border:1px solid #dbe7f1;border-radius:14px;padding:13px;margin-top:9px;transition:.16s}.match:hover{transform:translateY(-2px);border-color:var(--team-primary,#153B5B)}.match-top{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#718096}.match-main{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}.opponent{display:flex;align-items:center;gap:9px;font-weight:900}.opponent img{width:36px;height:36px;border-radius:50%;object-fit:contain;background:#fff}.score{font-size:20px;font-weight:900}.events{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.event{font-size:12px;background:#edf4fa;border-radius:20px;padding:4px 9px}.empty{text-align:center;color:#718096;padding:24px}
+.loading{position:fixed;inset:0;background:#f3f9ff;z-index:50;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900}.loading.hide{display:none}
+@media(max-width:650px){.stats{grid-template-columns:repeat(3,1fr)}.details{grid-template-columns:1fr 1fr}.container{padding:14px}.hero{padding-top:30px}.photo,.photo-fallback{width:96px;height:96px}.nav{height:58px}.stat{padding:12px 5px}.stat strong{font-size:23px}}
+</style>
+</head>
+<body>
+<div class="loading" id="loading">جاري تحميل اللاعب…</div>
+<nav class="nav">
+  <div class="nav-title" id="navTitle">👤 اللاعب</div>
+  <a class="back" id="teamBack" href="javascript:history.back()">← الفريق</a>
+</nav>
+<header class="hero">
+  <div id="playerPhoto"><div class="photo-fallback">👤</div></div>
+  <h1 class="player-name" id="playerName">اللاعب</h1>
+  <div class="player-sub" id="playerSub"></div>
+</header>
+<main class="container">
+  <section class="stats" aria-label="إحصائيات اللاعب">
+    <div class="stat goal"><strong id="goals">0</strong><span>أهداف</span></div>
+    <div class="stat yellow"><strong id="yellow">0</strong><span>بطاقات صفراء</span></div>
+    <div class="stat red"><strong id="red">0</strong><span>بطاقات حمراء</span></div>
+    <div class="stat"><strong id="apps">0</strong><span>مشاركات</span></div>
+    <div class="stat"><strong id="motm">0</strong><span>رجل المباراة</span></div>
+  </section>
+  <section class="panel">
+    <h2>بيانات اللاعب</h2>
+    <div class="details" id="details"></div>
+  </section>
+  <section class="panel">
+    <h2>المباريات والأحداث</h2>
+    <div id="matchHistory"><div class="empty">لا توجد أحداث مسجلة بعد</div></div>
+  </section>
+</main>
+<script src="supabase-config.js"></script>
+<script src="tournament-scope.js?v=20260910-4"></script>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+const PID=new URLSearchParams(location.search).get('id');
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const roleName={player_resident:'لاعب',player_guest:'لاعب ضيف',goalkeeper:'حارس مرمى',coach:'مدرب',admin:'إداري'};
+function eventLabel(e){
+  if(e.event_type==='goal')return e.event_subtype==='own_goal'?'⚽ هدف عكسي':'⚽ هدف';
+  if(e.event_type==='yellow_card')return '🟨 بطاقة صفراء';
+  if(e.event_type==='red_card')return '🟥 بطاقة حمراء';
+  return '• '+esc(e.event_type||'حدث');
+}
+async function init(){
+  if(!PID){document.getElementById('loading').textContent='معرّف اللاعب غير موجود';return;}
+  const playerRes=await sb.from('players').select('*').eq('id',PID).single();
+  const p=playerRes.data;
+  if(!p){document.getElementById('loading').textContent='تعذر العثور على اللاعب';return;}
+  const requests=[
+    sb.from('teams').select('*').eq('id',p.team_id).single(),
+    sb.from('tournaments').select('id,name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',p.tournament_id).single(),
+    sb.from('match_events').select('match_id,event_type,event_subtype,minute').eq('player_id',PID),
+    sb.from('match_lineups').select('match_id,is_starting').eq('player_id',PID),
+    sb.from('matches').select('id').eq('player_of_match_id',PID)
+  ];
+  const [teamRes,tourRes,eventRes,lineupRes,motmRes]=await Promise.all(requests);
+  const team=teamRes.data||{},tour=tourRes.data||{};
+  const events=eventRes.data||[],lineups=lineupRes.data||[],motmRows=motmRes.data||[];
+  const name=p.full_name_ar||p.name||'اللاعب';
+  const number=p.number||p.shirt_number||'—';
+  const photo=p.jersey_photo_url||p.photo_url||p.image||'';
+  const primary=team.primary_color||team.color_primary||tour.primary_color||'#153B5B';
+  const secondary=team.secondary_color||tour.secondary_color||'#3aa6a0';
+  document.documentElement.style.setProperty('--team-primary',primary);
+  document.documentElement.style.setProperty('--team-secondary',secondary);
+  window.TournamentScope?.applyTournamentTheme(tour);
+  document.title=name;
+  document.getElementById('playerName').textContent=name;
+  document.getElementById('playerSub').textContent=(team.name_ar||team.name||'')+(number!=='—'?' · الرقم '+number:'');
+  document.getElementById('navTitle').innerHTML=(team.logo_url?'<img src="'+esc(team.logo_url)+'" alt="">':'⚽')+'<span>'+esc(team.name_ar||team.name||'الفريق')+'</span>';
+  document.getElementById('teamBack').href='team.html?id='+encodeURIComponent(team.id||p.team_id);
+  if(photo)document.getElementById('playerPhoto').innerHTML='<img class="photo" src="'+esc(photo)+'" alt="'+esc(name)+'">';
+  const goals=events.filter(e=>e.event_type==='goal'&&e.event_subtype!=='own_goal').length;
+  const yellow=events.filter(e=>e.event_type==='yellow_card').length;
+  const red=events.filter(e=>e.event_type==='red_card').length;
+  document.getElementById('goals').textContent=goals;
+  document.getElementById('yellow').textContent=yellow;
+  document.getElementById('red').textContent=red;
+  document.getElementById('apps').textContent=new Set(lineups.map(x=>x.match_id)).size;
+  document.getElementById('motm').textContent=motmRows.length;
+  document.getElementById('details').innerHTML=[
+    ['الفريق',team.name_ar||team.name||'—'],
+    ['رقم القميص',number],
+    ['المركز',p.position||roleName[p.role]||'لاعب'],
+    ['الجنسية',p.nationality||'—'],
+    ['الحالة',p.is_injured?'مصاب'+(p.injury_note?' — '+p.injury_note:''):'متاح'],
+    ['البطاقات المتبقية للإيقاف',p.suspended_matches_remaining||0]
+  ].map(x=>'<div class="detail"><small>'+esc(x[0])+'</small><b>'+esc(x[1])+'</b></div>').join('');
+  const ids=[...new Set([...events.map(x=>x.match_id),...lineups.map(x=>x.match_id),...motmRows.map(x=>x.id)].filter(Boolean))];
+  if(ids.length){
+    const matchRes=await sb.from('matches').select('id,status,match_date,match_time,round_name,home_team_id,away_team_id,home_score,away_score,ht:teams!matches_home_team_id_fkey(id,name,name_ar,logo_url),at:teams!matches_away_team_id_fkey(id,name,name_ar,logo_url)').in('id',ids);
+    const matches=(matchRes.data||[]).sort((a,b)=>String(b.match_date||'').localeCompare(String(a.match_date||'')));
+    const eventMap={};events.forEach(e=>{(eventMap[e.match_id]||(eventMap[e.match_id]=[])).push(e);});
+    document.getElementById('matchHistory').innerHTML=matches.map(m=>{
+      const home=m.home_team_id===team.id,opp=home?m.at:m.ht;
+      const finished=m.status==='completed',score=finished?(home?(m.home_score??0)+' — '+(m.away_score??0):(m.away_score??0)+' — '+(m.home_score??0)):(m.status==='live'?'مباشر':m.match_time||'قادمة');
+      const date=m.match_date?new Date(m.match_date).toLocaleDateString('ar-SA-u-nu-latn',{day:'numeric',month:'long',year:'numeric'}):'';
+      const badges=(eventMap[m.id]||[]).map(e=>'<span class="event">'+eventLabel(e)+(e.minute!=null?' · '+esc(e.minute)+"'":'')+'</span>').join('');
+      const won=motmRows.some(x=>x.id===m.id)?'<span class="event">⭐ رجل المباراة</span>':'';
+      return '<a class="match" href="match-live.html?id='+encodeURIComponent(m.id)+'"><div class="match-top"><span>'+esc(m.round_name||'مباراة')+'</span><span>'+esc(date)+'</span></div><div class="match-main"><div class="opponent">'+(opp?.logo_url?'<img src="'+esc(opp.logo_url)+'" alt="">':'⚽')+'<span>أمام '+esc(opp?.name_ar||opp?.name||'المنافس')+'</span></div><div class="score">'+esc(score)+'</div></div><div class="events">'+badges+won+'</div></a>';
+    }).join('')||'<div class="empty">لا توجد مباريات مسجلة بعد</div>';
+  }
+  document.getElementById('loading').classList.add('hide');
+}
+init().catch(()=>{document.getElementById('loading').textContent='تعذر تحميل بيانات اللاعب — حاول مجددًا';});
+</script>
+</body>
+</html>
