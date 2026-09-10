@@ -308,7 +308,7 @@ img[src=""], img:not([src]) { display:none !important; }
 }
 @media(max-width:760px){.float-back{display:flex;align-items:center;gap:6px}}
 </style>
-<link rel="stylesheet" href="public-ui.css?v=20260910-4">
+<link rel="stylesheet" href="public-ui.css?v=20260910-5">
 </head>
 <body class="public-tournament">
 <div id="accessGateOverlay" style="display:none;position:fixed;inset:0;background:#0F2A4A;z-index:9999;align-items:center;justify-content:center;padding:20px">
@@ -1065,7 +1065,7 @@ async function loadMatches(){
   // العلاقة نفسها المستخدمة في صفحة المباراة؛ تعيد الاسم والشعار حتى إذا كان
   // سجل الفريق قديمًا أو لا يحمل tournament_id الحالي.
   let {data:matches,error:matchesError}=await sb.from('matches')
-    .select('*,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color,color_primary,secondary_color,logo_url),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color,color_primary,secondary_color,logo_url)')
+    .select('*,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color,secondary_color,logo_url),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color,secondary_color,logo_url)')
     .eq('tournament_id',TID).order('match_no');
   // مسار احتياطي فقط إذا تعذّر توسيع العلاقة لأي سبب.
   if(matchesError){
@@ -1080,7 +1080,7 @@ async function loadMatches(){
   // لا يحمل صفّها tournament_id الحالي، وكان الشرط السابق يخفي الاسم والشعار.
   const teamIds=[...new Set(matches.flatMap(m=>[m.home_team_id,m.away_team_id]).filter(Boolean))];
   const {data:teams}=teamIds.length
-    ? await sb.from('teams').select('id,name,name_ar,primary_color,color_primary,secondary_color,logo_url').in('id',teamIds)
+    ? await sb.from('teams').select('id,name,name_ar,primary_color,secondary_color,logo_url').in('id',teamIds)
     : {data:[]};
   
   // خريطة الفرق
