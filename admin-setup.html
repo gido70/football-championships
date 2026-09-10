@@ -452,6 +452,7 @@ async function loadRows(){
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn btn-edit" onclick="editTour('${r.id}')">✏️ تعديل</button>
+          <a class="btn secondary" href="qr-generator.html?tournament=${r.id}" style="font-size:12px;padding:7px 12px">▦ QR مستقل</a>
           <a class="btn btn-go" href="teams-admin.html">→ الفرق</a>
           <button class="btn secondary" onclick="delTour('${r.id}')" style="font-size:12px;padding:6px 10px">حذف</button>
         </div>
