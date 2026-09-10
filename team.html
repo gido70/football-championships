@@ -112,6 +112,8 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
     <div class="team-group" id="teamGroup"></div>
     <div class="team-stats">
       <div class="ts"><div class="ts-num" id="tsP" style="color:#c9a84c">—</div><div class="ts-lbl">لاعب</div></div>
+      <div class="ts"><div class="ts-num" id="tsRank" style="color:#fff">—</div><div class="ts-lbl">المركز</div></div>
+      <div class="ts"><div class="ts-num" id="tsPts" style="color:#c9a84c">—</div><div class="ts-lbl">نقطة</div></div>
       <div class="ts"><div class="ts-num" id="tsM" style="color:#3fb950">—</div><div class="ts-lbl">مباراة</div></div>
       <div class="ts"><div class="ts-num" id="tsG" style="color:#f85149">—</div><div class="ts-lbl">هدف سجله</div></div>
       <div class="ts"><div class="ts-num" id="tsGA" style="color:#79786A">—</div><div class="ts-lbl">هدف استقبله</div></div>
@@ -157,6 +159,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 
 <script src="supabase-config.js"></script>
 <script src="tournament-scope.js?v=20260910-3"></script>
+<script src="public-date.js?v=20260910-1"></script>
 <script>
 const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const TID=new URLSearchParams(location.search).get('id');
@@ -302,33 +305,39 @@ async function loadStats(){
 }
 
 async function loadMatches(){
-  const {data:matches}=await sb.from('matches')
-    .select('*')
-    .or(`home_team_id.eq.${TID},away_team_id.eq.${TID}`)
-    .order('match_no');
-
-  const {data:teams}=await sb.from('teams').select('id,name,name_ar,primary_color,color_primary')
-    .eq('tournament_id',teamData?.tournament_id||'');
-
-  const tm={};(teams||[]).forEach(t=>{tm[t.id]=t;});
+  const tournamentId=teamData?.tournament_id||'';
+  const [matchesRes,teamsRes,cardsRes]=await Promise.all([
+    sb.from('matches').select('*').eq('tournament_id',tournamentId).order('match_date').order('match_time').order('match_no'),
+    sb.from('teams').select('id,name,name_ar,primary_color,color_primary,group_code').eq('tournament_id',tournamentId),
+    sb.from('match_events').select('team_id,event_type').eq('tournament_id',tournamentId).in('event_type',['yellow_card','red_card'])
+  ]);
+  const allMatches=matchesRes.data||[];
+  const matches=allMatches.filter(m=>m.home_team_id===TID||m.away_team_id===TID);
+  const teams=teamsRes.data||[];
+  const cardEvents=cardsRes.data||[];
+  const tm={};teams.forEach(t=>{tm[t.id]=t;});
 
   const describeMatch=(label,m)=>{
-    if(!m)return `<div class="team-highlight" aria-disabled="true"><div class="th-label">${label}</div><div class="th-opponent">لا توجد مباراة</div></div>`;
+    if(!m){
+      const empty=label==='المباراة القادمة'?'لم تُحدَّد بعد':'لا توجد مباراة سابقة';
+      return `<div class="team-highlight" aria-disabled="true"><div class="th-label">${label}</div><div class="th-opponent">${empty}</div></div>`;
+    }
     const isHome=m.home_team_id===TID;
     const opp=tm[isHome?m.away_team_id:m.home_team_id]||{};
     const oppName=opp.name_ar||opp.name||'المنافس';
     const finished=m.status==='completed';
     const score=finished?`${isHome?m.home_score??0:m.away_score??0} — ${isHome?m.away_score??0:m.home_score??0}`:(m.status==='live'?'مباشر الآن':m.match_time||'الموعد لاحقًا');
-    const date=m.match_date?new Date(m.match_date).toLocaleDateString('ar-SA-u-nu-latn',{weekday:'long',day:'numeric',month:'long'}):'';
+    const date=m.match_date?window.PublicDate.format(m.match_date,{weekday:true}):'';
     return `<a class="team-highlight" href="match-live.html?id=${m.id}"><div class="th-label">${label}</div><div class="th-opponent">أمام ${oppName}</div><div class="th-result">${score}</div><div class="th-meta">${date} ${m.round_name||''}</div></a>`;
   };
-  const completed=(matches||[]).filter(m=>m.status==='completed');
-  const next=(matches||[]).find(m=>m.status==='live')||(matches||[]).find(m=>m.status==='scheduled');
+  const completed=matches.filter(m=>m.status==='completed').sort((a,b)=>`${a.match_date||''} ${a.match_time||''}`.localeCompare(`${b.match_date||''} ${b.match_time||''}`));
+  const scheduled=matches.filter(m=>m.status==='scheduled'&&m.match_date&&m.home_team_id&&m.away_team_id).sort((a,b)=>`${a.match_date} ${a.match_time||''}`.localeCompare(`${b.match_date} ${b.match_time||''}`));
+  const next=matches.find(m=>m.status==='live')||scheduled[0];
   document.getElementById('teamMatchHighlights').innerHTML=describeMatch('المباراة السابقة',completed[completed.length-1])+describeMatch('المباراة القادمة',next);
 
   // إحصائيات الفريق
   let gf=0,ga=0,mp=0;
-  (matches||[]).forEach(m=>{
+  matches.forEach(m=>{
     if(m.status!=='completed')return;
     mp++;
     if(m.home_team_id===TID){gf+=m.home_score||0;ga+=m.away_score||0;}
@@ -337,7 +346,45 @@ async function loadMatches(){
   document.getElementById('tsM').textContent=mp;
   document.getElementById('tsGA').textContent=ga;
 
-  if(!matches||!matches.length){
+  // المركز والنقاط محسوبان من النتائج المسجلة فقط وداخل مجموعة الفريق إن وجدت.
+  const groupCode=teamData?.group_code||null;
+  const standings={};
+  teams.filter(t=>(t.group_code||null)===groupCode).forEach(t=>{
+    standings[t.id]={id:t.id,name:t.name_ar||t.name||'',p:0,w:0,d:0,gf:0,ga:0,yellow:0,red:0};
+  });
+  allMatches.filter(m=>m.status==='completed').forEach(m=>{
+    const h=standings[m.home_team_id],a=standings[m.away_team_id];
+    if(!h||!a)return;
+    const hs=Number(m.home_score)||0,as=Number(m.away_score)||0;
+    h.p++;a.p++;h.gf+=hs;h.ga+=as;a.gf+=as;a.ga+=hs;
+    if(hs>as)h.w++;else if(hs<as)a.w++;else{h.d++;a.d++;}
+  });
+  cardEvents.forEach(e=>{
+    const row=standings[e.team_id];if(!row)return;
+    if(e.event_type==='yellow_card')row.yellow++;else if(e.event_type==='red_card')row.red++;
+  });
+  const points=r=>r.w*3+r.d;
+  const headToHead=(a,b)=>{
+    const games=allMatches.filter(m=>m.status==='completed'&&((m.home_team_id===a.id&&m.away_team_id===b.id)||(m.home_team_id===b.id&&m.away_team_id===a.id)));
+    let ap=0,bp=0,agd=0;
+    games.forEach(m=>{
+      const aHome=m.home_team_id===a.id;
+      const as=aHome?(Number(m.home_score)||0):(Number(m.away_score)||0);
+      const bs=aHome?(Number(m.away_score)||0):(Number(m.home_score)||0);
+      agd+=as-bs;if(as>bs)ap+=3;else if(as<bs)bp+=3;else{ap++;bp++;}
+    });
+    return ap!==bp?bp-ap:(agd!==0?-agd:0);
+  };
+  const table=Object.values(standings).sort((a,b)=>{
+    const primary=(points(b)-points(a))||((b.gf-b.ga)-(a.gf-a.ga))||(b.gf-a.gf);
+    return primary||headToHead(a,b)||((a.yellow+a.red*3)-(b.yellow+b.red*3))||a.name.localeCompare(b.name,'ar');
+  });
+  const current=standings[TID];
+  const rank=table.findIndex(r=>r.id===TID);
+  document.getElementById('tsRank').textContent=rank>=0?rank+1:'—';
+  document.getElementById('tsPts').textContent=current?points(current):0;
+
+  if(!matches.length){
     document.getElementById('matchesList').innerHTML='<div class="empty"><span>📅</span><p>لا توجد مباريات بعد</p></div>';
     return;
   }
@@ -356,7 +403,7 @@ async function loadMatches(){
 
     return `<a class="match-item" href="match-live.html?id=${m.id}" style="--tc:${teamColor}">
       <div class="match-top">
-        <span>${m.round_name||''} ${m.group_code?'— المجموعة '+m.group_code:''}</span>
+        <span>${m.match_date?window.PublicDate.format(m.match_date):''} ${m.round_name?'— '+m.round_name:''} ${m.group_code?'— المجموعة '+m.group_code:''}</span>
         <span class="m-badge ${sl[m.status]||'b-sched'}">${sl2[m.status]||m.status}</span>
       </div>
       <div class="match-score-row">
