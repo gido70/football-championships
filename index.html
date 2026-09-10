@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>منصة إدارة البطولات الرياضية | Sports Tournament Management Platform</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="vendor/supabase.min.js?v=20260910-1"></script>
 <style>
 /* ===== RESET & BASE ===== */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -336,7 +336,24 @@ img{display:block}
 
 <script src="supabase-config.js"></script>
 <script>
-const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+let sb=null;
+function showStartupError(){
+  ['sT','sTm','sP','sM'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='!';});
+  const g=document.getElementById('tGrid');
+  if(g)g.innerHTML='<div class="empty"><span class="empty-ic">⚠️</span><p>تعذر تحميل البيانات الآن.</p><button onclick="location.reload()" style="margin-top:14px;padding:10px 22px;border:0;border-radius:10px;background:#c9a84c;color:#10254a;font:inherit;font-weight:800;cursor:pointer">إعادة المحاولة</button></div>';
+}
+if(window.supabase&&window.SUPABASE_URL&&window.SUPABASE_ANON_KEY){
+  sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+}else{
+  showStartupError();
+}
+
+function withTimeout(promise,ms=12000){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('request-timeout')),ms))
+  ]);
+}
 
 function countUpTo(elId,target){
   const el=document.getElementById(elId);
@@ -356,19 +373,21 @@ function ini(n){return(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('
 function teamBg(c1,c2){return c2&&c2!==c1?`linear-gradient(135deg,${c1} 50%,${c2} 50%)`:c1;}
 
 async function loadStats(){
-  const [t,tm,p,m]=await Promise.all([
-    sb.from('tournaments').select('id',{count:'exact',head:true}).neq('status','draft'),
-    sb.from('teams').select('id',{count:'exact',head:true}),
-    sb.from('players').select('id',{count:'exact',head:true}),
-    sb.from('matches').select('id',{count:'exact',head:true}),
-  ]);
-  countUpTo('sT',t.count??0);
-  countUpTo('sTm',tm.count??0);
-  countUpTo('sP',p.count??0);
-  countUpTo('sM',m.count??0);
+  try{
+    const [t,tm,p,m]=await withTimeout(Promise.all([
+      sb.from('tournaments').select('id',{count:'exact',head:true}).neq('status','draft'),
+      sb.from('teams').select('id',{count:'exact',head:true}),
+      sb.from('players').select('id',{count:'exact',head:true}),
+      sb.from('matches').select('id',{count:'exact',head:true}),
+    ]));
+    countUpTo('sT',t.count??0);
+    countUpTo('sTm',tm.count??0);
+    countUpTo('sP',p.count??0);
+    countUpTo('sM',m.count??0);
+  }catch(_error){showStartupError();}
 }
 async function loadLive(){
-  const {data}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(name,name_ar,primary_color,secondary_color),tr:tournaments(name,name_ar)').eq('status','live');
+  const {data}=await withTimeout(sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(name,name_ar,primary_color,secondary_color),tr:tournaments(name,name_ar)').eq('status','live'));
   const sec=document.getElementById('liveSec');
   if(!data?.length){sec.style.display='none';return;}
   sec.style.display='block';
@@ -403,7 +422,10 @@ async function loadLive(){
 }
 
 async function loadTournaments(){
-  const {data}=await sb.from('tournaments').select('*,teams:teams(team_emoji,primary_color,secondary_color)').neq('status','draft').order('status',{ascending:true}).order('created_at',{ascending:false});
+  let data=null;
+  try{
+    ({data}=await withTimeout(sb.from('tournaments').select('*').neq('status','draft').order('status',{ascending:true}).order('created_at',{ascending:false})));
+  }catch(_error){showStartupError();return;}
   const g=document.getElementById('tGrid');
   if(!data?.length){g.innerHTML='<div class="empty"><span class="empty-ic">🏆</span><p>لا توجد بطولات بعد</p></div>';return;}
   const sl={draft:'مسودة',active:'نشطة',completed:'منتهية',archived:'مؤرشفة'};
@@ -467,33 +489,18 @@ async function loadTournaments(){
   }).join('');
 }
 
-sb.channel('idx-rt')
-  .on('postgres_changes',{event:'*',schema:'public',table:'matches'},()=>{loadLive();loadStats();})
-  .subscribe();
-
-loadStats();loadTournaments();loadLive();
-setInterval(loadLive,30000);
+if(sb){
+  sb.channel('idx-rt')
+    .on('postgres_changes',{event:'*',schema:'public',table:'matches'},()=>{loadLive().catch(()=>{});loadStats();})
+    .subscribe();
+  loadStats();loadTournaments();loadLive().catch(()=>{});
+  setInterval(()=>loadLive().catch(()=>{}),30000);
+}
 </script>
 
 <script>
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js')
-    .then(reg=>{
-      // تحقق من تحديثات فورياً
-      reg.update();
-      // إن وجد service worker جديد، فعّله وأعد التحميل
-      reg.addEventListener('updatefound',()=>{
-        const nw=reg.installing;
-        nw.addEventListener('statechange',()=>{
-          if(nw.state==='installed'&&navigator.serviceWorker.controller){
-            // إعادة تحميل تلقائية لتطبيق التحديث
-            window.location.reload();
-          }
-        });
-      });
-    });
-  // استمع لرسائل التحديث
-  navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 </script>
 </body>

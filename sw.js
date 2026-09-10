@@ -1,6 +1,15 @@
-// sw.js — fast shell cache — v3
-const VERSION = 'football-shell-v3';
-const CORE = ['./','./index.html','./tournament.html','./public-ui.css','./supabase-config.js','./icon-app.png'];
+// sw.js — network-first public shell — v4
+const VERSION = 'football-shell-v4';
+const CORE = [
+  './',
+  './index.html',
+  './tournament.html',
+  './match-live.html',
+  './public-ui.css',
+  './supabase-config.js',
+  './vendor/supabase.min.js',
+  './icon-app.png'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(cache=>cache.addAll(CORE)).catch(()=>{}));
@@ -10,7 +19,11 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.map(key => caches.delete(key))))
+      .then(keys => Promise.all(
+        keys
+          .filter(key => key.startsWith('football-shell-') && key !== VERSION)
+          .map(key => caches.delete(key))
+      ))
       .then(() => self.clients.claim())
   );
 });
@@ -20,15 +33,22 @@ self.addEventListener('fetch', e => {
   const url=new URL(e.request.url);
   if(url.origin!==self.location.origin)return;
 
-  if (e.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
+  const isFreshAsset = e.request.mode === 'navigate' ||
+    url.pathname.endsWith('.html') ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css');
+
+  if (isFreshAsset) {
     e.respondWith((async()=>{
       const cache=await caches.open(VERSION);
-      const cached=await cache.match(e.request,{ignoreSearch:true});
-      const network=fetch(e.request).then(res=>{
+      try{
+        const res=await fetch(e.request,{cache:'no-store'});
         if(res.ok)cache.put(e.request,res.clone());
         return res;
-      }).catch(()=>null);
-      return cached||await network||new Response('تعذر فتح الصفحة دون اتصال',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}});
+      }catch(_error){
+        return await cache.match(e.request,{ignoreSearch:true}) ||
+          new Response('تعذر فتح الصفحة دون اتصال',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}});
+      }
     })());
     return;
   }
