@@ -313,22 +313,32 @@ async function reviewExternalEvents(fixtureId){
     const {data,error}=await sb.functions.invoke('football-results',{body:{fixture_id:Number(fixtureId)}});
     if(error)throw error;if(data?.error)throw new Error(data.error);
     const {fixture:f,local:m}=ctx,used=new Set(),ops=[],shown=[];
+    const sourceGoalCount=(data?.events||[]).filter(e=>externalEventType(e)==='goal').length;
+    const localGoalCount=(m.events||[]).filter(e=>e.event_type==='goal').length;
     for(const e of (data?.events||[])){
       const eventType=externalEventType(e);if(!eventType)continue;
       const side=String(e.team?.id)===String(f.home?.id)?'home':String(e.team?.id)===String(f.away?.id)?'away':null;if(!side)continue;
-      const teamId=side==='home'?m.home_team_id:m.away_team_id;
+      const isOwnGoal=eventType==='goal'&&String(e.detail||'').toLowerCase().includes('own goal');
+      const playerSide=isOwnGoal?(side==='home'?'away':'home'):side;
+      const scoringTeamId=side==='home'?m.home_team_id:m.away_team_id;
+      const teamId=playerSide==='home'?m.home_team_id:m.away_team_id;
       const player=findExternalPlayer(await playersFor(teamId),e.player?.name),minute=Math.max(0,Number(e.minute)||0);
-      if(!player){shown.push({minute,icon:typeIcon[eventType],name:e.player?.name||'لاعب غير معروف',state:'skip',text:'اللاعب غير مطابق — راجعه يدويًا'});continue}
+      const icon=isOwnGoal?'↩️':typeIcon[eventType];
+      if(!player){shown.push({minute,icon,name:e.player?.name||'لاعب غير معروف',state:'skip',text:'اللاعب غير مطابق — راجعه يدويًا'});continue}
       let existing=(m.events||[]).filter(x=>!used.has(x.id)&&x.team_id===teamId&&x.player_id===player.id&&x.event_type===eventType).sort((a,b)=>Math.abs(Number(a.minute||0)-minute)-Math.abs(Number(b.minute||0)-minute))[0];
       if(!existing)existing=(m.events||[]).find(x=>!used.has(x.id)&&x.team_id===teamId&&x.player_id===player.id&&Math.abs(Number(x.minute||0)-minute)<=2);
+      if(!existing&&isOwnGoal&&localGoalCount===sourceGoalCount){
+        const replaceable=(m.events||[]).filter(x=>!used.has(x.id)&&x.team_id===scoringTeamId&&x.event_type==='goal');
+        if(replaceable.length===1)existing=replaceable[0];
+      }
       if(existing){
         used.add(existing.id);
-        if(Number(existing.minute)===minute&&existing.event_type===eventType){shown.push({minute,icon:typeIcon[eventType],name:player.full_name_ar||player.name,state:'ok',text:'مطابق بالفعل'});continue}
-        ops.push({kind:'update',id:existing.id,payload:{minute,event_type:eventType}});
-        shown.push({minute,icon:typeIcon[eventType],name:player.full_name_ar||player.name,state:'warn',text:'سيُصحح النوع أو الدقيقة'});
+        if(Number(existing.minute)===minute&&existing.event_type===eventType&&(!isOwnGoal||existing.event_subtype==='own_goal')&&existing.team_id===teamId&&existing.player_id===player.id){shown.push({minute,icon,name:player.full_name_ar||player.name,state:'ok',text:'مطابق بالفعل'});continue}
+        ops.push({kind:'update',id:existing.id,payload:{minute,event_type:eventType,team_id:teamId,player_id:player.id,...(isOwnGoal?{event_subtype:'own_goal'}:{})}});
+        shown.push({minute,icon,name:player.full_name_ar||player.name,state:'warn',text:isOwnGoal?'سيُصحح كهدف عكسي':'سيُصحح النوع أو الدقيقة'});
       }else{
-        ops.push({kind:'insert',payload:{match_id:m.id,tournament_id:m.tournament_id,team_id:teamId,player_id:player.id,event_type:eventType,minute}});
-        shown.push({minute,icon:typeIcon[eventType],name:player.full_name_ar||player.name,state:'warn',text:'حدث ناقص — سيُضاف'});
+        ops.push({kind:'insert',payload:{match_id:m.id,tournament_id:m.tournament_id,team_id:teamId,player_id:player.id,event_type:eventType,...(isOwnGoal?{event_subtype:'own_goal'}:{}),minute}});
+        shown.push({minute,icon,name:player.full_name_ar||player.name,state:'warn',text:isOwnGoal?'هدف عكسي ناقص — سيُضاف':'حدث ناقص — سيُضاف'});
       }
     }
     for(const local of (m.events||[]).filter(x=>!used.has(x.id))){shown.push({minute:Number(local.minute||0),icon:typeIcon[local.event_type]||'•',name:local.player?.full_name_ar||local.player?.name||'بدون لاعب',state:'skip',text:'موجود محليًا وغير موجود في بيانات المصدر — لن يُحذف'})}
