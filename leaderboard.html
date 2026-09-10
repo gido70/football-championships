@@ -42,12 +42,14 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 <div class="nav"><span style="font-weight:800;color:#c9a84c">🏆 لوحة المتصدرين</span><a href="#" id="backLink" onclick="history.back();return false">‹ رجوع</a></div>
 <div class="wrap" id="app"><div class="loading">⏳ جاري التحميل...</div></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="vendor/supabase.min.js?v=20260910-1"></script>
 <script src="supabase-config.js"></script>
+<script src="tournament-scope.js?v=20260910-1"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const qs=new URLSearchParams(location.search);
 const TID=qs.get('tid');
+const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
 
 const ROUND_LABEL={group:'دور المجموعات',round_of_16:'دور الـ16',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
 const ROUND_WEIGHT={group:1,round_of_16:2,quarter_final:3,semi_final:4,third_place:3,final:6};
@@ -60,7 +62,7 @@ function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 async function load(){
   if(!TID){document.getElementById('app').innerHTML='<div class="empty-note">لم تُحدَّد بطولة</div>';return;}
   const bl=document.getElementById('backLink');
-  bl.href='tournament.html?id='+TID;
+  bl.href=scopeUrl('tournament.html?id='+TID);
   bl.removeAttribute('onclick');
   const {data:matches}=await sb.from('matches').select('id,round_name,status,home_score,away_score').eq('tournament_id',TID);
   const decided=(matches||[]).filter(m=>m.status==='completed'&&m.home_score!=null&&m.away_score!=null);
