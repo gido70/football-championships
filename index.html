@@ -387,7 +387,7 @@ async function loadStats(){
   }catch(_error){showStartupError();}
 }
 async function loadLive(){
-  const {data}=await withTimeout(sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(name,name_ar,primary_color,secondary_color),tr:tournaments(name,name_ar)').eq('status','live'));
+  const {data}=await withTimeout(sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(name,name_ar,primary_color,secondary_color),tr:tournaments(name,name_ar)').eq('status','live').limit(4));
   const sec=document.getElementById('liveSec');
   if(!data?.length){sec.style.display='none';return;}
   sec.style.display='block';
@@ -489,13 +489,34 @@ async function loadTournaments(){
   }).join('');
 }
 
-if(sb){
-  sb.channel('idx-rt')
-    .on('postgres_changes',{event:'*',schema:'public',table:'matches'},()=>{loadLive().catch(()=>{});loadStats();})
-    .subscribe();
-  loadStats();loadTournaments();loadLive().catch(()=>{});
-  setInterval(()=>loadLive().catch(()=>{}),30000);
+let homeRefreshTimer=null;
+function stopHomeRefresh(){
+  if(homeRefreshTimer){clearInterval(homeRefreshTimer);homeRefreshTimer=null;}
 }
+function startHomeRefresh(){
+  stopHomeRefresh();
+  if(document.hidden||!sb)return;
+  homeRefreshTimer=setInterval(()=>loadLive().catch(()=>{}),60000);
+}
+async function bootHome(){
+  // اعرض البطولات أولًا؛ الإحصاءات والبث محتوى ثانوي ولا يجب أن يؤخرا الواجهة.
+  await loadTournaments();
+  const later=()=>{
+    loadStats();
+    loadLive().catch(()=>{});
+    startHomeRefresh();
+  };
+  if('requestIdleCallback' in window)requestIdleCallback(later,{timeout:1500});
+  else setTimeout(later,500);
+}
+if(sb)bootHome();
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)stopHomeRefresh();
+  else{
+    loadLive().catch(()=>{});
+    startHomeRefresh();
+  }
+});
 </script>
 
 <script>

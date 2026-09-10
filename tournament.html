@@ -1231,13 +1231,6 @@ async function loadTeams(){
     </a>`).join('')+'</div>';
 }
 
-sb.channel('rt-t').on('postgres_changes',{event:'*',schema:'public',table:'matches',filter:`tournament_id=eq.${TID}`},()=>{
-  if(document.hidden)return;
-  loadLiveMatch();
-  if(document.getElementById('tc-ma')?.classList.contains('active'))loadMatches();
-  if(document.getElementById('tc-st')?.classList.contains('active'))loadStandings();
-}).subscribe();
-
 async function loadSponsors(){
   const wrap=document.getElementById('sponsorsTicker');
   if(!TID){wrap.innerHTML='';return;}
@@ -1279,7 +1272,7 @@ function stopBackgroundRefresh(){
 function startBackgroundRefresh(){
   stopBackgroundRefresh();
   if(document.hidden||!TID||!ACCESS_GRANTED)return;
-  liveRefreshTimer=setInterval(loadLiveMatch,20000);
+  liveRefreshTimer=setInterval(loadLiveMatch,30000);
   newsRefreshTimer=setInterval(loadNews,60000);
 }
 
