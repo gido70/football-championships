@@ -246,6 +246,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .mt{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#2C2C2A;text-align:center;min-width:0}
 .mt-badge{width:44px;height:44px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#FFFFFF;overflow:hidden}
 .mt-badge img{width:100%;height:100%;object-fit:contain;border-radius:50%;padding:4px;background:rgba(255,255,255,.92)}
+.mt-badge[role="link"]{cursor:pointer}
 .mt-name{max-width:150px;min-height:34px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.35;color:#10264A;font-size:14px;font-weight:900}
 .mt-score{font-size:27px;font-weight:900;color:#10264A;margin-top:0}
 .ms{text-align:center;display:flex;flex-direction:column;align-items:center;padding-top:6px;justify-content:flex-start}
@@ -257,7 +258,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
   .mt-name{max-width:125px;font-size:13.5px}
 }
 /* SCORERS */
-.sc-item{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:10px;padding:9px 12px;margin-bottom:7px;display:flex;align-items:center;gap:9px;transition:.2s}
+.sc-item{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:10px;padding:9px 12px;margin-bottom:7px;display:flex;align-items:center;gap:9px;transition:.2s;text-decoration:none;color:inherit}
 .sc-item:hover{background:#EDEAE0}
 .sc-rank{font-size:13px;font-weight:900;color:#c9a84c;width:20px;text-align:center;flex-shrink:0}
 .sc-av-wrap{position:relative;flex-shrink:0}
@@ -1161,12 +1162,12 @@ async function loadMatches(){
           <span class="m-badge ${sm[m.status]||'b-sched'}">${lv?'<span class=live-pulse></span>':''} ${sl[m.status]||m.status}</span>
         </div>
         <div class="m-teams">
-          <div class="mt"><div class="mt-badge" style="background:linear-gradient(135deg,${hColor} 50%,${ht.secondary_color||hColor} 50%)">${hBadgeInner}</div><div class="mt-name">${hName}</div><div class="mt-score">${d||lv?m.home_score??0:'–'}</div></div>
+          <div class="mt"><div class="mt-badge" role="link" tabindex="0" title="فتح صفحة ${hName}" style="background:linear-gradient(135deg,${hColor} 50%,${ht.secondary_color||hColor} 50%)" onclick="event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.home_team_id}')||'team.html?id=${m.home_team_id}'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.home_team_id}')||'team.html?id=${m.home_team_id}'}">${hBadgeInner}</div><div class="mt-name">${hName}</div><div class="mt-score">${d||lv?m.home_score??0:'–'}</div></div>
           <div class="ms">
             <div class="ms-sep">:</div>
             ${lv?`<div class="ms-sub" style="color:#D85A30">${m.match_minute||0}'</div>`:`<div class="ms-sub">${m.match_time||''}</div>`}
           </div>
-          <div class="mt"><div class="mt-badge" style="background:linear-gradient(135deg,${aColor} 50%,${at.secondary_color||aColor} 50%)">${aBadgeInner}</div><div class="mt-name">${aName}</div><div class="mt-score">${d||lv?m.away_score??0:'–'}</div></div>
+          <div class="mt"><div class="mt-badge" role="link" tabindex="0" title="فتح صفحة ${aName}" style="background:linear-gradient(135deg,${aColor} 50%,${at.secondary_color||aColor} 50%)" onclick="event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.away_team_id}')||'team.html?id=${m.away_team_id}'" onkeydown="if(event.key===\'Enter\'){event.preventDefault();event.stopPropagation();location.href=window.TournamentScope?.scopedUrl('team.html?id=${m.away_team_id}')||'team.html?id=${m.away_team_id}'}">${aBadgeInner}</div><div class="mt-name">${aName}</div><div class="mt-score">${d||lv?m.away_score??0:'–'}</div></div>
         </div>
       </a>`;
     });
@@ -1194,6 +1195,7 @@ async function loadScorers(){
     const key=e.player_id||('m:'+e.manual_player_name+':'+e.team_id);
     const tm=teamMap[e.team_id]||{};
     if(!cnt[key])cnt[key]={
+      id:e.player_id||null,
       name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',
       photo:e.player?.jersey_photo_url,
       number:e.player?.number,
@@ -1222,7 +1224,7 @@ async function loadScorers(){
     const rc=rColor[rank]||'#3a4150';
     const sn=(p.name||'').split(' ').slice(0,2).join(' ');
     const big=rank===1;
-    return `<div class="sc-item" style="${rank<=3?'border-color:'+rc+'44;background:'+rc+'08':''}${big?';padding:14px 14px':''}">
+    return `<${p.id?'a':'div'} class="sc-item" ${p.id?`href="player.html?id=${p.id}" aria-label="فتح صفحة ${p.name}"`:''} style="${rank<=3?'border-color:'+rc+'44;background:'+rc+'08':''}${big?';padding:14px 14px':''}">
       <div class="sc-rank" style="color:${rc};${big?'font-size:17px':''}">${rank}</div>
       <div class="sc-av-wrap" style="${big?'width:46px;height:46px':''}">
         ${p.photo
@@ -1233,7 +1235,7 @@ async function loadScorers(){
       ${p.number?`<span class="sc-num">#${p.number}</span>`:''}
       <div class="sc-info"><div class="sc-name" style="${big?'font-size:14px':''}">${sn}</div><div class="sc-team"><div class="sc-tdot" style="background:${p.col}"></div>${p.team}</div></div>
       <div class="sc-g"><div class="sc-gn" style="${big?'font-size:20px;color:'+rc:''}">${p.g}</div><div class="sc-gl">هدف</div></div>
-    </div>`;
+    </${p.id?'a':'div'}>`;
   }).join('');
 }
 
