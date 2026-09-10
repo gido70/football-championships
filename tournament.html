@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" id="appManifest">
 <link rel="apple-touch-icon" href="icon-app.png">
-<link rel="stylesheet" href="tournament-theme.css?v=20260910-1">
+<link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
 <title>البطولة</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
@@ -422,7 +422,7 @@ img[src=""], img:not([src]) { display:none !important; }
 </div>
 
 <script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260910-2"></script>
+<script src="tournament-scope.js?v=20260910-3"></script>
 <script>
 const SUPABASE_READY=Boolean(window.supabase&&window.SUPABASE_URL&&window.SUPABASE_ANON_KEY);
 const sb=SUPABASE_READY?window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY):null;
@@ -509,7 +509,7 @@ async function generateAutoBulletin(){
   if(!TID)return[];
   const items=[];
   const {data:tour}=await sb.from('tournaments').select('primary_color,secondary_color').eq('id',TID).single();
-  const bulletinColor=tour?.secondary_color||'#c9a84c';
+  const bulletinColor=window.TournamentScope?.themeColors(tour).secondary||'#c9a84c';
 
   // 1) المتصدر الحالي من جدول الترتيب
   const {data:teams}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
@@ -938,8 +938,9 @@ async function loadTournament(){
     return;
   }
   const name=t.name_ar||t.name||'البطولة';
-  const p=t.primary_color||'#0b1f3a';
-  const s=t.secondary_color||'#c9a84c';
+  const resolvedTheme=window.TournamentScope?.themeColors(t)||{primary:t.primary_color||'#0b1f3a',secondary:t.secondary_color||'#c9a84c'};
+  const p=resolvedTheme.primary;
+  const s=resolvedTheme.secondary;
   window.TournamentScope?.configureApp(t,TID);
   const season=t.season_label||'';
 

@@ -387,7 +387,7 @@ async function loadStats(){
   }catch(_error){showStartupError();}
 }
 async function loadLive(){
-  const {data}=await withTimeout(sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(name,name_ar,primary_color,secondary_color),tr:tournaments(name,name_ar)').eq('status','live').limit(4));
+  const {data}=await withTimeout(sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(name,name_ar,primary_color,secondary_color),tr:tournaments(name)').eq('status','live').limit(4));
   const sec=document.getElementById('liveSec');
   if(!data?.length){sec.style.display='none';return;}
   sec.style.display='block';

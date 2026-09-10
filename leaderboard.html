@@ -37,7 +37,7 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .hero{animation:fadeSlideUp .5s ease-out both}
 .lb-row,.hof-badge{animation:fadeSlideUp .4s ease-out both}
 </style>
-<link rel="stylesheet" href="tournament-theme.css?v=20260910-1">
+<link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
 </head>
 <body>
 <div class="nav"><span style="font-weight:800;color:#c9a84c">🏆 لوحة المتصدرين</span><a href="#" id="backLink" onclick="history.back();return false">‹ رجوع</a></div>
@@ -45,7 +45,7 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
 <script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260910-2"></script>
+<script src="tournament-scope.js?v=20260910-3"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const qs=new URLSearchParams(location.search);
@@ -65,7 +65,7 @@ async function load(){
   const bl=document.getElementById('backLink');
   bl.href=scopeUrl('tournament.html?id='+TID);
   bl.removeAttribute('onclick');
-  const {data:tournament}=await sb.from('tournaments').select('name,name_ar,primary_color,secondary_color').eq('id',TID).single();
+  const {data:tournament}=await sb.from('tournaments').select('name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',TID).single();
   window.TournamentScope?.applyTournamentTheme(tournament);
   const {data:matches}=await sb.from('matches').select('id,round_name,status,home_score,away_score').eq('tournament_id',TID);
   const decided=(matches||[]).filter(m=>m.status==='completed'&&m.home_score!=null&&m.away_score!=null);

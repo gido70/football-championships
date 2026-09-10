@@ -59,7 +59,7 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
   .player-actions{order:2;width:100%;justify-content:space-between}
 }
 </style>
-<link rel="stylesheet" href="tournament-theme.css?v=20260910-1">
+<link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
 </head>
 <body>
 <div class="nav"><span style="font-weight:800;color:#c9a84c">🎬 فيديوهات البطولة</span><a href="#" id="backLink" onclick="history.back();return false">‹ رجوع للبطولة</a></div>
@@ -81,7 +81,7 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
 <script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260910-2"></script>
+<script src="tournament-scope.js?v=20260910-3"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const qs=new URLSearchParams(location.search);
@@ -100,7 +100,7 @@ async function load(){
   const backLink=document.getElementById('backLink');
   backLink.href=scopeUrl('tournament.html?id='+TID);
   backLink.removeAttribute('onclick');
-  const {data:t}=await sb.from('tournaments').select('name,name_ar,primary_color,secondary_color').eq('id',TID).single();
+  const {data:t}=await sb.from('tournaments').select('name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',TID).single();
   window.TournamentScope?.applyTournamentTheme(t);
   document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — الفيديوهات';
 
