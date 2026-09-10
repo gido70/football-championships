@@ -282,8 +282,9 @@ async function approveExternalResult(mid,home,away,rowId){
   toast('تم اعتماد النتيجة فقط');
 }
 
-function normalizePerson(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')}
-function personTokens(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g,' ').trim().split(/\s+/).filter(Boolean).map(normalizePerson)}
+function foldPersonChars(v){return String(v||'').replace(/[Øø]/g,'o').replace(/[Łł]/g,'l').replace(/[ĐđÐð]/g,'d').replace(/[Þþ]/g,'th').replace(/[Ææ]/g,'ae').replace(/[Œœ]/g,'oe').replace(/ß/g,'ss')}
+function normalizePerson(v){return foldPersonChars(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي')}
+function personTokens(v){return foldPersonChars(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/g,' ').trim().split(/\s+/).filter(Boolean).map(normalizePerson)}
 function externalEventType(e){
   const type=String(e.type||'').toLowerCase(),detail=String(e.detail||'').toLowerCase();
   if(type==='goal'&&!detail.includes('missed'))return 'goal';
