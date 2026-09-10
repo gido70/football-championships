@@ -97,6 +97,8 @@ body.public-match h1,body.public-match h2,body.public-match h3,
 .public-match .team-name{color:#fff;text-shadow:0 2px 9px rgba(0,0,0,.35)}
 .public-match .team-score{color:#fff}
 .public-match .info-strip{color:#d8e8f7}
+.public-match .info-chip{color:#38536e;border-color:#cbd9e6}
+.public-match .info-chip b{color:#173a5e}
 .public-match .main{max-width:1060px}
 .public-match .pane>div>div,.public-match .event-card,.public-match .lineup-card,
 .public-match .vote-card,.public-match .pred-card,.public-match .reaction-card,
