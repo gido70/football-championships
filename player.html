@@ -8,6 +8,7 @@
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
 <script src="public-date.js?v=20260910-1"></script>
 <link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
+<link rel="stylesheet" href="public-navigation.css?v=20260911-1">
 <style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:linear-gradient(145deg,#eef7ff,#f7fbff 55%,#edf9f5);color:#10264A;font-family:"Noto Naskh Arabic","Tajawal",Arial,sans-serif}
 .nav{height:62px;padding:0 max(18px,env(safe-area-inset-left));display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #dbe7f1;position:sticky;top:0;z-index:20}
@@ -32,7 +33,7 @@
 <div class="loading" id="loading">جاري تحميل اللاعب…</div>
 <nav class="nav">
   <div class="nav-title" id="navTitle">👤 اللاعب</div>
-  <a class="back" id="teamBack" href="javascript:history.back()">← الفريق</a>
+  <a class="back" id="teamBack" href="index.html">← الرئيسية</a>
 </nav>
 <header class="hero">
   <div id="playerPhoto"><div class="photo-fallback">👤</div></div>
@@ -58,6 +59,7 @@
 </main>
 <script src="supabase-config.js"></script>
 <script src="tournament-scope.js?v=20260910-4"></script>
+<script src="public-navigation.js?v=20260911-1"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const PID=new URLSearchParams(location.search).get('id');
@@ -96,7 +98,9 @@ async function init(){
   document.getElementById('playerName').textContent=name;
   document.getElementById('playerSub').textContent=(team.name_ar||team.name||'')+(number!=='—'?' · الرقم '+number:'');
   document.getElementById('navTitle').innerHTML=(team.logo_url?'<img src="'+esc(team.logo_url)+'" alt="">':'⚽')+'<span>'+esc(team.name_ar||team.name||'الفريق')+'</span>';
-  document.getElementById('teamBack').href='team.html?id='+encodeURIComponent(team.id||p.team_id);
+  const teamBack='team.html?id='+encodeURIComponent(team.id||p.team_id);
+  document.getElementById('teamBack').href=teamBack;
+  window.PublicNavigation?.configureBack(document.getElementById('teamBack'),window.TournamentScope?.scopedUrl(teamBack)||teamBack,'الفريق');
   if(photo)document.getElementById('playerPhoto').innerHTML='<img class="photo" src="'+esc(photo)+'" alt="'+esc(name)+'">';
   const goals=events.filter(e=>e.event_type==='goal'&&e.event_subtype!=='own_goal').length;
   const yellow=events.filter(e=>e.event_type==='yellow_card').length;
