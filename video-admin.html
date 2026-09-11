@@ -25,7 +25,7 @@
 .vid-title{font-weight:800;font-size:14px;margin-bottom:4px}
 .vid-type{font-size:11px;color:#8b949e;margin-bottom:8px}
 .vid-actions{display:flex;gap:6px}
-.vid-del{flex:1;background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:6px;font-size:12px;cursor:pointer;color:#f85149}
+.vid-del{flex:1;background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:6px;font-size:12px;cursor:pointer;color:#f85149}.vid-edit{flex:1;background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.35);border-radius:8px;padding:6px;font-size:12px;cursor:pointer;color:#e4c45e}
 .vid-open{flex:1;background:rgba(88,166,255,.15);border:1px solid rgba(88,166,255,.3);border-radius:8px;padding:6px;font-size:12px;cursor:pointer;color:#58a6ff;text-decoration:none;text-align:center;display:block}
 </style>
 </head>
@@ -46,11 +46,11 @@
     <h3>اختر البطولة</h3>
     <div class="form-grid"><div class="field full"><label>البطولة</label>
       <select id="tSel"></select>
-    </div></div>
+    </div><div class="field full"><div class="status" id="activeTournamentHint" style="color:#c9a84c;font-weight:800"></div></div></div>
   </section>
 
   <section class="panel" style="margin-top:20px">
-    <h3>➕ إضافة فيديو جديد</h3>
+    <h3 id="formTitle">➕ إضافة فيديو جديد</h3>
     <div class="form-grid">
       <div class="field full"><label>العنوان</label>
         <input type="text" id="titleInput" placeholder="مثال: ملخص المباراة النهائية">
@@ -64,6 +64,10 @@
       <div class="field"><label>رابط الفيديو</label>
         <input type="text" id="urlInput" placeholder="https://youtu.be/... أو رابط mp4" dir="ltr">
       </div>
+      <div class="field"><label>التصنيف</label><select id="categoryInput"><option value="highlights">ملخص مباراة</option><option value="press_conference">مؤتمر صحفي</option><option value="interview">لقاء أو مقابلة</option><option value="official_visit">زيارة رسمية</option><option value="tv_report">تقرير تلفزيوني</option><option value="opening">حفل الافتتاح</option><option value="trophy">التتويج والجوائز</option><option value="fans">تفاعل الجمهور</option><option value="other">فيديو آخر</option></select></div>
+      <div class="field"><label>شكل الفيديو</label><select id="orientationInput"><option value="auto">تلقائي</option><option value="landscape">أفقي 16:9</option><option value="portrait">رأسي 9:16</option><option value="square">مربع 1:1</option></select></div>
+      <div class="field"><label>المصدر</label><select id="sourceTypeInput"><option value="youtube">يوتيوب</option><option value="instagram">إنستغرام</option><option value="facebook">فيسبوك</option><option value="tv">قناة تلفزيونية</option><option value="internal">البطولة</option><option value="other">مصدر آخر</option></select></div>
+      <div class="field"><label>اسم المصدر (اختياري)</label><input type="text" id="sourceNameInput" placeholder="مثال: ديوان سبورت"></div>
       <div class="field full"><label>الصورة المصغّرة (اختياري)</label>
         <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap">
           <label style="display:inline-flex;align-items:center;gap:6px;background:rgba(78,161,255,.15);border:1px solid rgba(78,161,255,.3);color:#58a6ff;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit">
@@ -86,7 +90,7 @@
       </div>
     </div>
     <div class="actions">
-      <button class="btn" id="addBtn">💾 إضافة الفيديو</button>
+      <button class="btn" id="addBtn">💾 إضافة الفيديو</button><button class="btn secondary" id="cancelEdit" type="button" style="display:none">إلغاء التعديل</button>
     </div>
     <div class="status" id="addMsg"></div>
   </section>
@@ -99,7 +103,7 @@
 
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-let TID=null;
+let TID=null,VIDEOS=[],editingId=null;
 
 function setMsg(t,c=''){const e=document.getElementById('addMsg');e.className='status '+c;e.textContent=t;}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
@@ -108,17 +112,20 @@ async function initTournaments(){
   const {data}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});
   const sel=document.getElementById('tSel');
   sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
-  sel.onchange=()=>{TID=sel.value;loadVideos();};
-  if(data?.length){TID=data[0].id;loadVideos();}
+  const saved=localStorage.getItem('admin-selected-tournament');if(saved&&(data||[]).some(t=>t.id===saved))sel.value=saved;
+  const choose=()=>{TID=sel.value;localStorage.setItem('admin-selected-tournament',TID);document.getElementById('activeTournamentHint').textContent='أنت الآن تدير: '+(sel.options[sel.selectedIndex]?.textContent||'البطولة');};
+  sel.onchange=()=>{choose();resetVideoForm();loadVideos();};
+  if(data?.length){choose();loadVideos();}
 }
 
 async function loadVideos(){
   if(!TID)return;
   const {data}=await sb.from('videos').select('*').eq('tournament_id',TID).order('created_at',{ascending:false});
+  VIDEOS=data||[];
   const list=document.getElementById('vidList');
   document.getElementById('countBadge').textContent='('+((data||[]).length)+' فيديو)';
   if(!data?.length){list.innerHTML='<div class="empty" style="padding:24px;text-align:center;color:#6e7b8f;grid-column:1/-1">لا توجد فيديوهات بعد — أضف أول فيديو من الأعلى</div>';return;}
-  list.innerHTML=data.map(v=>`
+  list.innerHTML=VIDEOS.map(v=>`
     <div class="vid-card">
       ${v.thumbnail_url?`<img class="vid-thumb" src="${v.thumbnail_url}" alt="${esc(v.title)}">`:'<div class="vid-thumb-ph">🎬</div>'}
       <div class="vid-body">
@@ -126,6 +133,7 @@ async function loadVideos(){
         <div class="vid-type">${v.video_type==='youtube'?'▶️ يوتيوب':'🎞️ فيديو مباشر'}</div>
         <div class="vid-actions">
           <a class="vid-open" href="${v.video_url}" target="_blank">فتح</a>
+          <button class="vid-edit" onclick="editVideo('${v.id}')">تعديل</button>
           <button class="vid-del" onclick="deleteVideo('${v.id}')">حذف</button>
         </div>
       </div>
@@ -185,21 +193,20 @@ document.getElementById('addBtn').onclick=async()=>{
   const video_url=document.getElementById('urlInput').value.trim();
   const thumbnail_url=uploadedThumbDataUrl||document.getElementById('thumbInput').value.trim()||null;
   const description=document.getElementById('descInput').value.trim()||null;
+  const content_category=document.getElementById('categoryInput').value,media_orientation=document.getElementById('orientationInput').value,source_type=document.getElementById('sourceTypeInput').value,source_name=document.getElementById('sourceNameInput').value.trim()||null;
   if(!TID){setMsg('⚠️ اختر بطولة أولاً','warn');return;}
   if(!title||!video_url){setMsg('⚠️ العنوان والرابط مطلوبان','warn');return;}
-  const {error}=await sb.from('videos').insert({tournament_id:TID,title,video_type,video_url,thumbnail_url,description});
+  let finalThumb=thumbnail_url;
+  if(uploadedThumbDataUrl){const blob=await(await fetch(uploadedThumbDataUrl)).blob(),path=`media/${TID}/video_${Date.now()}.jpg`,upload=await sb.storage.from('tournament-assets').upload(path,blob,{contentType:'image/jpeg',upsert:false});if(upload.error){setMsg('❌ فشل رفع الصورة: '+upload.error.message,'err');return;}finalThumb=sb.storage.from('tournament-assets').getPublicUrl(path).data.publicUrl;}
+  const payload={tournament_id:TID,title,video_type,video_url,thumbnail_url:finalThumb,description,content_category,media_orientation,source_type,source_name,updated_at:new Date().toISOString()},wasEditing=Boolean(editingId),result=editingId?await sb.from('videos').update(payload).eq('id',editingId):await sb.from('videos').insert(payload),error=result.error;
   if(error){setMsg('❌ فشل الحفظ: '+error.message,'err');return;}
-  document.getElementById('titleInput').value='';
-  document.getElementById('urlInput').value='';
-  document.getElementById('thumbInput').value='';
-  document.getElementById('thumbInput').disabled=false;
-  document.getElementById('thumbInput').placeholder='أو الصق رابط صورة مباشرة: https://...';
-  document.getElementById('thumbSuccessBox').style.display='none';
-  uploadedThumbDataUrl=null;
-  document.getElementById('descInput').value='';
-  setMsg('✅ تمت الإضافة','ok');
+  resetVideoForm();setMsg(wasEditing?'✅ تم تحديث الفيديو':'✅ تمت إضافة الفيديو','ok');
   loadVideos();
 };
+
+function editVideo(id){const v=VIDEOS.find(x=>x.id===id);if(!v)return;editingId=id;document.getElementById('formTitle').textContent='✏️ تعديل الفيديو';document.getElementById('addBtn').textContent='💾 حفظ التعديل';document.getElementById('cancelEdit').style.display='inline-flex';document.getElementById('titleInput').value=v.title||'';document.getElementById('typeInput').value=v.video_type||'youtube';document.getElementById('urlInput').value=v.video_url||'';document.getElementById('thumbInput').value=v.thumbnail_url||'';document.getElementById('descInput').value=v.description||'';document.getElementById('categoryInput').value=v.content_category||'other';document.getElementById('orientationInput').value=v.media_orientation||'auto';document.getElementById('sourceTypeInput').value=v.source_type||'youtube';document.getElementById('sourceNameInput').value=v.source_name||'';window.scrollTo({top:0,behavior:'smooth'});}
+function resetVideoForm(){editingId=null;document.getElementById('formTitle').textContent='➕ إضافة فيديو جديد';document.getElementById('addBtn').textContent='💾 إضافة الفيديو';document.getElementById('cancelEdit').style.display='none';['titleInput','urlInput','thumbInput','descInput','sourceNameInput'].forEach(id=>document.getElementById(id).value='');document.getElementById('thumbInput').disabled=false;document.getElementById('thumbSuccessBox').style.display='none';uploadedThumbDataUrl=null;document.getElementById('typeInput').value='youtube';document.getElementById('categoryInput').value='highlights';document.getElementById('orientationInput').value='auto';document.getElementById('sourceTypeInput').value='youtube';}
+document.getElementById('cancelEdit').onclick=resetVideoForm;window.editVideo=editVideo;
 
 async function deleteVideo(id){
   if(!confirm('حذف هذا الفيديو نهائيًا؟'))return;

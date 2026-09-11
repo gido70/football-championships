@@ -3,132 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
 <title>نشرات البطولة</title>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box}
-body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;margin:0;min-height:100vh}
-.nav{background:#161b22;border-bottom:1px solid #21262d;padding:calc(14px + env(safe-area-inset-top,0px)) 20px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
-.nav a{color:#8b949e;text-decoration:none;font-size:13px;border:1px solid #30363d;padding:8px 16px;border-radius:20px;min-height:36px;display:inline-flex;align-items:center}
-.wrap{max-width:900px;margin:0 auto;padding:20px 16px 60px}
-h1{font-size:19px;color:#c9a84c;margin:0 0 14px}
-
-.doc-list{display:flex;flex-direction:column;gap:10px}
-.doc-row{display:flex;align-items:center;gap:14px;background:#161b22;border:1px solid #21262d;border-radius:12px;padding:12px 14px;cursor:pointer;transition:.15s;text-align:right;color:inherit;font-family:inherit;width:100%;animation:fadeSlideUp .4s ease-out both}
-@keyframes fadeSlideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.doc-row:hover{border-color:#c9a84c}
-.doc-emoji{font-size:26px;flex-shrink:0}
-.doc-info{flex:1;min-width:0}
-.doc-title{font-weight:800;font-size:14px;margin-bottom:2px}
-.doc-date{font-size:11.5px;color:#8b949e}
-.doc-desc{font-size:12px;color:#8b949e;margin-top:3px;line-height:1.5}
-.doc-arrow{color:#58a6ff;font-size:13px;flex-shrink:0}
-.empty-note{text-align:center;color:#6e7b8f;padding:60px 0;font-size:13px}
-.loading{text-align:center;color:#6e7b8f;padding:40px 0}
-
-.viewer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;z-index:999;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))}
-.viewer-overlay.open{display:flex;flex-direction:column}
-.viewer-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-.viewer-title{font-weight:800;font-size:14px;color:#e6edf3}
-.viewer-actions{display:flex;gap:10px;align-items:center}
-.viewer-actions a{color:#58a6ff;font-size:12px;text-decoration:none}
-.viewer-home{background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.4);color:#c9a84c!important;border-radius:8px;padding:8px 14px!important;font-size:13px!important;font-weight:800;text-decoration:none!important;min-height:38px;display:inline-flex;align-items:center}
-.viewer-close{background:none;border:1px solid #30363d;color:#e6edf3;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit;min-height:38px}
-@media(max-width:480px){
-  .wrap{padding:14px 10px 40px}
-  .doc-row{padding:11px 12px;gap:10px}
-  .doc-emoji{font-size:22px}
-  .doc-title{font-size:13px}
-  .viewer-overlay{padding:8px}
-  .viewer-top{margin-bottom:8px}
-  .viewer-title{font-size:13px;flex:1 1 100%;order:1}
-  .viewer-actions{order:2;width:100%;justify-content:space-between}
-}
-.viewer-frame-wrap{flex:1;background:#fff;border-radius:10px;overflow:hidden}
-.viewer-frame-wrap iframe{width:100%;height:100%;border:0}
+*{box-sizing:border-box}:root{--gold:#c9a84c;--muted:#8b949e}
+body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;margin:0;min-height:100vh}body.viewer-open{overflow:hidden}
+.nav{background:#161b22;border-bottom:1px solid #21262d;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}.nav strong{color:var(--gold);font-size:15px}.nav a{color:#fff;text-decoration:none;font-size:13px;border:1px solid #425166;background:linear-gradient(180deg,#23334a,#152235);padding:9px 15px;border-radius:12px;min-height:42px;display:inline-flex;align-items:center;box-shadow:0 4px 0 #09111d}
+.wrap{max-width:920px;margin:0 auto;padding:20px 14px 60px}.page-title{font-size:20px;color:var(--gold);margin:0 0 5px}.page-sub{color:var(--muted);font-size:12px;margin:0 0 16px}.issues{display:grid;gap:12px}
+.issue-card{display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:14px;align-items:center;width:100%;padding:12px;background:linear-gradient(145deg,#1b2430,#121820);color:inherit;border:1px solid #2b3542;border-radius:16px;text-align:right;font-family:inherit;cursor:pointer;box-shadow:0 7px 0 #090d12,0 12px 25px rgba(0,0,0,.24);transition:.2s}.issue-card:hover,.issue-card:focus-visible{border-color:var(--gold);transform:translateY(-2px);outline:none}
+.issue-cover{height:110px;border-radius:11px;overflow:hidden;background:linear-gradient(155deg,#103454,#071729);display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.1)}.issue-cover img{width:100%;height:100%;object-fit:cover}.issue-cover span{font-size:27px}.issue-cover b{font-size:11px;color:#7ee7ef;margin-top:4px}.issue-info{min-width:0}.issue-no{display:inline-flex;padding:4px 9px;border-radius:999px;background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.38);color:#e7c766;font-size:11px;font-weight:900;margin-bottom:6px}.issue-title{font-weight:900;font-size:15px;line-height:1.45}.issue-date{font-size:12px;color:var(--muted);margin-top:4px}.issue-desc{font-size:12px;color:#aab3bf;line-height:1.55;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.issue-read{color:#07111e;background:linear-gradient(180deg,#e2c668,#b48e36);border-radius:11px;padding:10px 13px;font-size:12px;font-weight:900;white-space:nowrap;box-shadow:0 4px 0 #74571d}
+.empty,.loading{text-align:center;color:#778396;padding:60px 12px}
+.viewer{position:fixed;inset:0;z-index:1000;background:#090d13;display:none;flex-direction:column}.viewer.open{display:flex}.viewer-top{flex:none;padding:calc(9px + env(safe-area-inset-top,0px)) 10px 9px;background:rgba(10,18,29,.98);border-bottom:1px solid #263245;box-shadow:0 5px 18px rgba(0,0,0,.4)}.viewer-row{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:8px}.viewer-title{flex:1;min-width:0;font-size:13px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tool-btn,.tool-link{min-height:42px;border-radius:11px;border:1px solid #435169;background:linear-gradient(180deg,#25364f,#152236);color:#fff;padding:8px 12px;font-family:inherit;font-size:12px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 0 #060b12}.tool-btn.gold{background:linear-gradient(180deg,#dec260,#a98331);color:#07111e;border-color:#d9bd5c;box-shadow:0 3px 0 #6e5218}.tool-btn:disabled{opacity:.35;cursor:not-allowed}.viewer-nav{max-width:1100px;margin:7px auto 0;display:flex;align-items:center;justify-content:center;gap:7px}.viewer-nav .tool-btn{min-height:34px;padding:5px 10px}.viewer-nav span{font-size:11px;color:#9ba7b6;min-width:72px;text-align:center}.pdf-scroll{flex:1;overflow:auto;overscroll-behavior:contain;background:#eef1f4;padding:10px 0 calc(18px + env(safe-area-inset-bottom,0px));direction:ltr}.pdf-pages{width:100%;margin:0 auto;display:grid;gap:10px;justify-items:center}.pdf-page{background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.2);display:block;max-width:none}.viewer-status{color:#27384b;background:#fff;border-radius:12px;padding:18px;margin:18px auto;text-align:center;font-size:13px;width:min(92%,560px)}.viewer-status.error{color:#a42121}
+@media(max-width:620px){.wrap{padding:15px 9px 42px}.issue-card{grid-template-columns:76px minmax(0,1fr);padding:9px;gap:10px}.issue-cover{height:94px}.issue-read{grid-column:1/-1;text-align:center;padding:9px}.issue-title{font-size:13px}.issue-desc{font-size:11px}.viewer-title{order:3;flex-basis:100%}.viewer-row{flex-wrap:wrap}.viewer-row .tool-btn,.viewer-row .tool-link{flex:1}.pdf-scroll{padding-top:4px}}
 </style>
-<link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
-<link rel="stylesheet" href="public-navigation.css?v=20260911-1">
+<link rel="stylesheet" href="tournament-theme.css?v=20260910-2"><link rel="stylesheet" href="public-navigation.css?v=20260911-1">
 </head>
 <body>
-<div class="nav"><span style="font-weight:800;color:#c9a84c">📰 نشرات البطولة</span><a href="index.html" id="backLink">← الرئيسية</a></div>
-<div class="wrap"><h1 id="tourName"></h1><div id="app"><div class="loading">⏳ جاري التحميل...</div></div></div>
-
-<div class="viewer-overlay" id="viewerOverlay">
-  <div class="viewer-top">
-    <div class="viewer-title" id="viewerTitle"></div>
-    <div class="viewer-actions">
-      <a id="viewerHomeLink" class="viewer-home" href="#">🏠 الرئيسية</a>
-      <button class="viewer-close" onclick="closeViewer()">✕ إغلاق</button>
-    </div>
-  </div>
-  <div class="viewer-frame-wrap"><iframe id="viewerFrame" title="عرض النشرة"></iframe></div>
-</div>
-
-<script src="vendor/supabase.min.js?v=20260910-1"></script>
-<script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260910-3"></script>
-<script src="public-navigation.js?v=20260911-1"></script>
-<script src="public-date.js?v=20260910-1"></script>
-<script>
-const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-const qs=new URLSearchParams(location.search);
-const TID=qs.get('id')||qs.get('tid');
-const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
-function fmtDate(d){return window.PublicDate.format(d,{year:true});}
-
-let DOCS=[];
-async function load(){
-  if(!TID){document.getElementById('app').innerHTML='<div class="empty-note">لم تُحدَّد بطولة</div>';return;}
-  const backLink=document.getElementById('backLink');
-  const tournamentBack=scopeUrl('tournament.html?id='+TID);
-  backLink.href=tournamentBack;
-  backLink.removeAttribute('onclick');
-  window.PublicNavigation?.configureBack(backLink,tournamentBack,'البطولة');
-  const {data:t}=await sb.from('tournaments').select('name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',TID).single();
-  window.TournamentScope?.applyTournamentTheme(t);
-  document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — النشرات';
-
-  const {data}=await sb.from('documents').select('*').eq('tournament_id',TID).order('publish_date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false});
-  DOCS=data||[];
-  const app=document.getElementById('app');
-  if(!DOCS.length){app.innerHTML='<div class="empty-note">لا توجد نشرات مضافة بعد لهذه البطولة</div>';return;}
-
-  app.innerHTML='<div class="doc-list">'+DOCS.map((d,i)=>`
-    <button class="doc-row" onclick="openViewer(${i})" style="animation-delay:${i*0.06}s">
-      <div class="doc-emoji">📄</div>
-      <div class="doc-info">
-        <div class="doc-title">${esc(d.title)}</div>
-        ${d.publish_date?`<div class="doc-date">${fmtDate(d.publish_date)}</div>`:''}
-        ${d.description?`<div class="doc-desc">${esc(d.description)}</div>`:''}
-      </div>
-      <div class="doc-arrow">قراءة ›</div>
-    </button>
-  `).join('')+'</div>';
-}
-
-function openViewer(i){
-  const d=DOCS[i];
-  document.getElementById('viewerFrame').src=d.pdf_url;
-  document.getElementById('viewerTitle').textContent=d.title;
-  document.getElementById('viewerHomeLink').href=scopeUrl('tournament.html?id='+TID);
-  document.getElementById('viewerOverlay').classList.add('open');
-}
-function closeViewer(){
-  document.getElementById('viewerOverlay').classList.remove('open');
-  document.getElementById('viewerFrame').src='';
-}
-window.openViewer=openViewer;
-window.closeViewer=closeViewer;
-
-load().then(()=>{
-  const openId=qs.get('open');
-  if(openId){
-    const idx=DOCS.findIndex(d=>d.id===openId);
-    if(idx>-1)openViewer(idx);
-  }
-});
+<nav class="nav"><strong>📰 النشرات الرسمية</strong><a href="index.html" id="backLink">← البطولة</a></nav>
+<main class="wrap"><h1 class="page-title" id="tourName">نشرات البطولة</h1><p class="page-sub">الأعداد مرتبة من الأحدث إلى الأقدم</p><div id="app"><div class="loading">⏳ جاري تحميل الأعداد...</div></div></main>
+<section class="viewer" id="viewer" aria-hidden="true"><div class="viewer-top"><div class="viewer-row"><button class="tool-btn gold" id="closeBtn">✕ إغلاق</button><div class="viewer-title" id="viewerTitle"></div><button class="tool-btn" id="zoomOut" aria-label="تصغير">−</button><button class="tool-btn" id="zoomIn" aria-label="تكبير">＋</button><a class="tool-link" id="directLink" target="_blank" rel="noopener">PDF ↗</a></div><div class="viewer-nav"><button class="tool-btn" id="newerBtn">الأحدث ↑</button><span id="issuePosition"></span><button class="tool-btn" id="olderBtn">الأقدم ↓</button></div></div><div class="pdf-scroll" id="pdfScroll"><div class="pdf-pages" id="pdfPages"></div></div></section>
+<script src="vendor/supabase.min.js?v=20260910-1"></script><script src="supabase-config.js"></script><script src="tournament-scope.js?v=20260910-3"></script><script src="public-navigation.js?v=20260911-1"></script><script src="public-date.js?v=20260910-1"></script>
+<script type="module">
+import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/build/pdf.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@5.7.284/build/pdf.worker.min.mjs';
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY),qs=new URLSearchParams(location.search),TID=qs.get('id')||qs.get('tid'),scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url,$=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])),fmtDate=d=>window.PublicDate.format(d,{year:true});
+let docs=[],activeIndex=-1,activeTask=null,zoom=1,renderToken=0;
+function issueLabel(d,index){return d.issue_number?`العدد ${d.issue_number}`:`العدد ${docs.length-index}`;}function cover(d,index){return d.cover_url?`<img src="${esc(d.cover_url)}" alt="">`:`<span>📰</span><b>${issueLabel(d,index)}</b>`;}function card(d,index){return `<button class="issue-card" data-index="${index}"><div class="issue-cover">${cover(d,index)}</div><div class="issue-info"><div class="issue-no">${issueLabel(d,index)}</div><div class="issue-title">${esc(d.title)}</div>${d.publish_date?`<div class="issue-date">${fmtDate(d.publish_date)}</div>`:''}${d.description?`<div class="issue-desc">${esc(d.description)}</div>`:''}</div><div class="issue-read">قراءة العدد</div></button>`;}
+async function load(){if(!TID){$('app').innerHTML='<div class="empty">لم تُحدَّد بطولة</div>';return;}const tournamentBack=scopeUrl('tournament.html?id='+TID);$('backLink').href=tournamentBack;window.PublicNavigation?.configureBack($('backLink'),tournamentBack,'البطولة');const [{data:t},{data,error}]=await Promise.all([sb.from('tournaments').select('*').eq('id',TID).single(),sb.from('documents').select('*').eq('tournament_id',TID).order('publish_date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false})]);window.TournamentScope?.applyTournamentTheme(t);$('tourName').textContent=(t?.name_ar||t?.name||'البطولة')+' — النشرات';if(error){$('app').innerHTML='<div class="empty">تعذر تحميل النشرات الآن</div>';return;}docs=data||[];if(!docs.length){$('app').innerHTML='<div class="empty">لا توجد أعداد منشورة لهذه البطولة</div>';return;}$('app').innerHTML=`<div class="issues">${docs.map(card).join('')}</div>`;document.querySelectorAll('.issue-card').forEach(el=>el.onclick=()=>openViewer(Number(el.dataset.index),true));const openId=qs.get('open'),idx=openId?docs.findIndex(d=>d.id===openId):-1;if(idx>=0)openViewer(idx,false);}
+async function openViewer(index,push){if(index<0||index>=docs.length)return;activeIndex=index;zoom=1;$('viewer').classList.add('open');$('viewer').setAttribute('aria-hidden','false');document.body.classList.add('viewer-open');if(push)history.pushState({newsletter:true},'',scopeUrl(`documents.html?id=${TID}&open=${docs[index].id}`));await renderActive();}
+async function renderActive(){const d=docs[activeIndex],token=++renderToken;$('viewerTitle').textContent=`${issueLabel(d,activeIndex)} — ${d.title}`;$('directLink').href=d.pdf_url;$('issuePosition').textContent=`${activeIndex+1} من ${docs.length}`;$('newerBtn').disabled=activeIndex===0;$('olderBtn').disabled=activeIndex===docs.length-1;$('pdfPages').innerHTML='<div class="viewer-status">⏳ جاري تجهيز العدد بعرض الهاتف...</div>';$('pdfScroll').scrollTop=0;try{if(activeTask)await activeTask.destroy().catch(()=>{});activeTask=pdfjsLib.getDocument({url:d.pdf_url});const pdf=await activeTask.promise;if(token!==renderToken)return;$('pdfPages').innerHTML='';for(let n=1;n<=pdf.numPages;n++){if(token!==renderToken)return;const page=await pdf.getPage(n),base=page.getViewport({scale:1}),available=Math.max(280,$('pdfScroll').clientWidth-8),cssScale=(available/base.width)*zoom,dpr=Math.min(window.devicePixelRatio||1,2),viewport=page.getViewport({scale:cssScale*dpr}),canvas=document.createElement('canvas');canvas.className='pdf-page';canvas.width=Math.floor(viewport.width);canvas.height=Math.floor(viewport.height);canvas.style.width=Math.floor(viewport.width/dpr)+'px';canvas.style.height=Math.floor(viewport.height/dpr)+'px';$('pdfPages').appendChild(canvas);await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;}}catch(error){if(token!==renderToken)return;$('pdfPages').innerHTML=`<div class="viewer-status error">تعذر تجهيز العرض المخصص.<br><a href="${esc(d.pdf_url)}" target="_blank" rel="noopener">فتح ملف PDF مباشرة</a></div>`;}}
+function closeViewer(fromPop=false){renderToken++;$('viewer').classList.remove('open');$('viewer').setAttribute('aria-hidden','true');document.body.classList.remove('viewer-open');$('pdfPages').innerHTML='';if(!fromPop&&history.state?.newsletter)history.back();}
+$('closeBtn').onclick=()=>closeViewer();$('newerBtn').onclick=()=>{if(activeIndex>0){activeIndex--;history.replaceState({newsletter:true},'',scopeUrl(`documents.html?id=${TID}&open=${docs[activeIndex].id}`));renderActive();}};$('olderBtn').onclick=()=>{if(activeIndex<docs.length-1){activeIndex++;history.replaceState({newsletter:true},'',scopeUrl(`documents.html?id=${TID}&open=${docs[activeIndex].id}`));renderActive();}};$('zoomIn').onclick=()=>{zoom=Math.min(2,zoom+.2);renderActive();};$('zoomOut').onclick=()=>{zoom=Math.max(.8,zoom-.2);renderActive();};window.addEventListener('popstate',()=>{if($('viewer').classList.contains('open'))closeViewer(true);});window.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('viewer').classList.contains('open'))closeViewer();});load();
 </script>
 </body>
 </html>
