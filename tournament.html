@@ -437,6 +437,9 @@ function withTimeout(promise,ms=25000){
     new Promise((_,reject)=>setTimeout(()=>reject(new Error('request-timeout')),ms))
   ]);
 }
+function retryBlock(msg,fnName){
+  return `<div class="empty"><span>⚠️</span><p>${msg}</p><button type="button" onclick="${fnName}()" style="margin-top:10px;padding:8px 22px;border-radius:8px;border:1px solid #c9a84c;background:transparent;color:#c9a84c;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px">🔄 إعادة المحاولة</button></div>`;
+}
 
 function countUpTo(elId,target){
   const el=document.getElementById(elId);
@@ -1037,14 +1040,20 @@ function getTournamentTeamsSummary(){
 }
 
 async function loadStandings(){
-  const {data:teams,error:teamsError}=await getTournamentTeamsSummary();
-  const {data:matches}=await sb.from('matches').select('id,home_team_id,away_team_id,home_score,away_score,status').eq('tournament_id',TID).eq('status','completed');
-  const {data:cardEvents}=await sb.from('match_events').select('team_id,event_type').eq('tournament_id',TID).in('event_type',['yellow_card','red_card']);
-  const {data:tourCfg}=await sb.from('tournaments').select('tournament_type,swiss_auto_qualify,swiss_playoff_cutoff').eq('id',TID).single();
+  let teams,teamsError,matches,cardEvents,tourCfg;
+  try{
+    ({data:teams,error:teamsError}=await withTimeout(getTournamentTeamsSummary()));
+    ({data:matches}=await withTimeout(sb.from('matches').select('id,home_team_id,away_team_id,home_score,away_score,status').eq('tournament_id',TID).eq('status','completed')));
+    ({data:cardEvents}=await withTimeout(sb.from('match_events').select('team_id,event_type').eq('tournament_id',TID).in('event_type',['yellow_card','red_card'])));
+    ({data:tourCfg}=await withTimeout(sb.from('tournaments').select('tournament_type,swiss_auto_qualify,swiss_playoff_cutoff').eq('id',TID).single()));
+  }catch(_error){
+    document.getElementById('stWrap').innerHTML=retryBlock('تعذر تحميل الترتيب — قد يكون الاتصال بطيئاً حالياً','loadStandings');
+    return;
+  }
   const isSwiss=tourCfg?.tournament_type==='swiss_league';
   const autoQ=tourCfg?.swiss_auto_qualify||8, playoffCut=tourCfg?.swiss_playoff_cutoff||24;
   countUpTo('hT',teams?.length||0);
-  if(teamsError){document.getElementById('stWrap').innerHTML='<div class="empty"><span>⚠️</span><p>تعذر تحميل الترتيب مؤقتًا — حاول مرة أخرى</p></div>';return;}
+  if(teamsError){document.getElementById('stWrap').innerHTML=retryBlock('تعذر تحميل الترتيب مؤقتًا','loadStandings');return;}
   if(!teams||!teams.length){document.getElementById('stWrap').innerHTML='<div class="empty"><span>📊</span><p>لا يوجد ترتيب بعد<br>أضف الفرق وابدأ المباريات</p></div>';return;}
   const st={};
   teams.forEach(t=>{st[t.id]={t,p:0,w:0,d:0,l:0,gf:0,ga:0,yellow:0,red:0};  });
@@ -1119,16 +1128,22 @@ async function loadStandings(){
 async function loadMatches(){
   // العلاقة نفسها المستخدمة في صفحة المباراة؛ تعيد الاسم والشعار حتى إذا كان
   // سجل الفريق قديمًا أو لا يحمل tournament_id الحالي.
-  let {data:matches,error:matchesError}=await sb.from('matches')
-    .select('id,status,match_date,match_time,round_name,match_no,home_team_id,away_team_id,home_score,away_score,match_minute,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color,secondary_color)')
-    .eq('tournament_id',TID).order('match_no');
-  // مسار احتياطي فقط إذا تعذّر توسيع العلاقة لأي سبب.
-  if(matchesError){
-    const fallback=await sb.from('matches').select('*').eq('tournament_id',TID).order('match_no');
-    matches=fallback.data;matchesError=fallback.error;
+  let matches,matchesError;
+  try{
+    ({data:matches,error:matchesError}=await withTimeout(sb.from('matches')
+      .select('id,status,match_date,match_time,round_name,match_no,home_team_id,away_team_id,home_score,away_score,match_minute,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color,secondary_color),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color,secondary_color)')
+      .eq('tournament_id',TID).order('match_no')));
+    // مسار احتياطي فقط إذا تعذّر توسيع العلاقة لأي سبب.
+    if(matchesError){
+      const fallback=await withTimeout(sb.from('matches').select('*').eq('tournament_id',TID).order('match_no'));
+      matches=fallback.data;matchesError=fallback.error;
+    }
+  }catch(_error){
+    document.getElementById('maWrap').innerHTML=retryBlock('تعذر تحميل الجدول — قد يكون الاتصال بطيئاً حالياً','loadMatches');
+    return;
   }
   countUpTo('hM',matches?.length||0);
-  if(matchesError){document.getElementById('maWrap').innerHTML='<div class="empty"><span>⚠️</span><p>تعذر تحميل الجدول مؤقتًا — أعد المحاولة</p></div>';return;}
+  if(matchesError){document.getElementById('maWrap').innerHTML=retryBlock('تعذر تحميل الجدول مؤقتًا','loadMatches');return;}
   if(!matches||!matches.length){document.getElementById('maWrap').innerHTML='<div class="empty"><span>📅</span><p>لا توجد مباريات بعد</p></div>';return;}
 
   // اجلب الفرق المرتبطة فعليًا بالمباريات. بعض البطولات القديمة تشارك سجلات فرق
@@ -1188,14 +1203,19 @@ async function loadMatches(){
 
 async function loadScorers(){
   // جلب مباشر بـ tournament_id — أسرع وأكثر موثوقية
-  const {data:evts}=await sb.from('match_events')
-    .select('player_id,manual_player_name,team_id,event_subtype,player:players!player_id(name,full_name_ar,jersey_photo_url,number)')
-    .eq('tournament_id',TID)
-    .eq('event_type','goal')
-    .or('event_subtype.neq.own_goal,event_subtype.is.null');
-  
-  // جلب بيانات الفرق منفصلة
-  const {data:teams}=await getTournamentTeamsSummary();
+  let evts,teams;
+  try{
+    ({data:evts}=await withTimeout(sb.from('match_events')
+      .select('player_id,manual_player_name,team_id,event_subtype,player:players!player_id(name,full_name_ar,jersey_photo_url,number)')
+      .eq('tournament_id',TID)
+      .eq('event_type','goal')
+      .or('event_subtype.neq.own_goal,event_subtype.is.null')));
+    // جلب بيانات الفرق منفصلة
+    ({data:teams}=await withTimeout(getTournamentTeamsSummary()));
+  }catch(_error){
+    document.getElementById('scWrap').innerHTML=retryBlock('تعذر تحميل الهدافين — قد يكون الاتصال بطيئاً حالياً','loadScorers');
+    return;
+  }
   const teamMap={};(teams||[]).forEach(t=>teamMap[t.id]=t);
   
   let tot=0;const cnt={};

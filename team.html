@@ -161,6 +161,21 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 <script src="tournament-scope.js?v=20260910-3"></script>
 <script src="public-date.js?v=20260910-1"></script>
 <script>
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function withTimeout(promise,ms=20000){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('request-timeout')),ms))
+  ]);
+}
+function showTeamRetry(){
+  if(document.getElementById('teamRetryBtn'))return;
+  const btn=document.createElement('button');
+  btn.id='teamRetryBtn';btn.type='button';btn.textContent='🔄 إعادة المحاولة';
+  btn.style.cssText='margin-top:14px;padding:9px 24px;border-radius:8px;border:1px solid #c9a84c;background:transparent;color:#c9a84c;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px';
+  btn.onclick=()=>location.reload();
+  document.getElementById('hero')?.appendChild(btn);
+}
 const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const TID=new URLSearchParams(location.search).get('id');
 function relLum(hex){
@@ -201,8 +216,20 @@ function showTab(btn,name){
 
 async function loadTeam(){
   if(!TID)return;
-  const {data:t}=await sb.from('teams').select('id,tournament_id,name,name_ar,group_code,primary_color,secondary_color,logo_url').eq('id',TID).single();
-  if(!t)return;
+  let t;
+  try{
+    ({data:t}=await withTimeout(sb.from('teams').select('id,tournament_id,name,name_ar,group_code,primary_color,secondary_color,logo_url').eq('id',TID).single()));
+  }catch(_error){
+    document.getElementById('teamName').textContent='تعذر تحميل الفريق';
+    document.getElementById('navTeam').textContent='تعذر التحميل';
+    showTeamRetry();
+    return;
+  }
+  if(!t){
+    document.getElementById('teamName').textContent='تعذر تحميل الفريق';
+    showTeamRetry();
+    return;
+  }
   teamData=t;
   const name=t.name_ar||t.name||'الفريق';
   const color=t.primary_color||t.color_primary||'#c9a84c';
@@ -216,7 +243,7 @@ async function loadTeam(){
   document.getElementById('teamName').textContent=name;
   document.getElementById('teamGroup').textContent=t.group_code?'المجموعة '+t.group_code:'';
   document.getElementById('heroBg').style.background=`linear-gradient(135deg,${color},${color2})`;
-  document.getElementById('teamInitial').innerHTML=t.logo_url?`<img src="${t.logo_url}" alt="${name}">`:name.charAt(0);
+  document.getElementById('teamInitial').innerHTML=t.logo_url?`<img src="${esc(t.logo_url)}" alt="${esc(name)}">`:name.charAt(0);
   if(t.tournament_id){
     const {data:tour}=await sb.from('tournaments').select('name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',t.tournament_id).single();
     window.TournamentScope?.applyTournamentTheme(tour);
@@ -243,7 +270,13 @@ async function loadTeam(){
 }
 
 async function loadSquad(){
-  const players=await getTeamPlayers();
+  let players;
+  try{
+    players=await withTimeout(getTeamPlayers());
+  }catch(_error){
+    document.getElementById('squadGrid').innerHTML=`<div class="empty"><span>⚠️</span><p>تعذر تحميل التشكيلة</p><button type="button" onclick="teamPlayersPromise=null;loadSquad()" style="margin-top:10px;padding:8px 22px;border-radius:8px;border:1px solid #c9a84c;background:transparent;color:#c9a84c;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px">🔄 إعادة المحاولة</button></div>`;
+    return;
+  }
 
   document.getElementById('tsP').textContent=players?.length||0;
   if(!players||!players.length){
@@ -259,24 +292,26 @@ async function loadSquad(){
     const role=p.role||'player_resident';
     const photo=p.jersey_photo_url||null;
     const subtitle=roleLabel[role]||p.nationality||'';
-    return `<a class="player-card" href="player.html?id=${p.id}" style="--tc:${teamColor};--tc-num:${safeText('#2C2C2A',teamColor)}" aria-label="فتح صفحة ${name}">
-      ${num?`<div class="player-number" style="color:var(--tc-num)">${num}</div>`:''}
+    return `<a class="player-card" href="player.html?id=${p.id}" style="--tc:${teamColor};--tc-num:${safeText('#2C2C2A',teamColor)}" aria-label="فتح صفحة ${esc(name)}">
+      ${num?`<div class="player-number" style="color:var(--tc-num)">${esc(num)}</div>`:''}
       ${photo
-        ? `<img class="player-photo" src="${photo}" alt="${name}" onerror="this.outerHTML='<div class=player-ph>👤</div>'">`
+        ? `<img class="player-photo" src="${esc(photo)}" alt="${esc(name)}" onerror="this.outerHTML='<div class=player-ph>👤</div>'">`
         : '<div class="player-ph">👤</div>'}
-      <div class="player-name">${name}</div>
-      <div class="player-nat">${subtitle}</div>
+      <div class="player-name">${esc(name)}</div>
+      <div class="player-nat">${esc(subtitle)}</div>
     </a>`;
   }).join('');
 }
 
 async function loadStats(){
-  // نحمل أحداث المباريات لهذا الفريق
-  const {data:evts}=await sb.from('match_events')
-    .select('player_id,event_type,event_subtype')
-    .eq('team_id',TID);
-
-  const players=await getTeamPlayers();
+  let evts,players;
+  try{
+    ({data:evts}=await withTimeout(sb.from('match_events').select('player_id,event_type,event_subtype').eq('team_id',TID)));
+    players=await withTimeout(getTeamPlayers());
+  }catch(_error){
+    document.getElementById('statsTable').innerHTML=`<div class="empty"><span>⚠️</span><p>تعذر تحميل الإحصائيات</p><button type="button" onclick="teamPlayersPromise=null;loadStats()" style="margin-top:10px;padding:8px 22px;border-radius:8px;border:1px solid #c9a84c;background:transparent;color:#c9a84c;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px">🔄 إعادة المحاولة</button></div>`;
+    return;
+  }
   if(!players||!players.length){
     document.getElementById('statsTable').innerHTML='<div class="empty"><span>📊</span><p>لا توجد إحصائيات بعد</p></div>';
     return;
@@ -315,11 +350,17 @@ async function loadStats(){
 
 async function loadMatches(){
   const tournamentId=teamData?.tournament_id||'';
-  const [matchesRes,teamsRes,cardsRes]=await Promise.all([
-    sb.from('matches').select('*').eq('tournament_id',tournamentId).order('match_date').order('match_time').order('match_no'),
-    sb.from('teams').select('id,name,name_ar,primary_color,group_code').eq('tournament_id',tournamentId),
-    sb.from('match_events').select('team_id,event_type').eq('tournament_id',tournamentId).in('event_type',['yellow_card','red_card'])
-  ]);
+  let matchesRes,teamsRes,cardsRes;
+  try{
+    [matchesRes,teamsRes,cardsRes]=await withTimeout(Promise.all([
+      sb.from('matches').select('*').eq('tournament_id',tournamentId).order('match_date').order('match_time').order('match_no'),
+      sb.from('teams').select('id,name,name_ar,primary_color,group_code').eq('tournament_id',tournamentId),
+      sb.from('match_events').select('team_id,event_type').eq('tournament_id',tournamentId).in('event_type',['yellow_card','red_card'])
+    ]));
+  }catch(_error){
+    document.getElementById('matchesList').innerHTML=`<div class="empty"><span>⚠️</span><p>تعذر تحميل المباريات</p><button type="button" onclick="loadMatches()" style="margin-top:10px;padding:8px 22px;border-radius:8px;border:1px solid #c9a84c;background:transparent;color:#c9a84c;font-weight:700;cursor:pointer;font-family:inherit;font-size:14px">🔄 إعادة المحاولة</button></div>`;
+    return;
+  }
   const allMatches=matchesRes.data||[];
   const matches=allMatches.filter(m=>m.home_team_id===TID||m.away_team_id===TID);
   const teams=teamsRes.data||[];
@@ -337,7 +378,7 @@ async function loadMatches(){
     const finished=m.status==='completed';
     const score=finished?`${isHome?m.home_score??0:m.away_score??0} — ${isHome?m.away_score??0:m.home_score??0}`:(m.status==='live'?'مباشر الآن':m.match_time||'الموعد لاحقًا');
     const date=m.match_date?window.PublicDate.format(m.match_date,{weekday:true}):'';
-    return `<a class="team-highlight" href="match-live.html?id=${m.id}"><div class="th-label">${label}</div><div class="th-opponent">أمام ${oppName}</div><div class="th-result">${score}</div><div class="th-meta">${date} ${m.round_name||''}</div></a>`;
+    return `<a class="team-highlight" href="match-live.html?id=${m.id}"><div class="th-label">${label}</div><div class="th-opponent">أمام ${esc(oppName)}</div><div class="th-result">${score}</div><div class="th-meta">${date} ${esc(m.round_name||'')}</div></a>`;
   };
   const completed=matches.filter(m=>m.status==='completed').sort((a,b)=>`${a.match_date||''} ${a.match_time||''}`.localeCompare(`${b.match_date||''} ${b.match_time||''}`));
   const scheduled=matches.filter(m=>m.status==='scheduled'&&m.match_date&&m.home_team_id&&m.away_team_id).sort((a,b)=>`${a.match_date} ${a.match_time||''}`.localeCompare(`${b.match_date} ${b.match_time||''}`));
@@ -412,13 +453,13 @@ async function loadMatches(){
 
     return `<a class="match-item" href="match-live.html?id=${m.id}" style="--tc:${teamColor}">
       <div class="match-top">
-        <span>${m.match_date?window.PublicDate.format(m.match_date):''} ${m.round_name?'— '+m.round_name:''} ${m.group_code?'— المجموعة '+m.group_code:''}</span>
+        <span>${m.match_date?window.PublicDate.format(m.match_date):''} ${m.round_name?'— '+esc(m.round_name):''} ${m.group_code?'— المجموعة '+esc(m.group_code):''}</span>
         <span class="m-badge ${sl[m.status]||'b-sched'}">${sl2[m.status]||m.status}</span>
       </div>
       <div class="match-score-row">
         <div class="mt ${isHome?'current':''}">
           <div class="mt-dot" style="background:${isHome?teamColor:oppColor}"></div>
-          ${isHome?'الفريق (أنت)':oppName}
+          ${isHome?'الفريق (أنت)':esc(oppName)}
         </div>
         <div class="ms-center">
           <div class="ms-nums">
@@ -426,7 +467,7 @@ async function loadMatches(){
           </div>
         </div>
         <div class="mt away ${!isHome?'current':''}">
-          ${!isHome?'الفريق (أنت)':oppName}
+          ${!isHome?'الفريق (أنت)':esc(oppName)}
           <div class="mt-dot" style="background:${!isHome?teamColor:oppColor}"></div>
         </div>
       </div>

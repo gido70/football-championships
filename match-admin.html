@@ -566,7 +566,7 @@ async function onTournChange(){
 async function onMatchChange(){
   const mid=document.getElementById('selM').value;
   if(!mid){document.getElementById('matchPanel').style.display='none';document.getElementById('quickBar').style.display='none';return;}
-  const {data:m,error}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(*),at:teams!matches_away_team_id_fkey(*)').eq('id',mid).single();
+  const {data:m,error}=await sb.from('matches').select('id,tournament_id,home_team_id,away_team_id,home_score,away_score,status,match_date,match_time,match_no,round_name,referee_1,referee_2,commentator,current_half,half_length_minutes,is_paused,phase_started_at,live_status,player_of_match_id,var_team_id,venue,venue_name,highlight_video_url,stream_url,home_penalties,away_penalties,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color)').eq('id',mid).single();
   if(error||!m){setMsg('تعذر تحميل المباراة: '+(error?.message||''),'err');return;}
   cur=m;
 
