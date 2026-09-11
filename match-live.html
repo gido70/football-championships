@@ -13,6 +13,7 @@
 <title>المباراة</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
+<link rel="stylesheet" href="public-navigation.css?v=20260911-1">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh;overscroll-behavior-y:contain;overflow-x:hidden}
@@ -296,6 +297,7 @@ a{text-decoration:none;color:inherit}
 
 <script src="supabase-config.js"></script>
 <script src="tournament-scope.js?v=20260910-3"></script>
+<script src="public-navigation.js?v=20260911-1"></script>
 <script src="public-date.js?v=20260910-1"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
@@ -773,7 +775,10 @@ async function init(){
   if(error||!m){document.body.innerHTML='<div class="empty"><span>⚠️</span><p>تعذر تحميل بيانات المباراة</p></div>';return;}
   cur=m;
 
-  document.getElementById('backLink').href=scopeUrl('tournament.html?id='+m.tournament_id+'&tab=ma');
+  const tournamentBack=scopeUrl('tournament.html?id='+m.tournament_id+'&tab=ma');
+  document.getElementById('backLink').href=tournamentBack;
+  window.PublicNavigation?.configureBack(document.getElementById('backLink'),tournamentBack,'البطولة');
+  window.PublicNavigation?.configureBack(document.getElementById('floatBack'),tournamentBack,'البطولة');
 
   const {data:t}=await sb.from('tournaments').select('*').eq('id',m.tournament_id).single();
   window.TournamentScope?.applyTournamentTheme(t);
