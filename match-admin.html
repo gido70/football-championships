@@ -113,6 +113,9 @@ select option{background:#0f2a45;color:#ffffff}
 .evt-del{background:none;border:none;cursor:pointer;color:#b7c6dc;padding:4px 8px;border-radius:6px;font-size:14px}
 .evt-del:hover{color:#ff6b6b}
 .no-evts{padding:24px;text-align:center;color:#b7c6dc;font-size:14px}
+.match-lock-banner{display:none;margin:0 0 14px;padding:11px 14px;border:1px solid rgba(255,213,79,.45);border-radius:12px;background:rgba(255,213,79,.10);color:#ffe082;font-size:13px;font-weight:800;text-align:center}
+.match-lock-banner.show{display:block}
+.btn-quick:disabled,.sb-btn:disabled,.evt-btn:disabled,.var-btn:disabled,.btn-sm:disabled,.evt-del:disabled{opacity:.38;cursor:not-allowed;filter:grayscale(.45);box-shadow:none}
 @media(max-width:640px){
   .evt-grid,.meta-grid{grid-template-columns:1fr}
   #quickBar{top:env(safe-area-inset-top,0px)!important;margin:0 -5px 12px!important;padding:9px!important;border-radius:0 0 15px 15px!important;z-index:80!important}
@@ -201,6 +204,7 @@ select option{background:#0f2a45;color:#ffffff}
   </div>
 
   <div id="matchPanel" style="display:none">
+    <div id="matchLockBanner" class="match-lock-banner">🔒 المباراة ليست مباشرة الآن؛ أدوات النتيجة والأحداث مقفلة لحماية البيانات.</div>
     <!-- لوحة النتيجة -->
     <div class="match-board">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -528,13 +532,16 @@ select option{background:#0f2a45;color:#ffffff}
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 let cur=null,hPl=[],aPl=[],evtType={h:null,a:null};
+let varUpdateBusy=false;
+const requestedMatchId=new URLSearchParams(location.search).get('match')||'';
+const requestedTournamentId=new URLSearchParams(location.search).get('tournament')||'';
 
 async function pushNews(text){
   if(!cur||!cur.tournament_id)return;
   await sb.from('news_items').insert({tournament_id:cur.tournament_id,match_id:cur.id,title:text.slice(0,80),content:text});
 }
-const EL={goal:'هدف',own_goal:'هدف عكسي',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل',penalty_missed:'ركلة جزاء ضائعة'};
-const EI={goal:'⚽',own_goal:'↩️',yellow_card:'🟨',red_card:'🟥',substitution:'🔄'};
+const EL={goal:'هدف',own_goal:'هدف عكسي',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل',penalty_missed:'ركلة جزاء ضائعة',var_goal_confirmed:'تأكيد هدف بعد مراجعة VAR',var_goal_disallowed:'إلغاء هدف بعد مراجعة VAR',var_penalty_review:'مراجعة ركلة جزاء عبر VAR',var_red_card_review:'مراجعة بطاقة حمراء عبر VAR'};
+const EI={goal:'⚽',own_goal:'↩️',yellow_card:'🟨',red_card:'🟥',substitution:'🔄',var_goal_confirmed:'✅',var_goal_disallowed:'❌',var_penalty_review:'🎯',var_red_card_review:'🟥'};
 
 function setMsg(t,c=''){const b=document.getElementById('statusMsg');if(b){b.className='status '+c;b.textContent=t;}}
 
@@ -543,9 +550,23 @@ async function init(){
   const s=document.getElementById('selT');
   s.innerHTML='<option value="">— اختر البطولة —</option>';
   (data||[]).forEach(t=>s.innerHTML+=`<option value="${t.id}">${t.name}${t.season_label?' - '+t.season_label:''}</option>`);
+  if(requestedMatchId){
+    if(requestedTournamentId&&[...s.options].some(o=>o.value===requestedTournamentId)){
+      s.value=requestedTournamentId;
+      await onTournChange(requestedMatchId);
+      return;
+    }
+    const {data:target}=await sb.from('matches').select('id,tournament_id').eq('id',requestedMatchId).maybeSingle();
+    if(target&&[...s.options].some(o=>o.value===target.tournament_id)){
+      s.value=target.tournament_id;
+      await onTournChange(target.id);
+    }else{
+      document.getElementById('selStatus').textContent='تعذر العثور على المباراة المطلوبة.';
+    }
+  }
 }
 
-async function onTournChange(){
+async function onTournChange(preferredMatchId=''){
   const tid=document.getElementById('selT').value;
   const s=document.getElementById('selM');
   s.innerHTML='<option value="">— اختر المباراة —</option>';
@@ -556,9 +577,14 @@ async function onTournChange(){
     const ic=m.status==='live'?'🔴 ':m.status==='completed'?'✅ ':'⏳ ';
     const home=m.ht?.name_ar||m.ht?.name||'الفريق الأول';
     const away=m.at?.name_ar||m.at?.name||'الفريق الثاني';
-    const when=m.match_date?window.PublicDate.format(m.match_date)+(m.match_time?' '+m.match_time:''):'الموعد غير محدد';
+    const when=m.match_date?window.PublicDate.format(m.match_date)+(m.match_time?' '+m.match_time:''):[m.match_no?'مباراة '+m.match_no:'',m.round_name==='group'?'دور المجموعات':m.round_name||''].filter(Boolean).join(' — ')||'دون موعد مسجل';
     s.innerHTML+=`<option value="${m.id}">${ic}${home} × ${away} — ${when}</option>`;
   });
+  if(preferredMatchId&&(data||[]).some(m=>m.id===preferredMatchId)){
+    s.value=preferredMatchId;
+    await onMatchChange();
+    return;
+  }
   const live=(data||[]).find(m=>m.status==='live');
   if(live){s.value=live.id;await onMatchChange();}
 }
@@ -569,6 +595,7 @@ async function onMatchChange(){
   const {data:m,error}=await sb.from('matches').select('id,tournament_id,home_team_id,away_team_id,home_score,away_score,status,match_date,match_time,match_no,round_name,referee_1,referee_2,commentator,current_half,half_length_minutes,is_paused,phase_started_at,live_status,player_of_match_id,var_team_id,venue,venue_name,highlight_video_url,stream_url,home_penalties,away_penalties,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color)').eq('id',mid).single();
   if(error||!m){setMsg('تعذر تحميل المباراة: '+(error?.message||''),'err');return;}
   cur=m;
+  document.getElementById('evtsList').innerHTML='<div class="no-evts">⏳ جاري تحميل الأحداث...</div>';
 
   const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.home_team_id).or('submission_status.eq.approved,submission_status.is.null').order('number');
   const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.away_team_id).or('submission_status.eq.approved,submission_status.is.null').order('number');
@@ -730,6 +757,7 @@ async function loadShootoutPlayers(){
   sel.innerHTML='<option value="">— اختر —</option>'+(data||[]).map(p=>`<option value="${p.id}">#${p.number??''} ${p.full_name_ar||p.name}</option>`).join('');
 }
 async function recordShootout(result){
+  if(!ensureLiveMatch())return;
   const tid=document.getElementById('soTeamSel').value;
   const pid=document.getElementById('soPlayerSel').value;
   if(!pid){setMsg('⚠️ اختر الضارب أولاً','warn');return;}
@@ -761,7 +789,7 @@ async function loadShootoutLog(){
 window.recordShootout=recordShootout;
 
 async function logVarEvent(){
-  if(!cur)return;
+  if(!cur||!ensureLiveMatch())return;
   const team_id=document.getElementById('varLogTeam').value||null;
   const var_type=document.getElementById('varLogType').value;
   const var_result=document.getElementById('varLogResult').value;
@@ -809,22 +837,36 @@ async function delVarEvent(id){
 window.delVarEvent=delVarEvent;
 
 async function setVAR(status){
-  if(!cur)return;
-  document.querySelectorAll('.var-btn').forEach(b=>b.classList.toggle('active',b.dataset.var===status));
+  if(!cur||!ensureLiveMatch()||varUpdateBusy)return;
   const teamId=document.getElementById('varTeamSel').value||null;
-  updateVARDisplay(status,teamId);
-  const {error}=await sb.from('matches').update({live_status:status,var_team_id:teamId}).eq('id',cur.id);
-  if(!error){cur.live_status=status;cur.var_team_id=teamId;}
-  // تسجيل دائم لقرار الفار في سجل الأحداث (لإحصائيات الفار لاحقًا) — فقط للحالات النهائية وليس "جاري المراجعة"
-  if(status!=='checking'&&status!=='none'){
-    const min=parseInt(document.getElementById('minInput').value)||0;
-    await sb.from('match_events').insert({
-      match_id:cur.id,tournament_id:cur.tournament_id,team_id:teamId,
-      event_type:'var_'+status,minute:min,event_subtype:status
-    });
-    const varLabels={goal_confirmed:'✅ هدف مؤكد',goal_disallowed:'❌ هدف ملغي',penalty_review:'🎯 مراجعة ركلة جزاء',red_card_review:'🟥 مراجعة طرد'};
-    const tn=teamId?(teamId===cur.home_team_id?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name)):'';
-    pushNews('📺 فار: '+(varLabels[status]||status)+(tn?' — '+tn:''));
+  if(cur.live_status===status&&(cur.var_team_id||null)===teamId){
+    setMsg('هذا القرار مسجل بالفعل. اختر «بدون مراجعة» قبل تسجيل مراجعة جديدة.','warn');
+    return;
+  }
+  varUpdateBusy=true;
+  document.querySelectorAll('.var-btn').forEach(b=>b.disabled=true);
+  try{
+    document.querySelectorAll('.var-btn').forEach(b=>b.classList.toggle('active',b.dataset.var===status));
+    updateVARDisplay(status,teamId);
+    const {error}=await sb.from('matches').update({live_status:status,var_team_id:teamId}).eq('id',cur.id);
+    if(error){setMsg('❌ فشل تحديث حالة VAR: '+error.message,'err');return;}
+    cur.live_status=status;cur.var_team_id=teamId;
+    // تسجيل دائم لقرار الفار في سجل الأحداث — مرة واحدة فقط لكل تغيير في الحالة.
+    if(status!=='checking'&&status!=='none'){
+      const min=parseInt(document.getElementById('minInput').value)||0;
+      const {error:eventError}=await sb.from('match_events').insert({
+        match_id:cur.id,tournament_id:cur.tournament_id,team_id:teamId,
+        event_type:'var_'+status,minute:min,event_subtype:status
+      });
+      if(eventError){setMsg('⚠️ تم تحديث VAR لكن تعذر إضافته إلى سجل الأحداث.','warn');return;}
+      const varLabels={goal_confirmed:'✅ هدف مؤكد',goal_disallowed:'❌ هدف ملغي',penalty_review:'🎯 مراجعة ركلة جزاء',red_card_review:'🟥 مراجعة طرد'};
+      const tn=teamId?(teamId===cur.home_team_id?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name)):'';
+      pushNews('📺 فار: '+(varLabels[status]||status)+(tn?' — '+tn:''));
+      loadEvts();
+    }
+  }finally{
+    varUpdateBusy=false;
+    document.querySelectorAll('.var-btn').forEach(b=>b.disabled=cur?.status!=='live');
   }
 }
 
@@ -834,6 +876,16 @@ function updateStatusUI(st){
   lbl.textContent=sl[st]||st;
   document.getElementById('btnStart').disabled=st!=='scheduled';
   document.getElementById('btnEnd').disabled=st!=='live';
+  const locked=st!=='live';
+  const lockBanner=document.getElementById('matchLockBanner');
+  if(lockBanner)lockBanner.classList.toggle('show',locked);
+  document.querySelectorAll('#quickBar .quick-actions button,.sb-btn,.half-btn,.var-btn,.evt-btn').forEach(b=>b.disabled=locked);
+}
+
+function ensureLiveMatch(){
+  if(cur?.status==='live')return true;
+  setMsg('🔒 ابدأ المباراة أولاً. أدوات النتيجة والأحداث تعمل أثناء المباراة المباشرة فقط.','warn');
+  return false;
 }
 
 function updateHalfUI(h){
@@ -847,7 +899,7 @@ function updateHalfUI(h){
 }
 
 async function setHalf(h){
-  if(!cur)return;
+  if(!cur||!ensureLiveMatch())return;
   const payload={current_half:h,phase_started_at:new Date().toISOString(),is_paused:(h===5)};
   const {error}=await sb.from('matches').update(payload).eq('id',cur.id);
   if(error){setMsg('❌ فشل تحديث المرحلة: '+error.message,'err');return;}
@@ -863,7 +915,7 @@ async function setHalf(h){
 window.setHalf=setHalf;
 
 async function pauseHalf(){
-  if(!cur)return;
+  if(!cur||!ensureLiveMatch())return;
   const {error}=await sb.from('matches').update({is_paused:true}).eq('id',cur.id);
   if(error){setMsg('❌ فشل: '+error.message,'err');return;}
   cur.is_paused=true;
@@ -877,7 +929,7 @@ async function pauseHalf(){
 window.pauseHalf=pauseHalf;
 
 async function savePens(){
-  if(!cur)return;
+  if(!cur||!ensureLiveMatch())return;
   const hp=parseInt(document.getElementById('homePensInput').value);
   const ap=parseInt(document.getElementById('awayPensInput').value);
   const {error}=await sb.from('matches').update({home_penalties:isNaN(hp)?null:hp,away_penalties:isNaN(ap)?null:ap}).eq('id',cur.id);
@@ -890,7 +942,7 @@ async function savePens(){
 window.savePens=savePens;
 
 async function chScore(side,d){
-  if(!cur)return;
+  if(!cur||!ensureLiveMatch())return;
   if(d>0){
     // لا نزيد النتيجة هنا — تُزاد تلقائيًا فقط بعد تأكيد اللاعب صاحب الهدف بالأسفل
     quickOpen(side==='home'?'h':'a','goal');
@@ -1014,6 +1066,7 @@ function tickClock(){
 }
 
 function quickOpen(side,type){
+  if(!ensureLiveMatch())return;
   const players=side==='h'?hPl:aPl;
   const teamName=side==='h'?(cur.ht?.name_ar||cur.ht?.name||''):(cur.at?.name_ar||cur.at?.name||'');
   const labels={goal:'⚽ من سجّل الهدف؟',own_goal:'↩️ من سجّل الهدف العكسي في مرماه؟',yellow_card:'🟨 من أخذ البطاقة الصفراء؟',red_card:'🟥 من أخذ البطاقة الحمراء؟'};
@@ -1030,6 +1083,7 @@ function quickOpen(side,type){
 function quickClose(){document.getElementById('quickPicker').style.display='none';}
 
 async function quickLog(side,type,playerId,playerName){
+  if(!ensureLiveMatch())return;
   const tid=side==='h'?cur.home_team_id:cur.away_team_id;
   const min=parseInt(document.getElementById('minInput').value)||0;
   const isOwnGoal=type==='own_goal';
@@ -1276,6 +1330,7 @@ function startVoicePick(side){
 window.startVoicePick=startVoicePick;
 
 function openEvt(side,type){
+  if(!ensureLiveMatch())return;
   evtType[side]=type;
   const teamName=side==='h'?(cur.ht?.name_ar||cur.ht?.name||''):(cur.at?.name_ar||cur.at?.name||'');
   document.getElementById(side+'FormLbl').textContent='تسجيل '+(EL[type]||type)+' — '+teamName;
@@ -1289,6 +1344,7 @@ function openEvt(side,type){
 function closeEvt(side){document.getElementById(side+'Form').classList.remove('show');}
 
 async function submitEvt(side){
+  if(!ensureLiveMatch())return;
   const playerSel=document.getElementById(side+'Player');
   const pid=playerSel.value;
   const playerLabel=playerSel.options[playerSel.selectedIndex]?.text||'بدون تحديد لاعب';
@@ -1332,20 +1388,25 @@ async function submitEvt(side){
 }
 
 async function loadEvts(){
-  const {data}=await sb.from('match_events').select('*,player:players!player_id(name,full_name_ar,number),team:teams(name,name_ar)').eq('match_id',cur.id).order('minute');
+  const matchId=cur?.id;
+  if(!matchId)return;
+  const {data,error}=await sb.from('match_events').select('*,player:players!player_id(name,full_name_ar,number),team:teams(name,name_ar)').eq('match_id',matchId).order('minute');
+  if(cur?.id!==matchId)return;
   const list=document.getElementById('evtsList');
+  if(error){list.innerHTML='<div class="no-evts">⚠️ تعذر تحميل الأحداث — حاول تنشيط الصفحة.</div>';return;}
   if(!data||!data.length){list.innerHTML='<div class="no-evts">لا توجد أحداث بعد</div>';return;}
   list.innerHTML=data.map(e=>`
     <div class="evt-item">
       <span class="evt-mn">${e.minute||0}'</span>
       <span class="evt-ic">${e.event_subtype==='own_goal'?'↩️':(EI[e.event_type]||'📌')}</span>
       <div class="evt-dt"><div class="evt-pl">${e.player?.full_name_ar||e.player?.name||'—'}</div><div>${e.team?.name_ar||e.team?.name||''} — ${e.event_subtype==='own_goal'?'هدف عكسي (لصالح المنافس)':(EL[e.event_type]||e.event_type)}</div></div>
-      <button class="evt-del" onclick="delEvt('${e.id}','${e.event_type}','${e.team_id}','${e.event_subtype||''}',this)">🗑</button>
+      <button class="evt-del" ${cur.status==='live'?'':'disabled'} onclick="delEvt('${e.id}','${e.event_type}','${e.team_id}','${e.event_subtype||''}',this)">🗑</button>
     </div>`).join('');
 }
 
 const armedEventDeletes=new Map();
 async function delEvt(id,type,teamId,subtype,btn){
+  if(!ensureLiveMatch())return;
   if(!armedEventDeletes.has(id)){
     armedEventDeletes.set(id,setTimeout(()=>{
       armedEventDeletes.delete(id);

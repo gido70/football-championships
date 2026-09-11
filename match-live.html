@@ -317,8 +317,8 @@ const qs=new URLSearchParams(location.search);
 const MID=qs.get('id');
 const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
 let cur=null;
-const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل',injury:'إصابة'};
-const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄',injury:'🩹'};
+const EL={goal:'هدف',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء',substitution:'تبديل',injury:'إصابة',var_goal_confirmed:'تأكيد هدف بعد مراجعة VAR',var_goal_disallowed:'إلغاء هدف بعد مراجعة VAR',var_penalty_review:'مراجعة ركلة جزاء عبر VAR',var_red_card_review:'مراجعة بطاقة حمراء عبر VAR'};
+const EI={goal:'⚽',yellow_card:'🟨',red_card:'🟥',substitution:'🔄',injury:'🩹',var_goal_confirmed:'✅',var_goal_disallowed:'❌',var_penalty_review:'🎯',var_red_card_review:'🟥'};
 
 function showTab(p){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.p===p));
@@ -1004,8 +1004,16 @@ async function loadEvents(m,ht,at){
   const {data}=await sb.from('match_events').select('*,player:players!player_id(name,full_name_ar,number,jersey_photo_url,is_goalkeeper)').eq('match_id',m.id).order('minute');
   const wrap=document.getElementById('eventsWrap');
   if(!data||!data.length){wrap.innerHTML='<div class="empty"><span>⚡</span><p>لا توجد أحداث مسجلة بعد</p></div>';return;}
+  const seenVarEvents=new Set();
+  const visibleEvents=data.filter(e=>{
+    if(!String(e.event_type||'').startsWith('var_'))return true;
+    const key=[e.event_type,e.event_subtype,e.minute,e.team_id,e.player_id].join('|');
+    if(seenVarEvents.has(key))return false;
+    seenVarEvents.add(key);
+    return true;
+  });
   const variantMap={goal:'goal',yellow_card:'yellow',red_card:'red'};
-  wrap.innerHTML=data.map(e=>{
+  wrap.innerHTML=visibleEvents.map(e=>{
     const side=e.team_id===m.home_team_id?'home':'away';
     const tColor=side==='home'?ht?.primary_color:at?.primary_color;
     const name=e.manual_player_name||e.player?.full_name_ar||e.player?.name||'';
