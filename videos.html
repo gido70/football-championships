@@ -12,6 +12,7 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .nav a{color:#8b949e;text-decoration:none;font-size:13px;border:1px solid #30363d;padding:8px 16px;border-radius:20px;min-height:36px;display:inline-flex;align-items:center}
 .wrap{max-width:100%;margin:0 auto;padding:20px 0 60px}
 h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
+.video-section{max-width:1100px;margin:0 auto 24px}.section-title{display:flex;align-items:center;gap:9px;margin:0 16px 10px;color:#e6edf3;font-size:16px;font-weight:900}.section-title:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,#34445a)}
 
 .carousel{display:grid;grid-template-columns:1fr;gap:14px;padding:4px 16px 14px;max-width:1100px;margin:0 auto}
 .card{width:100%;background:#161b22;border:1px solid #21262d;border-radius:14px;overflow:hidden;cursor:pointer;transition:.2s;padding:0;text-align:right;color:inherit;font-family:inherit;animation:fadeSlideUp .45s ease-out both}
@@ -35,6 +36,7 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 .carousel.odd-tail:not(.count-3) .card:last-child{grid-column:1/-1}
 @media(min-width:920px){.carousel.multi{grid-template-columns:repeat(3,minmax(0,1fr))}.carousel.count-3 .card:first-child,.carousel.odd-tail:not(.count-3) .card:last-child{grid-column:auto}}
 @media(max-width:640px){.carousel.multi{gap:9px;padding:4px 9px 14px}.carousel.multi .body{padding:9px}.carousel.multi .title{font-size:12px}.carousel.multi .desc{font-size:10.5px}}
+@media(max-width:640px){.video-section{margin-bottom:18px}.section-title{margin-inline:10px;font-size:14px}}
 
 .player-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:999;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
 .player-overlay.open{display:flex}
@@ -115,12 +117,24 @@ async function load(){
       video_type:'youtube',video_url:m.highlight_video_url,description:'ملخص المباراة',created_at:m.match_date,_isMatch:true
     }));
   }
-  VIDEOS=[...matchVideoItems,...(vidRows||[])];
+  const editorial=vidRows||[];
+  VIDEOS=[...editorial,...matchVideoItems];
   const app=document.getElementById('app');
   if(!VIDEOS.length){app.innerHTML='<div class="empty-note">لا توجد فيديوهات مضافة بعد لهذه البطولة</div>';return;}
 
-  const countClass=`count-${Math.min(VIDEOS.length,9)} ${VIDEOS.length>1?'multi':''} ${VIDEOS.length>3&&VIDEOS.length%2===1?'odd-tail':''}`;
-  app.innerHTML='<div class="carousel '+countClass+'">'+VIDEOS.map((v,i)=>`
+  const groups=[
+    {title:'أخبار وفيديوهات البطولة',items:editorial.filter(v=>v.content_category!=='highlights')},
+    {title:'النهائيات والتتويج',items:editorial.filter(v=>v.content_category==='highlights')},
+    {title:'ملخصات المباريات',items:matchVideoItems}
+  ].filter(g=>g.items.length);
+  app.innerHTML=groups.map(g=>renderGroup(g.title,g.items)).join('');
+}
+
+function renderGroup(title,items){
+  const countClass=`count-${Math.min(items.length,9)} ${items.length>1?'multi':''} ${items.length>3&&items.length%2===1?'odd-tail':''}`;
+  return `<section class="video-section"><h2 class="section-title">${esc(title)}</h2><div class="carousel ${countClass}">${items.map(v=>{
+    const i=VIDEOS.indexOf(v);
+    return `
     <button class="card orientation-${v.media_orientation||'landscape'}" onclick="openPlayer(${i})" style="animation-delay:${i*0.06}s">
       <div class="thumb-wrap">
         ${v.thumbnail_url?`<img class="thumb" src="${v.thumbnail_url}" alt="${esc(v.title)}">`:'<div class="thumb-ph">🎬</div>'}
@@ -130,8 +144,8 @@ async function load(){
         <div class="title">${esc(v.title)}</div>
         ${v.description?`<div class="desc">${esc(v.description)}</div>`:''}
       </div>
-    </button>
-  `).join('')+'</div>';
+    </button>`;
+  }).join('')}</div></section>`;
 }
 
 function openPlayer(i){
