@@ -1,131 +1,82 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth-guard.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#071426">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
-<title>دليل الاستخدام - لوحة الإدارة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<title>الخريطة الذهنية ودليل الأدمن</title>
 <link rel="stylesheet" href="admin.css">
 <style>
-.help-section{background:#161b22;border:1px solid #30363d;border-radius:16px;padding:22px;margin-bottom:18px}
-.help-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #21262d}
-.help-ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
-.help-head h2{margin:0;font-size:16px}
-.help-head p{margin:2px 0 0;font-size:12.5px;color:#8b949e}
-.help-steps{margin:0;padding-right:20px}
-.help-steps li{margin-bottom:9px;font-size:13.5px;line-height:1.7;color:#c9d1d9}
-.help-tip{margin-top:12px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:10px;padding:10px 14px;font-size:12.5px;color:#c9a84c}
-.toc{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
-.toc a{background:#161b22;border:1px solid #30363d;color:#c9d1d9;padding:8px 14px;border-radius:20px;font-size:12.5px;text-decoration:none}
+*{box-sizing:border-box}
+body{font-family:"Tajawal",sans-serif;background:#071426;color:#eef6ff}
+.guide-shell{max-width:1120px;margin:auto;padding:18px 16px 70px}
+.intro{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px;padding:16px 18px;border:1px solid rgba(78,161,255,.2);border-radius:18px;background:linear-gradient(145deg,rgba(18,48,81,.94),rgba(9,28,50,.96))}
+.intro h2{font-size:1.12rem;margin:0 0 5px;color:#fff}.intro p{font-size:.9rem;line-height:1.7;color:#aebfd4;margin:0}.legend{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.legend span{font-size:.78rem;font-weight:800;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.1);white-space:nowrap}.manual{color:#7cc2ff;background:rgba(78,161,255,.11)}.automatic{color:#62e6ad;background:rgba(52,211,153,.1)}.official{color:#f1d176;background:rgba(201,168,76,.1)}
+.map-root{width:min(360px,100%);margin:0 auto;padding:16px;text-align:center;border-radius:20px;background:linear-gradient(145deg,#e4bd50,#96701d);color:#08192c;box-shadow:0 7px 0 #614710,0 14px 30px rgba(0,0,0,.3)}
+.map-root strong{display:block;font-size:1.15rem}.map-root span{font-size:.82rem;font-weight:700;opacity:.82}.map-line{width:3px;height:30px;margin:auto;background:linear-gradient(#c9a84c,#4ea1ff);border-radius:4px}
+.branch-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;position:relative}.branch{--branch:#4ea1ff;border:1px solid color-mix(in srgb,var(--branch) 34%,#1c2d43);border-radius:20px;background:linear-gradient(160deg,rgba(17,44,75,.97),rgba(8,25,45,.98));overflow:hidden;box-shadow:0 8px 0 rgba(2,12,24,.5),0 16px 30px rgba(0,0,0,.18)}
+.branch>summary{list-style:none;min-height:78px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;cursor:pointer;border-right:5px solid var(--branch)}.branch>summary::-webkit-details-marker,.tool>summary::-webkit-details-marker{display:none}.branch>summary::marker,.tool>summary::marker{content:""}
+.branch-title{display:flex;align-items:center;gap:11px}.branch-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:1.35rem;background:color-mix(in srgb,var(--branch) 17%,transparent);border:1px solid color-mix(in srgb,var(--branch) 38%,transparent)}.branch-title strong{display:block;color:#fff;font-size:1rem}.branch-title small{display:block;color:#9fb2c9;font-size:.78rem;margin-top:3px;line-height:1.5}.chevron{width:32px;height:32px;display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--branch) 18%,transparent);color:var(--branch);font-weight:900;transition:transform .22s}.branch[open]>.branch-summary .chevron{transform:rotate(180deg)}
+.branch-body{padding:0 14px 15px;animation:reveal .22s ease-out}.branch-note{margin:0 2px 11px;padding:10px 12px;border-radius:11px;background:rgba(255,255,255,.045);color:#b8c8da;font-size:.84rem;line-height:1.65}
+.tool{border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(4,16,31,.54);margin-top:9px;overflow:hidden}.tool>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:54px;padding:10px 12px;cursor:pointer}.tool-name{display:flex;align-items:center;gap:9px;font-size:.91rem;font-weight:800;color:#eef6ff}.tool-num{width:27px;height:27px;display:grid;place-items:center;border-radius:9px;background:var(--branch);color:#071426;font-weight:900;font-size:.78rem}.tool-arrow{color:#8298b2;font-size:1.1rem;transition:transform .2s}.tool[open] .tool-arrow{transform:rotate(180deg);color:var(--branch)}
+.tool-body{padding:2px 12px 13px;border-top:1px solid rgba(255,255,255,.07)}.tool-body h4{font-size:.79rem;color:var(--branch);margin:11px 0 4px}.tool-body p,.tool-body li{font-size:.84rem;line-height:1.7;color:#c4d1df}.tool-body p{margin:0}.tool-body ol{margin:4px 0 0;padding-right:20px}.effect{padding:8px 10px;margin-top:9px!important;border-radius:9px;background:rgba(52,211,153,.075);border:1px solid rgba(52,211,153,.18);color:#91ebc1!important}.open-tool{display:flex;align-items:center;justify-content:center;min-height:42px;margin-top:11px;border-radius:10px;text-decoration:none;font-weight:900;font-size:.84rem;background:linear-gradient(145deg,var(--branch),color-mix(in srgb,var(--branch) 66%,#061526));color:#071426;box-shadow:0 4px 0 color-mix(in srgb,var(--branch) 45%,#020914)}
+.decision{margin-top:24px;padding:18px;border-radius:20px;background:linear-gradient(145deg,rgba(18,48,81,.96),rgba(9,28,50,.98));border:1px solid rgba(255,255,255,.09)}.decision h2{font-size:1.05rem;margin:0 0 13px;color:#f1d176}.decision-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.decision-item{padding:11px 12px;border-radius:12px;background:rgba(3,15,29,.55);border:1px solid rgba(255,255,255,.07)}.decision-item strong{display:block;font-size:.86rem;color:#fff;margin-bottom:3px}.decision-item span{font-size:.79rem;line-height:1.55;color:#9fb2c9}.gold-rule{margin-top:16px;padding:13px 15px;border-radius:14px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.28);color:#f1d176;font-size:.88rem;line-height:1.7;font-weight:700}
+@keyframes reveal{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:720px){.topbar-inner{align-items:flex-start}.guide-shell{padding:12px 9px 55px}.intro{display:block;padding:13px}.legend{justify-content:flex-start;margin-top:10px}.map-root{width:92%}.map-line{height:22px}.branch-grid{grid-template-columns:1fr;gap:13px}.branch>summary{min-height:70px;padding:11px 12px}.branch-icon{width:42px;height:42px}.branch-title small{font-size:.75rem}.decision-grid{grid-template-columns:1fr}.open-tool{min-height:46px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
 </style>
 </head>
 <body>
-<header class="topbar"><div class="topbar-inner">
-  <div class="page-head">
-    <div class="page-icon">📖</div>
-    <div class="page-title"><h1>دليل الاستخدام</h1><p>شرح مختصر لأكثر أقسام لوحة الإدارة استخداماً</p></div>
-  </div>
-  <div class="nav-actions">
-    <a class="btn secondary" href="./admin-home.html">← لوحة الأدمن</a>
-  </div>
-</div></header>
+<header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">🧠</div><div class="page-title"><h1>الخريطة الذهنية للأدمن</h1><p>اختر هدفك، ثم افتح الأداة المطلوبة ونفّذ خطواتها</p></div></div><div class="nav-actions"><a class="btn secondary" href="./admin-home.html">← لوحة الأدمن</a></div></div></header>
+<main class="guide-shell">
+  <section class="intro"><div><h2>لا تبدأ من اسم الصفحة؛ ابدأ من المهمة التي تريد إنجازها</h2><p>اضغط أحد الفروع الأربعة، ثم افتح الأداة التابعة له. يمكن فتح فرع واحد وأداة واحدة فقط في كل مرة لتبقى الخريطة واضحة على الهاتف.</p></div><div class="legend"><span class="manual">✍️ إدخال إداري</span><span class="automatic">⚡ تلقائي</span><span class="official">📄 ملف جاهز</span></div></section>
+  <div class="map-root"><strong>🏆 إدارة البطولة</strong><span>كل أعمال الأدمن تبدأ من هنا</span></div><div class="map-line" aria-hidden="true"></div>
+  <section class="branch-grid" id="mindMap" aria-label="فروع إدارة البطولة">
+    <details class="branch" style="--branch:#4ea1ff"><summary class="branch-summary"><span class="branch-title"><span class="branch-icon">🧱</span><span><strong>1. إنشاء وتجهيز البطولة</strong><small>من الفكرة حتى جدول المباريات</small></span></span><span class="chevron">⌄</span></summary><div class="branch-body">
+      <p class="branch-note">يُستخدم هذا الفرع عند إنشاء بطولة جديدة أو تجهيز موسم جديد. الترتيب مهم: بطولة ← فرق ← مجموعات ← جدول.</p>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">1</span> إعداد البطولة</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><h4>متى؟</h4><p>أول خطوة لإنشاء البطولة وتحديد اسمها وموسمها وهويتها وخصوصيتها.</p><h4>العمل</h4><ol><li>أنشئ البطولة واختر نظامها.</li><li>أضف الألوان والشعارات والخلفية.</li><li>راجع حالة الظهور والرابط المستقل.</li></ol><p class="effect">النتيجة: إنشاء المساحة الأساسية التي ترتبط بها جميع البيانات التالية.</p><a class="open-tool" href="./admin-setup.html">فتح إعداد البطولة ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">2</span> الفرق واللاعبون</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>أضف الفرق وشعاراتها وألوانها وقوائم لاعبيها يدويًا، أو أرسل رابط الفريق للمدرب ثم راجع ما أرسله قبل الاعتماد.</p><p class="effect">النتيجة: صفحات الفرق واللاعبين وربطهم بالمباريات والإحصائيات.</p><a class="open-tool" href="./teams-admin.html">فتح إدارة الفرق ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">+</span> استيراد اللاعبين</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>استخدم ملف Excel عند وجود عدد كبير من اللاعبين بدل إدخالهم واحدًا واحدًا. راجع الأعمدة والمعاينة قبل الاعتماد.</p><a class="open-tool" href="./admin-import.html">فتح الاستيراد من Excel ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">✓</span> مراجعة بيانات الفرق</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>افحص بيانات المدربين وصحّح الأسماء والصور والقوائم ثم اعتمدها. لا يظهر الإرسال للجمهور قبل الاعتماد.</p><a class="open-tool" href="./team-submissions-review.html">فتح المراجعة والاعتماد ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">3</span> المجموعات</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>أنشئ المجموعات ووزّع الفرق عليها قبل جدول دور المجموعات. لا تستخدمها في بطولة دوري واحد لا تحتوي مجموعات.</p><a class="open-tool" href="./groups-admin.html">فتح إدارة المجموعات ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">4</span> الجدول والمباريات</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>أنشئ المباريات تلقائيًا أو يدويًا وحدد الفريقين والتاريخ والوقت والمرحلة والملعب. دقة التاريخ تتحكم في ترتيب مباريات اليوم.</p><a class="open-tool" href="./schedule-admin.html">فتح الجدول والمباريات ←</a></div></details>
+    </div></details>
 
-<main class="container" style="max-width:820px">
+    <details class="branch" style="--branch:#ff5d72"><summary class="branch-summary"><span class="branch-title"><span class="branch-icon">🎯</span><span><strong>2. تشغيل يوم المباراة</strong><small>لايف، أحداث، نتيجة وإنهاء</small></span></span><span class="chevron">⌄</span></summary><div class="branch-body">
+      <p class="branch-note">هذا الفرع خاص بالمباراة نفسها. «مركز المباريات» للمتابعة السريعة، و«إدارة المباراة» للتفاصيل الدقيقة.</p>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">A</span> مركز المباريات الحية</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>شاشة عامة لمتابعة مباريات اليوم والانتقال إلى المباراة المطلوبة. استخدمها عندما تدير أكثر من مباراة.</p><p class="effect">الجمهور يرى المباراة المباشرة في بطاقة تلفزيونية داخل صفحة البطولة.</p><a class="open-tool" href="./live-desk.html">فتح مركز اللايف ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">B</span> إدارة المباراة المباشرة</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><h4>التسلسل</h4><ol><li>اختر البطولة والمباراة.</li><li>ابدأ المباراة.</li><li>سجّل الأهداف والبطاقات والتبديلات وVAR.</li><li>اختر نجم المباراة ثم أنهِ المباراة.</li></ol><p class="effect">النتيجة والأحداث والإحصائيات وتقرير المباراة تتحدث تلقائيًا.</p><a class="open-tool" href="./match-admin.html">فتح إدارة المباراة ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">⚡</span> أحداث المباريات</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p><strong>هذه ليست أخبارًا تحريرية.</strong> تعرض ما ينتجه تسجيل المباراة من أهداف وبطاقات ونتائج، وتُراجع عند وجود تكرار أو صياغة غير صحيحة.</p><a class="open-tool" href="./news-admin.html">فتح أحداث المباريات ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">!</span> تصحيح استثنائي</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>أداة طوارئ لتصحيح بيانات مباريات محددة. لا تُستخدم في العمل اليومي ولا قبل التأكد من الخطأ.</p><a class="open-tool" href="./repair-matches-admin.html">فتح أداة التصحيح ←</a></div></details>
+    </div></details>
 
-  <div class="toc">
-    <a href="#setup">⚙️ إعداد البطولة</a>
-    <a href="#match">🎯 إدارة المباراة المباشرة</a>
-    <a href="#schedule">📅 الجدول والمباريات</a>
-    <a href="#teams">👥 الفرق</a>
-    <a href="#awards">🏆 الجوائز الفردية</a>
-    <a href="#feed">📣 أخبار الدورة والفيديوهات والنشرات</a>
-  </div>
+    <details class="branch" style="--branch:#b58cff"><summary class="branch-summary"><span class="branch-title"><span class="branch-icon">📣</span><span><strong>3. الإعلام ومحتوى البطولة</strong><small>صور، تغطية، فيديو ونشرات</small></span></span><span class="chevron">⌄</span></summary><div class="branch-body">
+      <p class="branch-note">اختر البطولة أولًا، وتأكد من عبارة «أنت الآن تدير…». الأقسام الفارغة تبقى مخفية عن الجمهور حتى تضيف أول مادة.</p>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">📸</span> صور البطولة</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>لصور الزيارات واللقاءات ونجم المباراة والجمهور والجوائز والافتتاح والتتويج. ارفع من صورة إلى ثلاث صور للمادة، وأضف عنوانًا مختصرًا.</p><p class="effect">تظهر تحت عنوان «صور البطولة» في قسم قابل للفتح والإغلاق.</p><a class="open-tool" href="./feed-admin.html">فتح الصور والتغطية ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">📰</span> التغطية الإعلامية</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>لرابط خبر منشور في صحيفة أو موقع أو قناة أو إذاعة أو إنستغرام أو فيسبوك. أدخل المصدر والعنوان والرابط، ولا تنسخ المقال كاملًا.</p><p class="effect">يفتح الخبر داخل إطار المنصة مع رابط المصدر الأصلي.</p><a class="open-tool" href="./feed-admin.html">فتح الصور والتغطية ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">🎬</span> فيديوهات البطولة</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>لملخص مباراة أو مؤتمر أو لقاء أو زيارة أو تقرير تلفزيوني. اختر يوتيوب أو MP4 وحدد أفقي/رأسي/مربع وأضف صورة مصغرة عند الحاجة.</p><p class="effect">تظهر الفيديوهات مرتبة حسب التصنيف والعدد، وتعمل داخل المنصة.</p><a class="open-tool" href="./video-admin.html">فتح إدارة الفيديوهات ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">📄</span> النشرات الرسمية PDF</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p><strong>لا تُكتب النشرة هنا.</strong> ارفع فقط ملف PDF الجاهز القادم من إدارة البطولة، وحدد رقم العدد وتاريخه. يمكن إضافة أعداد متعددة.</p><p class="effect">الأحدث يظهر أولًا ويُقرأ داخل المنصة دون إخراج المشاهد منها.</p><a class="open-tool" href="./document-admin.html">فتح إدارة النشرات ←</a></div></details>
+    </div></details>
 
-  <section class="help-section" id="setup">
-    <div class="help-head">
-      <div class="help-ic" style="background:rgba(201,168,76,.15);color:#c9a84c">⚙️</div>
-      <div><h2>إعداد البطولة</h2><p>admin-setup.html — أول خطوة قبل أي شيء آخر</p></div>
-    </div>
-    <ol class="help-steps">
-      <li>أنشئ البطولة بالاسم والموسم ونوعها (مجموعات+إقصاء، دوري، دوري سويسري...).</li>
-      <li>ارفع شعار اللجنة وشعار الكأس، أو صورة خلفية جاهزة تحتويهما معاً (يمكن إخفاء أحدهما أو كليهما إن كانا مدمجين بالخلفية).</li>
-      <li>خصّص لون التقارير وخطها وترويستها من قسم "إعداد تصميم التقارير" — مستقل تماماً عن ألوان الموقع العام.</li>
-      <li>اختر إن كانت البطولة عامة (يراها الجميع) أو خاصة برمز دخول تُنشئه من نفس الصفحة.</li>
-    </ol>
-    <div class="help-tip">💡 لم تُخصّص تصميم التقارير؟ تُستخدم تلقائياً ألوان جميلة افتراضية موحّدة لكل البطولات.</div>
+    <details class="branch" style="--branch:#42d69a"><summary class="branch-summary"><span class="branch-title"><span class="branch-icon">📊</span><span><strong>4. التقارير والنشر</strong><small>مخرجات، باركود وفحص الجمهور</small></span></span><span class="chevron">⌄</span></summary><div class="branch-body">
+      <p class="branch-note">هذا الفرع يأتي بعد إدخال البيانات. استخدمه لاستخراج النتائج أو توزيع رابط البطولة أو مراجعة ما يراه الجمهور.</p>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">📊</span> التقارير والإحصائيات</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>استخرج الهدافين والبطاقات والإحصائيات في Excel أو Word أو PDF. البيانات تأتي من المباريات المسجلة، لذلك صحّح المباراة قبل التصدير.</p><a class="open-tool" href="./stats-admin.html">فتح التقارير والإحصائيات ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">QR</span> باركود البطولة</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>اختر البطولة وحمّل باركود رابطها المستقل للطباعة أو المشاركة. كل بطولة لها رابط وباركود خاصان.</p><a class="open-tool" href="./qr-generator.html">فتح مولد الباركود ←</a></div></details>
+      <details class="tool"><summary><span class="tool-name"><span class="tool-num">👁</span> معاينة الموقع العام</span><span class="tool-arrow">⌄</span></summary><div class="tool-body"><p>افحص ما يراه الجمهور بعد النشر: الاسم والشعار، المباريات، الأخبار، الصور، الفيديو والنشرات. هذه معاينة وليست مكانًا للتعديل.</p><a class="open-tool" href="./index.html" target="_blank" rel="noopener">فتح موقع الجمهور ↗</a></div></details>
+    </div></details>
   </section>
-
-  <section class="help-section" id="match">
-    <div class="help-head">
-      <div class="help-ic" style="background:rgba(255,107,107,.15);color:#ff6b6b">🎯</div>
-      <div><h2>إدارة المباراة المباشرة</h2><p>match-admin.html — تسجيل كل ما يحدث في المباراة لحظة بلحظة</p></div>
-    </div>
-    <ol class="help-steps">
-      <li>افتح الصفحة واختر المباراة من القائمة (تُرتَّب حسب التاريخ).</li>
-      <li>اضغط "بدء المباراة" لتحويل حالتها إلى مباشرة — تظهر فوراً للجمهور ببطاقة "🔴 مباشر الآن" في الصفحة الرئيسية.</li>
-      <li>سجّل كل هدف وبطاقة أولاً بأول: اختر الفريق، ثم اللاعب من القائمة (تظهر صورته تلقائياً)، ثم نوع الحدث.</li>
-      <li>عند الانتهاء، اختر "رجل المباراة" من القائمة المنسدلة (اختياري)، ثم اضغط "إنهاء المباراة" — تظهر شارة الفائز تلقائياً للجمهور فور الحفظ.</li>
-      <li>يمكنك أيضاً إضافة الحكم، المساعد، المعلّق، ورابط البث/الفيديو من نفس الصفحة.</li>
-    </ol>
-    <div class="help-tip">💡 كل الأحداث تُحفظ لحظياً — لا حاجة لزر حفظ منفصل بعد كل هدف أو بطاقة.</div>
-  </section>
-
-  <section class="help-section" id="schedule">
-    <div class="help-head">
-      <div class="help-ic" style="background:rgba(167,139,250,.15);color:#a78bfa">📅</div>
-      <div><h2>الجدول والمباريات</h2><p>schedule-admin.html — بناء جدول مباريات البطولة</p></div>
-    </div>
-    <ol class="help-steps">
-      <li>تأكد من توزيع الفرق على المجموعات أولاً (من صفحة المجموعات) قبل إنشاء الجدول.</li>
-      <li>يمكن إنشاء المباريات تلقائياً (كل فريق ضد كل فريق في مجموعته) أو إضافتها يدوياً واحدة تلو الأخرى.</li>
-      <li>لكل مباراة: حدّد الفريقين، التاريخ والوقت، والملعب إن وُجد.</li>
-      <li>بعد انتهاء دور المجموعات، تُستخدم نفس الصفحة لإضافة مباريات الأدوار الإقصائية (ربع/نصف النهائي والنهائي).</li>
-    </ol>
-    <div class="help-tip">💡 تاريخ كل مباراة هو ما يحدّد "اليوم" الذي تظهر فيه في بطاقة "⭐ نجوم المباراة" بالصفحة الرئيسية — تأكّد من ضبطه بدقة.</div>
-  </section>
-
-  <section class="help-section" id="teams">
-    <div class="help-head">
-      <div class="help-ic" style="background:rgba(78,161,255,.15);color:#4ea1ff">👥</div>
-      <div><h2>الفرق</h2><p>teams-admin.html — إضافة الفرق وتخصيص شكلها</p></div>
-    </div>
-    <ol class="help-steps">
-      <li>أضف اسم الفريق (بالعربية والإنجليزية إن رغبت)، ولون الفريق الأساسي.</li>
-      <li>يمكن رفع شعار الفريق مباشرة، أو استخدام حرف/رمز مبدئي إن لم يتوفر شعار بعد.</li>
-      <li>لإضافة لاعبين لفريق: إما يدوياً من هذه الصفحة، أو عبر إرسال رابط "team-submit.html" الخاص بالفريق لمدرّبه ليُدخل لاعبيه بنفسه (الطريقة الأسرع للبطولات الكبيرة).</li>
-      <li>ما يرسله المدرب يمر عبر صفحة "مراجعة وتعديل بيانات الفرق" قبل ظهوره للجمهور — راجعه واعتمده من هناك.</li>
-    </ol>
-    <div class="help-tip">💡 صور اللاعبين التي يرفعها المدرب تُحسَّن تلقائياً (وضوح وحجم مناسبين) قبل الحفظ — لا حاجة لتعديلها يدوياً.</div>
-  </section>
-
-  <section class="help-section" id="awards">
-    <div class="help-head">
-      <div class="help-ic" style="background:rgba(52,211,153,.15);color:#34d399">🏆</div>
-      <div><h2>الجوائز الفردية</h2><p>stats-admin.html — تحديد أبطال البطولة في نهايتها</p></div>
-    </div>
-    <ol class="help-steps">
-      <li>اختر البطولة، ثم انزل إلى قسم "الجوائز الفردية".</li>
-      <li>لجوائز "هداف البطولة"، "أفضل حارس"، "أفضل لاعب": اختر اللاعب مباشرة من القائمة المنسدلة — صورته ورقمه وفريقه تُسحب تلقائياً ولا تحتاج إدخالها يدوياً.</li>
-      <li>لجائزتَي "أفضل إداري" و"أفضل إدارة فريق": اكتب الاسم يدوياً (هذه الجوائز لأشخاص خارج قائمة اللاعبين، فلا صورة تلقائية لهما).</li>
-      <li>اضغط "حفظ الجوائز" — تظهر النتيجة فوراً في صفحة awards.html العامة لكل بطولة.</li>
-    </ol>
-    <div class="help-tip">💡 يمكن تحديث الجوائز في أي وقت أثناء البطولة، ليس فقط بعد انتهائها.</div>
-  </section>
-
-  <section class="help-section" id="feed">
-    <div class="help-head">
-      <div class="help-ic" style="background:rgba(107,76,154,.15);color:#a78bfa">📣</div>
-      <div><h2>أخبار الدورة والفيديوهات والنشرات</h2><p>feed-admin.html · video-admin.html · document-admin.html — إثراء الصفحة الرئيسية</p></div>
-    </div>
-    <ol class="help-steps">
-      <li><strong>أخبار الدورة (feed-admin):</strong> أضف منشوراً (رابط، صورة، أو فيديو) يظهر في شريط متحرك أفقي بالصفحة الرئيسية للبطولة.</li>
-      <li><strong>الفيديوهات (video-admin):</strong> أضف ملخصات المباريات أو أي فيديو يوتيوب/مباشر — تظهر في صفحة فيديوهات مستقلة، وتُدمَج تلقائياً مع ملخصات المباريات المُدخَلة من صفحة إدارة المباراة نفسها.</li>
-      <li><strong>النشرات (document-admin):</strong> ارفع ملف PDF مباشرة (لا حاجة لرابط خارجي) — يظهر في قائمة نشرات قابلة للفتح داخل الصفحة نفسها بلا تحميل.</li>
-    </ol>
-    <div class="help-tip">💡 روابط إنستغرام ويوتيوب الرسمية للبطولة (من إعداد البطولة) تظهر تلقائياً كبطاقات جميلة ضمن نفس مساحة "أخبار الدورة" — لا حاجة لإضافتها يدوياً هناك.</div>
-  </section>
-
+  <section class="decision"><h2>🔎 إذا تشابهت عليك الصفحات، استخدم هذا القرار السريع</h2><div class="decision-grid">
+    <div class="decision-item"><strong>حدث داخل الملعب؟</strong><span>إدارة المباراة: هدف، بطاقة، تبديل، VAR، نتيجة.</span></div><div class="decision-item"><strong>صورة أو زيارة أو خبر خارجي؟</strong><span>الصور والتغطية الإعلامية.</span></div><div class="decision-item"><strong>مقطع يُشاهد؟</strong><span>فيديوهات البطولة، حتى لو كان لقاءً أو زيارة.</span></div><div class="decision-item"><strong>نشرة جاهزة من الإدارة؟</strong><span>النشرات الرسمية PDF، ولا تُنشأ يدويًا داخل المنصة.</span></div><div class="decision-item"><strong>ملخص رقمي بعد المباراة؟</strong><span>تقرير المباراة الآلي أو التقارير والإحصائيات.</span></div><div class="decision-item"><strong>رابط لتوزيعه على الجمهور؟</strong><span>مولد باركود البطولة.</span></div>
+  </div><div class="gold-rule">قاعدة الأمان: قبل أي إضافة أو تعديل، تأكد من اسم البطولة الظاهر أعلى الأداة. لا تعتمد على البطولة التي اختيرت تلقائيًا.</div></section>
 </main>
+<script>
+const map=document.getElementById('mindMap');
+map.querySelectorAll(':scope > .branch').forEach(branch=>branch.addEventListener('toggle',()=>{if(!branch.open)return;map.querySelectorAll(':scope > .branch[open]').forEach(other=>{if(other!==branch)other.open=false;});}));
+document.querySelectorAll('.branch').forEach(branch=>{branch.querySelectorAll('.tool').forEach(tool=>tool.addEventListener('toggle',()=>{if(!tool.open)return;branch.querySelectorAll('.tool[open]').forEach(other=>{if(other!==tool)other.open=false;});}));});
+</script>
 </body>
 </html>

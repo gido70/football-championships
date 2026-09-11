@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+import path from 'node:path';
+const root=path.resolve(import.meta.dirname,'..');
+const read=name=>fs.readFileSync(path.join(root,name),'utf8');
+const assert=(condition,message)=>{if(!condition)throw new Error(message)};
+const guide=read('help.html');
+const home=read('admin-home.html');
+for(const branch of ['إنشاء وتجهيز البطولة','تشغيل يوم المباراة','الإعلام ومحتوى البطولة','التقارير والنشر'])assert(guide.includes(branch),`missing guide branch: ${branch}`);
+for(const route of ['admin-setup.html','teams-admin.html','groups-admin.html','schedule-admin.html','admin-import.html','team-submissions-review.html','live-desk.html','match-admin.html','news-admin.html','feed-admin.html','video-admin.html','document-admin.html','stats-admin.html','qr-generator.html','index.html'])assert(guide.includes(`href="./${route}`),`missing guide route: ${route}`);
+assert(guide.includes('لا تُكتب النشرة هنا'),'newsletter workflow must remain upload-only');
+assert(guide.includes('هذه ليست أخبارًا تحريرية'),'automatic match events must be distinguished from editorial news');
+assert(guide.includes("querySelectorAll(':scope > .branch')"),'mind-map branches must be interactive');
+assert(home.includes('الخريطة الذهنية ودليل الأدمن'),'admin home must expose the mind map');
+console.log('admin guide tests passed');
