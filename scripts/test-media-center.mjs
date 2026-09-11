@@ -18,8 +18,9 @@ assert(tournament.includes('live-screen'),'live match must use the television tr
 assert(tournament.includes('match-report.html?id='),'completed matches must expose the automatic report');
 
 const videos=read('videos.html');
-assert(videos.includes('count-${Math.min(VIDEOS.length,9)}'),'video layout must respond to item count');
-assert(videos.includes("VIDEOS.length>3&&VIDEOS.length%2===1?'odd-tail'"),'odd video rows must span the final card');
+assert(videos.includes('count-${Math.min(items.length,9)}'),'each video section must respond to its own item count');
+assert(videos.includes("items.length>3&&items.length%2===1?'odd-tail'"),'odd video rows must span the final card');
+assert(videos.includes("title:'ملخصات المباريات'"),'match highlights must be separated from editorial videos');
 
 const pdfs=fs.readdirSync(path.join(root,'legacy-2026/news')).filter(name=>name.endsWith('.pdf'));
 const covers=fs.readdirSync(path.join(root,'legacy-2026/news')).filter(name=>name.endsWith('-cover.jpg'));
