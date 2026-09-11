@@ -119,28 +119,29 @@ function render(){
 
 function matchCard(m){
   const h=teamName(m,'home'),a=teamName(m,'away'),events=(m.events||[]).slice(0,window.matchMedia('(max-width:520px)').matches?4:8);
+  const locked=m.status!=='live',disabled=locked?' disabled':'';
   return `<article class="match ${m.status==='live'?'live':''}">
     <div class="mh"><span>${esc(m.round_name||'')} ${m.match_no?'— مباراة '+m.match_no:''}</span><span class="badge ${m.status||'scheduled'}">${statusText(m.status)}</span></div>
     <div class="score">
-      <div class="team"><b>${esc(h)}</b><div class="scorefix"><button class="btn" title="تصحيح النتيجة فقط" onclick="changeScore('${m.id}','home',1)">+</button><button class="btn" title="تصحيح النتيجة فقط" onclick="changeScore('${m.id}','home',-1)">−</button></div><small>تصحيح النتيجة</small></div>
+      <div class="team"><b>${esc(h)}</b><div class="scorefix"><button class="btn" title="تصحيح النتيجة أثناء البث فقط"${disabled} onclick="changeScore('${m.id}','home',1)">+</button><button class="btn" title="تصحيح النتيجة أثناء البث فقط"${disabled} onclick="changeScore('${m.id}','home',-1)">−</button></div><small>${locked?'مقفلة حتى بدء المباراة':'تصحيح النتيجة'}</small></div>
       <div class="num">${m.home_score??0} — ${m.away_score??0}</div>
-      <div class="team"><b>${esc(a)}</b><div class="scorefix"><button class="btn" title="تصحيح النتيجة فقط" onclick="changeScore('${m.id}','away',1)">+</button><button class="btn" title="تصحيح النتيجة فقط" onclick="changeScore('${m.id}','away',-1)">−</button></div><small>تصحيح النتيجة</small></div>
+      <div class="team"><b>${esc(a)}</b><div class="scorefix"><button class="btn" title="تصحيح النتيجة أثناء البث فقط"${disabled} onclick="changeScore('${m.id}','away',1)">+</button><button class="btn" title="تصحيح النتيجة أثناء البث فقط"${disabled} onclick="changeScore('${m.id}','away',-1)">−</button></div><small>${locked?'مقفلة حتى بدء المباراة':'تصحيح النتيجة'}</small></div>
     </div>
     <div class="actions">
       ${sideActions(m,'home',h)}${sideActions(m,'away',a)}
     </div>
     <div class="statusbar">
-      ${m.status!=='live'?`<button class="btn btn-live" onclick="setStatus('${m.id}','live')">▶ بدء</button>`:''}
-      ${m.status!=='completed'?`<button class="btn btn-end" onclick="setStatus('${m.id}','completed')">⏹ إنهاء</button>`:''}
+      ${m.status==='scheduled'?`<button class="btn btn-live" onclick="setStatus('${m.id}','live')">▶ بدء</button>`:''}
+      ${m.status==='live'?`<button class="btn btn-end" onclick="setStatus('${m.id}','completed')">⏹ إنهاء</button>`:''}
       <button class="btn" onclick="toggleMotm('${m.id}')">⭐ نجم اختياري</button>
-      <a class="btn" href="match-admin.html?match=${m.id}" style="text-decoration:none">إدارة كاملة</a>
+      <a class="btn" href="match-admin.html?match=${m.id}&tournament=${m.tournament_id}" style="text-decoration:none">إدارة كاملة</a>
     </div>
     <div class="motm" id="motm-${m.id}"><div class="motmrow"><select id="motmteam-${m.id}" onchange="loadMotmPlayers('${m.id}')"><option value="">اختر الفريق</option><option value="${m.home_team_id}">${esc(h)}</option><option value="${m.away_team_id}">${esc(a)}</option></select><select id="motmplayer-${m.id}"><option value="">اختر اللاعب</option></select><button class="btn" onclick="saveMotm('${m.id}')">حفظ</button></div></div>
-    <div class="events"><h4>آخر الأحداث</h4>${events.length?events.map(e=>`<div class="evt"><b>${e.minute??0}'</b><span>${typeIcon[e.event_type]||'•'}</span><span>${esc(e.player?.full_name_ar||e.player?.name||'بدون لاعب')} — ${esc(typeLabel[e.event_type]||e.event_type)}</span><button class="btn" onclick="editEvent('${m.id}','${e.id}')">✏️</button></div>`).join(''):'<div style="font-size:12px;color:var(--muted)">لا توجد أحداث</div>'}</div>
+    <div class="events"><h4>آخر الأحداث</h4>${events.length?events.map(e=>`<div class="evt"><b>${e.minute??0}'</b><span>${typeIcon[e.event_type]||'•'}</span><span>${esc(e.player?.full_name_ar||e.player?.name||'بدون لاعب')} — ${esc(typeLabel[e.event_type]||e.event_type)}</span><button class="btn"${disabled} onclick="editEvent('${m.id}','${e.id}')">✏️</button></div>`).join(''):'<div style="font-size:12px;color:var(--muted)">لا توجد أحداث</div>'}</div>
   </article>`;
 }
 
-function sideActions(m,side,name){return `<div class="side"><div class="sidehead">${esc(name)}</div><div class="sidebtns"><button class="btn btn-goal" onclick="openEvent('${m.id}','${side}','goal')">⚽ هدف</button><button class="btn btn-yellow" onclick="openEvent('${m.id}','${side}','yellow_card')">🟨</button><button class="btn btn-red" onclick="openEvent('${m.id}','${side}','red_card')">🟥</button></div></div>`}
+function sideActions(m,side,name){const disabled=m.status==='live'?'':' disabled';return `<div class="side"><div class="sidehead">${esc(name)}</div><div class="sidebtns"><button class="btn btn-goal"${disabled} onclick="openEvent('${m.id}','${side}','goal')">⚽ هدف</button><button class="btn btn-yellow"${disabled} onclick="openEvent('${m.id}','${side}','yellow_card')">🟨</button><button class="btn btn-red"${disabled} onclick="openEvent('${m.id}','${side}','red_card')">🟥</button></div></div>`}
 
 async function playersFor(teamId){
   if(playerCache.has(teamId))return playerCache.get(teamId);
@@ -150,6 +151,7 @@ async function playersFor(teamId){
 
 async function openEvent(mid,side,type,eventId=null){
   const m=matches.find(x=>x.id===mid);if(!m)return;
+  if(m.status!=='live'){toast('ابدأ المباراة أولاً؛ الأحداث تسجّل أثناء البث فقط.','err');return;}
   const teamId=side==='home'?m.home_team_id:m.away_team_id,players=await playersFor(teamId);
   const existing=eventId?(m.events||[]).find(e=>e.id===eventId):null;
   eventCtx={mid,side,teamId,eventId,players,existing};
@@ -173,6 +175,7 @@ function renderPlayerOptions(players,selected=''){
 
 async function saveEvent(){
   if(!eventCtx)return;const m=matches.find(x=>x.id===eventCtx.mid),type=$('eventType').value,minute=Math.max(0,parseInt($('eventMinute').value)||0),playerId=$('playerSelect').value||null;
+  if(!m||m.status!=='live'){toast('المباراة ليست مباشرة؛ لم يُحفظ الحدث.','err');return;}
   $('saveEvent').disabled=true;
   try{
     if(eventCtx.eventId){
@@ -213,8 +216,8 @@ async function adjustScore(m,side,delta,rerender=true){
   const field=side==='home'?'home_score':'away_score',value=Math.max(0,Number(m[field]||0)+delta);
   const {error}=await sb.from('matches').update({[field]:value}).eq('id',m.id);if(error)throw error;m[field]=value;if(rerender)render();
 }
-async function changeScore(mid,side,delta){const m=matches.find(x=>x.id===mid);if(!m)return;try{await adjustScore(m,side,delta);toast('تم تصحيح النتيجة')}catch(e){toast('فشل تحديث النتيجة: '+e.message,'err')}}
-async function setStatus(mid,status){const m=matches.find(x=>x.id===mid);if(!m)return;const payload={status};if(status==='live'){payload.live_started_at=new Date().toISOString();payload.phase_started_at=new Date().toISOString();payload.current_half=m.current_half||1;payload.is_paused=false}if(status==='completed')payload.live_status='none';const {error}=await sb.from('matches').update(payload).eq('id',mid);if(error){toast('فشل تحديث الحالة: '+error.message,'err');return}Object.assign(m,payload);render();toast(status==='live'?'بدأت المباراة':'انتهت المباراة')}
+async function changeScore(mid,side,delta){const m=matches.find(x=>x.id===mid);if(!m)return;if(m.status!=='live'){toast('تصحيح النتيجة متاح أثناء المباراة المباشرة فقط.','err');return}try{await adjustScore(m,side,delta);toast('تم تصحيح النتيجة')}catch(e){toast('فشل تحديث النتيجة: '+e.message,'err')}}
+async function setStatus(mid,status){const m=matches.find(x=>x.id===mid);if(!m)return;if((status==='live'&&m.status!=='scheduled')||(status==='completed'&&m.status!=='live')){toast('انتقال حالة المباراة غير مسموح.','err');return}const payload={status};if(status==='live'){payload.live_started_at=new Date().toISOString();payload.phase_started_at=new Date().toISOString();payload.current_half=m.current_half||1;payload.is_paused=false}if(status==='completed')payload.live_status='none';const {error}=await sb.from('matches').update(payload).eq('id',mid);if(error){toast('فشل تحديث الحالة: '+error.message,'err');return}Object.assign(m,payload);render();toast(status==='live'?'بدأت المباراة':'انتهت المباراة')}
 
 function toggleMotm(mid){$('motm-'+mid).classList.toggle('show')}
 async function loadMotmPlayers(mid){const teamId=$('motmteam-'+mid).value,s=$('motmplayer-'+mid);if(!teamId){s.innerHTML='<option value="">اختر اللاعب</option>';return}try{const p=await playersFor(teamId);s.innerHTML='<option value="">اختر اللاعب</option>'+p.map(x=>`<option value="${x.id}">${x.number!=null?'#'+x.number+' ':''}${esc(x.full_name_ar||x.name)}</option>`).join('')}catch(e){toast('تعذر تحميل اللاعبين','err')}}
