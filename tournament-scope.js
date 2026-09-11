@@ -53,6 +53,7 @@
     const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=primary;
     decorateTournamentNav(t);
   }
+  function escHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function decorateTournamentNav(t){
     if(!isolated||!t||currentPage==='tournament.html')return;
     const nav=document.querySelector('.nav');if(!nav)return;
@@ -60,7 +61,7 @@
     const name=t.name_ar||t.name||'البطولة';
     const logo=t.cup_logo_url||t.logo_url||'';
     target.classList.add('tournament-nav-brand');
-    target.innerHTML=(logo?'<img class="tournament-nav-logo" src="'+logo+'" alt="">':'<span class="tournament-nav-cup">🏆</span>')+'<span>'+name+'</span>';
+    target.innerHTML=(logo?'<img class="tournament-nav-logo" src="'+escHtml(logo)+'" alt="">':'<span class="tournament-nav-cup">🏆</span>')+'<span>'+escHtml(name)+'</span>';
   }
   function addPlatformBrand(){
     if(document.querySelector('[data-platform-brand]'))return;
