@@ -34,6 +34,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(13,17,23,.25) 0%,rgba(13,17,23,.92) 100%)}
 .hero-content{position:relative;z-index:1;display:flex;flex-direction:column;min-height:260px;align-items:stretch}
 .hero-side-logo{width:80px;height:80px;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))}
+.hero-side-logo.logo-white{filter:brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0,0,0,.8))}
 .hero-logo{width:84px;height:84px;object-fit:contain;border-radius:50%;border:3px solid rgba(255,255,255,.25);margin-bottom:16px;box-shadow:0 8px 32px rgba(0,0,0,.5)}
 .hero-logo-ph{font-size:68px;margin-bottom:16px;display:block}
 .hero-title{font-size:clamp(26px,4vw,48px);font-weight:900;color:white;margin-bottom:8px;text-shadow:0 2px 16px rgba(0,0,0,.5)}
@@ -120,7 +121,13 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .live-vote-btn{display:block;text-align:center;margin-top:10px;background:linear-gradient(135deg,#c9a84c,#a5813a);color:#0d1117;font-weight:900;font-size:13px;padding:11px;border-radius:10px;text-decoration:none;box-shadow:0 4px 0 rgba(0,0,0,.15),0 6px 14px rgba(0,0,0,.12)}
 .live-vote-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.15)}
 
-.media-section{max-width:940px;margin:18px auto 0;padding:0 14px}.media-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.media-section-title{font-size:16px;font-weight:900;color:#253044}.media-section-count{font-size:11px;color:#79786A;background:#fff;border:1px solid #E0DCCF;border-radius:999px;padding:4px 9px}
+.media-section{max-width:940px;margin:18px auto 0;padding:0 14px}
+.media-section-head{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;padding:11px 14px;cursor:pointer;background:linear-gradient(145deg,#f8fdff,#dff3fa);border:1px solid #b7d8e6;border-radius:16px;box-shadow:0 5px 0 #b7ccd6,0 10px 22px rgba(32,74,96,.13);transition:transform .16s,box-shadow .16s,border-radius .2s}
+.media-section-head::-webkit-details-marker{display:none}.media-section-head::marker{content:""}
+.media-section-head:active{transform:translateY(2px);box-shadow:0 2px 0 #b7ccd6,0 5px 12px rgba(32,74,96,.13)}
+.media-section[open] .media-section-head{border-radius:16px 16px 10px 10px;margin-bottom:14px;background:linear-gradient(145deg,#eaf9ff,#ccecf7)}
+.media-section-title{font-size:16px;font-weight:900;color:#173e58;display:flex;align-items:center;gap:8px}.media-section-tools{display:flex;align-items:center;gap:9px}.media-section-count{font-size:11px;color:#31566b;background:#fff;border:1px solid #b7d8e6;border-radius:999px;padding:4px 9px}.media-section-arrow{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#176a8b;color:#fff;font-size:16px;font-weight:900;box-shadow:0 3px 0 #0d4962;transition:transform .2s}.media-section[open] .media-section-arrow{transform:rotate(180deg)}
+.media-section-body{animation:mediaReveal .24s ease-out}@keyframes mediaReveal{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
 .feed-wrap{display:grid;grid-template-columns:1fr;gap:12px}.feed-wrap.multi{grid-template-columns:repeat(2,minmax(0,1fr))}.feed-wrap.count-3 .feed-post:first-child{grid-column:1/-1}.feed-wrap.odd-tail:not(.count-3) .feed-post:last-child{grid-column:1/-1}
 .feed-post{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:16px;overflow:hidden;text-align:right;min-width:0;box-shadow:0 6px 0 rgba(26,38,57,.10),0 10px 24px rgba(24,35,52,.08)}
 
@@ -153,16 +160,16 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .feed-post-vid .ph{display:flex;align-items:center;justify-content:center;font-size:34px;color:#30363d;background:#0d1117}
 .feed-post-vid .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25)}
 .feed-post-vid .play span{width:46px;height:46px;border-radius:50%;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
-@media(max-width:640px){.media-section{padding:0 9px}.feed-wrap{gap:9px}.feed-wrap.multi .feed-post-body{padding:9px}.feed-wrap.multi .feed-post-title{font-size:12px}.feed-wrap.multi .feed-post-cap{font-size:10.5px}.feed-post-imgs img{height:145px}.feed-post-imgs.n1 img{height:200px}}
+@media(max-width:640px){.media-section{padding:0 9px;margin-top:14px}.media-section-head{min-height:54px;padding:9px 11px}.media-section-title{font-size:14px}.feed-wrap{gap:9px}.feed-wrap.multi .feed-post-body{padding:9px}.feed-wrap.multi .feed-post-title{font-size:12px}.feed-wrap.multi .feed-post-cap{font-size:10.5px}.feed-post-imgs img{height:145px}.feed-post-imgs.n1 img{height:200px}}
 @media(min-width:920px){.feed-wrap.multi{grid-template-columns:repeat(3,minmax(0,1fr))}.feed-wrap.count-3 .feed-post:first-child,.feed-wrap.odd-tail:not(.count-3) .feed-post:last-child{grid-column:auto}}
-.feed-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.94);display:none;align-items:center;justify-content:center;z-index:999;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))}
+.feed-lightbox{position:fixed;inset:0;background:linear-gradient(160deg,rgba(235,249,255,.98),rgba(188,226,241,.97));backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;z-index:999;padding:calc(14px + env(safe-area-inset-top,0px)) 14px calc(14px + env(safe-area-inset-bottom,0px))}
 .feed-lightbox.open{display:flex;flex-direction:column}
 .feed-lightbox-top{display:flex;justify-content:flex-end;margin-bottom:10px}
-.feed-lightbox-close{background:#c9a84c;border:none;color:#0d1117;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 4px 14px rgba(201,168,76,.4)}
-.feed-lightbox-body{flex:1;width:100%;max-width:1000px;min-height:0;display:flex;align-items:center;justify-content:center}
+.feed-lightbox-close{background:linear-gradient(145deg,#fff0a7,#d7b54a);border:1px solid #b58e25;color:#173047;border-radius:12px;padding:11px 22px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 5px 0 #9b7720,0 9px 18px rgba(71,92,105,.18)}
+.feed-lightbox-body{flex:1;width:100%;max-width:1000px;min-height:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.48);border:1px solid rgba(109,173,199,.55);border-radius:18px;padding:9px;box-shadow:0 16px 38px rgba(42,92,116,.18)}
 .feed-lightbox-body img{max-width:100%;max-height:100%;border-radius:8px}
 .feed-lightbox-body iframe,.feed-lightbox-body video{width:100%;max-height:100%;aspect-ratio:16/9;border:0;border-radius:10px;background:#000}
-.feed-gallery{width:100%;height:100%;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:2px}.feed-gallery img{width:100%;height:auto;max-height:none;object-fit:contain;background:#111;border-radius:10px}.feed-gallery img:first-child:nth-last-child(odd){grid-column:1/-1}
+.feed-gallery{width:100%;height:100%;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:2px}.feed-gallery img{width:100%;height:auto;max-height:none;object-fit:contain;background:#fff;border-radius:10px}.feed-gallery img:first-child:nth-last-child(odd){grid-column:1/-1}
 @media(max-width:620px){.feed-gallery{grid-template-columns:1fr}}
 
 .bulletin-wrap{max-width:900px;margin:0 auto;padding:10px 16px 4px}
@@ -664,7 +671,13 @@ function safeMediaUrl(value){try{const u=new URL(value,location.href);return ['h
 function gridClass(rows){const n=rows.length;return `${n>1?'multi':''} count-${Math.min(n,9)} ${n>3&&n%2===1?'odd-tail':''}`;}
 function categoryLabel(value){return ({opening:'الافتتاح',official_visit:'زيارة رسمية',interview:'لقاء',player_of_match:'نجم المباراة',awards:'الجوائز',fans:'تفاعل الجمهور',teams:'الفرق واللاعبون',behind_scenes:'كواليس البطولة',trophy:'التتويج',highlights:'ملخص مباراة',press_conference:'مؤتمر صحفي',tv_report:'تقرير تلفزيوني',other:'تغطية البطولة'})[value]||'تغطية البطولة';}
 function sourceLabel(value,name){return name||({newspaper:'صحيفة',website:'موقع إخباري',tv:'قناة تلفزيونية',radio:'إذاعة',instagram:'إنستغرام',facebook:'فيسبوك',youtube:'يوتيوب',internal:'البطولة'})[value]||'البطولة';}
-function mediaSection(title,icon,rows,cards){return rows.length?`<section class="media-section"><div class="media-section-head"><div class="media-section-title">${icon} ${title}</div><div class="media-section-count">${rows.length}</div></div><div class="feed-wrap ${gridClass(rows)}">${cards}</div></section>`:'';}
+function mediaSection(title,icon,rows,cards){return rows.length?`<details class="media-section media-accordion"><summary class="media-section-head"><span class="media-section-title"><span>${icon}</span>${title}</span><span class="media-section-tools"><span class="media-section-count">${rows.length}</span><span class="media-section-arrow" aria-hidden="true">⌄</span></span></summary><div class="media-section-body"><div class="feed-wrap ${gridClass(rows)}">${cards}</div></div></details>`:'';}
+function bindMediaAccordions(container){
+  container.querySelectorAll('.media-accordion').forEach(section=>section.addEventListener('toggle',()=>{
+    if(!section.open)return;
+    container.querySelectorAll('.media-accordion[open]').forEach(other=>{if(other!==section)other.open=false;});
+  }));
+}
 function openFeedGallery(id){const post=PUBLIC_FEED.find(p=>p.id===id);if(!post?.image_urls?.length)return;openFeedLightbox(`<div class="feed-gallery">${post.image_urls.map(u=>`<img src="${safeMediaUrl(u)}" alt="${motdEsc(post.title)}">`).join('')}</div>`);}
 function openMediaVideo(id){const item=PUBLIC_FEED.find(p=>p.id===id);if(!item)return;const url=safeMediaUrl(item.video_url),yid=feedYoutubeId(url);if(yid)openFeedLightbox(`<iframe src="https://www.youtube.com/embed/${yid}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`);else if(url)openFeedLightbox(`<video src="${url}" controls autoplay playsinline></video>`);}
 window.openFeedGallery=openFeedGallery;window.openMediaVideo=openMediaVideo;
@@ -679,6 +692,7 @@ async function loadFeed(){
   const linkCards=links.map(p=>`<article class="feed-post"><div class="feed-post-body"><div class="feed-post-ic">📰 ${sourceLabel(p.source_type,p.source_name)}</div><div class="feed-post-title">${motdEsc(p.title)}</div>${p.caption?`<div class="feed-post-cap">${motdEsc(p.caption)}</div>`:''}<a class="feed-post-link-btn" href="${scopeUrl('media-source.html?id='+encodeURIComponent(p.id)+'&tid='+encodeURIComponent(TID))}">قراءة التغطية داخل المنصة</a></div></article>`).join('');
   const videoCards=videoRows.map(p=>{const yid=feedYoutubeId(p.video_url),thumb=safeMediaUrl(p.thumbnail_url)||(yid?`https://i.ytimg.com/vi/${yid}/hqdefault.jpg`:''),orientation=p.media_orientation==='portrait'?'portrait':p.media_orientation==='square'?'square':'';return `<article class="feed-post"><div class="feed-post-vid ${orientation}" onclick="openMediaVideo('${p.id}')">${thumb?`<img src="${thumb}" alt="${motdEsc(p.title)}" loading="lazy">`:'<div class="ph">🎬</div>'}<div class="play"><span>▶</span></div></div><div class="feed-post-body"><div class="feed-post-ic">🎬 ${categoryLabel(p.content_category)}</div><div class="feed-post-title">${motdEsc(p.title)}</div>${p.caption?`<div class="feed-post-cap">${motdEsc(p.caption)}</div>`:''}</div></article>`;}).join('');
   sec.innerHTML=mediaSection('صور البطولة','📸',images,imageCards)+mediaSection('التغطية الإعلامية','📰',links,linkCards)+mediaSection('فيديوهات البطولة','🎬',videoRows,videoCards);
+  bindMediaAccordions(sec);
 }
 
 let feedScrollRaf=null, feedScrollPaused=false, rtlScrollSign=null;
@@ -948,8 +962,8 @@ async function loadTournament(){
   // شعار الكأس — من قاعدة البيانات أولاً، ثم الملف الافتراضي
   const cupLogoUrl = t.cup_logo_url || t.logo_url ||
     `https://gido70.github.io/football-championships/logo_cup_${season||'2026'}.png`;
-  const cupImg=`<img src="${cupLogoUrl}" class="hero-side-logo" alt="${name}"
-      style="filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))"
+  const whiteCupLogo=/أبطال أوروبا|دوري الأبطال|champions league/i.test(name);
+  const cupImg=`<img src="${cupLogoUrl}" class="hero-side-logo${whiteCupLogo?' logo-white':''}" alt="${name}"
       onerror="this.style.display='none'">`;
 
   // ترتيب الشعارين قابل للعكس من إعدادات البطولة.
