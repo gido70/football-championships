@@ -74,6 +74,8 @@ body { font-family: "Tajawal", sans-serif !important; }
 .conn-dot.err { background: #ff6b6b; animation: none; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 .conn-bar.err { background: rgba(255,107,107,.08); border-color: rgba(255,107,107,.2); color: #ff6b6b; }
+.guide-shortcut{display:flex;align-items:center;gap:13px;background:linear-gradient(145deg,#183f69,#0d2948);border:1px solid rgba(78,161,255,.35);border-radius:16px;padding:15px 18px;margin:-12px 0 24px;text-decoration:none;color:#fff;box-shadow:0 5px 0 #06172a,0 10px 22px rgba(0,0,0,.2)}
+.guide-shortcut-icon{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.28);font-size:22px}.guide-shortcut strong{display:block;font-size:14px;color:#f1d176}.guide-shortcut small{display:block;color:#aebfd4;font-size:12px;margin-top:3px;line-height:1.5}
 
 /* شبكة بطاقات الأدمن */
 .admin-cards {
@@ -291,6 +293,10 @@ body { font-family: "Tajawal", sans-serif !important; }
       <div class="qr-shortcut-desc" style="font-size:12.5px;opacity:.85">اختر بطولة وحمّل باركوداً جاهزاً للطباعة والتوزيع فوراً</div>
     </div>
   </a>
+  <a class="guide-shortcut" href="./help.html">
+    <span class="guide-shortcut-icon">🧠</span>
+    <span><strong>الخريطة الذهنية ودليل الأدمن</strong><small>ابدأ من المهمة، وافتح الفرع ثم الأداة وخطوات تنفيذها</small></span>
+  </a>
 
   <!-- خطوات إعداد البطولة -->
   <button type="button" class="section-label admin-section-toggle" data-section="setupCards" aria-expanded="false"><span>🧱 خطوات إعداد بطولة جديدة</span><span class="section-mini-icons" aria-hidden="true">⚙️ 👥 📅 <span class="section-chevron">⌄</span></span></button>
@@ -383,8 +389,8 @@ body { font-family: "Tajawal", sans-serif !important; }
     </a>
     <a class="admin-card" href="./help.html" style="--card-color:#c9a84c">
       <div class="admin-card-icon">📖</div>
-      <h3>دليل الاستخدام</h3>
-      <p>شرح مختصر لأكثر الأقسام استخداماً</p>
+      <h3>الخريطة الذهنية ودليل الأدمن</h3>
+      <p>فروع تفاعلية تشرح كل أداة وطريقة استخدامها</p>
     </a>
     <a class="admin-card" href="./index.html" target="_blank" style="--card-color:#8b949e">
       <div class="admin-card-icon">🌐</div>
