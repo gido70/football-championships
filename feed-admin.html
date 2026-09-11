@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
 <meta charset="UTF-8">
 
-<title>إدارة أخبار الدورة</title>
+<title>إدارة الصور والتغطية الإعلامية</title>
 <link rel="stylesheet" href="admin.css">
 <style>
 .type-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
@@ -35,14 +35,14 @@
 .feed-cap{font-size:11.5px;color:#8b949e;margin-bottom:6px}
 .feed-imgs{display:flex;gap:4px}
 .feed-imgs img{width:50px;height:50px;object-fit:cover;border-radius:6px}
-.feed-del{background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;color:#f85149;flex-shrink:0}
+.feed-del,.feed-edit{background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;color:#f85149;flex-shrink:0}.feed-edit{background:rgba(201,168,76,.13);border-color:rgba(201,168,76,.35);color:#e4c45e}
 </style>
 </head>
 <body>
 <header class="topbar"><div class="topbar-inner">
   <div class="page-head">
     <div class="page-icon">📣</div>
-    <div class="page-title"><h1>إدارة أخبار الدورة</h1><p>موجز أخبار تفاعلي (روابط، صور، فيديوهات) يظهر في الصفحة الرئيسية للبطولة</p></div>
+    <div class="page-title"><h1>الصور والتغطية الإعلامية</h1><p>صور البطولة وروابط الصحف والقنوات والمنصات الاجتماعية</p></div>
   </div>
   <div class="nav-actions">
     <a class="btn secondary" href="./admin-home.html">← لوحة الأدمن</a>
@@ -55,19 +55,21 @@
     <h3>اختر البطولة</h3>
     <div class="form-grid"><div class="field full"><label>البطولة</label>
       <select id="tSel"></select>
-    </div></div>
+    </div><div class="field full"><div class="status" id="activeTournamentHint" style="color:#c9a84c;font-weight:800"></div></div></div>
   </section>
 
   <section class="panel" style="margin-top:20px">
-    <h3>➕ إضافة خبر جديد</h3>
+    <h3 id="formTitle">➕ إضافة مادة جديدة</h3>
 
     <div class="type-tabs">
-      <button class="type-tab active" data-type="link" onclick="selectType('link')">🔗 رابط</button>
-      <button class="type-tab" data-type="image" onclick="selectType('image')">🖼️ صور</button>
-      <button class="type-tab" data-type="video" onclick="selectType('video')">🎬 فيديو</button>
+      <button class="type-tab active" data-type="link" onclick="selectType('link')">📰 تغطية إعلامية</button>
+      <button class="type-tab" data-type="image" onclick="selectType('image')">📸 صور البطولة</button>
     </div>
 
     <div class="form-grid">
+      <div class="field"><label>التصنيف</label><select id="categoryInput"><option value="official_visit">زيارة رسمية</option><option value="interview">لقاء أو مقابلة</option><option value="player_of_match">نجم المباراة</option><option value="awards">الجوائز</option><option value="fans">تفاعل الجمهور</option><option value="opening">حفل الافتتاح</option><option value="trophy">التتويج والختام</option><option value="teams">الفرق واللاعبون</option><option value="behind_scenes">كواليس البطولة</option><option value="other">تغطية أخرى</option></select></div>
+      <div class="field"><label>نوع المصدر</label><select id="sourceTypeInput"><option value="internal">البطولة</option><option value="newspaper">صحيفة</option><option value="website">موقع إخباري</option><option value="tv">قناة تلفزيونية</option><option value="radio">إذاعة</option><option value="instagram">إنستغرام</option><option value="facebook">فيسبوك</option><option value="youtube">يوتيوب</option><option value="other">مصدر آخر</option></select></div>
+      <div class="field full"><label>اسم المصدر (اختياري)</label><input type="text" id="sourceNameInput" placeholder="مثال: ديوان سبورت"></div>
       <div class="field full"><label>العنوان</label>
         <input type="text" id="titleInput" placeholder="مثال: زيارة اللجنة المنظمة لمعسكر الفريق">
       </div>
@@ -93,28 +95,14 @@
       <div class="status" style="font-size:11.5px;color:#8b949e">يمكن اختيار صورة واحدة حتى ثلاث صور لنفس الخبر</div>
     </div>
 
-    <div class="type-panel" id="panel-video">
-      <div class="form-grid">
-        <div class="field"><label>نوع الفيديو</label>
-          <select id="vidTypeInput">
-            <option value="youtube">رابط يوتيوب</option>
-            <option value="mp4">رابط فيديو مباشر (mp4)</option>
-          </select>
-        </div>
-        <div class="field"><label>رابط الفيديو</label>
-          <input type="text" id="vidUrlInput" placeholder="https://youtu.be/..." dir="ltr">
-        </div>
-      </div>
-    </div>
-
     <div class="actions">
-      <button class="btn" id="addBtn">💾 نشر الخبر</button>
+      <button class="btn" id="addBtn">💾 نشر المادة</button><button class="btn secondary" id="cancelEdit" type="button" style="display:none">إلغاء التعديل</button>
     </div>
     <div class="status" id="addMsg"></div>
   </section>
 
   <section class="panel" style="margin-top:20px">
-    <h3>📣 الأخبار المنشورة <span id="countBadge" style="font-size:12px;color:#8b949e;font-weight:400"></span></h3>
+    <h3>📣 المواد المنشورة <span id="countBadge" style="font-size:12px;color:#8b949e;font-weight:400"></span></h3>
     <div id="feedList" class="feed-list"><div class="status">جاري التحميل...</div></div>
   </section>
 </main>
@@ -124,6 +112,7 @@ const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_K
 let TID=null;
 let currentType='link';
 let imgSlots=[null,null,null];
+let FEED=[],editingId=null,editingOriginal=null;
 
 function setMsg(t,c=''){const e=document.getElementById('addMsg');e.className='status '+c;e.textContent=t;}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
@@ -173,18 +162,21 @@ async function initTournaments(){
   const {data}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});
   const sel=document.getElementById('tSel');
   sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
-  sel.onchange=()=>{TID=sel.value;loadFeed();};
-  if(data?.length){TID=data[0].id;loadFeed();}
+  const saved=localStorage.getItem('admin-selected-tournament');if(saved&&(data||[]).some(t=>t.id===saved))sel.value=saved;
+  const choose=()=>{TID=sel.value;localStorage.setItem('admin-selected-tournament',TID);document.getElementById('activeTournamentHint').textContent='أنت الآن تدير: '+(sel.options[sel.selectedIndex]?.textContent||'البطولة');};
+  sel.onchange=()=>{choose();resetForm();loadFeed();};
+  if(data?.length){choose();loadFeed();}
 }
 
 async function loadFeed(){
   if(!TID)return;
   const {data}=await sb.from('feed_posts').select('*').eq('tournament_id',TID).order('created_at',{ascending:false});
+  FEED=data||[];
   const list=document.getElementById('feedList');
-  document.getElementById('countBadge').textContent='('+((data||[]).length)+' خبر)';
-  if(!data?.length){list.innerHTML='<div class="empty" style="padding:24px;text-align:center;color:#6e7b8f">لا توجد أخبار بعد — أضف أول خبر من الأعلى</div>';return;}
+  document.getElementById('countBadge').textContent='('+FEED.length+' مادة)';
+  if(!FEED.length){list.innerHTML='<div class="empty" style="padding:24px;text-align:center;color:#6e7b8f">لا توجد مواد بعد — أضف أول صورة أو تغطية من الأعلى</div>';return;}
   const icMap={link:'🔗',image:'🖼️',video:'🎬'};
-  list.innerHTML=data.map(p=>`
+  list.innerHTML=FEED.map(p=>`
     <div class="feed-card">
       <div class="feed-ic">${icMap[p.post_type]||'📣'}</div>
       <div class="feed-body">
@@ -194,46 +186,49 @@ async function loadFeed(){
         ${p.post_type==='link'?`<div class="feed-cap" style="color:#58a6ff">${esc(p.link_url||'')}</div>`:''}
         ${p.post_type==='video'?`<div class="feed-cap" style="color:#58a6ff">${esc(p.video_url||'')}</div>`:''}
       </div>
-      <button class="feed-del" onclick="deletePost('${p.id}')">حذف</button>
+      <button class="feed-edit" onclick="editPost('${p.id}')">تعديل</button><button class="feed-del" onclick="deletePost('${p.id}')">حذف</button>
     </div>
   `).join('');
 }
 
 document.getElementById('addBtn').onclick=async()=>{
   const title=document.getElementById('titleInput').value.trim();
-  const caption=document.getElementById('captionInput').value.trim()||null;
+  const caption=document.getElementById('captionInput').value.trim()||null,content_category=document.getElementById('categoryInput').value,source_type=document.getElementById('sourceTypeInput').value,source_name=document.getElementById('sourceNameInput').value.trim()||null;
   if(!TID){setMsg('⚠️ اختر بطولة أولاً','warn');return;}
   if(!title){setMsg('⚠️ العنوان مطلوب','warn');return;}
 
-  const payload={tournament_id:TID,post_type:currentType,title,caption};
+  const payload={tournament_id:TID,post_type:currentType,title,caption,content_category,source_type,source_name,updated_at:new Date().toISOString()};
 
   if(currentType==='link'){
     const link_url=document.getElementById('linkUrlInput').value.trim();
     if(!link_url){setMsg('⚠️ رابط الخبر مطلوب','warn');return;}
     payload.link_url=link_url;
   }else if(currentType==='image'){
-    const imgs=imgSlots.filter(Boolean);
+    let imgs=imgSlots.filter(Boolean);
+    if(imgs.length){
+      const uploaded=[];
+      for(let i=0;i<imgs.length;i++){
+        const blob=await (await fetch(imgs[i])).blob(),path=`media/${TID}/${Date.now()}_${i}.jpg`;
+        const {error:uploadError}=await sb.storage.from('tournament-assets').upload(path,blob,{contentType:'image/jpeg',upsert:false});
+        if(uploadError){setMsg('❌ فشل رفع الصورة: '+uploadError.message,'err');return;}
+        const {data:u}=sb.storage.from('tournament-assets').getPublicUrl(path);uploaded.push(u.publicUrl);
+      }
+      imgs=uploaded;
+    }else if(editingOriginal?.post_type==='image')imgs=editingOriginal.image_urls||[];
     if(!imgs.length){setMsg('⚠️ اختر صورة واحدة على الأقل','warn');return;}
     payload.image_urls=imgs;
-  }else if(currentType==='video'){
-    const video_url=document.getElementById('vidUrlInput').value.trim();
-    if(!video_url){setMsg('⚠️ رابط الفيديو مطلوب','warn');return;}
-    payload.video_type=document.getElementById('vidTypeInput').value;
-    payload.video_url=video_url;
   }
 
-  const {error}=await sb.from('feed_posts').insert(payload);
+  const wasEditing=Boolean(editingId),result=editingId?await sb.from('feed_posts').update(payload).eq('id',editingId):await sb.from('feed_posts').insert(payload),error=result.error;
   if(error){setMsg('❌ فشل النشر: '+error.message,'err');return;}
 
-  document.getElementById('titleInput').value='';
-  document.getElementById('captionInput').value='';
-  document.getElementById('linkUrlInput').value='';
-  document.getElementById('vidUrlInput').value='';
-  imgSlots=[null,null,null];
-  [0,1,2].forEach(i=>{document.getElementById('imgPrev'+i).style.display='none';});
-  setMsg('✅ تم النشر','ok');
+  resetForm();setMsg(wasEditing?'✅ تم تحديث المادة':'✅ تم نشر المادة','ok');
   loadFeed();
 };
+
+function editPost(id){const p=FEED.find(x=>x.id===id);if(!p||!['link','image'].includes(p.post_type))return;editingId=id;editingOriginal=p;selectType(p.post_type);document.getElementById('formTitle').textContent='✏️ تعديل المادة';document.getElementById('addBtn').textContent='💾 حفظ التعديل';document.getElementById('cancelEdit').style.display='inline-flex';document.getElementById('titleInput').value=p.title||'';document.getElementById('captionInput').value=p.caption||'';document.getElementById('categoryInput').value=p.content_category||'other';document.getElementById('sourceTypeInput').value=p.source_type||'internal';document.getElementById('sourceNameInput').value=p.source_name||'';document.getElementById('linkUrlInput').value=p.link_url||'';window.scrollTo({top:0,behavior:'smooth'});}
+function resetForm(){editingId=null;editingOriginal=null;selectType('link');document.getElementById('formTitle').textContent='➕ إضافة مادة جديدة';document.getElementById('addBtn').textContent='💾 نشر المادة';document.getElementById('cancelEdit').style.display='none';['titleInput','captionInput','linkUrlInput','sourceNameInput'].forEach(id=>document.getElementById(id).value='');document.getElementById('categoryInput').value='official_visit';document.getElementById('sourceTypeInput').value='internal';imgSlots=[null,null,null];[0,1,2].forEach(i=>{const p=document.getElementById('imgPrev'+i);p.style.display='none';p.removeAttribute('src');});}
+document.getElementById('cancelEdit').onclick=resetForm;window.editPost=editPost;
 
 async function deletePost(id){
   if(!confirm('حذف هذا الخبر نهائيًا؟'))return;

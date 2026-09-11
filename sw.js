@@ -1,10 +1,14 @@
-// sw.js — network-first public shell — v19
-const VERSION = 'football-shell-v19';
+// sw.js — network-first public shell — v20
+const VERSION = 'football-shell-v20';
 const CORE = [
   './',
   './index.html',
   './tournament.html',
   './match-live.html',
+  './match-report.html',
+  './documents.html',
+  './videos.html',
+  './media-source.html',
   './team.html',
   './player.html',
   './public-ui.css',

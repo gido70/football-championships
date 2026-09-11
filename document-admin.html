@@ -26,6 +26,7 @@
 .doc-actions{display:flex;gap:6px}
 .doc-del{flex:1;background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:6px;font-size:12px;cursor:pointer;color:#f85149}
 .doc-open{flex:1;background:rgba(88,166,255,.15);border:1px solid rgba(88,166,255,.3);border-radius:8px;padding:6px;font-size:12px;cursor:pointer;color:#58a6ff;text-decoration:none;text-align:center;display:block}
+.doc-edit{flex:1;background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.35);border-radius:8px;padding:6px;font-size:12px;cursor:pointer;color:#e4c45e}.issue-pill{display:inline-flex;background:rgba(201,168,76,.14);border:1px solid rgba(201,168,76,.35);color:#e4c45e;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:900;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -45,14 +46,17 @@
     <h3>اختر البطولة</h3>
     <div class="form-grid"><div class="field full"><label>البطولة</label>
       <select id="tSel"></select>
-    </div></div>
+    </div><div class="field full"><div class="status" id="activeTournamentHint" style="color:#c9a84c;font-weight:800"></div></div></div>
   </section>
 
   <section class="panel" style="margin-top:20px">
-    <h3>➕ إضافة نشرة جديدة</h3>
+    <h3 id="formTitle">➕ إضافة عدد جديد</h3>
     <div class="form-grid">
       <div class="field full"><label>عنوان النشرة</label>
         <input type="text" id="titleInput" placeholder="مثال: نشرة الأربعاء 11-3-2026">
+      </div>
+      <div class="field"><label>رقم العدد</label>
+        <input type="number" id="issueInput" min="1" step="1" placeholder="يُقترح تلقائيًا">
       </div>
       <div class="field"><label>تاريخ النشر (اختياري)</label>
         <input type="date" id="dateInput">
@@ -73,7 +77,7 @@
       💡 ارفع الملف مباشرة من زر "رفع ملف PDF" — يُستضاف تلقائياً بلا أي إعداد تقني منك.
     </div>
     <div class="actions">
-      <button class="btn" id="addBtn">💾 إضافة النشرة</button>
+      <button class="btn" id="addBtn">💾 إضافة العدد</button><button class="btn secondary" id="cancelEdit" type="button" style="display:none">إلغاء التعديل</button>
     </div>
     <div class="status" id="addMsg"></div>
   </section>
@@ -87,27 +91,14 @@
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 const SB_BUCKET='tournament-assets';
-let TID=null;
+let TID=null,DOCS=[],editingId=null,selectedPdfFile=null;
 
-document.getElementById('pdfFileInput').onchange=async function(){
+document.getElementById('pdfFileInput').onchange=function(){
   const file=this.files[0];
   if(!file)return;
   const statusEl=document.getElementById('pdfUploadStatus');
-  statusEl.style.color='#ffd54f';
-  statusEl.textContent='⏳ جاري الرفع...';
-  try{
-    const fname=`documents/doc_${Date.now()}.pdf`;
-    const {error}=await sb.storage.from(SB_BUCKET).upload(fname,file,{upsert:true,contentType:'application/pdf'});
-    if(error)throw error;
-    const {data:u}=sb.storage.from(SB_BUCKET).getPublicUrl(fname);
-    document.getElementById('urlInput').value=u.publicUrl;
-    statusEl.style.color='#3fb950';
-    statusEl.textContent='✅ تم رفع: '+file.name;
-  }catch(e){
-    statusEl.style.color='#f85149';
-    statusEl.textContent='❌ فشل الرفع: '+e.message;
-  }
-  this.value='';
+  selectedPdfFile=file;statusEl.style.color='#3fb950';statusEl.textContent='✅ جاهز للحفظ: '+file.name;
+  if(!document.getElementById('titleInput').value.trim()){const n=document.getElementById('issueInput').value||'';document.getElementById('titleInput').value=n?'نشرة العدد '+n:file.name.replace(/\.pdf$/i,'');}
 };
 
 function setMsg(t,c=''){const e=document.getElementById('addMsg');e.className='status '+c;e.textContent=t;}
@@ -118,24 +109,29 @@ async function initTournaments(){
   const {data}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});
   const sel=document.getElementById('tSel');
   sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
-  sel.onchange=()=>{TID=sel.value;loadDocs();};
-  if(data?.length){TID=data[0].id;loadDocs();}
+  const saved=localStorage.getItem('admin-selected-tournament');if(saved&&(data||[]).some(t=>t.id===saved))sel.value=saved;
+  const choose=()=>{TID=sel.value;localStorage.setItem('admin-selected-tournament',TID);document.getElementById('activeTournamentHint').textContent='أنت الآن تدير: '+(sel.options[sel.selectedIndex]?.textContent||'البطولة');};
+  sel.onchange=()=>{choose();resetForm();loadDocs();};
+  if(data?.length){choose();loadDocs();}
 }
 
 async function loadDocs(){
   if(!TID)return;
   const {data}=await sb.from('documents').select('*').eq('tournament_id',TID).order('publish_date',{ascending:false,nullsFirst:false}).order('created_at',{ascending:false});
+  DOCS=data||[];
   const list=document.getElementById('docList');
   document.getElementById('countBadge').textContent='('+((data||[]).length)+' نشرة)';
-  if(!data?.length){list.innerHTML='<div class="empty" style="padding:24px;text-align:center;color:#6e7b8f;grid-column:1/-1">لا توجد نشرات بعد — أضف أول نشرة من الأعلى</div>';return;}
-  list.innerHTML=data.map(d=>`
+  if(!DOCS.length){list.innerHTML='<div class="empty" style="padding:24px;text-align:center;color:#6e7b8f;grid-column:1/-1">لا توجد أعداد بعد — أضف العدد الأول من الأعلى</div>';if(!editingId)document.getElementById('issueInput').value=1;return;}
+  if(!editingId)document.getElementById('issueInput').value=Math.max(0,...DOCS.map(d=>Number(d.issue_number)||0))+1;
+  list.innerHTML=DOCS.map(d=>`
     <div class="doc-card">
       <div class="doc-icon">📄</div>
       <div class="doc-body">
-        <div class="doc-title">${esc(d.title)}</div>
+        <div class="issue-pill">العدد ${d.issue_number||'—'}</div><div class="doc-title">${esc(d.title)}</div>
         <div class="doc-date">${d.publish_date?fmtDate(d.publish_date):''}</div>
         <div class="doc-actions">
           <a class="doc-open" href="${d.pdf_url}" target="_blank">فتح</a>
+          <button class="doc-edit" onclick="editDoc('${d.id}')">تعديل</button>
           <button class="doc-del" onclick="deleteDoc('${d.id}')">حذف</button>
         </div>
       </div>
@@ -146,23 +142,28 @@ async function loadDocs(){
 document.getElementById('addBtn').onclick=async()=>{
   const title=document.getElementById('titleInput').value.trim();
   const publish_date=document.getElementById('dateInput').value||null;
-  const pdf_url=document.getElementById('urlInput').value.trim();
+  let pdf_url=document.getElementById('urlInput').value.trim(),uploadedPath=null;
   const description=document.getElementById('descInput').value.trim()||null;
+  const issue_number=Math.max(1,parseInt(document.getElementById('issueInput').value)||1);
   if(!TID){setMsg('⚠️ اختر بطولة أولاً','warn');return;}
-  if(!title||!pdf_url){setMsg('⚠️ العنوان ورابط الملف مطلوبان','warn');return;}
-  const {error}=await sb.from('documents').insert({tournament_id:TID,title,pdf_url,publish_date,description});
-  if(error){setMsg('❌ فشل الحفظ: '+error.message,'err');return;}
-  document.getElementById('titleInput').value='';
-  document.getElementById('dateInput').value='';
-  document.getElementById('urlInput').value='';
-  document.getElementById('descInput').value='';
-  setMsg('✅ تمت الإضافة','ok');
+  if(!title||(!pdf_url&&!selectedPdfFile)){setMsg('⚠️ العنوان وملف PDF مطلوبان','warn');return;}
+  if(selectedPdfFile){setMsg('⏳ جاري رفع العدد وحفظه...');uploadedPath=`documents/${TID}/issue_${issue_number}_${Date.now()}.pdf`;const up=await sb.storage.from(SB_BUCKET).upload(uploadedPath,selectedPdfFile,{upsert:false,contentType:'application/pdf'});if(up.error){setMsg('❌ فشل رفع الملف: '+up.error.message,'err');return;}pdf_url=sb.storage.from(SB_BUCKET).getPublicUrl(uploadedPath).data.publicUrl;}
+  const payload={tournament_id:TID,title,pdf_url,publish_date,description,issue_number,updated_at:new Date().toISOString()};
+  const wasEditing=Boolean(editingId);
+  const {error}=editingId?await sb.from('documents').update(payload).eq('id',editingId):await sb.from('documents').insert(payload);
+  if(error){if(uploadedPath)await sb.storage.from(SB_BUCKET).remove([uploadedPath]);setMsg('❌ فشل الحفظ: '+error.message,'err');return;}
+  resetForm();setMsg(wasEditing?'✅ تم تحديث العدد':'✅ تمت إضافة العدد','ok');
   loadDocs();
 };
 
+function editDoc(id){const d=DOCS.find(x=>x.id===id);if(!d)return;editingId=id;document.getElementById('formTitle').textContent='✏️ تعديل العدد';document.getElementById('addBtn').textContent='💾 حفظ التعديل';document.getElementById('cancelEdit').style.display='inline-flex';document.getElementById('titleInput').value=d.title||'';document.getElementById('issueInput').value=d.issue_number||'';document.getElementById('dateInput').value=d.publish_date||'';document.getElementById('urlInput').value=d.pdf_url||'';document.getElementById('descInput').value=d.description||'';document.getElementById('pdfUploadStatus').textContent='يمكن إبقاء الملف الحالي أو رفع ملف بديل';window.scrollTo({top:0,behavior:'smooth'});}
+function resetForm(){editingId=null;selectedPdfFile=null;document.getElementById('pdfFileInput').value='';document.getElementById('formTitle').textContent='➕ إضافة عدد جديد';document.getElementById('addBtn').textContent='💾 إضافة العدد';document.getElementById('cancelEdit').style.display='none';['titleInput','dateInput','urlInput','descInput'].forEach(id=>document.getElementById(id).value='');document.getElementById('pdfUploadStatus').textContent='';}
+document.getElementById('cancelEdit').onclick=()=>{resetForm();loadDocs();};window.editDoc=editDoc;
+
 async function deleteDoc(id){
   if(!confirm('حذف هذه النشرة نهائيًا؟'))return;
-  await sb.from('documents').delete().eq('id',id);
+  const doc=DOCS.find(d=>d.id===id),result=await sb.from('documents').delete().eq('id',id);if(result.error){setMsg('❌ تعذر حذف العدد: '+result.error.message,'err');return;}
+  const marker='/storage/v1/object/public/'+SB_BUCKET+'/';if(doc?.pdf_url?.includes(marker)){const path=decodeURIComponent(doc.pdf_url.split(marker)[1].split('?')[0]);if(path)await sb.storage.from(SB_BUCKET).remove([path]);}
   loadDocs();
 }
 

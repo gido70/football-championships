@@ -13,13 +13,14 @@ body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction
 .wrap{max-width:100%;margin:0 auto;padding:20px 0 60px}
 h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 
-.carousel{display:grid;grid-template-columns:1fr;gap:14px;padding:4px 16px 14px}
+.carousel{display:grid;grid-template-columns:1fr;gap:14px;padding:4px 16px 14px;max-width:1100px;margin:0 auto}
 .card{width:100%;background:#161b22;border:1px solid #21262d;border-radius:14px;overflow:hidden;cursor:pointer;transition:.2s;padding:0;text-align:right;color:inherit;font-family:inherit;animation:fadeSlideUp .45s ease-out both}
 @keyframes fadeSlideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .card:hover{outline:2px solid #c9a84c}
-.thumb-wrap{position:relative}
-.thumb{width:100%;height:190px;object-fit:cover;display:block;background:#0d1117}
-.thumb-ph{width:100%;height:190px;background:#0d1117;display:flex;align-items:center;justify-content:center;font-size:32px;color:#30363d}
+.thumb-wrap{position:relative;aspect-ratio:16/9;background:#05080d;overflow:hidden}
+.card.orientation-portrait .thumb-wrap{aspect-ratio:9/16}.card.orientation-square .thumb-wrap{aspect-ratio:1/1}
+.thumb{width:100%;height:100%;object-fit:cover;display:block;background:#0d1117}
+.card.orientation-portrait .thumb{object-fit:contain}.thumb-ph{width:100%;height:100%;background:#0d1117;display:flex;align-items:center;justify-content:center;font-size:32px;color:#536276}
 .play-badge{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25)}
 .play-icon{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
 .body{padding:12px 14px}
@@ -28,22 +29,17 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 .empty-note{text-align:center;color:#6e7b8f;padding:60px 0;font-size:13px}
 .loading{text-align:center;color:#6e7b8f;padding:40px 0}
 
-/* شاشات أعرض (تابلت/حاسوب): عمودان أو ثلاثة */
-@media(min-width:600px){.carousel{grid-template-columns:repeat(2,1fr)}}
-@media(min-width:920px){.carousel{grid-template-columns:repeat(3,1fr)}}
-/* الهاتف بالوضع العرضي تحديداً: ثلاثة أعمدة دائماً بغض النظر عن العرض */
-@media(orientation:landscape) and (max-width:920px){
-  .carousel{grid-template-columns:repeat(3,1fr)}
-  .thumb,.thumb-ph{height:110px}
-  .body{padding:8px 10px}
-  .title{font-size:12px;-webkit-line-clamp:1}
-  .desc{display:none}
-}
+/* توزيع واعٍ بعدد الفيديوهات: لا يبقى نصف الشاشة فارغًا */
+.carousel.multi{grid-template-columns:repeat(2,minmax(0,1fr))}
+.carousel.count-3 .card:first-child{grid-column:1/-1}
+.carousel.odd-tail:not(.count-3) .card:last-child{grid-column:1/-1}
+@media(min-width:920px){.carousel.multi{grid-template-columns:repeat(3,minmax(0,1fr))}.carousel.count-3 .card:first-child,.carousel.odd-tail:not(.count-3) .card:last-child{grid-column:auto}}
+@media(max-width:640px){.carousel.multi{gap:9px;padding:4px 9px 14px}.carousel.multi .body{padding:9px}.carousel.multi .title{font-size:12px}.carousel.multi .desc{font-size:10.5px}}
 
 .player-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:999;padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
 .player-overlay.open{display:flex}
 .player-box{width:100%;max-width:820px}
-.player-frame-wrap{position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:10px;overflow:hidden}
+.player-frame-wrap{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}.player-frame-wrap.portrait{aspect-ratio:9/16;max-height:76vh;width:auto;max-width:100%;margin:0 auto}.player-frame-wrap.square{aspect-ratio:1/1;max-height:76vh;width:auto;max-width:100%;margin:0 auto}
 .player-frame-wrap iframe,.player-frame-wrap video{position:absolute;inset:0;width:100%;height:100%;border:0}
 .player-meta{display:flex;align-items:center;justify-content:space-between;margin-top:12px;color:#e6edf3}
 .player-title{font-weight:800;font-size:14px}
@@ -123,8 +119,9 @@ async function load(){
   const app=document.getElementById('app');
   if(!VIDEOS.length){app.innerHTML='<div class="empty-note">لا توجد فيديوهات مضافة بعد لهذه البطولة</div>';return;}
 
-  app.innerHTML='<div class="carousel">'+VIDEOS.map((v,i)=>`
-    <button class="card" onclick="openPlayer(${i})" style="animation-delay:${i*0.06}s">
+  const countClass=`count-${Math.min(VIDEOS.length,9)} ${VIDEOS.length>1?'multi':''} ${VIDEOS.length>3&&VIDEOS.length%2===1?'odd-tail':''}`;
+  app.innerHTML='<div class="carousel '+countClass+'">'+VIDEOS.map((v,i)=>`
+    <button class="card orientation-${v.media_orientation||'landscape'}" onclick="openPlayer(${i})" style="animation-delay:${i*0.06}s">
       <div class="thumb-wrap">
         ${v.thumbnail_url?`<img class="thumb" src="${v.thumbnail_url}" alt="${esc(v.title)}">`:'<div class="thumb-ph">🎬</div>'}
         <div class="play-badge"><div class="play-icon">▶</div></div>
@@ -140,6 +137,7 @@ async function load(){
 function openPlayer(i){
   const v=VIDEOS[i];
   const wrap=document.getElementById('playerFrameWrap');
+  wrap.className='player-frame-wrap '+(v.media_orientation==='portrait'?'portrait':v.media_orientation==='square'?'square':'');
   if(v.video_type==='youtube'){
     const yid=extractYoutubeId(v.video_url);
     wrap.innerHTML=yid
