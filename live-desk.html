@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="auth-guard.js"></script>
+<script src="admin-push.js?v=20260912-1"></script>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#071426;--panel:#102846;--panel2:#0b1e35;--line:rgba(255,255,255,.12);--text:#eef5ff;--muted:#aabbd0;--blue:#4ea1ff;--green:#34d399;--red:#ff6b6b;--yellow:#ffd54f;--gold:#c9a84c}
@@ -186,6 +187,7 @@ async function saveEvent(){
     }else{
       const {data:created,error}=await sb.from('match_events').insert({match_id:m.id,tournament_id:m.tournament_id,team_id:eventCtx.teamId,player_id:playerId,event_type:type,minute}).select('id').single();if(error)throw error;
       if(type==='goal'){try{await adjustScore(m,eventCtx.side,1,false)}catch(e){await sb.from('match_events').delete().eq('id',created.id);throw e}}
+      if(type==='goal')window.AdminPush?.send(sb,'goal',m.id,created.id);
       toast('تم تسجيل '+typeLabel[type]);
     }
     closeEvent();await loadMatches(true);
@@ -222,6 +224,7 @@ async function setStatus(mid,status){
   if((status==='live'&&m.status!=='scheduled')||(status==='completed'&&m.status!=='live')){toast('انتقال حالة المباراة غير مسموح.','err');return}
   const payload={status};if(status==='live'){payload.live_started_at=new Date().toISOString();payload.phase_started_at=new Date().toISOString();payload.current_half=m.current_half||1;payload.is_paused=false}if(status==='completed')payload.live_status='none';
   const {error}=await sb.from('matches').update(payload).eq('id',mid);if(error){toast('فشل تحديث الحالة: '+error.message,'err');return}Object.assign(m,payload);
+  window.AdminPush?.send(sb,status==='live'?'start':'end',m.id);
   if(status==='completed'){
     const hn=teamName(m,'home'),an=teamName(m,'away'),hs=m.home_score??0,as=m.away_score??0,winner=hs>as?hn:as>hs?an:null;
     await sb.from('news_items').insert({tournament_id:m.tournament_id,match_id:m.id,title:`انتهت: ${hn} ${hs} - ${as} ${an}`.slice(0,80),content:`🏁 انتهت المباراة: ${hn} ${hs} - ${as} ${an}${winner?' — الفائز: '+winner:' — تعادل'}`});
