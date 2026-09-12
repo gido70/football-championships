@@ -15,6 +15,7 @@ function scriptsFrom(html) {
 
 const sql = read('tournament_content_hub.sql');
 const admin = read('content-hub-admin.html');
+const newsAdmin = read('news-admin.html');
 const resources = read('resources.html');
 const tournament = read('tournament.html');
 const matchLive = read('match-live.html');
@@ -49,7 +50,14 @@ expect(resources.includes('for(let n=1;n<=currentPdf.numPages;n++)'), 'كل صف
 expect(!resources.includes('useNativePdf') && !resources.includes('native-pdf-frame') && !resources.includes('<iframe'), 'لا يعود الملف إلى عارض PDF الأصلي الكبير');
 expect(resources.includes('history.pushState({resourceViewer:true}') && resources.includes("addEventListener('popstate'"), 'زر الرجوع في الهاتف يغلق عارض الملف');
 expect(!resources.includes('id="directLink"'), 'لا يوجد زر يخرج بالـPDF إلى صفحة بلا رجوع');
-expect(tournament.includes('<details class="media-section media-accordion info-hub">') && !tournament.includes('<details open class="media-section media-accordion info-hub">'), 'صندوق اللوائح والتعليمات مطوي افتراضيًا');
+expect(tournament.includes('info-hub media-section--resources') && !tournament.includes('<details open class="media-section'), 'صندوق اللوائح والتعليمات مطوي افتراضيًا');
+expect(!tournament.includes('id="qlinkNews"') && tournament.includes('id="newsHubSection"'), 'مركز الأخبار نُقل من الدوائر إلى صندوق مطوي');
+expect(tournament.includes('media-section--news') && tournament.includes('loadNewsHub()'), 'رابط مركز الأخبار مطوي ومرتبط بالبطولة');
+expect(tournament.includes("CONTENT_VIS.instagram===false") && tournament.includes("CONTENT_VIS.youtube===false"), 'إنستغرام ويوتيوب قابلان للإظهار والإخفاء');
+expect(admin.includes("resources:['🗂️") && admin.includes("instagram:['📷") && admin.includes("youtube:['▶️"), 'الأدمن يتحكم في الصناديق والروابط المستجدة');
+expect(admin.includes("news_center:['🗞️") && newsAdmin.includes("section_key','news_center'"), 'شريط الأخبار ومركز الأخبار لهما تحكم مستقل');
+expect(tournament.includes('id="mainNewsTrack"') && !tournament.includes("line('bulletin'") && !tournament.includes("line('match'"), 'الواجهة تستخدم شريط أخبار خارجيًا واحدًا');
+expect(matchLive.includes('class="mt-item"') && matchLive.includes('match-ticker::before'), 'شريط المباراة اللايف محسن بصريًا');
 expect(tournament.includes('bindMediaAccordions(sec)'), 'صندوق اللوائح يستخدم آلية طي أقسام الصور والفيديوهات نفسها');
 expect(tournament.includes("await loadContentSettings()") && tournament.includes('loadInfoHub()'), 'إعدادات الظهور تُحمّل قبل المحتوى');
 expect(tournament.includes(".eq('is_visible',true)"), 'صفحة البطولة تستبعد المواد المخفية');
