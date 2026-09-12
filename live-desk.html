@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script src="auth-guard.js"></script>
-<script src="admin-push.js?v=20260912-1"></script>
+<script src="admin-push.js?v=20260912-2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#071426;--panel:#102846;--panel2:#0b1e35;--line:rgba(255,255,255,.12);--text:#eef5ff;--muted:#aabbd0;--blue:#4ea1ff;--green:#34d399;--red:#ff6b6b;--yellow:#ffd54f;--gold:#c9a84c}
@@ -27,11 +27,17 @@
 .pill{color:#fff;border-color:rgba(255,255,255,.28)}
 .badge.scheduled{color:#fff;background:rgba(78,161,255,.32);border:1px solid rgba(145,197,255,.55)}
 .controls select,.controls input,.form input,.form select,.motm select{color:#fff;color-scheme:dark}
+.player-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:310px;overflow:auto;padding:2px}
+.player-choice{display:grid;grid-template-columns:48px 1fr;align-items:center;gap:10px;min-height:58px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#142f50;color:#fff;text-align:right;cursor:pointer}
+.player-choice.selected{border-color:#ffd54f;background:#24496f;box-shadow:0 0 0 2px rgba(255,213,79,.22)}
+.player-choice-number{display:flex;align-items:center;justify-content:center;height:42px;border-radius:11px;background:#4ea1ff;color:#071426;font-size:18px;font-weight:900;direction:ltr}
+.player-choice-name{font-size:14px;font-weight:800;line-height:1.35}
 input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightness(2);opacity:1;cursor:pointer}
 .api-panel{display:none;background:linear-gradient(135deg,rgba(32,201,151,.14),rgba(78,161,255,.08));border:1px solid rgba(52,211,153,.38);border-radius:18px;padding:13px;margin-bottom:14px}.api-panel.show{display:block}.api-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}.api-head h3{margin:0;font-size:15px}.api-note{font-size:11px;color:#fff}.api-list{display:grid;gap:7px}.api-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;background:rgba(7,20,38,.75);border:1px solid var(--line);border-radius:12px;padding:9px}.api-teams{font-weight:800;font-size:13px}.api-teams small{display:block;color:#fff;font-weight:400;margin-top:3px}.api-score{font-size:20px;font-weight:900;white-space:nowrap}.api-row .btn{min-width:95px}.api-unmatched{opacity:.72}.btn-api{background:#0f766e}.btn-approve{background:#166534}
 .api-block{background:rgba(7,20,38,.45);border-radius:12px}.api-actions{display:flex;gap:6px}.api-events{display:none;padding:0 9px 9px}.api-events.show{display:block}.api-event{display:grid;grid-template-columns:42px 24px 1fr auto;gap:7px;align-items:center;border-top:1px solid var(--line);padding:7px 2px;font-size:12px}.api-event small{color:#fff}.api-event .ok{color:#6ee7b7}.api-event .warn{color:#ffd54f}.api-event .skip{color:#ff9b9b}.api-events-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0}.api-events-head .btn{font-size:12px;padding:8px}
 @media(min-width:851px){.controls{grid-template-columns:1.4fr 1fr auto auto auto}}
 @media(max-width:520px){.api-panel{padding:9px;border-radius:14px}.api-head{align-items:flex-start}.api-row{grid-template-columns:1fr auto;padding:8px;gap:7px}.api-row .api-actions{grid-column:1/-1}.api-row .btn{width:100%;min-height:44px}.api-score{font-size:18px}.api-teams{font-size:12px}.api-event{grid-template-columns:36px 20px 1fr}.api-event span:last-child{grid-column:1/-1}.api-events-head{align-items:flex-start}}
+@media(max-width:430px){.player-choice-grid{grid-template-columns:1fr}.player-choice{min-height:60px}.player-choice-number{font-size:19px}}
 </style>
 </head>
 <body>
@@ -60,7 +66,8 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightnes
       <label>ابحث باسم اللاعب أو رقمه</label>
       <input id="playerSearch" inputmode="search" placeholder="مثال: 7 أو محمد">
       <label>اللاعب</label>
-      <select id="playerSelect"><option value="">— بدون تحديد لاعب —</option></select>
+      <select id="playerSelect" aria-label="اللاعب"><option value="">— بدون تحديد لاعب —</option></select>
+      <div class="player-choice-grid" id="playerChoiceGrid" aria-label="قائمة اللاعبين"></div>
       <div class="formrow"><div><label>نوع الحدث</label><select id="eventType"><option value="goal">⚽ هدف</option><option value="yellow_card">🟨 بطاقة صفراء</option><option value="red_card">🟥 بطاقة حمراء</option></select></div><div><label>الدقيقة</label><input id="eventMinute" type="number" min="0" max="130" inputmode="numeric"></div></div>
       <div class="modal-actions"><button class="btn" id="cancelEvent">إلغاء</button><button class="btn btn-goal" id="saveEvent">حفظ الحدث</button></div>
     </div>
@@ -146,7 +153,7 @@ function sideActions(m,side,name){const disabled=m.status==='live'?'':' disabled
 
 async function playersFor(teamId){
   if(playerCache.has(teamId))return playerCache.get(teamId);
-  const {data,error}=await sb.from('players').select('id,name,full_name_ar,number').eq('team_id',teamId).or('submission_status.eq.approved,submission_status.is.null').order('number');
+  const {data,error}=await sb.from('players').select('id,name,full_name_ar,number').eq('team_id',teamId).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
   if(error)throw error;playerCache.set(teamId,data||[]);return data||[];
 }
 
@@ -172,6 +179,13 @@ function renderPlayerOptions(players,selected=''){
   const q=normalize($('playerSearch').value);let list=players;
   if(q)list=players.filter(p=>normalize(p.full_name_ar||p.name).includes(q)||String(p.number??'').includes(q));
   $('playerSelect').innerHTML='<option value="">— بدون تحديد لاعب —</option>'+list.map(p=>`<option value="${p.id}" ${p.id===selected?'selected':''}>${p.number!=null?'#'+p.number+' ':''}${esc(p.full_name_ar||p.name)}</option>`).join('');
+  $('playerChoiceGrid').innerHTML=list.map(p=>`<button type="button" class="player-choice${p.id===selected?' selected':''}" onclick="selectDeskPlayer('${p.id}',this)"><span class="player-choice-number">${p.number??'—'}</span><span class="player-choice-name">${esc(p.full_name_ar||p.name)}</span></button>`).join('')||'<div style="color:var(--muted);font-size:12px">لا يوجد لاعبون مطابقون</div>';
+}
+
+function selectDeskPlayer(playerId,button){
+  $('playerSelect').value=playerId;
+  document.querySelectorAll('#playerChoiceGrid .player-choice').forEach(b=>b.classList.remove('selected'));
+  button.classList.add('selected');
 }
 
 async function saveEvent(){
@@ -187,7 +201,7 @@ async function saveEvent(){
     }else{
       const {data:created,error}=await sb.from('match_events').insert({match_id:m.id,tournament_id:m.tournament_id,team_id:eventCtx.teamId,player_id:playerId,event_type:type,minute}).select('id').single();if(error)throw error;
       if(type==='goal'){try{await adjustScore(m,eventCtx.side,1,false)}catch(e){await sb.from('match_events').delete().eq('id',created.id);throw e}}
-      if(type==='goal')window.AdminPush?.send(sb,'goal',m.id,created.id);
+      if(['goal','yellow_card','red_card'].includes(type))window.AdminPush?.send(sb,type,m.id,created.id);
       toast('تم تسجيل '+typeLabel[type]);
     }
     closeEvent();await loadMatches(true);
