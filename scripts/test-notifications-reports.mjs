@@ -44,5 +44,6 @@ must(matchAdmin.includes('معلّق المباراة')&&matchAdmin.includes("re
 must(matchAdmin.includes('الحكم المساعد')&&matchAdmin.includes("reportField('referee2','referee_2')"),'اسم الحكم المساعد غير مربوط بمحضر المباراة');
 must(matchAdmin.includes("select('event_type,event_subtype,minute,team_id,player_id,manual_player_name')")&&matchAdmin.includes('const playerMap=new Map'),'محضر المباراة لا يربط الأحداث بقائمة اللاعبين بصورة آمنة');
 must(!matchAdmin.includes("sb.from('match_events').select('*,player:players(name,full_name_ar,number)')"),'محضر المباراة ما زال يستخدم ربط PostgREST غير الصالح للأحداث');
+must(matchAdmin.includes("e.minute==null?'—':e.minute"),'المحضر يعرض الدقيقة الفارغة بصيغة null');
 
 console.log('notification and report tests passed');
