@@ -80,11 +80,12 @@
     function generateNews(){
       const t=state.tournament,names=Object.fromEntries(state.teams.map(x=>[x.id,nameOf(x)])),done=state.matches.filter(m=>m.status==='completed'||m.status==='finished');
       const cfg=state.settings||{mode:'automatic',results_enabled:true,round_summaries_enabled:true,qualification_enabled:true,awards_enabled:true,external_enabled:false};
-      const publishedSaved=state.saved.filter(n=>n.source_type!=='external'&&n.editorial_status==='published'&&n.is_visible!==false&&n.is_active!==false).map(n=>({
-        id:'saved:'+n.id,key:n.dedupe_key||'saved:'+n.id,type:'official',category:n.category||'official',tag:n.source_type==='manual'?'خبر يدوي':'خبر البطولة',priority:Number(n.sort_order)||50,featured:!!n.is_featured,cover:n.is_featured?'warm':'',title:n.title,summary:n.summary||n.content||'',facts:n.content?'<b>تفاصيل الخبر</b>'+esc(n.content):'',source:n.source_type==='manual'?'إدارة البطولة':'بيانات البطولة',local:false
+      const publishedSaved=state.saved.filter(n=>['automatic','manual'].includes(n.source_type)&&n.editorial_status==='published'&&n.is_visible!==false&&n.is_active!==false).map(n=>({
+        id:'saved:'+n.id,key:n.dedupe_key||'saved:'+n.id,type:'official',sourceType:n.source_type,category:n.category||'official',tag:n.source_type==='manual'?'خبر يدوي':'خبر البطولة',priority:Number(n.sort_order)||50,featured:!!n.is_featured,cover:n.is_featured?'warm':'',title:n.title,summary:n.summary||n.content||'',facts:n.content?'<b>تفاصيل الخبر</b>'+esc(n.content):'',source:n.source_type==='manual'?'إدارة البطولة':'بيانات البطولة',local:false
       }));
-      const alwaysSaved=publishedSaved.filter(n=>!String(n.key).includes('smart:')||state.saved.find(x=>'saved:'+x.id===n.id)?.source_type!=='automatic');
-      if(cfg.mode==='review'||cfg.mode==='off')return dedupe(publishedSaved).sort((a,b)=>b.priority-a.priority);
+      const alwaysSaved=publishedSaved.filter(n=>n.sourceType==='manual');
+      if(cfg.mode==='review')return dedupe(publishedSaved).sort((a,b)=>b.priority-a.priority);
+      if(cfg.mode==='off')return dedupe(alwaysSaved).sort((a,b)=>b.priority-a.priority);
       const final=done.find(m=>m.round_name==='final'),quarters=done.filter(m=>m.round_name==='quarter_final'),semis=done.filter(m=>m.round_name==='semi_final'),third=done.find(m=>m.round_name==='third_place');
       const totalGoals=done.reduce((sum,m)=>sum+(Number(m.home_score)||0)+(Number(m.away_score)||0),0),high=done.slice().sort((a,b)=>(Number(b.home_score)+Number(b.away_score))-(Number(a.home_score)+Number(a.away_score)))[0];
       const items=[];
