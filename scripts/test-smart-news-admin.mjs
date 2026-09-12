@@ -15,7 +15,7 @@ assert.match(admin,/name="mode" value="off"/);
 assert.match(admin,/is_active:published,is_visible:published/);
 assert.match(admin,/editNews/);assert.match(admin,/moveNews/);assert.match(admin,/toggleFeatured/);
 assert.match(center,/smart_news_settings/);assert.match(center,/editorial_status==='published'/);
-assert.match(center,/source_type!=='external'/);assert.match(center,/cfg\.awards_enabled/);
+assert.match(center,/\['automatic','manual'\]\.includes\(n\.source_type\)/);assert.match(center,/cfg\.awards_enabled/);
 assert.match(theme,/Noto Naskh Arabic/);
 assert.match(help,/محرك واحد لكل البطولات/);assert.match(help,/مراجعة أولًا/);
 console.log('Smart News admin checks passed');
