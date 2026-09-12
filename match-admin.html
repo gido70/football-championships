@@ -43,7 +43,14 @@ select option{background:#0f2a45;color:#ffffff}
 .btn-quick{border:none;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:800;color:#0d1117;cursor:pointer;font-family:inherit;white-space:nowrap}
 .quick-player-chip{display:flex;align-items:center;gap:7px!important;background:#162941!important;color:#eef5ff!important;border:1px solid rgba(255,255,255,.1)!important;text-align:right}
 .quick-player-chip:hover{border-color:#4ea1ff!important;background:#1c3657!important}
-.qp-number{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:25px;padding:0 6px;border-radius:8px;background:#4ea1ff;color:#071426;font-weight:900;font-size:12px;direction:ltr}
+.quick-player-chip.selected{border-color:#ffd54f!important;background:#24496f!important;box-shadow:0 0 0 2px rgba(255,213,79,.25)}
+.qp-number{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:40px;padding:0 8px;border-radius:11px;background:#4ea1ff;color:#071426;font-weight:900;font-size:17px;direction:ltr;flex:0 0 auto}
+.qp-name{font-size:14px;font-weight:800;line-height:1.35}
+.quick-confirm{width:100%;margin-top:12px;min-height:50px;font-size:15px!important;background:linear-gradient(135deg,#34d399,#059669)!important;color:#071426!important}
+.quick-confirm:disabled{background:#3a4150!important;color:#9aa5b3!important;opacity:.7}
+.inj-player-card label{display:grid!important;grid-template-columns:48px 1fr auto;align-items:center;gap:10px!important;width:100%}
+.inj-player-number{display:flex;align-items:center;justify-content:center;min-width:44px;height:38px;border-radius:10px;background:#4ea1ff;color:#071426;font-size:16px;font-weight:900;direction:ltr}
+.inj-player-name{font-size:14px;font-weight:800;white-space:normal!important}
 .lu-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
 .lu-admin-team-hd{font-size:13px;font-weight:800;color:#c9a84c;margin-bottom:8px}
 .lu-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;color:#e6edf3}
@@ -142,13 +149,14 @@ select option{background:#0f2a45;color:#ffffff}
   #quickPicker{position:fixed!important;z-index:120!important;right:0;left:0;bottom:0;margin:0!important;padding:16px 14px calc(14px + env(safe-area-inset-bottom,0px))!important;background:linear-gradient(180deg,#16385f,#08182c)!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:20px 20px 0 0!important;box-shadow:0 -18px 45px rgba(0,0,0,.55);max-height:72vh;overflow:auto}
   #quickPickerTitle{font-size:15px!important;font-weight:900;color:#eef5ff!important;margin-bottom:12px!important}
   #quickPickerGrid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
-  .quick-player-chip{width:100%;min-height:43px;padding:7px 8px!important;font-size:12px!important;white-space:normal;line-height:1.25}
+  .quick-player-chip{width:100%;min-height:56px;padding:8px 10px!important;white-space:normal;line-height:1.25}
   .evt-form.show{animation:formReveal .24s ease-out}@keyframes formReveal{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
 }
 @media(max-width:420px){
   .sb-btns{gap:10px}
   .sb-btn{width:46px;height:46px;font-size:22px}
   .evt-btns{grid-template-columns:repeat(3,1fr)!important}.evt-btn{font-size:11.5px;padding:9px 4px}
+  #quickPickerGrid{grid-template-columns:1fr!important}
 }
 </style>
 </head>
@@ -199,6 +207,7 @@ select option{background:#0f2a45;color:#ffffff}
     <div id="quickPicker" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.1)">
       <div id="quickPickerTitle" style="font-size:13px;color:#b7c6dc;margin-bottom:8px"></div>
       <div id="quickPickerGrid" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      <button id="quickPickerConfirm" class="btn-quick quick-confirm" type="button" onclick="quickConfirm()" disabled>اختر اللاعب أولًا</button>
       <button class="btn secondary" style="margin-top:8px;padding:6px 14px;font-size:12px" onclick="quickClose()">إلغاء</button>
     </div>
   </div>
@@ -527,10 +536,10 @@ select option{background:#0f2a45;color:#ffffff}
 
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <script src="supabase-config.js"></script>
-<script src="admin-push.js?v=20260912-1"></script>
+<script src="admin-push.js?v=20260912-2"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-let cur=null,hPl=[],aPl=[],evtType={h:null,a:null};
+let cur=null,hPl=[],aPl=[],evtType={h:null,a:null},quickPending=null;
 let varUpdateBusy=false;
 const requestedMatchId=new URLSearchParams(location.search).get('match')||'';
 const requestedTournamentId=new URLSearchParams(location.search).get('tournament')||'';
@@ -596,8 +605,8 @@ async function onMatchChange(){
   cur=m;
   document.getElementById('evtsList').innerHTML='<div class="no-evts">⏳ جاري تحميل الأحداث...</div>';
 
-  const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.home_team_id).or('submission_status.eq.approved,submission_status.is.null').order('number');
-  const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.away_team_id).or('submission_status.eq.approved,submission_status.is.null').order('number');
+  const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.home_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
+  const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.away_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
   hPl=hp||[];aPl=ap||[];
   fillSel('hPlayer',hPl);fillSel('aPlayer',aPl);
   fillManOfMatchTeams(m);
@@ -1072,18 +1081,40 @@ function quickOpen(side,type){
   const teamName=side==='h'?(cur.ht?.name_ar||cur.ht?.name||''):(cur.at?.name_ar||cur.at?.name||'');
   const labels={goal:'⚽ من سجّل الهدف؟',own_goal:'↩️ من سجّل الهدف العكسي في مرماه؟',yellow_card:'🟨 من أخذ البطاقة الصفراء؟',red_card:'🟥 من أخذ البطاقة الحمراء؟'};
   document.getElementById('quickPickerTitle').textContent=(labels[type]||'')+' — '+teamName;
+  quickPending=null;
+  const confirmBtn=document.getElementById('quickPickerConfirm');
+  confirmBtn.disabled=true;
+  confirmBtn.textContent='اختر اللاعب أولًا';
   const grid=document.getElementById('quickPickerGrid');
   if(!players||!players.length){grid.innerHTML='<span style="color:#7d8694;font-size:12px">لا يوجد لاعبون محمّلون لهذا الفريق</span>';}
   else{
-    grid.innerHTML=players.map(p=>`<button class="btn-quick quick-player-chip" onclick="quickLog('${side}','${type}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}')"><span class="qp-number">${p.number||'—'}</span><span>${p.full_name_ar||p.name}</span></button>`).join('');
+    grid.innerHTML=players.map(p=>`<button type="button" class="btn-quick quick-player-chip" onclick="quickSelect('${side}','${type}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}',this)"><span class="qp-number">${p.number||'—'}</span><span class="qp-name">${p.full_name_ar||p.name}</span></button>`).join('');
   }
-  if(type!=='own_goal')grid.innerHTML+=`<button class="btn-quick quick-player-chip" onclick="quickLog('${side}','${type}','','بدون تحديد لاعب')"><span class="qp-number">—</span><span>بدون تحديد لاعب</span></button>`;
+  if(type!=='own_goal')grid.innerHTML+=`<button type="button" class="btn-quick quick-player-chip" onclick="quickSelect('${side}','${type}','','بدون تحديد لاعب',this)"><span class="qp-number">—</span><span class="qp-name">بدون تحديد لاعب</span></button>`;
   const picker=document.getElementById('quickPicker');
   picker.style.display='block';
   requestAnimationFrame(()=>picker.scrollIntoView({behavior:'smooth',block:'center'}));
 }
 
-function quickClose(){document.getElementById('quickPicker').style.display='none';}
+function quickSelect(side,type,playerId,playerName,button){
+  quickPending={side,type,playerId,playerName};
+  document.querySelectorAll('#quickPickerGrid .quick-player-chip').forEach(b=>b.classList.remove('selected'));
+  button.classList.add('selected');
+  const action={goal:'تأكيد تسجيل الهدف',own_goal:'تأكيد الهدف العكسي',yellow_card:'تأكيد البطاقة الصفراء',red_card:'تأكيد البطاقة الحمراء'}[type]||'تأكيد الحدث';
+  const confirmBtn=document.getElementById('quickPickerConfirm');
+  confirmBtn.disabled=false;
+  confirmBtn.textContent=action+' — '+playerName;
+}
+
+function quickConfirm(){
+  if(!quickPending)return;
+  const p=quickPending;
+  quickPending=null;
+  document.getElementById('quickPickerConfirm').disabled=true;
+  quickLog(p.side,p.type,p.playerId,p.playerName);
+}
+
+function quickClose(){quickPending=null;document.getElementById('quickPicker').style.display='none';}
 
 async function quickLog(side,type,playerId,playerName){
   if(!ensureLiveMatch())return;
@@ -1113,7 +1144,10 @@ async function quickLog(side,type,playerId,playerName){
   else if(isOwnGoal)pushNews('↩️ هدف عكسي على '+(playerName||'لاعب')+' ('+tn+') في الدقيقة '+min2+' — يُحتسب للفريق المنافس');
   else if(type==='yellow_card')pushNews('🟨 بطاقة صفراء لـ '+(playerName||'لاعب')+' ('+tn+')');
   else if(type==='red_card')pushNews('🟥 بطاقة حمراء لـ '+(playerName||'لاعب')+' ('+tn+')');
-  if((type==='goal'||isOwnGoal)&&created?.id)window.AdminPush?.send(sb,'goal',cur.id,created.id);
+  if(created?.id){
+    const pushType=(type==='goal'||isOwnGoal)?'goal':(type==='yellow_card'||type==='red_card'?type:null);
+    if(pushType)window.AdminPush?.send(sb,pushType,cur.id,created.id);
+  }
 }
 
 async function loadPredictResults(matchId){
@@ -1390,7 +1424,10 @@ async function submitEvt(side){
   else if(isOwnGoal)pushNews('↩️ هدف عكسي على '+playerLabel+' ('+tn2+') في الدقيقة '+min+' — يُحتسب للفريق المنافس');
   else if(type==='yellow_card')pushNews('🟨 بطاقة صفراء لـ '+playerLabel+' ('+tn2+')');
   else if(type==='red_card')pushNews('🟥 بطاقة حمراء لـ '+playerLabel+' ('+tn2+')');
-  if((type==='goal'||isOwnGoal)&&created?.id)window.AdminPush?.send(sb,'goal',cur.id,created.id);
+  if(created?.id){
+    const pushType=(type==='goal'||isOwnGoal)?'goal':(type==='yellow_card'||type==='red_card'?type:null);
+    if(pushType)window.AdminPush?.send(sb,pushType,cur.id,created.id);
+  }
 }
 
 async function loadEvts(){
@@ -1464,8 +1501,8 @@ function setLineupTeam(side,checked){
 window.setLineupTeam=setLineupTeam;
 
 function renderInjuryCheckboxes(){
-  const injRow=p=>`<div class="lu-row" data-pid="${p.id}">
-    <label><input type="checkbox" class="inj-check" data-pid="${p.id}" ${p.is_injured?'checked':''} onchange="toggleInjuryCheckbox('${p.id}',this.checked)"><span>${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</span></label>
+  const injRow=p=>`<div class="lu-row inj-player-card" data-pid="${p.id}">
+    <label><span class="inj-player-number">${p.number||'—'}</span><span class="inj-player-name">${p.full_name_ar||p.name}</span><input aria-label="تسجيل إصابة ${p.full_name_ar||p.name}" type="checkbox" class="inj-check" data-pid="${p.id}" ${p.is_injured?'checked':''} onchange="toggleInjuryCheckbox('${p.id}',this.checked)"></label>
   </div>`;
   document.getElementById('injHList').innerHTML=hPl.map(injRow).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
   document.getElementById('injAList').innerHTML=aPl.map(injRow).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
