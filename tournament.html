@@ -122,7 +122,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .live-vote-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.15)}
 
 .media-section{max-width:940px;margin:18px auto 0;padding:0 14px}
-.info-hub{max-width:940px;margin:18px auto 0;padding:0 14px}.info-hub-box{background:linear-gradient(145deg,#f9fdff,#e3f3f9);border:1px solid #b7d8e6;border-radius:17px;padding:14px;box-shadow:0 5px 0 #b7ccd6,0 10px 22px rgba(32,74,96,.13)}.info-hub-title{font-size:17px;font-weight:900;color:#173e58;margin-bottom:11px}.info-hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}.info-hub-card{display:flex;align-items:center;gap:9px;min-height:58px;padding:10px;background:#fff;border:1px solid #bdd8e4;border-radius:12px;color:#173e58;text-decoration:none;font-weight:900;box-shadow:0 3px 0 #c4d7df}.info-hub-card span:first-child{font-size:25px}.info-hub-card small{display:block;color:#607989;font-size:10px;margin-top:2px}
+.info-hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;padding:2px}.info-hub-card{display:flex;align-items:center;gap:9px;min-height:58px;padding:10px;background:#fff;border:1px solid #bdd8e4;border-radius:12px;color:#173e58;text-decoration:none;font-weight:900;box-shadow:0 3px 0 #c4d7df}.info-hub-card span:first-child{font-size:25px}.info-hub-card small{display:block;color:#607989;font-size:10px;margin-top:2px}
 .media-section-head{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;padding:11px 14px;cursor:pointer;background:linear-gradient(145deg,#f8fdff,#dff3fa);border:1px solid #b7d8e6;border-radius:16px;box-shadow:0 5px 0 #b7ccd6,0 10px 22px rgba(32,74,96,.13);transition:transform .16s,box-shadow .16s,border-radius .2s}
 .media-section-head::-webkit-details-marker{display:none}.media-section-head::marker{content:""}
 .media-section-head:active{transform:translateY(2px);box-shadow:0 2px 0 #b7ccd6,0 5px 12px rgba(32,74,96,.13)}
@@ -694,7 +694,9 @@ async function loadInfoHub(){
   const {data}=await sb.from('tournament_resources').select('id,category').eq('tournament_id',TID).eq('is_visible',true).order('sort_order');
   const groups=Object.entries(INFO_META).map(([key,meta])=>({key,meta,count:(data||[]).filter(x=>x.category===key).length})).filter(x=>x.count&&CONTENT_VIS[x.key]!==false);
   if(!groups.length){sec.innerHTML='';return;}
-  sec.innerHTML=`<section class="info-hub"><div class="info-hub-box"><div class="info-hub-title">🗂️ اللوائح والتعليمات الرسمية</div><div class="info-hub-grid">${groups.map(g=>`<a class="info-hub-card" href="${scopeUrl('resources.html?id='+TID+'&category='+g.key)}"><span>${g.meta[1]}</span><span>${g.meta[0]}<small>${g.count} ${g.count===1?'مادة':'مواد'}</small></span></a>`).join('')}</div></div></section>`;
+  const total=groups.reduce((sum,g)=>sum+g.count,0);
+  sec.innerHTML=`<details class="media-section media-accordion info-hub"><summary class="media-section-head"><span class="media-section-title"><span>🗂️</span>اللوائح والتعليمات الرسمية</span><span class="media-section-tools"><span class="media-section-count">${total}</span><span class="media-section-arrow" aria-hidden="true">⌄</span></span></summary><div class="media-section-body"><div class="info-hub-grid">${groups.map(g=>`<a class="info-hub-card" href="${scopeUrl('resources.html?id='+TID+'&category='+g.key)}"><span>${g.meta[1]}</span><span>${g.meta[0]}<small>${g.count} ${g.count===1?'مادة':'مواد'}</small></span></a>`).join('')}</div></div></details>`;
+  bindMediaAccordions(sec);
 }
 function safeMediaUrl(value){try{const u=new URL(value,location.href);return ['http:','https:'].includes(u.protocol)?u.href:'';}catch(_){return'';}}
 function gridClass(rows){const n=rows.length;return `${n>1?'multi':''} count-${Math.min(n,9)} ${n>3&&n%2===1?'odd-tail':''}`;}
