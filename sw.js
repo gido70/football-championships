@@ -1,4 +1,4 @@
-// sw.js — network-first public shell + Web Push — v29
+// sw.js — network-first public shell + Web Push — v31
 const VERSION = 'football-shell-v31';
 const CORE = [
   './',
