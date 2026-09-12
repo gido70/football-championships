@@ -1,5 +1,5 @@
-// sw.js — network-first public shell — v21
-const VERSION = 'football-shell-v21';
+// sw.js — network-first public shell + Web Push — v23
+const VERSION = 'football-shell-v23';
 const CORE = [
   './',
   './index.html',
@@ -18,6 +18,9 @@ const CORE = [
   './supabase-config.js',
   './tournament-scope.js',
   './public-date.js',
+  './push-config.js',
+  './push-notifications.js',
+  './admin-push.js',
   './vendor/supabase.min.js',
   './icon-app.png',
   './uefa-champions-app-192.png',
@@ -71,4 +74,24 @@ self.addEventListener('fetch', e => {
       return res;
     }))
   );
+});
+
+self.addEventListener('push',event=>{
+  let data={};
+  try{data=event.data?.json()||{}}catch(_error){data={body:event.data?.text()||''}}
+  const options={
+    body:data.body||'',icon:data.icon||'./icon-app.png',badge:data.badge||'./icon-app.png',
+    tag:data.tag||'match-update',renotify:true,silent:false,dir:'rtl',lang:'ar',data:{url:data.url||'./index.html'}
+  };
+  event.waitUntil(self.registration.showNotification(data.title||'منصة البطولات',options));
+});
+
+self.addEventListener('notificationclick',event=>{
+  event.notification.close();
+  const target=new URL(event.notification.data?.url||'./index.html',self.location.origin).href;
+  event.waitUntil((async()=>{
+    const windows=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    for(const client of windows){if('focus'in client){await client.navigate(target);return client.focus();}}
+    return self.clients.openWindow?self.clients.openWindow(target):undefined;
+  })());
 });

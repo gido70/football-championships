@@ -325,6 +325,11 @@ img[src=""], img:not([src]) { display:none !important; }
   box-shadow:0 4px 18px rgba(0,0,0,.4);
 }
 @media(max-width:760px){.float-back{display:flex;align-items:center;gap:6px}}
+.notification-control{max-width:680px;margin:12px auto;padding:10px 12px;border-radius:16px;background:linear-gradient(145deg,#fff,#edf4fb);border:1px solid #cfdae7;box-shadow:0 7px 18px rgba(23,49,77,.12);display:flex;align-items:center;gap:10px;justify-content:center;color:#17314d}
+.notification-control button{min-height:44px;border:0;border-radius:13px;padding:10px 16px;background:linear-gradient(#2d5f91,#173d66);box-shadow:0 4px 0 #092846;color:#fff;font:800 13px "Tajawal",sans-serif;cursor:pointer}
+.notification-control button.enabled{background:linear-gradient(#26a269,#137447);box-shadow:0 4px 0 #0a4b30}.notification-control button:disabled{opacity:.72;cursor:default}
+.notification-control small{font-size:11px;line-height:1.5;color:#617287}
+@media(max-width:620px){.notification-control{margin:9px 8px;align-items:stretch;flex-direction:column;text-align:center}.notification-control button{width:100%}}
 </style>
 <link rel="stylesheet" href="public-ui.css?v=20260910-5">
 </head>
@@ -370,6 +375,10 @@ img[src=""], img:not([src]) { display:none !important; }
   <a href="index.html" class="nav-back">← جميع البطولات</a>
 </nav>
 <div id="scopeNotice" style="display:none;background:rgba(184,134,11,.1);border-bottom:2px solid #b8860b;color:#8a6d2f;text-align:center;padding:10px 16px;font-size:13px;font-weight:700"></div>
+<section class="notification-control" aria-label="تنبيهات البطولة">
+  <button type="button" id="notificationToggle">🔔 فعّل تنبيهات البطولة</button>
+  <small>بداية المباراة، الأهداف، ونهاية المباراة فقط. يستخدم الهاتف صوت الإشعار المعتاد.</small>
+</section>
 
 <div class="hero" id="hero">
   <div class="hero-bg" id="heroBg"></div>
@@ -437,11 +446,14 @@ img[src=""], img:not([src]) { display:none !important; }
 <script src="tournament-scope.js?v=20260910-3"></script>
 <script src="public-navigation.js?v=20260911-1"></script>
 <script src="public-date.js?v=20260910-1"></script>
+<script src="push-config.js?v=20260912-1"></script>
+<script src="push-notifications.js?v=20260912-1"></script>
 <script>
 const SUPABASE_READY=Boolean(window.supabase&&window.SUPABASE_URL&&window.SUPABASE_ANON_KEY);
 const sb=SUPABASE_READY?window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY):null;
 const TID=new URLSearchParams(location.search).get('id');
 let TOURNAMENT_CACHE=null;
+if(window.PushNotifications&&sb&&TID)window.PushNotifications.init({client:sb,tournamentId:TID,button:document.getElementById('notificationToggle'),onNeedsInstall:()=>{document.getElementById('iosInstallSheet').style.display='flex'}});
 
 function withTimeout(promise,ms=25000){
   return Promise.race([
@@ -825,36 +837,12 @@ function dismissInstallBanner(){
 window.handleInstallClick=handleInstallClick;
 window.dismissInstallBanner=dismissInstallBanner;
 const TAB_ACCENT={st:'#639922',ma:'#c9a84c',sc:'#D85A30',tm:'#378ADD'};
-let lastKnownScores={};
 let liveRefreshTimer=null;
-function requestNotifyPermissionOnce(){
-  if(!('Notification' in window))return;
-  if(Notification.permission==='default'&&!localStorage.getItem('notifyAsked')){
-    localStorage.setItem('notifyAsked','1');
-    setTimeout(()=>Notification.requestPermission(),4000);
-  }
-}
-function showLocalNotification(title,body){
-  if(!('Notification' in window)||Notification.permission!=='granted')return;
-  try{
-    const n=new Notification(title,{body,icon:'./icon-app.png',silent:true,tag:'live-update'});
-    setTimeout(()=>n.close(),8000);
-  }catch(e){}
-}
 
 async function loadLiveMatch(){
   const sec=document.getElementById('liveMatchSection');
   const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(4);
   if(!matches?.length){sec.innerHTML='';return;}
-
-  matches.forEach(m=>{
-    const key=m.id, hn=m.ht?.name_ar||m.ht?.name||'', an=m.at?.name_ar||m.at?.name||'';
-    const scoreStr=`${m.home_score??0}-${m.away_score??0}`;
-    if(lastKnownScores[key]!==undefined&&lastKnownScores[key]!==scoreStr){
-      showLocalNotification('⚽ تحديث النتيجة',`${hn} ${m.home_score??0} - ${m.away_score??0} ${an}`);
-    }
-    lastKnownScores[key]=scoreStr;
-  });
 
   sec.innerHTML=`<div class="live-wrap">${matches.map(m=>`
     <div class="live-card" style="margin-bottom:14px">
@@ -1367,7 +1355,6 @@ async function bootstrapTournament(){
     loadSponsors();
     loadFollowSection();
     loadFeed();
-    requestNotifyPermissionOnce();
   };
   if('requestIdleCallback' in window)requestIdleCallback(later,{timeout:1400});
   else setTimeout(later,450);

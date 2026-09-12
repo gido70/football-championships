@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#071426">
+<title>إدارة تنبيهات البطولة</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="auth-guard.js"></script><script src="admin-push.js?v=20260912-1"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="admin.css">
+<style>
+body{font-family:"Tajawal",sans-serif}.notice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}.notice-card{border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px;background:rgba(255,255,255,.04);text-align:center}.notice-card span{font-size:30px}.notice-card b{display:block;margin:7px 0}.notice-card small{color:#b7c6dc}.test-panel{border-color:rgba(201,168,76,.4);background:rgba(201,168,76,.07)}#sendTest{min-height:46px;background:linear-gradient(135deg,#c9a84c,#9c7825);color:#071426;font-weight:900}.privacy{font-size:12px;color:#b7c6dc;line-height:1.8;margin-top:13px}@media(max-width:620px){.notice-grid{grid-template-columns:1fr}.container{padding-left:9px;padding-right:9px}.nav-actions .btn{min-height:44px}}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">🔔</div><div class="page-title"><h1>إدارة التنبيهات</h1><p>بداية المباراة، الهدف، والنهاية فقط</p></div></div><div class="nav-actions"><a class="btn secondary" href="admin-home.html">← لوحة الأدمن</a></div></div></header>
+<main class="container">
+  <section class="panel"><h3>آلية التنبيه المعتمدة</h3><div class="notice-grid"><div class="notice-card"><span>🔴</span><b>بداية المباراة</b><small>يدعو المستخدم لفتح شاشة البث</small></div><div class="notice-card"><span>⚽</span><b>تسجيل هدف</b><small>اسم الفريق والنتيجة والدقيقة</small></div><div class="notice-card"><span>🏁</span><b>نهاية المباراة</b><small>النتيجة النهائية</small></div></div><p class="privacy">يرسل الهاتف صوته المعتاد حسب إعداداته. لا تُجمع أرقام هواتف أو أسماء مستخدمين، ويمكن للمشاهد إيقاف الاشتراك من صفحة البطولة.</p></section>
+  <section class="panel test-panel" style="margin-top:18px"><h3>إرسال تنبيه تجريبي</h3><p class="note">فعّل التنبيهات أولًا من صفحة البطولة على الهاتف، ثم اختر مباراة وأرسل الاختبار. لا يغيّر الاختبار نتيجة المباراة ولا حالتها.</p><div class="form-grid"><div class="field"><label>البطولة</label><select id="tour"></select></div><div class="field"><label>المباراة</label><select id="match"></select></div></div><div class="actions"><button class="btn" id="sendTest">🔔 إرسال تنبيه تجريبي</button></div><div class="status" id="msg"></div></section>
+</main>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY),$=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function init(){const {data,error}=await sb.from('tournaments').select('id,name,name_ar,season_label,status').order('created_at',{ascending:false});if(error){$('msg').textContent='تعذر تحميل البطولات';return}$('tour').innerHTML=(data||[]).map(t=>`<option value="${t.id}">${esc(t.name_ar||t.name)} ${esc(t.season_label||'')}</option>`).join('');$('tour').onchange=loadMatches;await loadMatches()}
+async function loadMatches(){const tid=$('tour').value;if(!tid)return;const {data,error}=await sb.from('matches').select('id,match_no,match_date,status,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',tid).order('match_date',{ascending:false}).order('match_no',{ascending:false});if(error){$('msg').textContent='تعذر تحميل المباريات';return}$('match').innerHTML=(data||[]).map(m=>`<option value="${m.id}">مباراة ${m.match_no||'—'} — ${esc(m.ht?.name_ar||m.ht?.name||'')} × ${esc(m.at?.name_ar||m.at?.name||'')} — ${m.match_date||'دون تاريخ'}</option>`).join('')}
+$('sendTest').onclick=async()=>{const mid=$('match').value;if(!mid){$('msg').className='status err';$('msg').textContent='اختر مباراة أولًا';return}$('sendTest').disabled=true;$('msg').className='status';$('msg').textContent='⏳ جاري الإرسال...';const r=await window.AdminPush.send(sb,'test',mid);$('sendTest').disabled=false;if(!r.ok){$('msg').className='status err';$('msg').textContent='تعذر الإرسال. تأكد من تفعيل وظيفة التنبيهات في Supabase.';return}$('msg').className='status ok';$('msg').textContent=r.sent?`✅ وصل التنبيه إلى ${r.sent} جهاز${r.failed?'، وتعذر على '+r.failed:''}`:'لم يوجد هاتف مشترك في تنبيهات هذه البطولة حتى الآن.'};
+init();
+</script></body></html>
