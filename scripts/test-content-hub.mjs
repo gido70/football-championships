@@ -42,7 +42,10 @@ expect(tournament.indexOf('id="newsBanner"') < tournament.indexOf('class="qlinks
 expect(tournament.indexOf('class="qlinks-wrap"') < tournament.indexOf('id="infoHubSection"'), 'الأقسام الأساسية تسبق مركز المعلومات');
 expect(resources.includes('env(safe-area-inset-top') && resources.includes('✕ إغلاق والرجوع'), 'أزرار الرجوع والإغلاق بعيدة عن حافة الهاتف');
 expect(resources.includes('media-stage') && resources.includes('linear-gradient(160deg,#eefbff,#cbeaf5)'), 'الفيديو يظهر مركزيًا فوق خلفية سماوية فاتحة');
-expect(resources.includes('changePdfZoom') && resources.includes('useSystemFonts:true') && resources.includes('Math.min(devicePixelRatio||1,3)'), 'عارض PDF عالي الدقة ويدعم التكبير والتصغير');
+expect(resources.includes('changePdfZoom') && resources.includes('Math.min(devicePixelRatio||1,3)'), 'عارض PDF للنشرات عالي الدقة ويدعم التكبير والتصغير');
+expect(resources.includes('function useNativePdf()') && resources.includes('native-pdf-frame'), 'الآيفون يستخدم عارض PDF الأصلي داخل صفحة المنصة');
+expect(resources.includes('history.pushState({resourceViewer:true}') && resources.includes("addEventListener('popstate'"), 'زر الرجوع في الهاتف يغلق عارض الملف');
+expect(!resources.includes('id="directLink"'), 'لا يوجد زر يخرج بالـPDF إلى صفحة بلا رجوع');
 expect(tournament.includes("await loadContentSettings()") && tournament.includes('loadInfoHub()'), 'إعدادات الظهور تُحمّل قبل المحتوى');
 expect(tournament.includes(".eq('is_visible',true)"), 'صفحة البطولة تستبعد المواد المخفية');
 expect(matchLive.includes(".eq('match_id',m.id).eq('is_visible',true)"), 'صفحة المباراة لا تعرض خبرًا مخفيًا');
