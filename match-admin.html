@@ -1932,7 +1932,7 @@ async function printFullMatchReport(mode='docx'){
       <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">⭐ نجم المباراة</td><td style="padding:8px" colspan="3">${motmP?escR((motmP.full_name_ar||motmP.name)+' (#'+(motmP.number??'')+')'):'— لم يُحدَّد —'}</td></tr>
     </table>`;
 
-  const eventsRows=(allEvents||[]).map(e=>{const p=playerOf(e);return[e.minute+"'",e.event_subtype==='own_goal'?'↩️ هدف عكسي (لصالح المنافس)':(EL2[e.event_type]||e.event_type),p?.full_name_ar||p?.name||e.manual_player_name||'—',teamOf(e)]});
+  const eventsRows=(allEvents||[]).map(e=>{const p=playerOf(e);return[e.minute==null?'—':e.minute+"'",e.event_subtype==='own_goal'?'↩️ هدف عكسي (لصالح المنافس)':(EL2[e.event_type]||e.event_type),p?.full_name_ar||p?.name||e.manual_player_name||'—',teamOf(e)]});
   const eventsTable=rTable('⚡ سجل أحداث المباراة كاملاً',['الدقيقة','الحدث','اللاعب','الفريق'],eventsRows);
 
   let varTable='';
