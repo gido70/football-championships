@@ -106,7 +106,7 @@ async function load(){
   window.TournamentScope?.applyTournamentTheme(t);
   document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — الفيديوهات';
 
-  const {data:vidRows}=await sb.from('videos').select('*').eq('tournament_id',TID).order('created_at',{ascending:false});
+  const {data:vidRows}=await sb.from('videos').select('*').eq('tournament_id',TID).eq('is_visible',true).order('created_at',{ascending:false});
   const {data:matchVids}=await sb.from('matches').select('id,home_score,away_score,match_date,highlight_video_url,home_team_id,away_team_id').eq('tournament_id',TID).eq('status','completed').not('highlight_video_url','is',null);
   let matchVideoItems=[];
   if(matchVids?.length){

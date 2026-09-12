@@ -1,5 +1,5 @@
 // sw.js — network-first public shell + Web Push — v29
-const VERSION = 'football-shell-v30';
+const VERSION = 'football-shell-v31';
 const CORE = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const CORE = [
   './match-live.html',
   './match-report.html',
   './documents.html',
+  './resources.html',
   './videos.html',
   './media-source.html',
   './team.html',

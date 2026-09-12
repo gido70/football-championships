@@ -751,7 +751,7 @@ function stopMatchTicker(){
 async function loadMatchTicker(m){
   const box=document.getElementById('matchNewsTicker');
   if(m.status!=='live'){stopMatchTicker();return;}
-  const {data}=await sb.from('news_items').select('content,created_at').eq('match_id',m.id).order('created_at',{ascending:false}).limit(15);
+  const {data}=await sb.from('news_items').select('content,created_at').eq('match_id',m.id).eq('is_visible',true).order('created_at',{ascending:false}).limit(15);
   if(!data||!data.length){stopMatchTicker();return;}
   box.innerHTML=`<div class="match-ticker">
     <div class="mt-label"><span class="mt-dot"></span>أخبار المباراة</div>

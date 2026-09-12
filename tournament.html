@@ -122,6 +122,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .live-vote-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.15)}
 
 .media-section{max-width:940px;margin:18px auto 0;padding:0 14px}
+.info-hub{max-width:940px;margin:18px auto 0;padding:0 14px}.info-hub-box{background:linear-gradient(145deg,#f9fdff,#e3f3f9);border:1px solid #b7d8e6;border-radius:17px;padding:14px;box-shadow:0 5px 0 #b7ccd6,0 10px 22px rgba(32,74,96,.13)}.info-hub-title{font-size:17px;font-weight:900;color:#173e58;margin-bottom:11px}.info-hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}.info-hub-card{display:flex;align-items:center;gap:9px;min-height:58px;padding:10px;background:#fff;border:1px solid #bdd8e4;border-radius:12px;color:#173e58;text-decoration:none;font-weight:900;box-shadow:0 3px 0 #c4d7df}.info-hub-card span:first-child{font-size:25px}.info-hub-card small{display:block;color:#607989;font-size:10px;margin-top:2px}
 .media-section-head{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px;padding:11px 14px;cursor:pointer;background:linear-gradient(145deg,#f8fdff,#dff3fa);border:1px solid #b7d8e6;border-radius:16px;box-shadow:0 5px 0 #b7ccd6,0 10px 22px rgba(32,74,96,.13);transition:transform .16s,box-shadow .16s,border-radius .2s}
 .media-section-head::-webkit-details-marker{display:none}.media-section-head::marker{content:""}
 .media-section-head:active{transform:translateY(2px);box-shadow:0 2px 0 #b7ccd6,0 5px 12px rgba(32,74,96,.13)}
@@ -406,8 +407,6 @@ img[src=""], img:not([src]) { display:none !important; }
 
 <div id="liveMatchSection"></div>
 
-<div id="newsBanner"></div>
-
 <div id="sponsorsTicker"></div>
 
 <div class="qlinks-wrap">
@@ -423,6 +422,9 @@ img[src=""], img:not([src]) { display:none !important; }
     <a class="qlink qlink--gold" id="qlinkPredictions" href="#"><span class="qlink-orb"><span class="qlink-ic">🥇</span></span><span class="qlink-label">توقعات الأصدقاء</span></a>
   </div>
 </div>
+
+<div id="infoHubSection"></div>
+<div id="newsBanner"></div>
 
 <div id="followSection"></div>
 
@@ -584,8 +586,9 @@ async function generateAutoBulletin(){
 
 async function loadNews(){
   if(!TID)return;
-  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(30);
   const banner=document.getElementById('newsBanner');
+  if(CONTENT_VIS.news===false){banner.innerHTML='';return;}
+  const {data}=await sb.from('news_items').select('*').eq('tournament_id',TID).eq('is_visible',true).order('created_at',{ascending:false}).limit(30);
 
   // تجاهل السجلات الفارغة حتى لا يظهر شريط بلا نص لمجرد وجود صف في القاعدة.
   const usableNews=(data||[]).filter(n=>String(n?.content||'').trim());
@@ -678,7 +681,21 @@ function closeFeedLightbox(){
 window.openFeedLightbox=openFeedLightbox;
 window.closeFeedLightbox=closeFeedLightbox;
 
-let PUBLIC_FEED=[];
+let PUBLIC_FEED=[],CONTENT_VIS={};
+const INFO_META={intro:['فيديو المقدمة','🎬'],regulations:['اللائحة التنظيمية','📘'],decisions:['قرارات اللجنة','⚖️'],instructions:['التعليمات','📋'],tutorials:['فيديوهات تعليمية','🎓']};
+async function loadContentSettings(){
+  const {data}=await sb.from('tournament_content_sections').select('section_key,is_visible').eq('tournament_id',TID);
+  CONTENT_VIS=Object.fromEntries((data||[]).map(x=>[x.section_key,x.is_visible]));
+  document.getElementById('qlinkVideos').style.display=CONTENT_VIS.media_videos===false?'none':'';
+  document.getElementById('qlinkDocs').style.display=CONTENT_VIS.bulletins===false?'none':'';
+}
+async function loadInfoHub(){
+  const sec=document.getElementById('infoHubSection');
+  const {data}=await sb.from('tournament_resources').select('id,category').eq('tournament_id',TID).eq('is_visible',true).order('sort_order');
+  const groups=Object.entries(INFO_META).map(([key,meta])=>({key,meta,count:(data||[]).filter(x=>x.category===key).length})).filter(x=>x.count&&CONTENT_VIS[x.key]!==false);
+  if(!groups.length){sec.innerHTML='';return;}
+  sec.innerHTML=`<section class="info-hub"><div class="info-hub-box"><div class="info-hub-title">🗂️ اللوائح والتعليمات الرسمية</div><div class="info-hub-grid">${groups.map(g=>`<a class="info-hub-card" href="${scopeUrl('resources.html?id='+TID+'&category='+g.key)}"><span>${g.meta[1]}</span><span>${g.meta[0]}<small>${g.count} ${g.count===1?'مادة':'مواد'}</small></span></a>`).join('')}</div></div></section>`;
+}
 function safeMediaUrl(value){try{const u=new URL(value,location.href);return ['http:','https:'].includes(u.protocol)?u.href:'';}catch(_){return'';}}
 function gridClass(rows){const n=rows.length;return `${n>1?'multi':''} count-${Math.min(n,9)} ${n>3&&n%2===1?'odd-tail':''}`;}
 function categoryLabel(value){return ({opening:'الافتتاح',official_visit:'زيارة رسمية',interview:'لقاء',player_of_match:'نجم المباراة',awards:'الجوائز',fans:'تفاعل الجمهور',teams:'الفرق واللاعبون',behind_scenes:'كواليس البطولة',trophy:'التتويج',highlights:'ملخص مباراة',press_conference:'مؤتمر صحفي',tv_report:'تقرير تلفزيوني',other:'تغطية البطولة'})[value]||'تغطية البطولة';}
@@ -696,9 +713,9 @@ window.openFeedGallery=openFeedGallery;window.openMediaVideo=openMediaVideo;
 
 async function loadFeed(){
   const sec=document.getElementById('feedSection');
-  const [{data:feedRows},{data:vidRows}]=await Promise.all([sb.from('feed_posts').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(60),sb.from('videos').select('*').eq('tournament_id',TID).order('created_at',{ascending:false}).limit(60)]);
+  const [{data:feedRows},{data:vidRows}]=await Promise.all([sb.from('feed_posts').select('*').eq('tournament_id',TID).eq('is_visible',true).order('created_at',{ascending:false}).limit(60),sb.from('videos').select('*').eq('tournament_id',TID).eq('is_visible',true).order('created_at',{ascending:false}).limit(60)]);
   const videos=(vidRows||[]).map(v=>({...v,id:'vid_'+v.id,post_type:'video',caption:v.description||null}));PUBLIC_FEED=[...(feedRows||[]),...videos];
-  const images=PUBLIC_FEED.filter(p=>p.post_type==='image'&&p.image_urls?.length),links=PUBLIC_FEED.filter(p=>p.post_type==='link'&&safeMediaUrl(p.link_url)),videoRows=PUBLIC_FEED.filter(p=>p.post_type==='video'&&safeMediaUrl(p.video_url));
+  const images=CONTENT_VIS.photos===false?[]:PUBLIC_FEED.filter(p=>p.post_type==='image'&&p.image_urls?.length),links=CONTENT_VIS.media_links===false?[]:PUBLIC_FEED.filter(p=>p.post_type==='link'&&safeMediaUrl(p.link_url)),videoRows=CONTENT_VIS.media_videos===false?[]:PUBLIC_FEED.filter(p=>p.post_type==='video'&&safeMediaUrl(p.video_url));
   if(!images.length&&!links.length&&!videoRows.length){sec.innerHTML='';return;}
   const imageCards=images.map(p=>{const n=Math.min(p.image_urls.length,3),more=p.image_urls.length-n;return `<article class="feed-post"><div class="feed-post-body"><div class="feed-post-ic">🖼️ ${categoryLabel(p.content_category)}</div><div class="feed-post-title">${motdEsc(p.title)}</div>${p.caption?`<div class="feed-post-cap">${motdEsc(p.caption)}</div>`:''}<div class="feed-post-imgs n${n}" onclick="openFeedGallery('${p.id}')">${p.image_urls.slice(0,3).map((u,i)=>`<div style="position:relative"><img src="${safeMediaUrl(u)}" alt="${motdEsc(p.title)}" loading="lazy">${more&&i===2?`<span class="feed-more-count">+${more}</span>`:''}</div>`).join('')}</div></div></article>`;}).join('');
   const linkCards=links.map(p=>`<article class="feed-post"><div class="feed-post-body"><div class="feed-post-ic">📰 ${sourceLabel(p.source_type,p.source_name)}</div><div class="feed-post-title">${motdEsc(p.title)}</div>${p.caption?`<div class="feed-post-cap">${motdEsc(p.caption)}</div>`:''}<a class="feed-post-link-btn" href="${scopeUrl('media-source.html?id='+encodeURIComponent(p.id)+'&tid='+encodeURIComponent(TID))}">قراءة التغطية داخل المنصة</a></div></article>`).join('');
@@ -1349,7 +1366,9 @@ async function bootstrapTournament(){
   loadHeaderCounts();
   getTournamentTeamsSummary();
 
-  const later=()=>{
+  const later=async()=>{
+    await loadContentSettings();
+    loadInfoHub();
     loadNews();
     loadMOTD();
     loadSponsors();
