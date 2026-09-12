@@ -36,6 +36,30 @@
     const rgb=[0,2,4].map(i=>parseInt(raw.slice(i,i+2),16)/255).map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4));
     return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]>.5?'#10233c':'#ffffff';
   }
+  function normalizeHex(hex,fallback='#0b4f7c'){
+    let raw=String(hex||'').trim().replace('#','');
+    if(/^[0-9a-f]{3}$/i.test(raw))raw=raw.split('').map(c=>c+c).join('');
+    return /^[0-9a-f]{6}$/i.test(raw)?'#'+raw.toLowerCase():fallback;
+  }
+  function mixColor(color,target,weight){
+    const a=normalizeHex(color).slice(1),b=normalizeHex(target,'#000000').slice(1),w=Math.max(0,Math.min(1,Number(weight)||0));
+    const channel=i=>Math.round(parseInt(a.slice(i,i+2),16)*(1-w)+parseInt(b.slice(i,i+2),16)*w).toString(16).padStart(2,'0');
+    return '#'+channel(0)+channel(2)+channel(4);
+  }
+  function themePalette(t){
+    const colors=themeColors(t),primary=normalizeHex(colors.primary),secondary=normalizeHex(colors.secondary,'#d7b348');
+    return {
+      primary,secondary,
+      deep:mixColor(primary,'#04111d',.72),
+      dark:mixColor(primary,'#061b2a',.5),
+      mid:mixColor(primary,'#ffffff',.16),
+      soft:mixColor(primary,'#ffffff',.86),
+      accent:secondary,
+      accentSoft:mixColor(secondary,'#ffffff',.72),
+      onPrimary:contrastText(primary),
+      onAccent:contrastText(secondary)
+    };
+  }
   function themeColors(t){
     let primary=t?.primary_color||'#0b4f7c',secondary=t?.secondary_color||'#d7b348';
     if(primary.toLowerCase()==='#a31971'&&secondary.toLowerCase()==='#0bd0cd'){
@@ -45,10 +69,16 @@
   }
   function applyTournamentTheme(t){
     if(!t)return;
-    const {primary,secondary}=themeColors(t);
+    const palette=themePalette(t),{primary,secondary}=palette;
     document.documentElement.style.setProperty('--theme-primary',primary);
     document.documentElement.style.setProperty('--theme-secondary',secondary);
-    document.documentElement.style.setProperty('--theme-on-primary',contrastText(primary));
+    document.documentElement.style.setProperty('--theme-primary-deep',palette.deep);
+    document.documentElement.style.setProperty('--theme-primary-dark',palette.dark);
+    document.documentElement.style.setProperty('--theme-primary-mid',palette.mid);
+    document.documentElement.style.setProperty('--theme-primary-soft',palette.soft);
+    document.documentElement.style.setProperty('--theme-secondary-soft',palette.accentSoft);
+    document.documentElement.style.setProperty('--theme-on-primary',palette.onPrimary);
+    document.documentElement.style.setProperty('--theme-on-secondary',palette.onAccent);
     document.body?.classList.add('tournament-themed');
     const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.content=primary;
     decorateTournamentNav(t);
@@ -101,5 +131,5 @@
       else record.addedNodes.forEach(decorate);
     })).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['href']});
   });
-  window.TournamentScope={isIsolated:isolated,rootTournamentId,scopedUrl,decorate,themeColors,applyTournamentTheme,decorateTournamentNav,configureApp,contrastText};
+  window.TournamentScope={isIsolated:isolated,rootTournamentId,scopedUrl,decorate,themeColors,themePalette,applyTournamentTheme,decorateTournamentNav,configureApp,contrastText,mixColor,normalizeHex};
 })();

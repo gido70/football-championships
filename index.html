@@ -193,6 +193,10 @@ img{display:block}
   height:120px;display:flex;align-items:center;
   justify-content:center;position:relative;overflow:hidden;
 }
+.t-banner::before,.t-featured::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:repeating-linear-gradient(118deg,rgba(255,255,255,.055) 0 1px,transparent 1px 34px);
+}
 .t-banner::after{
   content:"";position:absolute;inset:0;
   background:linear-gradient(0deg,rgba(9,22,36,.65),transparent 50%),radial-gradient(circle at 50% 0%,rgba(255,255,255,.15),transparent 65%);
@@ -255,6 +259,17 @@ img{display:block}
 }
 .t-featured:active{transform:scale(.98)}
 @media(min-width:640px){.t-featured{min-height:50vh}}
+
+.news-preview-box{
+  position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:18px;
+  margin:0 0 28px;padding:20px 22px;border:1px solid rgba(255,255,255,.11);border-radius:20px;
+  background:radial-gradient(circle at 12% 15%,rgba(201,168,76,.2),transparent 30%),linear-gradient(125deg,#1c55bb,#0b2e73 52%,#061735);
+  box-shadow:0 15px 38px rgba(0,0,0,.28);color:#fff;
+}
+.news-preview-box::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(118deg,rgba(255,255,255,.055) 0 1px,transparent 1px 32px);pointer-events:none}
+.news-preview-copy,.news-preview-link{position:relative;z-index:1}.news-preview-copy b{display:block;font-size:17px}.news-preview-copy span{display:block;margin-top:5px;color:rgba(255,255,255,.65);font-size:12px}
+.news-preview-link{flex:0 0 auto;padding:11px 16px;border-radius:12px;background:linear-gradient(135deg,#f5d88d,#c9a84c);color:#10213d;font-size:13px;font-weight:900}
+@media(max-width:560px){.news-preview-box{align-items:stretch;flex-direction:column}.news-preview-link{text-align:center}}
 
 /* ===== Skeleton ===== */
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -327,6 +342,10 @@ img{display:block}
 </div>
 
 <div class="section" style="padding-top:28px;padding-bottom:40px">
+  <div class="news-preview-box">
+    <div class="news-preview-copy"><b>📰 مركز الأخبار الذكي — معاينة</b><span>أخبار موثقة مولّدة من بيانات بطولة كأس منصور 2026.</span></div>
+    <a class="news-preview-link" href="news-center-preview.html?id=aaaaaaaa-0000-0000-0000-000000000001">فتح المعاينة ←</a>
+  </div>
   <div class="sec-title" id="tGridTitle">🏆 البطولات</div>
   <div class="t-grid" id="tGrid">
     <div class="skel"></div><div class="skel"></div>
@@ -337,6 +356,7 @@ img{display:block}
 
 <script src="public-navigation.js?v=20260911-1"></script>
 <script src="supabase-config.js"></script>
+<script src="tournament-scope.js"></script>
 <script>
 let sb=null;
 function showStartupError(){
@@ -373,6 +393,12 @@ function countUpTo(elId,target){
 
 function ini(n){return(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
 function teamBg(c1,c2){return c2&&c2!==c1?`linear-gradient(135deg,${c1} 50%,${c2} 50%)`:c1;}
+function tournamentGradient(t,withImage=false){
+  const p=window.TournamentScope?.themePalette?.(t)||{primary:t.primary_color||'#1e4a8a',mid:t.primary_color||'#2c5aa0',dark:'#102f62',deep:'#071a37',secondary:t.secondary_color||'#c9a84c'};
+  const glow=`radial-gradient(circle at 14% 8%,color-mix(in srgb,${p.secondary} 22%,transparent),transparent 34%)`;
+  if(withImage)return `${glow},linear-gradient(120deg,${p.deep}e6,${p.primary}96 48%,${p.dark}d9),url('${t.bg_image_url}') center/cover`;
+  return `${glow},linear-gradient(125deg,${p.mid},${p.dark} 52%,${p.deep})`;
+}
 
 async function loadStats(){
   try{
@@ -438,9 +464,7 @@ async function loadTournaments(){
   // حالة خاصة: بطولة واحدة فقط ظاهرة للعموم — بانر مميّز كبير بدل بطاقة صغيرة في شبكة
   if(data.length===1){
     const t=data[0];
-    const bg=t.bg_image_url
-      ?`linear-gradient(rgba(6,14,26,.55),rgba(6,14,26,.85)),url('${t.bg_image_url}') center/cover`
-      :`linear-gradient(160deg,${t.primary_color||'#1e4a8a'} 0%,${t.secondary_color||'#2c5aa0'} 100%)`;
+    const bg=tournamentGradient(t,Boolean(t.bg_image_url));
     const s=t.season_label||'';
     const logo=t.cup_logo_url||t.logo_url||(s.includes('2027')?base+'logo_cup_2027.png':s.includes('2026')?base+'logo_cup_2026.png':'');
     document.getElementById('tGridTitle').style.display='none';
@@ -462,9 +486,7 @@ async function loadTournaments(){
   g.className='t-grid';
   document.getElementById('tGridTitle').style.display='';
   g.innerHTML=data.map((t,i)=>{
-    const bg=t.bg_image_url
-      ?`linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),url('${t.bg_image_url}') center/cover`
-      :`linear-gradient(135deg,${t.primary_color||'#1e4a8a'} 0%,${t.secondary_color||'#2c5aa0'} 100%)`;
+    const bg=tournamentGradient(t,Boolean(t.bg_image_url));
     const s=t.season_label||'';
     const logo=t.cup_logo_url||t.logo_url||(s.includes('2027')?base+'logo_cup_2027.png':s.includes('2026')?base+'logo_cup_2026.png':'');
     return `<a class="t-card" href="tournament.html?id=${t.id}" style="animation-delay:${i*0.08}s">
