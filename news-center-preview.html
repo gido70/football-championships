@@ -113,7 +113,7 @@
     }
     $$('.view-tab').forEach(b=>b.onclick=()=>{$$('.view-tab').forEach(x=>x.classList.toggle('active',x===b));$$('.view').forEach(v=>v.classList.remove('active'));$('#'+b.dataset.view+'View').classList.add('active');scrollTo({top:0,behavior:'smooth'})});
     $$('.filter').forEach(b=>b.onclick=()=>{$$('.filter').forEach(x=>x.classList.toggle('active',x===b));state.filter=b.dataset.filter;render()});
-    $('[data-close]').onclick=closeModal;$('.backdrop').onclick=closeModal;document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+    $$('[data-close]').forEach(el=>el.onclick=closeModal);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
     $('#tournamentSelect').onchange=e=>loadTournament(e.target.value).catch(showError);$('#focusManual').onclick=()=>{$('#manualTitle').focus();$('#manualForm').scrollIntoView({behavior:'smooth',block:'center'})};
     $('#manualForm').onsubmit=e=>{e.preventDefault();const title=$('#manualTitle').value.trim();if(!title)return;const item={id:'local:'+Date.now(),key:'local:'+Date.now(),type:'official',category:$('#manualCategory').value,tag:'خبر يدوي',priority:110,cover:'warm',title,summary:$('#manualSummary').value.trim()||'خبر يدوي تجريبي داخل مركز التحرير.',source:'إدخال محلي — لم يُحفظ',local:true};state.news.unshift(item);state.selected=item.id;e.target.reset();render()};
     function showError(error){console.error(error);$('#newsGrid').innerHTML=`<div class="loading error">تعذر تحميل بيانات البطولة: ${esc(error?.message||error)}</div>`}
