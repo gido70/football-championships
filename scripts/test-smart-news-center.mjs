@@ -27,6 +27,7 @@ assert.match(page,/تغطيات خارجية/);
 assert.match(page,/خبر يدوي تجريبي/);
 assert.match(page,/@media\(max-width:680px\)/);
 assert.match(page,/prefers-reduced-motion/);
+assert.match(page,/\$\$\('\[data-close\]'\)\.forEach/);
 assert.ok((page.match(/repeating-linear-gradient/g)||[]).length>=4,'expected layered diagonal texture');
 assert.match(scope,/function themePalette\(/);
 assert.match(scope,/--theme-primary-deep/);
