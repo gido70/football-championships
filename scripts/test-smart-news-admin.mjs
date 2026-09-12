@@ -17,5 +17,6 @@ assert.match(admin,/editNews/);assert.match(admin,/moveNews/);assert.match(admin
 assert.match(center,/smart_news_settings/);assert.match(center,/editorial_status==='published'/);
 assert.match(center,/\['automatic','manual'\]\.includes\(n\.source_type\)/);assert.match(center,/cfg\.awards_enabled/);
 assert.match(theme,/Noto Naskh Arabic/);
+assert.match(theme,/body\.tournament-themed :where\(h1,h2,h3/);
 assert.match(help,/محرك واحد لكل البطولات/);assert.match(help,/مراجعة أولًا/);
 console.log('Smart News admin checks passed');
