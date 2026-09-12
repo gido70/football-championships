@@ -1078,7 +1078,9 @@ function quickOpen(side,type){
     grid.innerHTML=players.map(p=>`<button class="btn-quick quick-player-chip" onclick="quickLog('${side}','${type}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}')"><span class="qp-number">${p.number||'—'}</span><span>${p.full_name_ar||p.name}</span></button>`).join('');
   }
   if(type!=='own_goal')grid.innerHTML+=`<button class="btn-quick quick-player-chip" onclick="quickLog('${side}','${type}','','بدون تحديد لاعب')"><span class="qp-number">—</span><span>بدون تحديد لاعب</span></button>`;
-  document.getElementById('quickPicker').style.display='block';
+  const picker=document.getElementById('quickPicker');
+  picker.style.display='block';
+  requestAnimationFrame(()=>picker.scrollIntoView({behavior:'smooth',block:'center'}));
 }
 
 function quickClose(){document.getElementById('quickPicker').style.display='none';}
@@ -1089,7 +1091,7 @@ async function quickLog(side,type,playerId,playerName){
   const min=parseInt(document.getElementById('minInput').value)||0;
   const isOwnGoal=type==='own_goal';
   if(isOwnGoal&&!playerId){setMsg('⚠️ اختر اللاعب الذي سجّل الهدف العكسي','warn');return;}
-  const {error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:playerId||null,team_id:tid,event_type:isOwnGoal?'goal':type,minute:min,event_subtype:isOwnGoal?'own_goal':null});
+  const {data:created,error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:playerId||null,team_id:tid,event_type:isOwnGoal?'goal':type,minute:min,event_subtype:isOwnGoal?'own_goal':null}).select('id').single();
   if(error){setMsg('❌ فشل: '+error.message,'err');return;}
   if(type==='goal'||isOwnGoal){
     const f=isOwnGoal?(side==='h'?'away_score':'home_score'):(side==='h'?'home_score':'away_score');
@@ -1111,6 +1113,7 @@ async function quickLog(side,type,playerId,playerName){
   else if(isOwnGoal)pushNews('↩️ هدف عكسي على '+(playerName||'لاعب')+' ('+tn+') في الدقيقة '+min2+' — يُحتسب للفريق المنافس');
   else if(type==='yellow_card')pushNews('🟨 بطاقة صفراء لـ '+(playerName||'لاعب')+' ('+tn+')');
   else if(type==='red_card')pushNews('🟥 بطاقة حمراء لـ '+(playerName||'لاعب')+' ('+tn+')');
+  if((type==='goal'||isOwnGoal)&&created?.id)window.AdminPush?.send(sb,'goal',cur.id,created.id);
 }
 
 async function loadPredictResults(matchId){
