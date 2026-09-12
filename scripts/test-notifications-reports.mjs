@@ -37,5 +37,10 @@ must(matchAdmin.includes('referee-page')&&matchAdmin.includes('commentator-page'
 must(matchAdmin.includes('slice(0,15)'),'حد الصفحة الواحدة للاعبين غير مطبق');
 must(matchAdmin.includes('rosters-layout'),'قائمتا الحكم ليستا مثبتتين جنبًا إلى جنب للطباعة');
 must(matchAdmin.includes('team-staff-table')&&matchAdmin.includes('coach_name'),'بيانات المدرب والإداري ناقصة من تقرير الحكم');
+must(!matchAdmin.includes("select('name_ar,name,committee_logo_url"),'استعلام التقرير ما زال يطلب عمود البطولة غير الموجود name_ar');
+must(matchAdmin.includes("select('name,committee_logo_url,cup_logo_url,logo_url,report_color,report_font,report_header_image_url,report_show_logos,report_logos_swapped,show_committee_logo,show_cup_logo')"),'هوية البطولة الكاملة غير مربوطة بالتقارير');
+must(matchAdmin.includes(".eq('team_id',cur.home_team_id).eq('is_active',true)")&&matchAdmin.includes(".eq('team_id',cur.away_team_id).eq('is_active',true)"),'التقارير قد تعرض لاعبين غير نشطين');
+must(matchAdmin.includes('معلّق المباراة')&&matchAdmin.includes("reportField('commentator','commentator')"),'اسم المعلق وتوقيعه غير موجودين في تقرير الحكم');
+must(matchAdmin.includes('الحكم المساعد')&&matchAdmin.includes("reportField('referee2','referee_2')"),'اسم الحكم المساعد غير مربوط بمحضر المباراة');
 
 console.log('notification and report tests passed');
