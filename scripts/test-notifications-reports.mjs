@@ -42,11 +42,17 @@ must(matchAdmin.includes("select('name,committee_logo_url,cup_logo_url,logo_url,
 must(matchAdmin.includes(".eq('team_id',cur.home_team_id).eq('is_active',true)")&&matchAdmin.includes(".eq('team_id',cur.away_team_id).eq('is_active',true)"),'التقارير قد تعرض لاعبين غير نشطين');
 must(matchAdmin.includes('معلّق المباراة')&&matchAdmin.includes("reportField('commentator','commentator')"),'اسم المعلق وتوقيعه غير موجودين في تقرير الحكم');
 must(matchAdmin.includes('الحكم المساعد')&&matchAdmin.includes("reportField('referee2','referee_2')"),'اسم الحكم المساعد غير مربوط بمحضر المباراة');
-must(matchAdmin.includes("select('event_type,event_subtype,minute,team_id,player_id,manual_player_name')")&&matchAdmin.includes('const playerMap=new Map'),'محضر المباراة لا يربط الأحداث بقائمة اللاعبين بصورة آمنة');
+must(matchAdmin.includes("select('event_type,event_subtype,minute,team_id,player_id,related_player_id,manual_player_name,notes,var_result')")&&matchAdmin.includes('const playerMap=new Map'),'محضر المباراة لا يربط الأحداث بقائمة اللاعبين بصورة آمنة');
 must(!matchAdmin.includes("sb.from('match_events').select('*,player:players(name,full_name_ar,number)')"),'محضر المباراة ما زال يستخدم ربط PostgREST غير الصالح للأحداث');
 must(matchAdmin.includes("e.minute==null?'—':e.minute"),'المحضر يعرض الدقيقة الفارغة بصيغة null');
 must(matchAdmin.includes('نموذج ما قبل المباراة')&&matchAdmin.includes('يؤشّر على الهدف والإنذار والطرد يدويًا'),'تقرير الحكم لا يوضح أنه نموذج يدوي قبل المباراة');
 must(!matchAdmin.includes("cur.status==='completed'?`${cur.home_score??0} - ${cur.away_score??0}`:''"),'تقرير الحكم ما زال يطبع النتيجة النهائية تلقائيًا');
 must(matchAdmin.includes('style="--team-color:${color}"')&&matchAdmin.includes('border-top:2.5mm solid var(--team-color'),'هوية لون الفريق غير واضحة في صفحة المعلّق');
+must(matchAdmin.includes('report-letterhead-banner')&&matchAdmin.includes('report-brand-strip')&&matchAdmin.includes('object-position:center center'),'الترويسة لا تضمن تمركز الصورة ووضوح الشعارات');
+must(matchAdmin.includes(".order('match_no',{ascending:true,nullsFirst:false})")&&matchAdmin.includes('if(index>=0)matchNo=index+1'),'رقم المباراة الاحتياطي لا يُشتق تلقائيًا من ترتيب البطولة');
+must(matchAdmin.includes('function reportTime(')&&matchAdmin.includes('reportDate(cur.match_date)'),'تاريخ ووقت المباراة غير مربوطين بنماذج الطباعة');
+must(matchAdmin.includes('full-score-card')&&matchAdmin.includes('report-kpis')&&matchAdmin.includes('الطاقم التحكيمي والإعلامي'),'التصميم الشامل لمحضر المباراة غير مكتمل');
+for(const label of ['الأهداف','البطاقات الصفراء','البطاقات الحمراء','الإصابات','التبديلات','مراجعات VAR','سجل ركلات الترجيح'])must(matchAdmin.includes(label),'محضر المباراة لا يشمل '+label);
+must(matchAdmin.includes('full-report-page')&&matchAdmin.includes('overflow:visible'),'محضر المباراة الطويل قد يُقص عند الطباعة');
 
 console.log('notification and report tests passed');
