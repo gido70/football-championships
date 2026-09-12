@@ -48,12 +48,15 @@ a{text-decoration:none;color:inherit}
 }
 .sb-glow{position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(201,168,76,.18),transparent 60%)}
 @keyframes livepulse3{0%{box-shadow:0 0 0 0 rgba(255,59,59,.6)}70%{box-shadow:0 0 0 8px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
-.match-ticker{display:flex;align-items:center;gap:8px;background:#FFFFFF;border:1px solid #EDEAE0;border-bottom:2px solid rgba(255,59,59,.4);height:38px;overflow:hidden}
-.match-ticker .mt-label{flex-shrink:0;font-size:11px;font-weight:800;padding:0 12px;height:100%;display:flex;align-items:center;gap:5px;background:rgba(255,59,59,.12);color:#f85149;white-space:nowrap}
+.match-ticker{position:relative;isolation:isolate;display:flex;align-items:center;gap:0;margin:10px 9px 4px;background:linear-gradient(110deg,#fff,color-mix(in srgb,var(--theme-primary) 6%,#fff),color-mix(in srgb,var(--theme-secondary) 13%,#fff));border:1px solid color-mix(in srgb,var(--theme-primary) 24%,#d8e4ed);border-radius:15px;height:52px;overflow:hidden;box-shadow:0 5px 0 color-mix(in srgb,var(--theme-primary) 17%,#c8d6df),0 11px 22px rgba(10,39,68,.13)}
+.match-ticker::before{content:"";position:absolute;z-index:-1;inset:0;background:repeating-linear-gradient(118deg,rgba(10,49,79,.045) 0 1px,transparent 1px 28px)}
+.match-ticker .mt-label{flex-shrink:0;font-size:11.5px;font-weight:900;padding:0 13px;height:100%;display:flex;align-items:center;gap:7px;background:radial-gradient(circle at 18% 20%,rgba(255,75,75,.26),transparent 42%),linear-gradient(135deg,var(--theme-primary),var(--theme-primary-dark),var(--theme-primary-deep));color:#fff;white-space:nowrap;border-left:1px solid rgba(255,255,255,.16)}
 .match-ticker .mt-dot{width:7px;height:7px;border-radius:50%;background:#f85149;animation:livepulse3 1.2s infinite}
 .mt-viewport{flex:1;overflow:hidden;position:relative;height:100%}
-.mt-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:13px;color:#2C2C2A;will-change:transform}
-.mt-sep{margin:0 16px;color:#9C9A8D}
+.mt-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:13px;font-weight:800;color:#17324d;will-change:transform}
+.mt-item{display:inline-flex;align-items:center;min-height:32px;padding:5px 12px;border-radius:10px;background:rgba(255,255,255,.7);border:1px solid color-mix(in srgb,var(--theme-primary) 14%,#e7eef4)}
+.mt-sep{margin:0 10px;color:#f85149;font-weight:900}
+@media(max-width:520px){.match-ticker{height:49px;margin-inline:7px}.match-ticker .mt-label{padding-inline:10px;font-size:10.5px}.mt-track{font-size:12px}.mt-item{padding-inline:9px}}
 .sb-inner{position:relative;z-index:1;max-width:720px;margin:0 auto}
 .sb-meta{display:flex;justify-content:center;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
 .sb-round{font-size:12px;font-weight:700;color:#79786A;background:#FFFFFF;border:1px solid #E0DCCF;padding:4px 12px;border-radius:20px}
@@ -228,7 +231,7 @@ a{text-decoration:none;color:inherit}
 .float-back{display:none;position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:16px;z-index:199;background:rgba(6,14,26,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(201,168,76,.3);border-radius:30px;padding:10px 18px;font-size:13px;font-weight:800;color:#c9a84c;text-decoration:none;box-shadow:0 4px 18px rgba(0,0,0,.4)}
 @media(max-width:760px){.float-back{display:flex;align-items:center;gap:6px}}
 </style>
-<link rel="stylesheet" href="public-ui.css?v=20260910-3">
+<link rel="stylesheet" href="public-ui.css?v=20260912-6">
 <link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
 </head>
 <body class="public-match">
@@ -755,7 +758,7 @@ async function loadMatchTicker(m){
   if(!data||!data.length){stopMatchTicker();return;}
   box.innerHTML=`<div class="match-ticker">
     <div class="mt-label"><span class="mt-dot"></span>أخبار المباراة</div>
-    <div class="mt-viewport"><div class="mt-track" id="mtTrack">${data.map(n=>`<span>${n.content}</span>`).join('<span class="mt-sep">•</span>')}</div></div>
+    <div class="mt-viewport"><div class="mt-track" id="mtTrack">${data.map(n=>`<span class="mt-item">${escapeHtmlPn(String(n.content||'').replace(/\s+/g,' ').trim().slice(0,120))}</span>`).join('<span class="mt-sep">◆</span>')}</div></div>
   </div>`;
   const track=document.getElementById('mtTrack');
   mtPos=track.parentElement.offsetWidth;
