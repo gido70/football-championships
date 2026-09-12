@@ -106,16 +106,16 @@ body.public-match h1,body.public-match h2,body.public-match h3,
 .public-tournament .qlink-orb{
   position:relative;
   isolation:isolate;
-  width:68px;
-  height:68px;
-  flex:0 0 68px;
+  width:74px;
+  height:74px;
+  flex:0 0 74px;
   display:grid;
   place-items:center;
   border-radius:50%;
   color:#fff;
   background:
     radial-gradient(circle at 33% 24%,rgba(255,255,255,.42),transparent 23%),
-    linear-gradient(145deg,color-mix(in srgb,var(--qlink-accent) 76%,white),var(--qlink-accent) 58%,var(--qlink-depth));
+    linear-gradient(145deg,color-mix(in srgb,var(--qlink-accent) 84%,white),var(--qlink-accent) 55%,var(--qlink-depth));
   border:1px solid rgba(255,255,255,.72);
   box-shadow:
     0 7px 0 var(--qlink-depth),
@@ -123,6 +123,7 @@ body.public-match h1,body.public-match h2,body.public-match h3,
     inset 0 2px 2px rgba(255,255,255,.55),
     inset 0 -5px 9px rgba(2,24,49,.22);
   transform:translateY(0) rotateX(0) rotateY(0);
+  filter:saturate(1.18) contrast(1.04);
   transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,filter .2s ease;
 }
 .public-tournament .qlink-orb::after{
@@ -169,11 +170,11 @@ body.public-match h1,body.public-match h2,body.public-match h3,
   transition-duration:.08s;
 }
 .public-tournament .qlink:focus-visible{outline:3px solid rgba(212,173,82,.5);outline-offset:4px}
-.public-tournament .qlink--navy{--qlink-accent:#123f6c;--qlink-depth:#071b35}
-.public-tournament .qlink--blue{--qlink-accent:#2777bb;--qlink-depth:#114a7c}
-.public-tournament .qlink--azure{--qlink-accent:#3597cf;--qlink-depth:#176694}
-.public-tournament .qlink--teal{--qlink-accent:#248a91;--qlink-depth:#125d66}
-.public-tournament .qlink--gold{--qlink-accent:#d4ad52;--qlink-depth:#9b7428}
+.public-tournament .qlink--navy{--qlink-accent:#175b96;--qlink-depth:#062b52}
+.public-tournament .qlink--blue{--qlink-accent:#1789dc;--qlink-depth:#0b4f91}
+.public-tournament .qlink--azure{--qlink-accent:#19ace6;--qlink-depth:#0876a8}
+.public-tournament .qlink--teal{--qlink-accent:#0ca7a7;--qlink-depth:#08666c}
+.public-tournament .qlink--gold{--qlink-accent:#e6b535;--qlink-depth:#a97812}
 .public-tournament .st-wrap,.public-tournament .bulletin-card,
 .public-tournament .feed-post,.public-tournament .motd-card,
 .public-tournament .m-card,.public-tournament .sc-item{
@@ -251,9 +252,9 @@ body.public-match h1,body.public-match h2,body.public-match h3,
   .public-tournament .main{padding:18px 10px calc(34px + env(safe-area-inset-bottom,0px))}
   .public-tournament .qlinks-wrap{padding:18px 10px 8px}
   .public-tournament .qlinks-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 5px}
-  .public-tournament .qlink{min-height:91px;gap:9px;padding:0}
-  .public-tournament .qlink-orb{width:60px;height:60px;flex-basis:60px;box-shadow:0 6px 0 var(--qlink-depth),0 11px 18px color-mix(in srgb,var(--qlink-depth) 32%,transparent),inset 0 2px 2px rgba(255,255,255,.55),inset 0 -4px 8px rgba(2,24,49,.22)}
-  .public-tournament .qlink-ic{font-size:22px}
+  .public-tournament .qlink{min-height:101px;gap:10px;padding:0}
+  .public-tournament .qlink-orb{width:68px;height:68px;flex-basis:68px;box-shadow:0 7px 0 var(--qlink-depth),0 13px 21px color-mix(in srgb,var(--qlink-depth) 38%,transparent),inset 0 2px 2px rgba(255,255,255,.62),inset 0 -5px 9px rgba(2,24,49,.24)}
+  .public-tournament .qlink-ic{font-size:24px}
   .public-tournament .qlink-label{font-size:12.5px}
   .public-tournament .st-scroll{overflow-x:auto;border-radius:0 0 16px 16px}
   .public-tournament .st-table{min-width:650px}
