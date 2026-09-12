@@ -8,6 +8,7 @@ const home=read('admin-home.html');
 for(const branch of ['إنشاء وتجهيز البطولة','تشغيل يوم المباراة','الإعلام ومحتوى البطولة','التقارير والنشر'])assert(guide.includes(branch),`missing guide branch: ${branch}`);
 for(const route of ['admin-setup.html','teams-admin.html','groups-admin.html','schedule-admin.html','admin-import.html','team-submissions-review.html','live-desk.html','match-admin.html','news-admin.html','feed-admin.html','video-admin.html','document-admin.html','stats-admin.html','qr-generator.html','index.html'])assert(guide.includes(`href="./${route}`),`missing guide route: ${route}`);
 assert(guide.includes('لا تُكتب النشرة هنا'),'newsletter workflow must remain upload-only');
+assert(guide.includes('حتى 24 ساعة أو حتى بدء مباراة جديدة'),'guide must explain ticker lifecycle');
 assert(guide.includes('هذه ليست مقالات مستقلة'),'quick match events must be distinguished from editorial news');
 for(const phrase of ['مركز الأخبار الذكي','تلقائي:</strong>','مراجعة أولًا','إيقاف','خارجي:</strong> متوقف حاليًا','معرّف البطولة'])assert(guide.includes(phrase),`missing smart-news guide detail: ${phrase}`);
 assert(home.includes('توليد أخبار كل بطولة ومراجعتها وترتيبها ونشرها'),'admin home must expose smart-news management');
