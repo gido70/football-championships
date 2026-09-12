@@ -44,6 +44,7 @@ expect(resources.includes('env(safe-area-inset-top') && resources.includes('✕ 
 expect(resources.includes('media-stage') && resources.includes('linear-gradient(160deg,#eefbff,#cbeaf5)'), 'الفيديو يظهر مركزيًا فوق خلفية سماوية فاتحة');
 expect(resources.includes('changePdfZoom') && resources.includes('Math.min(window.devicePixelRatio||1,2)'), 'عارض PDF للنشرات عالي الدقة ويدعم التكبير والتصغير');
 expect(resources.includes('available=Math.max(280,body.clientWidth-8)') && resources.includes('cssScale=(available/base.width)*pdfZoom'), 'ملفات PDF تستخدم معادلة ملاءمة عرض النشرة نفسها');
+expect(resources.includes('overflow-y:scroll') && resources.includes('scrollbar-gutter:stable'), 'عرض الصفحة يبقى ثابتًا بلا تمرير أفقي عند ظهور شريط الصفحات');
 expect(resources.includes('for(let n=1;n<=currentPdf.numPages;n++)'), 'كل صفحات PDF تظهر رأسيًا بالتتابع');
 expect(!resources.includes('useNativePdf') && !resources.includes('native-pdf-frame') && !resources.includes('<iframe'), 'لا يعود الملف إلى عارض PDF الأصلي الكبير');
 expect(resources.includes('history.pushState({resourceViewer:true}') && resources.includes("addEventListener('popstate'"), 'زر الرجوع في الهاتف يغلق عارض الملف');
