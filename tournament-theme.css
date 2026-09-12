@@ -2,6 +2,7 @@
 :root{--theme-primary:#0b4f7c;--theme-secondary:#d7b348;--theme-primary-deep:#041623;--theme-primary-dark:#07314c;--theme-primary-mid:#33729a;--theme-primary-soft:#e7f0f5;--theme-secondary-soft:#f4e9c4;--theme-on-primary:#fff;--theme-on-secondary:#10233c}
 body.tournament-themed,body.public-tournament{font-family:"Noto Naskh Arabic",serif!important}
 body.tournament-themed button,body.tournament-themed input,body.tournament-themed select,body.tournament-themed textarea,body.public-tournament button,body.public-tournament input,body.public-tournament select,body.public-tournament textarea{font-family:inherit!important}
+body.tournament-themed :where(h1,h2,h3,h4,h5,h6,p,span,a,button,input,select,textarea,label,small,strong,em,li,td,th,.tab),body.public-tournament :where(h1,h2,h3,h4,h5,h6,p,span,a,button,input,select,textarea,label,small,strong,em,li,td,th,.tab){font-family:"Noto Naskh Arabic",serif!important}
 .tournament-platform-mark{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px;background:linear-gradient(135deg,var(--theme-primary),color-mix(in srgb,var(--theme-primary) 76%,#061b33));color:var(--theme-on-primary);font:800 12px/1.25 "Noto Naskh Arabic","Tajawal",sans-serif;border-bottom:1px solid rgba(255,255,255,.15)}
 .tournament-platform-mark img{width:29px;height:29px;border-radius:9px;object-fit:cover;filter:drop-shadow(0 3px 5px rgba(0,0,0,.25))}
 .tournament-nav-brand{display:flex;align-items:center;justify-content:center;gap:9px;min-width:0}
