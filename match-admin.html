@@ -1771,8 +1771,8 @@ function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
 async function fetchReportData(){
   const {data:hTeam}=await sb.from('teams').select('name,name_ar,submitted_by_name,coach_name,logo_url,primary_color,secondary_color').eq('id',cur.home_team_id).single();
   const {data:aTeam}=await sb.from('teams').select('name,name_ar,submitted_by_name,coach_name,logo_url,primary_color,secondary_color').eq('id',cur.away_team_id).single();
-  const {data:hRoster}=await sb.from('players').select('name,full_name_ar,number,nationality,is_goalkeeper').eq('team_id',cur.home_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
-  const {data:aRoster}=await sb.from('players').select('name,full_name_ar,number,nationality,is_goalkeeper').eq('team_id',cur.away_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
+  const {data:hRoster}=await sb.from('players').select('id,name,full_name_ar,number,nationality,is_goalkeeper').eq('team_id',cur.home_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
+  const {data:aRoster}=await sb.from('players').select('id,name,full_name_ar,number,nationality,is_goalkeeper').eq('team_id',cur.away_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
   const {data:tour}=await sb.from('tournaments').select('name,committee_logo_url,cup_logo_url,logo_url,report_color,report_font,report_header_image_url,report_show_logos,report_logos_swapped,show_committee_logo,show_cup_logo').eq('id',cur.tournament_id).single();
   REPORT_PRIMARY=tour?.report_color||'#1a5c3a';
   REPORT_ACCENT='#c9a84c';
@@ -1903,15 +1903,17 @@ window.printCommentatorReport=printCommentatorReport;
 
 async function printFullMatchReport(mode='docx'){
   document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
-  const {hName,aName,tour}=await fetchReportData();
+  const {hName,aName,hLineup,aLineup,tour}=await fetchReportData();
   const tourName=tour?.name||'';
-  const {data:allEvents}=await sb.from('match_events').select('*,player:players(name,full_name_ar,number)').eq('match_id',cur.id).order('minute');
+  const {data:allEvents}=await sb.from('match_events').select('event_type,event_subtype,minute,team_id,player_id,manual_player_name').eq('match_id',cur.id).order('minute');
   const {data:varEvents}=await sb.from('match_var_events').select('*').eq('match_id',cur.id);
-  const {data:missedPens}=await sb.from('match_penalties_missed').select('*,player:players(name,full_name_ar,number)').eq('match_id',cur.id);
+  const {data:missedPens}=await sb.from('match_penalties_missed').select('team_id,player_id').eq('match_id',cur.id);
   const {data:motmP}=cur.player_of_match_id?await sb.from('players').select('name,full_name_ar,number').eq('id',cur.player_of_match_id).single():{data:null};
 
   const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
   const teamOf=e=>e.team_id===cur.home_team_id?hName:(e.team_id===cur.away_team_id?aName:'—');
+  const playerMap=new Map([...hLineup,...aLineup].map(p=>[p.id,p]));
+  const playerOf=e=>playerMap.get(e.player_id);
   const EL2={goal:'⚽ هدف',yellow_card:'🟨 بطاقة صفراء',red_card:'🟥 بطاقة حمراء',substitution:'🔄 تبديل',injury:'🩹 إصابة'};
 
   const summaryTable=`
@@ -1930,7 +1932,7 @@ async function printFullMatchReport(mode='docx'){
       <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">⭐ نجم المباراة</td><td style="padding:8px" colspan="3">${motmP?escR((motmP.full_name_ar||motmP.name)+' (#'+(motmP.number??'')+')'):'— لم يُحدَّد —'}</td></tr>
     </table>`;
 
-  const eventsRows=(allEvents||[]).map(e=>[e.minute+"'",e.event_subtype==='own_goal'?'↩️ هدف عكسي (لصالح المنافس)':(EL2[e.event_type]||e.event_type),e.player?.full_name_ar||e.player?.name||e.manual_player_name||'—',teamOf(e)]);
+  const eventsRows=(allEvents||[]).map(e=>{const p=playerOf(e);return[e.minute+"'",e.event_subtype==='own_goal'?'↩️ هدف عكسي (لصالح المنافس)':(EL2[e.event_type]||e.event_type),p?.full_name_ar||p?.name||e.manual_player_name||'—',teamOf(e)]});
   const eventsTable=rTable('⚡ سجل أحداث المباراة كاملاً',['الدقيقة','الحدث','اللاعب','الفريق'],eventsRows);
 
   let varTable='';
@@ -1941,7 +1943,7 @@ async function printFullMatchReport(mode='docx'){
   }
   let missedTable='';
   if(missedPens?.length){
-    missedTable=rTable('❌ ركلات جزاء ضائعة',['اللاعب','الفريق'],missedPens.map(e=>[e.player?.full_name_ar||e.player?.name||'—',teamOf(e)]));
+    missedTable=rTable('❌ ركلات جزاء ضائعة',['اللاعب','الفريق'],missedPens.map(e=>{const p=playerOf(e);return[p?.full_name_ar||p?.name||'—',teamOf(e)]}));
   }
 
   const header=reportLetterhead(tour,tourName);
