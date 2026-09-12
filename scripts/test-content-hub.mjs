@@ -35,9 +35,14 @@ expect(sql.includes("'intro','regulations','decisions','instructions','tutorials
 expect(sql.includes('add column if not exists is_visible'), 'الإخفاء الفردي مضاف للمحتوى القديم');
 expect(admin.includes('toggleSection(') && admin.includes('toggleResource(') && admin.includes('toggleLegacy('), 'الأدمن يدعم التحكم بالقسم والمادة والمحتوى القديم');
 expect(admin.includes('accept="application/pdf,video/mp4"'), 'نموذج الأدمن يقبل PDF والفيديو');
+expect(admin.includes("autoTitle=file?.name?.replace") && admin.includes("title=typedTitle||autoTitle"), 'اسم الملف يتحول تلقائيًا إلى عنوان دون كتابة يدوية');
 expect(resources.includes('pdfjsLib.getDocument'), 'ملفات PDF تُقرأ داخل المنصة');
 expect(resources.includes('<video src='), 'الفيديو يُشغّل داخل المنصة');
-expect(tournament.indexOf('id="quickLinks"') < tournament.indexOf('id="infoHubSection"'), 'الأقسام الأساسية تسبق مركز المعلومات');
+expect(tournament.indexOf('id="newsBanner"') < tournament.indexOf('class="qlinks-wrap"'), 'شريط الأخبار يظهر أعلى أقسام البطولة');
+expect(tournament.indexOf('class="qlinks-wrap"') < tournament.indexOf('id="infoHubSection"'), 'الأقسام الأساسية تسبق مركز المعلومات');
+expect(resources.includes('env(safe-area-inset-top') && resources.includes('✕ إغلاق والرجوع'), 'أزرار الرجوع والإغلاق بعيدة عن حافة الهاتف');
+expect(resources.includes('media-stage') && resources.includes('linear-gradient(160deg,#eefbff,#cbeaf5)'), 'الفيديو يظهر مركزيًا فوق خلفية سماوية فاتحة');
+expect(resources.includes('changePdfZoom') && resources.includes('useSystemFonts:true') && resources.includes('Math.min(devicePixelRatio||1,3)'), 'عارض PDF عالي الدقة ويدعم التكبير والتصغير');
 expect(tournament.includes("await loadContentSettings()") && tournament.includes('loadInfoHub()'), 'إعدادات الظهور تُحمّل قبل المحتوى');
 expect(tournament.includes(".eq('is_visible',true)"), 'صفحة البطولة تستبعد المواد المخفية');
 expect(matchLive.includes(".eq('match_id',m.id).eq('is_visible',true)"), 'صفحة المباراة لا تعرض خبرًا مخفيًا');
