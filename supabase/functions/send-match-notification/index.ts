@@ -1,5 +1,5 @@
-import {createClient} from '@supabase/supabase-js';
-import webpush from 'web-push';
+import {createClient} from 'npm:@supabase/supabase-js@2';
+import webpush from 'npm:web-push@3.6.7';
 
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type'};
 const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
