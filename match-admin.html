@@ -1638,7 +1638,8 @@ async function domToDocxChildren(container){
       const buf=await imgUrlToBuffer(el.getAttribute('src'));
       if(buf){
         const h=parseInt(st['max-height'])||parseInt(st['height'])||70;
-        out.push(new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:buf,transformation:{width:h*2,height:h}})]}));
+        const isLetterhead=!!el.closest('.report-letterhead-banner');
+        out.push(new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:buf,transformation:{width:isLetterhead?700:h*2,height:isLetterhead?105:h}})]}));
       }
       continue;
     }
@@ -1647,6 +1648,10 @@ async function domToDocxChildren(container){
         alignment:AlignmentType.CENTER,bidirectional:true,spacing:{before:200,after:200},
         children:[new TextRun({text:el.textContent,bold:true,size:tag==='H1'?32:26,color:hex6(st.color)||'1a5c3a',font:REPORT_FONT})]
       }));
+      continue;
+    }
+    if(tag==='DIV'&&(el.classList.contains('report-letterhead')||el.classList.contains('report-letterhead-banner')||el.classList.contains('report-brand-strip'))){
+      out.push(...await domToDocxChildren(el));
       continue;
     }
     if(tag==='P'||tag==='DIV'){
@@ -1736,8 +1741,8 @@ function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
       .report-page{width:196mm;min-height:283mm;margin:0 auto 12px;background:#fff;padding:0;overflow:hidden;break-after:page;page-break-after:always}
       .report-page:last-child{break-after:auto;page-break-after:auto}
       .report-letterhead{height:auto;overflow:visible;margin-bottom:2.5mm}
-      .report-letterhead-banner{height:26mm;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff}
-      .report-letterhead-banner img{display:block;width:100%;height:100%;object-fit:contain;object-position:center center}
+      .report-letterhead-banner{width:100%;height:30mm;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff}
+      .report-letterhead-banner img{display:block;width:100%;height:100%;object-fit:fill;object-position:center center}
       .report-brand-strip{height:11mm;display:flex;align-items:center;justify-content:center;gap:3mm;padding:1mm 4mm;border-bottom:1mm solid ${REPORT_PRIMARY};background:#fff}
       .report-brand-strip img{width:9mm;height:9mm;object-fit:contain;flex:none}
       .report-brand-title{min-width:42mm;max-width:105mm;text-align:center;font-size:13px;font-weight:900;color:${REPORT_PRIMARY};line-height:1.2}
@@ -1759,7 +1764,7 @@ function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
       .signature-table{font-size:10px;margin-top:2mm}.signature-table th,.signature-table td{padding:1.4mm}.signature-space{height:9mm}
       .manual-note{font-size:9.5px;text-align:center;background:#f3f5f8;border:1px solid #cbd2da;padding:1mm;margin:1.5mm 0;color:#303945}
       .commentator-page{border-top:2.5mm solid var(--team-color,${REPORT_PRIMARY});box-shadow:inset -1.5mm 0 var(--team-color,${REPORT_PRIMARY})}
-      .commentator-page .report-letterhead-banner{height:23mm}
+      .commentator-page .report-letterhead-banner{height:27mm}
       .commentator-page .report-brand-strip{height:10mm}
       .commentator-page .report-brand-strip img{width:8mm;height:8mm}
       .commentator-page .team-banner{display:grid;grid-template-columns:19mm 1fr 19mm;align-items:center;gap:2mm;color:#fff;border-radius:3mm;padding:2mm 3mm;margin:1.5mm 0 2mm;min-height:19mm}
@@ -1784,6 +1789,13 @@ function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
       .report-kpis td{border:1px solid #d7dee8;border-radius:2mm;background:#f7f9fc;padding:2mm 1mm}
       .report-kpis b{display:block;font-size:18px;color:${REPORT_PRIMARY}}.report-kpis small{font-size:8.5px;color:#596579}
       .report-summary{font-size:11px;line-height:1.7;background:#f4f6fa;border-right:1.5mm solid ${REPORT_ACCENT};padding:2mm 3mm;margin:2mm 0 3mm}
+      .motm-card{display:grid;grid-template-columns:20mm 1fr;align-items:center;gap:3mm;margin:2mm 0 3mm;padding:2.5mm 3mm;border:1px solid #dfc66e;border-radius:3mm;background:linear-gradient(135deg,#fff9df,#fff)}
+      .motm-card .motm-avatar{width:17mm;height:17mm;border-radius:50%;object-fit:cover;background:#fff;border:1mm solid #e3c45b}
+      .motm-card .motm-star{display:flex;align-items:center;justify-content:center;width:17mm;height:17mm;border-radius:50%;background:#f5cc43;color:#694f00;font-size:26px}
+      .motm-card strong{display:block;color:#6b5200;font-size:13px;margin-bottom:1mm}.motm-card span{font-size:10.5px;color:#333}
+      .special-cases{table-layout:fixed;border-spacing:1.2mm;border-collapse:separate;margin:2mm 0 3mm}
+      .special-cases td{border:1px solid #d7dee8;border-radius:2mm;background:#fbfcfe;padding:2mm 1mm}
+      .special-cases b{display:block;font-size:16px;color:${REPORT_PRIMARY}}.special-cases small{font-size:8.5px;color:#596579}
       .report-section-title{color:${REPORT_PRIMARY};font-size:13px;border-bottom:.8mm solid ${REPORT_ACCENT};padding-bottom:1mm;margin:3mm 0 1.5mm}
       .report-data-table{font-size:10px;margin-bottom:3mm;table-layout:fixed}
       .report-data-table th,.report-data-table td{padding:1.6mm 1.2mm}.report-data-table th{color:#fff}
@@ -1944,12 +1956,12 @@ async function printFullMatchReport(mode='docx'){
   const {data:varEvents}=await sb.from('match_var_events').select('*').eq('match_id',cur.id);
   const {data:missedPens}=await sb.from('match_penalties_missed').select('team_id,player_id').eq('match_id',cur.id);
   const {data:shootout}=await sb.from('match_penalty_shootout').select('team_id,player_id,shot_order,result').eq('match_id',cur.id).order('shot_order');
-  const {data:motmP}=cur.player_of_match_id?await sb.from('players').select('name,full_name_ar,number').eq('id',cur.player_of_match_id).single():{data:null};
+  const {data:motmP}=cur.player_of_match_id?await sb.from('players').select('name,full_name_ar,number,team_id,jersey_photo_url,injury_note').eq('id',cur.player_of_match_id).single():{data:null};
 
   const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
   const teamOf=e=>e.team_id===cur.home_team_id?hName:(e.team_id===cur.away_team_id?aName:'—');
   const playerIds=[...new Set([...(allEvents||[]).flatMap(e=>[e.player_id,e.related_player_id]),...(missedPens||[]).map(e=>e.player_id),...(shootout||[]).map(e=>e.player_id),cur.player_of_match_id].filter(Boolean))];
-  const {data:reportPlayers}=playerIds.length?await sb.from('players').select('id,name,full_name_ar,number').in('id',playerIds):{data:[]};
+  const {data:reportPlayers}=playerIds.length?await sb.from('players').select('id,name,full_name_ar,number,team_id,jersey_photo_url,injury_note').in('id',playerIds):{data:[]};
   const playerMap=new Map((reportPlayers||[]).map(p=>[p.id,p]));
   const playerOf=e=>playerMap.get(e.player_id);
   const playerLabel=p=>p?((p.number!=null?'#'+p.number+' — ':'')+(p.full_name_ar||p.name||'—')):'—';
@@ -1990,28 +2002,31 @@ async function printFullMatchReport(mode='docx'){
   const substitutions=(allEvents||[]).filter(e=>e.event_type==='substitution').length;
   const kpis=`<table class="report-kpis"><tr><td><b>${goals}</b><small>الأهداف</small></td><td><b>${yellow}</b><small>البطاقات الصفراء</small></td><td><b>${red}</b><small>البطاقات الحمراء</small></td><td><b>${injuries}</b><small>الإصابات</small></td><td><b>${substitutions}</b><small>التبديلات</small></td><td><b>${(varEvents||[]).length}</b><small>مراجعات VAR</small></td></tr></table>`;
   const motmText=motmP?playerLabel(motmP):'لم يُحدَّد نجم المباراة';
-  const summary=`<p class="report-summary"><strong>خلاصة المباراة:</strong> ${escR(outcomeText)} <strong>نجم المباراة:</strong> ${escR(motmText)}</p>`;
+  const motmTeam=motmP?.team_id===cur.home_team_id?hName:(motmP?.team_id===cur.away_team_id?aName:'—');
+  const motmVisual=motmP?.jersey_photo_url?`<img class="motm-avatar" src="${escR(motmP.jersey_photo_url)}" alt="صورة أفضل لاعب">`:'<div class="motm-star">★</div>';
+  const motmCard=`<h2 class="report-section-title">⭐ أفضل لاعب في المباراة</h2><div class="motm-card">${motmVisual}<div><strong>${escR(motmText)}</strong><span>${motmP?`الفريق: ${escR(motmTeam)}${motmP.number!=null?` — الرقم: ${escR(motmP.number)}`:''}`:'لم يتم اختيار أفضل لاعب لهذه المباراة في سجل الإدارة.'}</span></div></div>`;
+  const summary=`<p class="report-summary"><strong>الخلاصة الرسمية:</strong> ${escR(outcomeText)}</p>`;
+  const specialCases=`<h2 class="report-section-title">ملخص الحالات الخاصة</h2><table class="special-cases"><tr><td><b>${injuries}</b><small>إصابات مسجلة</small></td><td><b>${substitutions}</b><small>تبديلات</small></td><td><b>${(varEvents||[]).length}</b><small>مراجعات VAR</small></td><td><b>${(missedPens||[]).length}</b><small>جزاء ضائع</small></td><td><b>${(shootout||[]).length}</b><small>ركلات ترجيح</small></td></tr></table>`;
 
   const eventsRows=(allEvents||[]).map(e=>[e.minute==null?'—':e.minute+"'",eventLabel(e),eventPlayer(e),teamOf(e)]);
   const eventsTable=rTable('⚡ سجل أحداث المباراة كاملاً',['الدقيقة','الحدث','اللاعب','الفريق'],eventsRows);
 
-  let varTable='';
-  if(varEvents?.length){
-    const typeLabels={penalty:'ضربة جزاء',goal:'هدف',red_card:'بطاقة حمراء',other:'أخرى'};
-    const resultLabels={awarded:'✅ احتُسب',cancelled:'❌ أُلغي',confirmed:'☑️ تأكيد الحكم'};
-    varTable=rTable('📺 مراجعات الفار',['الدقيقة','الفريق','النوع','القرار'],varEvents.map(e=>[e.minute?e.minute+"'":'—',teamOf(e),typeLabels[e.var_type]||e.var_type,resultLabels[e.var_result]||e.var_result]));
-  }
-  let missedTable='';
-  if(missedPens?.length){
-    missedTable=rTable('❌ ركلات جزاء ضائعة',['اللاعب','الفريق'],missedPens.map(e=>{const p=playerOf(e);return[p?.full_name_ar||p?.name||'—',teamOf(e)]}));
-  }
-  let shootoutTable='';
-  if(shootout?.length){
-    shootoutTable=rTable('🎯 سجل ركلات الترجيح',['الترتيب','اللاعب','الفريق','النتيجة'],shootout.map(e=>[e.shot_order??'—',playerLabel(playerOf(e)),teamOf(e),e.result==='scored'?'سجل':'أهدر']));
-  }
+  const injuryEvents=(allEvents||[]).filter(e=>e.event_type==='injury');
+  const injuriesTable=rTable('🩹 تفاصيل إصابات المباراة',['الدقيقة','اللاعب','الفريق','التفاصيل'],injuryEvents.map(e=>{
+    const p=playerOf(e);
+    return [e.minute==null?'—':e.minute+"'",eventPlayer(e),teamOf(e),e.notes||p?.injury_note||'إصابة مسجلة أثناء المباراة'];
+  }));
+  const substitutionEvents=(allEvents||[]).filter(e=>e.event_type==='substitution');
+  const substitutionsTable=rTable('🔄 تفاصيل التبديلات',['الدقيقة','اللاعب الخارج ← اللاعب الداخل','الفريق','ملاحظات'],substitutionEvents.map(e=>[e.minute==null?'—':e.minute+"'",eventPlayer(e),teamOf(e),e.notes||'—']));
+
+  const typeLabels={penalty:'ضربة جزاء',goal:'هدف',red_card:'بطاقة حمراء',other:'أخرى'};
+  const resultLabels={awarded:'✅ احتُسب',cancelled:'❌ أُلغي',confirmed:'☑️ تأكيد الحكم'};
+  const varTable=rTable('📺 تفاصيل مراجعات VAR',['الدقيقة','الفريق','نوع المراجعة','قرار الحكم'],(varEvents||[]).map(e=>[e.minute?e.minute+"'":'—',teamOf(e),typeLabels[e.var_type]||e.var_type,resultLabels[e.var_result]||e.var_result]));
+  const missedTable=rTable('❌ ركلات الجزاء الضائعة',['اللاعب','الفريق'],(missedPens||[]).map(e=>{const p=playerOf(e);return[playerLabel(p),teamOf(e)]}));
+  const shootoutTable=rTable('🎯 سجل ركلات الترجيح',['الترتيب','اللاعب','الفريق','النتيجة'],(shootout||[]).map(e=>[e.shot_order??'—',playerLabel(playerOf(e)),teamOf(e),e.result==='scored'?'سجل':'أهدر']));
 
   const header=reportLetterhead(tour,tourName);
-  const content=`<div class="report-title">محضر المباراة الشامل</div>${metaTable}${scoreCard}${summary}${kpis}${officialsTable}${eventsTable}${varTable}${missedTable}${shootoutTable}<div class="report-footnote">أُنشئ هذا المحضر من سجل المباراة المعتمد في منصة البطولة.</div>`;
+  const content=`<div class="report-title">محضر المباراة الشامل</div>${metaTable}${scoreCard}${summary}${kpis}${officialsTable}${motmCard}${specialCases}${eventsTable}${injuriesTable}${substitutionsTable}${varTable}${missedTable}${shootoutTable}<div class="report-footnote">أُنشئ هذا المحضر من سجل المباراة المعتمد في منصة البطولة.</div>`;
   const pdfBody=`<section class="report-page full-report-page">${header}${content}</section>`;
   if(mode==='pdf'){printReportAsPDF('محضر المباراة الشامل',pdfBody,header);document.getElementById('reportMsg').textContent='✅ فُتحت نافذة الطباعة';return;}
   await downloadReportDoc('محضر المباراة - '+hName+' × '+aName+'.doc','',content,header);
