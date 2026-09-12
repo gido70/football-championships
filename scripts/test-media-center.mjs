@@ -14,7 +14,7 @@ const tournament=read('tournament.html');
 assert(tournament.includes("mediaSection('صور البطولة'"),'photos must have a separate section');
 assert(tournament.includes("mediaSection('التغطية الإعلامية'"),'media coverage must have a separate section');
 assert(tournament.includes("mediaSection('فيديوهات البطولة'"),'videos must have a separate section');
-assert(tournament.includes('<details class="media-section media-accordion">'),'tournament media sections must collapse on mobile');
+assert(tournament.includes('<details class="media-section media-accordion media-section--${tone}">'),'tournament media sections must collapse on mobile');
 assert(tournament.includes('bindMediaAccordions(sec)'),'tournament media accordions must bind after loading');
 assert(tournament.includes("whiteCupLogo=/أبطال أوروبا|دوري الأبطال|champions league/i"),'Champions League logo must get the visible white treatment');
 assert(tournament.includes('rgba(235,249,255,.98)'),'in-page media viewer must use the light sky treatment');
