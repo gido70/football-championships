@@ -129,6 +129,12 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .media-section[open] .media-section-head{border-radius:16px 16px 10px 10px;margin-bottom:14px;background:linear-gradient(145deg,#eaf9ff,#ccecf7)}
 .media-section-title{font-size:16px;font-weight:900;color:#173e58;display:flex;align-items:center;gap:8px}.media-section-tools{display:flex;align-items:center;gap:9px}.media-section-count{font-size:11px;color:#31566b;background:#fff;border:1px solid #b7d8e6;border-radius:999px;padding:4px 9px}.media-section-arrow{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#176a8b;color:#fff;font-size:16px;font-weight:900;box-shadow:0 3px 0 #0d4962;transition:transform .2s}.media-section[open] .media-section-arrow{transform:rotate(180deg)}
 .media-section-body{animation:mediaReveal .24s ease-out}@keyframes mediaReveal{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:translateY(0)}}
+.media-section--resources .media-section-head{background:linear-gradient(145deg,#e8f8ff,#bfe9f8);border-color:#86cde6;box-shadow:0 5px 0 #79b9cf,0 10px 22px rgba(25,105,139,.16)}
+.media-section--news .media-section-head{background:linear-gradient(145deg,color-mix(in srgb,var(--theme-secondary) 30%,#fff),color-mix(in srgb,var(--theme-primary) 18%,#fff));border-color:color-mix(in srgb,var(--theme-secondary) 52%,var(--theme-primary));box-shadow:0 5px 0 color-mix(in srgb,var(--theme-primary) 52%,#879bab),0 10px 24px color-mix(in srgb,var(--theme-primary) 19%,transparent)}
+.media-section--photos .media-section-head{background:linear-gradient(145deg,#fff1f7,#ffd6e8);border-color:#ee9fc0;box-shadow:0 5px 0 #cf82a2,0 10px 22px rgba(145,43,89,.14)}
+.media-section--coverage .media-section-head{background:linear-gradient(145deg,#f0eaff,#dcd0ff);border-color:#b39ce9;box-shadow:0 5px 0 #927ac6,0 10px 22px rgba(72,51,132,.14)}
+.media-section--videos .media-section-head{background:linear-gradient(145deg,#e9fff5,#c8f2df);border-color:#82d2ad;box-shadow:0 5px 0 #62ad8b,0 10px 22px rgba(28,112,76,.14)}
+.section-launch{display:grid;grid-template-columns:48px 1fr;align-items:center;gap:2px 12px;margin:0 2px;padding:14px 16px;border-radius:15px;background:linear-gradient(125deg,var(--theme-primary),var(--theme-primary-dark),var(--theme-primary-deep));color:#fff;text-decoration:none;box-shadow:0 6px 18px color-mix(in srgb,var(--theme-primary) 25%,transparent)}.section-launch>span{grid-row:1/3;font-size:30px}.section-launch b{font-size:15px}.section-launch small{color:rgba(255,255,255,.74);font-size:11px}
 .feed-wrap{display:grid;grid-template-columns:1fr;gap:12px}.feed-wrap.multi{grid-template-columns:repeat(2,minmax(0,1fr))}.feed-wrap.count-3 .feed-post:first-child{grid-column:1/-1}.feed-wrap.odd-tail:not(.count-3) .feed-post:last-child{grid-column:1/-1}
 .feed-post{background:#FFFFFF;border:1px solid #E0DCCF;border-radius:16px;overflow:hidden;text-align:right;min-width:0;box-shadow:0 6px 0 rgba(26,38,57,.10),0 10px 24px rgba(24,35,52,.08)}
 
@@ -180,16 +186,19 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .bulletin-desc{font-size:11.5px;color:#8b949e;margin-bottom:12px}
 .bulletin-btn{display:block;width:100%;text-align:center;background:linear-gradient(135deg,#c9a84c,#a5813a);color:#0d1117;font-weight:900;font-size:13px;padding:12px;border-radius:10px;text-decoration:none;margin-bottom:8px}
 .bulletin-more{display:block;width:100%;text-align:center;background:none;border:1px solid #30363d;color:#8b949e;font-size:12px;padding:9px;border-radius:10px;text-decoration:none}
-.ticker-wrap{max-width:900px;margin:0 auto;padding:10px 14px 4px}
-.ticker-line{display:flex;align-items:center;gap:0;background:#FFFFFF;border:1.5px solid #EDEAE0;border-radius:12px;padding:0;margin-bottom:10px;overflow:hidden;height:52px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.ticker-label{flex-shrink:0;width:118px;font-size:13px;font-weight:900;padding:0 10px;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;border-left:1px solid;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ticker-wrap{max-width:940px;margin:0 auto;padding:14px 14px 5px}
+.ticker-line{position:relative;isolation:isolate;display:flex;align-items:center;gap:0;background:linear-gradient(110deg,#fff,color-mix(in srgb,var(--theme-primary) 6%,#fff) 55%,color-mix(in srgb,var(--theme-secondary) 13%,#fff));border:1px solid color-mix(in srgb,var(--theme-primary) 25%,#d9e5ee);border-radius:17px;padding:0;margin-bottom:10px;overflow:hidden;height:58px;box-shadow:0 6px 0 color-mix(in srgb,var(--theme-primary) 18%,#c8d5df),0 13px 26px rgba(10,39,68,.13)}
+.ticker-line::before{content:"";position:absolute;z-index:-1;inset:0;background:repeating-linear-gradient(118deg,rgba(10,49,79,.045) 0 1px,transparent 1px 30px)}
+.ticker-label{flex-shrink:0;width:124px;font-size:13px;font-weight:900;padding:0 10px;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;border-left:1px solid rgba(255,255,255,.18);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:radial-gradient(circle at 20% 20%,color-mix(in srgb,var(--theme-secondary) 24%,transparent),transparent 43%),linear-gradient(135deg,var(--theme-primary),var(--theme-primary-dark),var(--theme-primary-deep));color:var(--theme-on-primary);box-shadow:-7px 0 18px rgba(4,25,43,.15)}
 .ticker-viewport{flex:1;overflow:hidden;position:relative;height:100%}
-.ticker-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:15px;font-weight:600;color:#2C2C2A;will-change:transform}
-.ticker-sep{margin:0 18px;color:#9C9A8D}
-.ticker-toggle{flex-shrink:0;background:transparent;border:none;color:#79786A;font-size:16px;cursor:pointer;padding:0 14px;height:100%}
+.ticker-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:14px;font-weight:800;color:#17324d;will-change:transform}
+.ticker-item{display:inline-flex;align-items:center;min-height:34px;padding:5px 13px;border-radius:10px;background:rgba(255,255,255,.66);border:1px solid color-mix(in srgb,var(--theme-primary) 14%,#e7eef4)}
+.ticker-sep{margin:0 10px;color:var(--theme-secondary);font-weight:900}
+.ticker-toggle{flex-shrink:0;background:color-mix(in srgb,var(--theme-primary) 8%,#fff);border:0;border-right:1px solid color-mix(in srgb,var(--theme-primary) 16%,#e2eaf0);color:var(--theme-primary);font-size:16px;cursor:pointer;padding:0 14px;height:100%}
 .ticker-toggle:hover{color:#2C2C2A}
 .ticker-sponsor-logo{height:24px;width:auto;max-width:60px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-left:8px}
 .ticker-sponsor-item{display:inline-flex;align-items:center;font-weight:800}
+@media(max-width:560px){.ticker-wrap{padding-inline:9px}.ticker-line{height:54px;border-radius:14px}.ticker-label{width:96px;font-size:11.5px}.ticker-track{font-size:12.5px}.ticker-item{padding-inline:10px}.ticker-toggle{padding-inline:11px}}
 .follow-wrap{max-width:900px;margin:0 auto;padding:4px 16px 14px}
 .follow-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 .follow-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:22px 14px;border-radius:16px;color:#fff;text-decoration:none;font-weight:900;font-size:15px;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.18);transition:transform .18s ease,box-shadow .18s ease}
@@ -332,7 +341,7 @@ img[src=""], img:not([src]) { display:none !important; }
 .notification-control small{font-size:11px;line-height:1.5;color:#617287}
 @media(max-width:620px){.notification-control{margin:9px 8px;align-items:stretch;flex-direction:column;text-align:center}.notification-control button{width:100%}}
 </style>
-<link rel="stylesheet" href="public-ui.css?v=20260910-5">
+<link rel="stylesheet" href="public-ui.css?v=20260912-6">
 </head>
 <body class="public-tournament">
 <div id="accessGateOverlay" style="display:none;position:fixed;inset:0;background:#0F2A4A;z-index:9999;align-items:center;justify-content:center;padding:20px">
@@ -420,12 +429,13 @@ img[src=""], img:not([src]) { display:none !important; }
     <a class="qlink qlink--gold" id="qlinkAwards" href="#"><span class="qlink-orb"><span class="qlink-ic">🏆</span></span><span class="qlink-label">الجوائز</span></a>
     <a class="qlink qlink--blue" id="qlinkVideos" href="#"><span class="qlink-orb"><span class="qlink-ic">🎬</span></span><span class="qlink-label">الفيديوهات</span></a>
     <a class="qlink qlink--azure" id="qlinkDocs" href="#"><span class="qlink-orb"><span class="qlink-ic">📰</span></span><span class="qlink-label">النشرات</span></a>
-    <a class="qlink qlink--navy" id="qlinkNews" href="#"><span class="qlink-orb"><span class="qlink-ic">🗞️</span></span><span class="qlink-label">مركز الأخبار</span></a>
     <a class="qlink qlink--gold" id="qlinkPredictions" href="#"><span class="qlink-orb"><span class="qlink-ic">🥇</span></span><span class="qlink-label">توقعات الأصدقاء</span></a>
   </div>
 </div>
 
 <div id="infoHubSection"></div>
+
+<div id="newsHubSection"></div>
 
 <div id="followSection"></div>
 
@@ -535,7 +545,6 @@ document.getElementById('qlinkStats').href=scopeUrl('stats.html?id='+TID);
   document.getElementById('qlinkAwards').href=scopeUrl('awards.html?id='+TID);
   document.getElementById('qlinkVideos').href=scopeUrl('videos.html?id='+TID);
   document.getElementById('qlinkDocs').href=scopeUrl('documents.html?id='+TID);
-  document.getElementById('qlinkNews').href=scopeUrl('news-center-preview.html?id='+TID);
   document.getElementById('qlinkPredictions').href=scopeUrl('leaderboard.html?tid='+TID);
 
 async function generateAutoBulletin(){
@@ -606,16 +615,17 @@ async function loadNews(){
     return;
   }
 
-  const line=(id,label,items,color)=>items.length?`
-    <div class="ticker-line" style="border-color:${color}55">
-      <div class="ticker-label" style="background:${color}22;color:${color};border-color:${color}55">${label}</div>
-      <div class="ticker-viewport">
-        <div class="ticker-track" id="${id}Track">${items.map(n=>`<span class="ticker-item">${n.content||n}</span>`).join('<span class="ticker-sep">•</span>')}</div>
-      </div>
-      <button class="ticker-toggle" id="${id}Toggle" onclick="toggleTicker('${id}')">⏸</button>
-    </div>`:'';
-
-  const markup=`<div class="ticker-wrap">${line('bulletin','📰 نشرة البطولة',usableBulletins,bulletinColor)}${line('match','⚽ أخبار المباريات',matchItems,'#1d4e89')}${line('general','📢 أخبار الكأس',generalItems,'#a3364c')}</div>`;
+  const cleanTickerText=value=>String(value||'').replace(/\s+/g,' ').trim().slice(0,120);
+  const combined=[
+    ...usableBulletins.map(text=>({text,type:'auto'})),
+    ...matchItems.map(n=>({text:n.title||n.content,type:'match'})),
+    ...generalItems.map(n=>({text:n.title||n.content,type:'general'}))
+  ].map(x=>({...x,text:cleanTickerText(x.text)})).filter(x=>x.text).filter((x,i,arr)=>arr.findIndex(y=>y.text===x.text)===i).slice(0,15);
+  const markup=`<div class="ticker-wrap"><div class="ticker-line ticker-line--main">
+    <div class="ticker-label">📰 آخر الأخبار</div>
+    <div class="ticker-viewport"><div class="ticker-track" id="mainNewsTrack">${combined.map(n=>`<span class="ticker-item ticker-item--${n.type}">${motdEsc(n.text)}</span>`).join('<span class="ticker-sep">◆</span>')}</div></div>
+    <button class="ticker-toggle" id="mainNewsToggle" onclick="toggleTicker('mainNews')" aria-label="إيقاف أو تشغيل شريط الأخبار">⏸</button>
+  </div></div>`;
 
   // لا نُعيد إنشاء الشريط إذا لم تتغير أخباره؛ إعادة البناء كانت تصفّر
   // موضع الحركة كل 25 ثانية وتجعل الشريط يبدو ثابتًا أو يقفز إلى البداية.
@@ -623,10 +633,8 @@ async function loadNews(){
   banner.dataset.tickerMarkup=markup;
   banner.innerHTML=markup;
 
-  ['bulletin','match','general'].forEach(id=>{
-    const track=document.getElementById(id+'Track');
-    if(track)startTickerAnim(id,track);
-  });
+  const track=document.getElementById('mainNewsTrack');
+  if(track)startTickerAnim('mainNews',track);
 }
 
 const tickerState={};
@@ -690,22 +698,30 @@ async function loadContentSettings(){
   CONTENT_VIS=Object.fromEntries((data||[]).map(x=>[x.section_key,x.is_visible]));
   document.getElementById('qlinkVideos').style.display=CONTENT_VIS.media_videos===false?'none':'';
   document.getElementById('qlinkDocs').style.display=CONTENT_VIS.bulletins===false?'none':'';
-  document.getElementById('qlinkNews').style.display=CONTENT_VIS.news===false?'none':'';
 }
 async function loadInfoHub(){
   const sec=document.getElementById('infoHubSection');
+  if(CONTENT_VIS.resources===false){sec.innerHTML='';return;}
   const {data}=await sb.from('tournament_resources').select('id,category').eq('tournament_id',TID).eq('is_visible',true).order('sort_order');
   const groups=Object.entries(INFO_META).map(([key,meta])=>({key,meta,count:(data||[]).filter(x=>x.category===key).length})).filter(x=>x.count&&CONTENT_VIS[x.key]!==false);
   if(!groups.length){sec.innerHTML='';return;}
   const total=groups.reduce((sum,g)=>sum+g.count,0);
-  sec.innerHTML=`<details class="media-section media-accordion info-hub"><summary class="media-section-head"><span class="media-section-title"><span>🗂️</span>اللوائح والتعليمات الرسمية</span><span class="media-section-tools"><span class="media-section-count">${total}</span><span class="media-section-arrow" aria-hidden="true">⌄</span></span></summary><div class="media-section-body"><div class="info-hub-grid">${groups.map(g=>`<a class="info-hub-card" href="${scopeUrl('resources.html?id='+TID+'&category='+g.key)}"><span>${g.meta[1]}</span><span>${g.meta[0]}<small>${g.count} ${g.count===1?'مادة':'مواد'}</small></span></a>`).join('')}</div></div></details>`;
+  sec.innerHTML=`<details class="media-section media-accordion info-hub media-section--resources"><summary class="media-section-head"><span class="media-section-title"><span>🗂️</span>اللوائح والتعليمات الرسمية</span><span class="media-section-tools"><span class="media-section-count">${total}</span><span class="media-section-arrow" aria-hidden="true">⌄</span></span></summary><div class="media-section-body"><div class="info-hub-grid">${groups.map(g=>`<a class="info-hub-card" href="${scopeUrl('resources.html?id='+TID+'&category='+g.key)}"><span>${g.meta[1]}</span><span>${g.meta[0]}<small>${g.count} ${g.count===1?'مادة':'مواد'}</small></span></a>`).join('')}</div></div></details>`;
+  bindMediaAccordions(sec);
+}
+async function loadNewsHub(){
+  const sec=document.getElementById('newsHubSection');
+  if(CONTENT_VIS.news_center===false){sec.innerHTML='';return;}
+  const {count}=await sb.from('news_items').select('id',{count:'exact',head:true}).eq('tournament_id',TID).eq('is_visible',true).eq('is_active',true);
+  const total=Number(count)||0;
+  sec.innerHTML=`<details class="media-section media-accordion media-section--news"><summary class="media-section-head"><span class="media-section-title"><span>📰</span>مركز أخبار البطولة</span><span class="media-section-tools"><span class="media-section-count">${total}</span><span class="media-section-arrow" aria-hidden="true">⌄</span></span></summary><div class="media-section-body"><a class="section-launch" href="${scopeUrl('news-center-preview.html?id='+TID)}"><span>🗞️</span><b>فتح الأخبار والنتائج السابقة</b><small>ملخصات رياضية قصيرة وموثقة</small></a></div></details>`;
   bindMediaAccordions(sec);
 }
 function safeMediaUrl(value){try{const u=new URL(value,location.href);return ['http:','https:'].includes(u.protocol)?u.href:'';}catch(_){return'';}}
 function gridClass(rows){const n=rows.length;return `${n>1?'multi':''} count-${Math.min(n,9)} ${n>3&&n%2===1?'odd-tail':''}`;}
 function categoryLabel(value){return ({opening:'الافتتاح',official_visit:'زيارة رسمية',interview:'لقاء',player_of_match:'نجم المباراة',awards:'الجوائز',fans:'تفاعل الجمهور',teams:'الفرق واللاعبون',behind_scenes:'كواليس البطولة',trophy:'التتويج',highlights:'ملخص مباراة',press_conference:'مؤتمر صحفي',tv_report:'تقرير تلفزيوني',other:'تغطية البطولة'})[value]||'تغطية البطولة';}
 function sourceLabel(value,name){return name||({newspaper:'صحيفة',website:'موقع إخباري',tv:'قناة تلفزيونية',radio:'إذاعة',instagram:'إنستغرام',facebook:'فيسبوك',youtube:'يوتيوب',internal:'البطولة'})[value]||'البطولة';}
-function mediaSection(title,icon,rows,cards){return rows.length?`<details class="media-section media-accordion"><summary class="media-section-head"><span class="media-section-title"><span>${icon}</span>${title}</span><span class="media-section-tools"><span class="media-section-count">${rows.length}</span><span class="media-section-arrow" aria-hidden="true">⌄</span></span></summary><div class="media-section-body"><div class="feed-wrap ${gridClass(rows)}">${cards}</div></div></details>`:'';}
+function mediaSection(title,icon,rows,cards,tone='media'){return rows.length?`<details class="media-section media-accordion media-section--${tone}"><summary class="media-section-head"><span class="media-section-title"><span>${icon}</span>${title}</span><span class="media-section-tools"><span class="media-section-count">${rows.length}</span><span class="media-section-arrow" aria-hidden="true">⌄</span></span></summary><div class="media-section-body"><div class="feed-wrap ${gridClass(rows)}">${cards}</div></div></details>`:'';}
 function bindMediaAccordions(container){
   container.querySelectorAll('.media-accordion').forEach(section=>section.addEventListener('toggle',()=>{
     if(!section.open)return;
@@ -725,7 +741,7 @@ async function loadFeed(){
   const imageCards=images.map(p=>{const n=Math.min(p.image_urls.length,3),more=p.image_urls.length-n;return `<article class="feed-post"><div class="feed-post-body"><div class="feed-post-ic">🖼️ ${categoryLabel(p.content_category)}</div><div class="feed-post-title">${motdEsc(p.title)}</div>${p.caption?`<div class="feed-post-cap">${motdEsc(p.caption)}</div>`:''}<div class="feed-post-imgs n${n}" onclick="openFeedGallery('${p.id}')">${p.image_urls.slice(0,3).map((u,i)=>`<div style="position:relative"><img src="${safeMediaUrl(u)}" alt="${motdEsc(p.title)}" loading="lazy">${more&&i===2?`<span class="feed-more-count">+${more}</span>`:''}</div>`).join('')}</div></div></article>`;}).join('');
   const linkCards=links.map(p=>`<article class="feed-post"><div class="feed-post-body"><div class="feed-post-ic">📰 ${sourceLabel(p.source_type,p.source_name)}</div><div class="feed-post-title">${motdEsc(p.title)}</div>${p.caption?`<div class="feed-post-cap">${motdEsc(p.caption)}</div>`:''}<a class="feed-post-link-btn" href="${scopeUrl('media-source.html?id='+encodeURIComponent(p.id)+'&tid='+encodeURIComponent(TID))}">قراءة التغطية داخل المنصة</a></div></article>`).join('');
   const videoCards=videoRows.map(p=>{const yid=feedYoutubeId(p.video_url),thumb=safeMediaUrl(p.thumbnail_url)||(yid?`https://i.ytimg.com/vi/${yid}/hqdefault.jpg`:''),orientation=p.media_orientation==='portrait'?'portrait':p.media_orientation==='square'?'square':'';return `<article class="feed-post"><div class="feed-post-vid ${orientation}" onclick="openMediaVideo('${p.id}')">${thumb?`<img src="${thumb}" alt="${motdEsc(p.title)}" loading="lazy">`:'<div class="ph">🎬</div>'}<div class="play"><span>▶</span></div></div><div class="feed-post-body"><div class="feed-post-ic">🎬 ${categoryLabel(p.content_category)}</div><div class="feed-post-title">${motdEsc(p.title)}</div>${p.caption?`<div class="feed-post-cap">${motdEsc(p.caption)}</div>`:''}</div></article>`;}).join('');
-  sec.innerHTML=mediaSection('صور البطولة','📸',images,imageCards)+mediaSection('التغطية الإعلامية','📰',links,linkCards)+mediaSection('فيديوهات البطولة','🎬',videoRows,videoCards);
+  sec.innerHTML=mediaSection('صور البطولة','📸',images,imageCards,'photos')+mediaSection('التغطية الإعلامية','📰',links,linkCards,'coverage')+mediaSection('فيديوهات البطولة','🎬',videoRows,videoCards,'videos');
   bindMediaAccordions(sec);
 }
 
@@ -1313,7 +1329,7 @@ async function loadFollowSection(){
   const sec=document.getElementById('followSection');
   if(!TID){sec.innerHTML='';return;}
   const {data}=await sb.from('tournaments').select('instagram_url,youtube_url').eq('id',TID).single();
-  const ig=data?.instagram_url, yt=data?.youtube_url;
+  const ig=CONTENT_VIS.instagram===false?'':data?.instagram_url, yt=CONTENT_VIS.youtube===false?'':data?.youtube_url;
   if(!ig&&!yt){sec.innerHTML='';return;}
   sec.innerHTML=`<div class="follow-wrap"><div class="follow-grid">
       ${ig?`<a class="follow-tile ig" href="${ig}" target="_blank" rel="noopener"><span class="follow-ic">📷</span>إنستغرام البطولة</a>`:''}
@@ -1374,6 +1390,7 @@ async function bootstrapTournament(){
   const later=async()=>{
     await loadContentSettings();
     loadInfoHub();
+    loadNewsHub();
     loadNews();
     loadMOTD();
     loadSponsors();
