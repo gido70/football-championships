@@ -49,10 +49,14 @@ must(matchAdmin.includes('نموذج ما قبل المباراة')&&matchAdmin.
 must(!matchAdmin.includes("cur.status==='completed'?`${cur.home_score??0} - ${cur.away_score??0}`:''"),'تقرير الحكم ما زال يطبع النتيجة النهائية تلقائيًا');
 must(matchAdmin.includes('style="--team-color:${color}"')&&matchAdmin.includes('border-top:2.5mm solid var(--team-color'),'هوية لون الفريق غير واضحة في صفحة المعلّق');
 must(matchAdmin.includes('report-letterhead-banner')&&matchAdmin.includes('report-brand-strip')&&matchAdmin.includes('object-position:center center'),'الترويسة لا تضمن تمركز الصورة ووضوح الشعارات');
+must(matchAdmin.includes('object-fit:fill')&&matchAdmin.includes('.report-letterhead-banner{width:100%'),'صورة الترويسة لا تمتد بعرض الصفحة كاملاً');
+must(matchAdmin.includes("el.closest('.report-letterhead-banner')")&&matchAdmin.includes('width:isLetterhead?700'),'ترويسة Word لا تمتد بعرض الصفحة');
 must(matchAdmin.includes(".order('match_no',{ascending:true,nullsFirst:false})")&&matchAdmin.includes('if(index>=0)matchNo=index+1'),'رقم المباراة الاحتياطي لا يُشتق تلقائيًا من ترتيب البطولة');
 must(matchAdmin.includes('function reportTime(')&&matchAdmin.includes('reportDate(cur.match_date)'),'تاريخ ووقت المباراة غير مربوطين بنماذج الطباعة');
 must(matchAdmin.includes('full-score-card')&&matchAdmin.includes('report-kpis')&&matchAdmin.includes('الطاقم التحكيمي والإعلامي'),'التصميم الشامل لمحضر المباراة غير مكتمل');
 for(const label of ['الأهداف','البطاقات الصفراء','البطاقات الحمراء','الإصابات','التبديلات','مراجعات VAR','سجل ركلات الترجيح'])must(matchAdmin.includes(label),'محضر المباراة لا يشمل '+label);
+for(const label of ['أفضل لاعب في المباراة','تفاصيل إصابات المباراة','تفاصيل التبديلات','تفاصيل مراجعات VAR','ملخص الحالات الخاصة'])must(matchAdmin.includes(label),'المحضر الشامل لا يعرض قسم '+label);
+must(matchAdmin.includes('jersey_photo_url,injury_note')&&matchAdmin.includes('p?.injury_note'),'تفاصيل أفضل لاعب أو الإصابة غير مربوطة ببيانات اللاعب');
 must(matchAdmin.includes('full-report-page')&&matchAdmin.includes('overflow:visible'),'محضر المباراة الطويل قد يُقص عند الطباعة');
 
 console.log('notification and report tests passed');
