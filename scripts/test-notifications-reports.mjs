@@ -15,11 +15,15 @@ must(tournament.includes('id="notificationToggle"'),'زر تفعيل التنب�
 must(!tournament.includes('requestNotifyPermissionOnce'),'ما زال طلب الإذن التلقائي موجودًا');
 must(sw.includes("self.addEventListener('push'"),'مستمع Push غير موجود');
 must(sw.includes("self.addEventListener('notificationclick'"),'فتح المباراة من التنبيه غير موجود');
-for(const event of ['start','goal','end']){
+for(const event of ['start','goal','yellow_card','red_card','end']){
   must(matchAdmin.includes(`'${event}'`),`إرسال ${event} غير مربوط بإدارة المباراة`);
   must(edge.includes(`'${event}'`),`وظيفة الخادم لا تعرف ${event}`);
 }
-must(live.includes("AdminPush?.send(sb,'goal'"),'هدف مركز اللايف غير مربوط بالتنبيه');
+must(live.includes("['goal','yellow_card','red_card'].includes(type)"),'أحداث مركز اللايف غير مربوطة بالتنبيهات');
+must(matchAdmin.includes('id="quickPickerConfirm"'),'زر تأكيد اختيار اللاعب غير موجود');
+must(matchAdmin.includes('function quickSelect(')&&matchAdmin.includes('function quickConfirm('),'اختيار اللاعب الآمن غير مكتمل');
+must(matchAdmin.includes(".eq('is_active',true)")&&live.includes(".eq('is_active',true)"),'اللاعبون غير النشطين قد يظهرون في اللايف');
+must(live.includes('id="playerChoiceGrid"'),'قائمة اللاعبين المرئية غير موجودة في مركز اللايف');
 must(sql.includes('unique(tournament_id,endpoint)'),'منع تكرار الاشتراك غير موجود');
 must(sql.includes('event_key text not null unique'),'منع تكرار التنبيه غير موجود');
 must(report.includes('الفائز')&&report.includes('الخاسر')&&report.includes('وقت البداية')&&report.includes('حكم المباراة')&&report.includes('المعلّق'),'تقرير المباراة ينقصه أحد الحقول المطلوبة');

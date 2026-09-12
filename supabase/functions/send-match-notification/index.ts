@@ -15,20 +15,20 @@ Deno.serve(async req=>{
     if(!user)return reply({error:'unauthorized'},401);
 
     const {type,match_id,event_id}=await req.json();
-    if(!['start','goal','end','test'].includes(type)||!match_id)return reply({error:'invalid_payload'},400);
+    if(!['start','goal','yellow_card','red_card','end','test'].includes(type)||!match_id)return reply({error:'invalid_payload'},400);
     const db=createClient(url,service);
     const {data:m,error:matchError}=await db.from('matches').select('id,tournament_id,home_team_id,away_team_id,home_score,away_score,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('id',match_id).single();
     if(matchError||!m)return reply({error:'match_not_found'},404);
 
     let event:any=null;
-    if(type==='goal'){
-      let q=db.from('match_events').select('id,minute,event_subtype,team_id,player:players!player_id(name,full_name_ar)').eq('match_id',match_id).eq('event_type','goal');
+    if(['goal','yellow_card','red_card'].includes(type)){
+      let q=db.from('match_events').select('id,minute,event_subtype,team_id,player:players!player_id(name,full_name_ar)').eq('match_id',match_id).eq('event_type',type);
       q=event_id?q.eq('id',event_id):q.order('created_at',{ascending:false}).limit(1);
       const {data}=event_id?await q.maybeSingle():await q;
       event=Array.isArray(data)?data[0]:data;
-      if(!event)return reply({error:'goal_not_found'},404);
+      if(!event)return reply({error:'event_not_found'},404);
     }
-    const eventKey=type==='goal'?`goal:${event.id}`:`${type}:${match_id}`;
+    const eventKey=['goal','yellow_card','red_card'].includes(type)?`${type}:${event.id}`:`${type}:${match_id}`;
     let delivery:any=null;
     if(type!=='test'){
       const {data,error}=await db.from('notification_deliveries').insert({event_key:eventKey,tournament_id:m.tournament_id,match_id,notification_type:type}).select('id').single();
@@ -45,7 +45,13 @@ Deno.serve(async req=>{
       const scoringTeam=scoringHome?homeName:awayName,player=(event.player as any)?.full_name_ar||(event.player as any)?.name;
       title='⚽ هدف لـ '+scoringTeam;body=`${player?player+' — ':''}${homeName} ${m.home_score??0} - ${m.away_score??0} ${awayName}${event.minute!=null?' — الدقيقة '+event.minute:''}`;
     }
-    if(type==='test'){title='🔔 تنبيه تجريبي ناجح';body=`${homeName} × ${awayName} — ستصل تنبيهات البداية والأهداف والنهاية بهذه الطريقة`;}
+    if(type==='yellow_card'||type==='red_card'){
+      const team=event.team_id===m.home_team_id?homeName:awayName;
+      const player=(event.player as any)?.full_name_ar||(event.player as any)?.name||'لاعب';
+      title=type==='yellow_card'?'🟨 بطاقة صفراء':'🟥 بطاقة حمراء';
+      body=`${player} — ${team}${event.minute!=null?' — الدقيقة '+event.minute:''}`;
+    }
+    if(type==='test'){title='🔔 تنبيه تجريبي ناجح';body=`${homeName} × ${awayName} — ستصل تنبيهات البداية والأهداف والبطاقات والنهاية بهذه الطريقة`;}
     const site=(Deno.env.get('PUBLIC_SITE_URL')||'https://gido70.github.io/football-championships').replace(/\/$/,'');
     const payload=JSON.stringify({title,body,icon:site+'/icon-app.png',badge:site+'/icon-app.png',tag:eventKey,url:`${site}/match-live.html?id=${match_id}`});
     webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT')||site,Deno.env.get('VAPID_PUBLIC_KEY')!,Deno.env.get('VAPID_PRIVATE_KEY')!);

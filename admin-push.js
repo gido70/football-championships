@@ -1,6 +1,6 @@
 (function(){
   async function send(client,type,matchId,eventId){
-    if(!client||!matchId||!['start','goal','end','test'].includes(type))return {skipped:true};
+    if(!client||!matchId||!['start','goal','yellow_card','red_card','end','test'].includes(type))return {skipped:true};
     try{
       const {data,error}=await client.functions.invoke('send-match-notification',{body:{type,match_id:matchId,event_id:eventId||null}});
       if(error)throw error;

@@ -1,5 +1,5 @@
-// sw.js — network-first public shell + Web Push — v23
-const VERSION = 'football-shell-v23';
+// sw.js — network-first public shell + Web Push — v25
+const VERSION = 'football-shell-v25';
 const CORE = [
   './',
   './index.html',
