@@ -24,6 +24,12 @@ must(matchAdmin.includes('id="quickPickerConfirm"'),'زر تأكيد اختيا�
 must(matchAdmin.includes('function quickSelect(')&&matchAdmin.includes('function quickConfirm('),'اختيار اللاعب الآمن غير مكتمل');
 must(matchAdmin.includes(".eq('is_active',true)")&&live.includes(".eq('is_active',true)"),'اللاعبون غير النشطين قد يظهرون في اللايف');
 must(live.includes('id="playerChoiceGrid"'),'قائمة اللاعبين المرئية غير موجودة في مركز اللايف');
+must(live.includes('id="playerSelect" type="hidden"'),'ما زالت قائمة اللاعب المنسدلة ظاهرة في مركز اللايف');
+must(live.includes("if(!playerId){toast('اختر اللاعب من البطاقة"),'مركز اللايف يسمح بحفظ حدث دون اختيار بطاقة لاعب');
+must(matchAdmin.includes('id="hPlayerCards"')&&matchAdmin.includes('id="aPlayerCards"'),'بطاقات اللاعبين غير موجودة في نموذج إدارة المباراة التفصيلي');
+must(matchAdmin.includes('function selectEventPlayer('),'تحديد بطاقة اللاعب في النموذج التفصيلي غير مربوط');
+must(matchAdmin.includes('function saveInjurySelection(')&&matchAdmin.includes('id="saveInjuryBtn"'),'الإصابة لا تستخدم الاختيار ثم التأكيد');
+must(!matchAdmin.includes('class="inj-check"'),'ما زال حفظ الإصابة الفوري بضغطة واحدة موجودًا');
 must(sql.includes('unique(tournament_id,endpoint)'),'منع تكرار الاشتراك غير موجود');
 must(sql.includes('event_key text not null unique'),'منع تكرار التنبيه غير موجود');
 must(report.includes('الفائز')&&report.includes('الخاسر')&&report.includes('وقت البداية')&&report.includes('حكم المباراة')&&report.includes('المعلّق'),'تقرير المباراة ينقصه أحد الحقول المطلوبة');

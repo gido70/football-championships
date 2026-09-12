@@ -51,6 +51,14 @@ select option{background:#0f2a45;color:#ffffff}
 .inj-player-card label{display:grid!important;grid-template-columns:48px 1fr auto;align-items:center;gap:10px!important;width:100%}
 .inj-player-number{display:flex;align-items:center;justify-content:center;min-width:44px;height:38px;border-radius:10px;background:#4ea1ff;color:#071426;font-size:16px;font-weight:900;direction:ltr}
 .inj-player-name{font-size:14px;font-weight:800;white-space:normal!important}
+.event-player-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:300px;overflow:auto;margin:8px 0;padding:2px}
+.event-player-card{display:grid;grid-template-columns:48px 1fr;align-items:center;gap:9px;min-height:56px;padding:7px 9px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:#162941;color:#eef5ff;text-align:right;cursor:pointer;font-family:inherit}
+.event-player-card.selected{border-color:#ffd54f;background:#24496f;box-shadow:0 0 0 2px rgba(255,213,79,.22)}
+.event-player-card .player-number{display:flex;align-items:center;justify-content:center;height:40px;border-radius:10px;background:#4ea1ff;color:#071426;font-size:17px;font-weight:900;direction:ltr}
+.event-player-card .player-name{font-size:14px;font-weight:800;line-height:1.35}
+.inj-player-card{display:grid!important;grid-template-columns:48px 1fr auto;align-items:center;gap:10px;width:100%;cursor:pointer;border:1px solid rgba(255,255,255,.08);border-radius:11px!important;padding:7px!important;margin-bottom:6px;background:rgba(255,255,255,.025);color:#eef5ff;text-align:right;font-family:inherit}
+.inj-player-card.selected{border-color:#ffd54f;background:rgba(255,213,79,.12);box-shadow:0 0 0 2px rgba(255,213,79,.18)}
+.inj-player-card.current{border-color:#f85149;background:rgba(248,81,73,.13)}
 .lu-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
 .lu-admin-team-hd{font-size:13px;font-weight:800;color:#c9a84c;margin-bottom:8px}
 .lu-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;color:#e6edf3}
@@ -60,6 +68,7 @@ select option{background:#0f2a45;color:#ffffff}
 .lu-row .inj-btn{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #ff6b6b;background:transparent;color:#ff6b6b;cursor:pointer}
 .lu-row .inj-btn.active{background:#ff6b6b;color:#fff}
 @media(max-width:680px){.lu-admin-grid{grid-template-columns:1fr}}
+@media(max-width:520px){.event-player-grid{grid-template-columns:1fr;max-height:340px}.event-player-card{min-height:60px}.event-player-card .player-number{font-size:19px}.inj-player-card{min-height:58px}.inj-player-number{font-size:18px;height:42px}}
 .min-row{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px}
 .min-row input{width:80px;text-align:center;padding:8px 12px;font-size:15px;border-radius:10px}
 
@@ -340,7 +349,7 @@ select option{background:#0f2a45;color:#ffffff}
         <span class="chev">▾</span>
       </div>
       <div class="collapsible-body" id="injuryBody">
-        <div style="font-size:11.5px;color:#8fa3c0;margin-bottom:10px">أشِّر على اللاعب المصاب — بنفس طريقة اختيار التشكيلة تماماً</div>
+        <div style="font-size:11.5px;color:#8fa3c0;margin-bottom:10px">اختر بطاقة اللاعب أولًا، ثم اضغط حفظ الإصابة. اللمسة الأولى وحدها لا تغيّر البيانات.</div>
         <div class="lu-admin-grid">
           <div>
             <div class="lu-admin-team-hd" id="injHName">الفريق الأول</div>
@@ -351,7 +360,7 @@ select option{background:#0f2a45;color:#ffffff}
             <div id="injAList"></div>
           </div>
         </div>
-        <button type="button" class="voice-btn" onclick="startVoiceInjury()" title="تسجيل إصابة بالصوت" style="margin-top:10px">🎤 تسجيل بالصوت</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px"><button type="button" class="voice-btn" onclick="startVoiceInjury()" title="اختيار المصاب بالصوت">🎤</button><button type="button" id="saveInjuryBtn" class="btn-sm btn-sm-ok" onclick="saveInjurySelection()" disabled>اختر لاعبًا لحفظ الإصابة</button><span id="injuryVoiceStatus" style="font-size:11px;color:#8fa3c0"></span></div>
       </div>
     </div>
 
@@ -464,9 +473,10 @@ select option{background:#0f2a45;color:#ffffff}
         <div class="evt-form" id="hForm">
           <div style="font-size:13px;color:#b7c6dc;margin-bottom:10px" id="hFormLbl">تسجيل حدث</div>
           <div style="display:flex;gap:6px;align-items:center">
-            <select id="hPlayer" style="flex:1"><option value="">— اللاعب (اختياري) —</option></select>
+            <input id="hPlayer" type="hidden" value="">
             <button type="button" class="voice-btn" id="hVoiceBtn" onclick="startVoicePick('h')" title="اختيار اللاعب بالصوت">🎤</button>
           </div>
+          <div id="hPlayerCards" class="event-player-grid" aria-label="لاعبو الفريق الأول"></div>
           <div id="hVoiceStatus" style="font-size:11px;color:#8fa3c0;margin-top:4px;display:none"></div>
           <input type="number" id="hMin" placeholder="الدقيقة" min="1" max="120">
           <label id="hPenWrap" style="display:none;align-items:center;gap:6px;margin-top:8px;font-size:12.5px;color:#f7c948;cursor:pointer"><input type="checkbox" id="hPenCheck"> ⚽ من ركلة جزاء؟</label>
@@ -489,9 +499,10 @@ select option{background:#0f2a45;color:#ffffff}
         <div class="evt-form" id="aForm">
           <div style="font-size:13px;color:#b7c6dc;margin-bottom:10px" id="aFormLbl">تسجيل حدث</div>
           <div style="display:flex;gap:6px;align-items:center">
-            <select id="aPlayer" style="flex:1"><option value="">— اللاعب (اختياري) —</option></select>
+            <input id="aPlayer" type="hidden" value="">
             <button type="button" class="voice-btn" id="aVoiceBtn" onclick="startVoicePick('a')" title="اختيار اللاعب بالصوت">🎤</button>
           </div>
+          <div id="aPlayerCards" class="event-player-grid" aria-label="لاعبو الفريق الثاني"></div>
           <div id="aVoiceStatus" style="font-size:11px;color:#8fa3c0;margin-top:4px;display:none"></div>
           <input type="number" id="aMin" placeholder="الدقيقة" min="1" max="120">
           <label id="aPenWrap" style="display:none;align-items:center;gap:6px;margin-top:8px;font-size:12.5px;color:#f7c948;cursor:pointer"><input type="checkbox" id="aPenCheck"> ⚽ من ركلة جزاء؟</label>
@@ -539,7 +550,7 @@ select option{background:#0f2a45;color:#ffffff}
 <script src="admin-push.js?v=20260912-2"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-let cur=null,hPl=[],aPl=[],evtType={h:null,a:null},quickPending=null;
+let cur=null,hPl=[],aPl=[],evtType={h:null,a:null},quickPending=null,injuryPendingId=null;
 let varUpdateBusy=false;
 const requestedMatchId=new URLSearchParams(location.search).get('match')||'';
 const requestedTournamentId=new URLSearchParams(location.search).get('tournament')||'';
@@ -608,7 +619,7 @@ async function onMatchChange(){
   const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.home_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
   const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.away_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
   hPl=hp||[];aPl=ap||[];
-  fillSel('hPlayer',hPl);fillSel('aPlayer',aPl);
+  fillEventPlayerCards('h',hPl);fillEventPlayerCards('a',aPl);
   fillManOfMatchTeams(m);
   fillManOfMatch([]);
 
@@ -633,11 +644,19 @@ async function onMatchChange(){
   document.getElementById('matchPanel').style.display='block';
 }
 
-function fillSel(id,players){
-  const s=document.getElementById(id);
-  s.innerHTML='<option value="">— اللاعب (اختياري) —</option>';
-  players.forEach(p=>s.innerHTML+=`<option value="${p.id}">${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</option>`);
+function fillEventPlayerCards(side,players){
+  const input=document.getElementById(side+'Player');
+  input.value='';input.dataset.playerLabel='';
+  document.getElementById(side+'PlayerCards').innerHTML=players.map(p=>`<button type="button" class="event-player-card" onclick="selectEventPlayer('${side}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}',this)"><span class="player-number">${p.number??'—'}</span><span class="player-name">${p.full_name_ar||p.name}</span></button>`).join('')||'<div style="color:#8fa3c0;font-size:12px">لا يوجد لاعبون نشطون معتمدون</div>';
 }
+
+function selectEventPlayer(side,playerId,playerName,button){
+  const input=document.getElementById(side+'Player');
+  input.value=playerId;input.dataset.playerLabel=playerName;
+  document.querySelectorAll('#'+side+'PlayerCards .event-player-card').forEach(b=>b.classList.remove('selected'));
+  if(button)button.classList.add('selected');
+}
+window.selectEventPlayer=selectEventPlayer;
 
 function fillManOfMatch(players){
   const s=document.getElementById('manOfMatch');
@@ -1090,7 +1109,6 @@ function quickOpen(side,type){
   else{
     grid.innerHTML=players.map(p=>`<button type="button" class="btn-quick quick-player-chip" onclick="quickSelect('${side}','${type}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}',this)"><span class="qp-number">${p.number||'—'}</span><span class="qp-name">${p.full_name_ar||p.name}</span></button>`).join('');
   }
-  if(type!=='own_goal')grid.innerHTML+=`<button type="button" class="btn-quick quick-player-chip" onclick="quickSelect('${side}','${type}','','بدون تحديد لاعب',this)"><span class="qp-number">—</span><span class="qp-name">بدون تحديد لاعب</span></button>`;
   const picker=document.getElementById('quickPicker');
   picker.style.display='block';
   requestAnimationFrame(()=>picker.scrollIntoView({behavior:'smooth',block:'center'}));
@@ -1286,12 +1304,10 @@ async function startVoiceInjury(){
       if(score>bestScore){bestScore=score;best=p;}
     });
     if(best&&statusEl){
-      const newVal=!best.is_injured;
-      toggleInjuryCheckbox(best.id,newVal);
-      const cb=document.querySelector('.inj-check[data-pid="'+best.id+'"]');
-      if(cb)cb.checked=newVal;
+      const card=document.querySelector('.inj-player-card[data-pid="'+best.id+'"]');
+      if(card)selectInjuryPlayer(best.id,card);
       statusEl.style.color='#3fb950';
-      statusEl.textContent='✅ سمعت: "'+text+'" — تم '+(newVal?'تحديد':'إلغاء')+' إصابة: '+(best.full_name_ar||best.name);
+      statusEl.textContent='✅ اخترت: '+(best.full_name_ar||best.name)+' — راجع البطاقة ثم اضغط زر التأكيد';
     }else if(statusEl){
       statusEl.style.color='#ff6b6b';
       statusEl.textContent='⚠️ سمعت: "'+text+'" — لم أجد لاعباً مطابقاً، اختره يدوياً من القائمة';
@@ -1311,17 +1327,16 @@ function normalizeArabic(s){
 }
 
 function matchPlayerByVoice(text,side){
-  const sel=document.getElementById(side+'Player');
-  const opts=[...sel.options].filter(o=>o.value);
+  const players=side==='h'?hPl:aPl;
   const norm=normalizeArabic(text);
   const words=norm.split(/\s+/).filter(Boolean);
   let best=null,bestScore=0;
-  opts.forEach(o=>{
-    const oNorm=normalizeArabic(o.text);
+  players.forEach(p=>{
+    const oNorm=normalizeArabic((p.number?'#'+p.number+' ':'')+(p.full_name_ar||p.name||''));
     let score=0;
     if(oNorm.includes(norm)&&norm.length>=2)score+=10;
     words.forEach(w=>{if(w.length>=2&&oNorm.includes(w))score+=2;});
-    if(score>bestScore){bestScore=score;best=o;}
+    if(score>bestScore){bestScore=score;best=p;}
   });
   return bestScore>0?best:null;
 }
@@ -1350,9 +1365,10 @@ function startVoicePick(side){
     const text=e.results[0][0].transcript;
     const match=matchPlayerByVoice(text,side);
     if(match){
-      document.getElementById(side+'Player').value=match.value;
+      const card=document.querySelector('#'+side+'PlayerCards .event-player-card[onclick*="'+match.id+'"]');
+      selectEventPlayer(side,match.id,match.full_name_ar||match.name,card);
       statusEl.style.color='#3fb950';
-      statusEl.textContent='✅ سمعت: "'+text+'" — اخترت: '+match.text+' (تأكد من القائمة قبل الحفظ)';
+      statusEl.textContent='✅ سمعت: "'+text+'" — اخترت: '+(match.full_name_ar||match.name)+' (تأكد من البطاقة قبل الحفظ)';
     }else{
       statusEl.style.color='#ff6b6b';
       statusEl.textContent='⚠️ سمعت: "'+text+'" — لم أجد لاعباً مطابقاً، اختره يدوياً من القائمة';
@@ -1376,6 +1392,7 @@ function openEvt(side,type){
   const penWrap=document.getElementById(side+'PenWrap');
   penWrap.style.display=type==='goal'?'flex':'none';
   document.getElementById(side+'PenCheck').checked=false;
+  fillEventPlayerCards(side,side==='h'?hPl:aPl);
   document.getElementById(side+'Form').classList.add('show');
   document.getElementById(side+'Form').scrollIntoView({behavior:'smooth',block:'center'});
 }
@@ -1385,10 +1402,11 @@ async function submitEvt(side){
   if(!ensureLiveMatch())return;
   const playerSel=document.getElementById(side+'Player');
   const pid=playerSel.value;
-  const playerLabel=playerSel.options[playerSel.selectedIndex]?.text||'بدون تحديد لاعب';
+  const playerLabel=playerSel.dataset.playerLabel||'بدون تحديد لاعب';
   const min=parseInt(document.getElementById(side+'Min').value)||0;
   const tid=side==='h'?cur.home_team_id:cur.away_team_id;
   const type=evtType[side];
+  if(!pid){setMsg('⚠️ اختر اللاعب من البطاقة أولًا','warn');return;}
 
   if(type==='penalty_missed'){
     if(!pid){setMsg('⚠️ اختر اللاعب الذي أضاع ركلة الجزاء','warn');return;}
@@ -1501,9 +1519,9 @@ function setLineupTeam(side,checked){
 window.setLineupTeam=setLineupTeam;
 
 function renderInjuryCheckboxes(){
-  const injRow=p=>`<div class="lu-row inj-player-card" data-pid="${p.id}">
-    <label><span class="inj-player-number">${p.number||'—'}</span><span class="inj-player-name">${p.full_name_ar||p.name}</span><input aria-label="تسجيل إصابة ${p.full_name_ar||p.name}" type="checkbox" class="inj-check" data-pid="${p.id}" ${p.is_injured?'checked':''} onchange="toggleInjuryCheckbox('${p.id}',this.checked)"></label>
-  </div>`;
+  injuryPendingId=null;
+  const saveBtn=document.getElementById('saveInjuryBtn');if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='اختر لاعبًا لحفظ الإصابة';}
+  const injRow=p=>`<button type="button" class="lu-row inj-player-card${p.is_injured?' current':''}" data-pid="${p.id}" onclick="selectInjuryPlayer('${p.id}',this)"><span class="inj-player-number">${p.number||'—'}</span><span class="inj-player-name">${p.full_name_ar||p.name}</span><span>${p.is_injured?'🩹 مصاب':'اختيار'}</span></button>`;
   document.getElementById('injHList').innerHTML=hPl.map(injRow).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
   document.getElementById('injAList').innerHTML=aPl.map(injRow).join('')||'<div style="color:#7d8694;font-size:12px">لا يوجد لاعبون</div>';
   const injCount=[...hPl,...aPl].filter(p=>p.is_injured).length;
@@ -1511,6 +1529,24 @@ function renderInjuryCheckboxes(){
   if(injSum)injSum.textContent=injCount?'('+injCount+' مصاب)':'';
 }
 window.renderInjuryCheckboxes=renderInjuryCheckboxes;
+
+function selectInjuryPlayer(pid,button){
+  injuryPendingId=pid;
+  document.querySelectorAll('.inj-player-card').forEach(b=>b.classList.remove('selected'));
+  button.classList.add('selected');
+  const pl=[...hPl,...aPl].find(p=>p.id===pid);
+  const saveBtn=document.getElementById('saveInjuryBtn');
+  saveBtn.disabled=false;saveBtn.textContent=pl?.is_injured?'تأكيد إزالة الإصابة — '+(pl.full_name_ar||pl.name):'تأكيد تسجيل الإصابة — '+(pl?.full_name_ar||pl?.name||'اللاعب');
+}
+window.selectInjuryPlayer=selectInjuryPlayer;
+
+async function saveInjurySelection(){
+  if(!injuryPendingId)return;
+  const pl=[...hPl,...aPl].find(p=>p.id===injuryPendingId);if(!pl)return;
+  await toggleInjuryCheckbox(pl.id,!pl.is_injured);
+  renderInjuryCheckboxes();
+}
+window.saveInjurySelection=saveInjurySelection;
 
 async function toggleInjuryCheckbox(pid,checked){
   const pl=[...hPl,...aPl].find(p=>p.id===pid);

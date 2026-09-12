@@ -65,8 +65,8 @@ input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1) brightnes
     <div class="form">
       <label>ابحث باسم اللاعب أو رقمه</label>
       <input id="playerSearch" inputmode="search" placeholder="مثال: 7 أو محمد">
-      <label>اللاعب</label>
-      <select id="playerSelect" aria-label="اللاعب"><option value="">— بدون تحديد لاعب —</option></select>
+      <label>اختر اللاعب من البطاقات</label>
+      <input id="playerSelect" type="hidden" value="">
       <div class="player-choice-grid" id="playerChoiceGrid" aria-label="قائمة اللاعبين"></div>
       <div class="formrow"><div><label>نوع الحدث</label><select id="eventType"><option value="goal">⚽ هدف</option><option value="yellow_card">🟨 بطاقة صفراء</option><option value="red_card">🟥 بطاقة حمراء</option></select></div><div><label>الدقيقة</label><input id="eventMinute" type="number" min="0" max="130" inputmode="numeric"></div></div>
       <div class="modal-actions"><button class="btn" id="cancelEvent">إلغاء</button><button class="btn btn-goal" id="saveEvent">حفظ الحدث</button></div>
@@ -178,7 +178,7 @@ function normalize(v){return String(v||'').toLowerCase().replace(/[أإآ]/g,'ا
 function renderPlayerOptions(players,selected=''){
   const q=normalize($('playerSearch').value);let list=players;
   if(q)list=players.filter(p=>normalize(p.full_name_ar||p.name).includes(q)||String(p.number??'').includes(q));
-  $('playerSelect').innerHTML='<option value="">— بدون تحديد لاعب —</option>'+list.map(p=>`<option value="${p.id}" ${p.id===selected?'selected':''}>${p.number!=null?'#'+p.number+' ':''}${esc(p.full_name_ar||p.name)}</option>`).join('');
+  $('playerSelect').value=selected||'';
   $('playerChoiceGrid').innerHTML=list.map(p=>`<button type="button" class="player-choice${p.id===selected?' selected':''}" onclick="selectDeskPlayer('${p.id}',this)"><span class="player-choice-number">${p.number??'—'}</span><span class="player-choice-name">${esc(p.full_name_ar||p.name)}</span></button>`).join('')||'<div style="color:var(--muted);font-size:12px">لا يوجد لاعبون مطابقون</div>';
 }
 
@@ -191,6 +191,7 @@ function selectDeskPlayer(playerId,button){
 async function saveEvent(){
   if(!eventCtx)return;const m=matches.find(x=>x.id===eventCtx.mid),type=$('eventType').value,minute=Math.max(0,parseInt($('eventMinute').value)||0),playerId=$('playerSelect').value||null;
   if(!m||m.status!=='live'){toast('المباراة ليست مباشرة؛ لم يُحفظ الحدث.','err');return;}
+  if(!playerId){toast('اختر اللاعب من البطاقة قبل حفظ الحدث.','err');return;}
   $('saveEvent').disabled=true;
   try{
     if(eventCtx.eventId){
