@@ -55,7 +55,7 @@ create table if not exists public.notification_deliveries (
   event_key text not null unique,
   tournament_id uuid not null references public.tournaments(id) on delete cascade,
   match_id uuid not null references public.matches(id) on delete cascade,
-  notification_type text not null check(notification_type in ('start','goal','end')),
+  notification_type text not null check(notification_type in ('start','goal','yellow_card','red_card','end')),
   status text not null default 'pending' check(status in ('pending','sent','partial','failed')),
   sent_count integer not null default 0,
   failed_count integer not null default 0,
@@ -65,4 +65,3 @@ create table if not exists public.notification_deliveries (
 
 alter table public.notification_deliveries enable row level security;
 revoke all on public.notification_deliveries from anon,authenticated;
-
