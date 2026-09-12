@@ -45,5 +45,8 @@ must(matchAdmin.includes('الحكم المساعد')&&matchAdmin.includes("repo
 must(matchAdmin.includes("select('event_type,event_subtype,minute,team_id,player_id,manual_player_name')")&&matchAdmin.includes('const playerMap=new Map'),'محضر المباراة لا يربط الأحداث بقائمة اللاعبين بصورة آمنة');
 must(!matchAdmin.includes("sb.from('match_events').select('*,player:players(name,full_name_ar,number)')"),'محضر المباراة ما زال يستخدم ربط PostgREST غير الصالح للأحداث');
 must(matchAdmin.includes("e.minute==null?'—':e.minute"),'المحضر يعرض الدقيقة الفارغة بصيغة null');
+must(matchAdmin.includes('نموذج ما قبل المباراة')&&matchAdmin.includes('يؤشّر على الهدف والإنذار والطرد يدويًا'),'تقرير الحكم لا يوضح أنه نموذج يدوي قبل المباراة');
+must(!matchAdmin.includes("cur.status==='completed'?`${cur.home_score??0} - ${cur.away_score??0}`:''"),'تقرير الحكم ما زال يطبع النتيجة النهائية تلقائيًا');
+must(matchAdmin.includes('style="--team-color:${color}"')&&matchAdmin.includes('border-top:2.5mm solid var(--team-color'),'هوية لون الفريق غير واضحة في صفحة المعلّق');
 
 console.log('notification and report tests passed');
