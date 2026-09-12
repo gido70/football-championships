@@ -1751,6 +1751,8 @@ function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
       .kit-table{font-size:10px;margin:2mm 0}.kit-table th,.kit-table td{padding:1.2mm}
       .team-staff-table{font-size:9.5px;margin-top:1.5mm}.team-staff-table th,.team-staff-table td{padding:1.15mm}
       .signature-table{font-size:10px;margin-top:2mm}.signature-table th,.signature-table td{padding:1.4mm}.signature-space{height:9mm}
+      .manual-note{font-size:9.5px;text-align:center;background:#f3f5f8;border:1px solid #cbd2da;padding:1mm;margin:1.5mm 0;color:#303945}
+      .commentator-page{border-top:2.5mm solid var(--team-color,${REPORT_PRIMARY});box-shadow:inset -1.5mm 0 var(--team-color,${REPORT_PRIMARY})}
       .commentator-page .report-letterhead{height:31mm}
       .commentator-page .report-letterhead-table{height:26mm}
       .commentator-page .report-letterhead-table img{max-height:21mm}
@@ -1822,13 +1824,6 @@ async function printRefereeReport(mode='docx'){
   document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
   const {hTeam,aTeam,hName,aName,hLineup,aLineup,tour}=await fetchReportData();
   const tourName=tour?.name||'';
-  const {data:shots}=await sb.from('match_penalty_shootout').select('team_id,result').eq('match_id',cur.id);
-  let shootoutScore='';
-  if(shots?.length){
-    const hScore=shots.filter(s=>s.team_id===cur.home_team_id&&s.result==='scored').length;
-    const aScore=shots.filter(s=>s.team_id===cur.away_team_id&&s.result==='scored').length;
-    shootoutScore=hScore+' - '+aScore;
-  }
 
   const infoTable=`<table class="match-meta">
       <tr><th style="background:${REPORT_PRIMARY}">رقم المباراة</th><td>${escR(cur.match_no||'—')}</td><th style="background:${REPORT_PRIMARY}">التاريخ</th><td>${escR(reportDate(cur.match_date))}</td><th style="background:${REPORT_PRIMARY}">الوقت</th><td>${escR(cur.match_time||'—')}</td></tr>
@@ -1870,8 +1865,8 @@ async function printRefereeReport(mode='docx'){
       <tr class="signature-space"><td></td><td></td><td></td></tr>
     </table>`;
   const header=reportLetterhead(tour,tourName);
-  const resultLine=`<table class="match-meta"><tr><th style="background:${REPORT_PRIMARY}">الشوط الأول</th><td></td><th style="background:${REPORT_PRIMARY}">الشوط الثاني</th><td>${cur.status==='completed'?`${cur.home_score??0} - ${cur.away_score??0}`:''}</td><th style="background:${REPORT_PRIMARY}">الوقت الإضافي</th><td></td><th style="background:${REPORT_PRIMARY}">الترجيح</th><td>${escR(shootoutScore)}</td></tr></table>`;
-  const body=`<section class="report-page referee-page">${header}<div class="report-title">تقرير حكم المباراة</div>${infoTable}${resultLine}${kitTable}${rostersRow}${staffTable}${sigTable}</section>`;
+  const resultLine=`<table class="match-meta"><tr><th style="background:${REPORT_PRIMARY}">الشوط الأول</th><td></td><th style="background:${REPORT_PRIMARY}">الشوط الثاني</th><td></td><th style="background:${REPORT_PRIMARY}">الوقت الإضافي</th><td></td><th style="background:${REPORT_PRIMARY}">الترجيح</th><td></td></tr></table>`;
+  const body=`<section class="report-page referee-page">${header}<div class="report-title">تقرير حكم المباراة</div><div class="manual-note">نموذج ما قبل المباراة — يعبّئ الحكم النتيجة ويؤشّر على الهدف والإنذار والطرد يدويًا</div>${infoTable}${resultLine}${kitTable}${rostersRow}${staffTable}${sigTable}</section>`;
   if(mode==='pdf'){printReportAsPDF('تقرير حكم المباراة',body,header);document.getElementById('reportMsg').textContent='✅ فُتحت نافذة الطباعة';return;}
   await downloadReportDoc('تقرير الحكم - '+hName+' × '+aName+'.doc','',body,'');
   document.getElementById('reportMsg').textContent='✅ تم التحميل';
@@ -1885,7 +1880,7 @@ async function printCommentatorReport(mode='docx'){
   const teamPage=(name,opponent,lineup,team)=>{
     const color=team?.primary_color||REPORT_PRIMARY;
     const rows=lineup.map(p=>`<tr><td style="padding:7px;text-align:right">${escR(p.full_name_ar||p.name||'—')}</td><td style="padding:7px;text-align:center">${p.number??''}</td><td style="padding:7px;text-align:center">${escR(p.nationality||'—')}</td></tr>`).join('');
-    return `<section class="report-page commentator-page">${reportLetterhead(tour,tourName)}
+    return `<section class="report-page commentator-page" style="--team-color:${color}">${reportLetterhead(tour,tourName)}
       <div class="report-title">قائمة المعلّق</div>
       <table class="match-meta"><tr><th style="background:${color}">المباراة</th><td>رقم ${escR(cur.match_no||'—')} — أمام ${escR(opponent)}</td><th style="background:${color}">التاريخ والوقت</th><td>${escR(reportDate(cur.match_date))} — ${escR(cur.match_time||'—')}</td></tr><tr><th style="background:${color}">المعلّق</th><td>${escR(reportField('commentator','commentator'))}</td><th style="background:${color}">الملعب</th><td>${escR(reportField('venueName','venue_name',cur.venue||'—'))}</td></tr></table>
       <div class="team-banner" style="background:${teamGradient(team,color)}">${team?.logo_url?`<img src="${escR(team.logo_url)}" alt="شعار ${escR(name)}">`:'<span></span>'}<div><h2>${escR(name)}</h2><small>دليل أسماء اللاعبين للمعلّق</small></div><span></span></div>
