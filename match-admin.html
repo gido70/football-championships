@@ -1590,11 +1590,11 @@ window.openEvt=openEvt;window.closeEvt=closeEvt;window.submitEvt=submitEvt;windo
 let REPORT_PRIMARY='#1a5c3a', REPORT_ACCENT='#c9a84c', REPORT_FONT='Tajawal';
 function escR(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 function rTable(title,headers,rows){
-  if(!rows||!rows.length)return `<h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid ${REPORT_ACCENT};padding-bottom:4px">${title}</h2><p style="color:#888">لا توجد بيانات</p>`;
-  return `<h2 style="color:${REPORT_PRIMARY};border-bottom:2px solid ${REPORT_ACCENT};padding-bottom:4px">${title}</h2>
-    <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:20px" dir="rtl">
-      <tr>${headers.map(h=>`<th style="background:${REPORT_PRIMARY};color:#fff;padding:6px">${escR(h)}</th>`).join('')}</tr>
-      ${rows.map(r=>`<tr>${r.map(c=>`<td style="padding:6px;text-align:center">${escR(c)}</td>`).join('')}</tr>`).join('')}
+  if(!rows||!rows.length)return `<h2 class="report-section-title">${title}</h2><p class="report-empty">لا توجد بيانات مسجلة</p>`;
+  return `<h2 class="report-section-title">${title}</h2>
+    <table class="report-data-table" dir="rtl">
+      <thead><tr>${headers.map(h=>`<th style="background:${REPORT_PRIMARY}">${escR(h)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${escR(c)}</td>`).join('')}</tr>`).join('')}</tbody>
     </table>`;
 }
 
@@ -1735,8 +1735,14 @@ function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
       img{max-width:100%;object-fit:contain}
       .report-page{width:196mm;min-height:283mm;margin:0 auto 12px;background:#fff;padding:0;overflow:hidden;break-after:page;page-break-after:always}
       .report-page:last-child{break-after:auto;page-break-after:auto}
-      .report-letterhead{height:36mm;overflow:hidden;margin-bottom:2.5mm}
-      .report-letterhead img{display:block;width:100%;height:100%;object-fit:cover}
+      .report-letterhead{height:auto;overflow:visible;margin-bottom:2.5mm}
+      .report-letterhead-banner{height:26mm;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff}
+      .report-letterhead-banner img{display:block;width:100%;height:100%;object-fit:contain;object-position:center center}
+      .report-brand-strip{height:11mm;display:flex;align-items:center;justify-content:center;gap:3mm;padding:1mm 4mm;border-bottom:1mm solid ${REPORT_PRIMARY};background:#fff}
+      .report-brand-strip img{width:9mm;height:9mm;object-fit:contain;flex:none}
+      .report-brand-title{min-width:42mm;max-width:105mm;text-align:center;font-size:13px;font-weight:900;color:${REPORT_PRIMARY};line-height:1.2}
+      .report-letterhead-fallback .report-brand-strip{height:27mm;border-top:1px solid #d9dee7}
+      .report-letterhead-fallback .report-brand-strip img{width:21mm;height:21mm}
       .report-letterhead-table{height:30mm;margin-bottom:2mm;border:0}
       .report-letterhead-table td{border:0;padding:2mm}
       .report-letterhead-table img{max-height:25mm;max-width:42mm}
@@ -1753,15 +1759,36 @@ function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
       .signature-table{font-size:10px;margin-top:2mm}.signature-table th,.signature-table td{padding:1.4mm}.signature-space{height:9mm}
       .manual-note{font-size:9.5px;text-align:center;background:#f3f5f8;border:1px solid #cbd2da;padding:1mm;margin:1.5mm 0;color:#303945}
       .commentator-page{border-top:2.5mm solid var(--team-color,${REPORT_PRIMARY});box-shadow:inset -1.5mm 0 var(--team-color,${REPORT_PRIMARY})}
-      .commentator-page .report-letterhead{height:31mm}
-      .commentator-page .report-letterhead-table{height:26mm}
-      .commentator-page .report-letterhead-table img{max-height:21mm}
+      .commentator-page .report-letterhead-banner{height:23mm}
+      .commentator-page .report-brand-strip{height:10mm}
+      .commentator-page .report-brand-strip img{width:8mm;height:8mm}
       .commentator-page .team-banner{display:grid;grid-template-columns:19mm 1fr 19mm;align-items:center;gap:2mm;color:#fff;border-radius:3mm;padding:2mm 3mm;margin:1.5mm 0 2mm;min-height:19mm}
       .commentator-page .team-banner img{width:16mm;height:16mm;background:#fff;border-radius:50%;padding:1mm}
       .commentator-page .team-banner h2{color:#fff;border:0;margin:0;font-size:17px}
       .commentator-page .team-banner small{display:block;margin-top:1mm;opacity:.9;font-size:10px}
       .commentator-roster{font-size:10.5px;table-layout:fixed}.commentator-roster th,.commentator-roster td{padding:1.25mm;height:6.2mm}.commentator-roster .num{width:16%}.commentator-roster .nat{width:25%}
       .staff-table{font-size:10.5px;margin-top:2mm}.staff-table th,.staff-table td{padding:1.8mm}
+      .full-report-page{height:auto;min-height:283mm;overflow:visible;break-after:auto;page-break-after:auto;padding-bottom:6mm}
+      .full-report-page table{break-inside:auto;page-break-inside:auto}
+      .full-report-page tr{break-inside:avoid;page-break-inside:avoid}
+      .full-score-card{table-layout:fixed;border:0;margin:1.5mm 0 3mm;background:#f6f8fb;border-radius:4mm;overflow:hidden}
+      .full-score-card td{border:0;padding:2mm;text-align:center}
+      .full-score-card .team-logo{width:18mm;height:18mm;object-fit:contain;background:#fff;border:1px solid #dde3eb;border-radius:50%;padding:1.5mm}
+      .full-score-card .team-name{font-size:14px;font-weight:900;border-top:1.5mm solid var(--team-color,${REPORT_PRIMARY})}
+      .full-score-card .score-value{font-size:29px;font-weight:900;color:#151d2a;direction:ltr;white-space:nowrap}
+      .full-score-card .score-caption{display:block;font-size:9px;color:#687386;margin-top:.5mm}
+      .match-outcome{background:${REPORT_PRIMARY};color:#fff;font-weight:800;font-size:11px}
+      .full-meta{font-size:10.5px;margin-bottom:2mm}.full-meta th,.full-meta td{padding:1.7mm}
+      .officials-grid{font-size:10.5px;margin:2mm 0}.officials-grid th,.officials-grid td{padding:1.8mm}.officials-grid td{font-weight:800}
+      .report-kpis{table-layout:fixed;border-spacing:1.2mm;border-collapse:separate;margin:2mm 0 3mm}
+      .report-kpis td{border:1px solid #d7dee8;border-radius:2mm;background:#f7f9fc;padding:2mm 1mm}
+      .report-kpis b{display:block;font-size:18px;color:${REPORT_PRIMARY}}.report-kpis small{font-size:8.5px;color:#596579}
+      .report-summary{font-size:11px;line-height:1.7;background:#f4f6fa;border-right:1.5mm solid ${REPORT_ACCENT};padding:2mm 3mm;margin:2mm 0 3mm}
+      .report-section-title{color:${REPORT_PRIMARY};font-size:13px;border-bottom:.8mm solid ${REPORT_ACCENT};padding-bottom:1mm;margin:3mm 0 1.5mm}
+      .report-data-table{font-size:10px;margin-bottom:3mm;table-layout:fixed}
+      .report-data-table th,.report-data-table td{padding:1.6mm 1.2mm}.report-data-table th{color:#fff}
+      .report-data-table thead{display:table-header-group}.report-empty{color:#7a8493;background:#f6f7f9;padding:2mm 3mm;margin:0 0 3mm}
+      .report-footnote{text-align:center;color:#7b8492;font-size:8.5px;border-top:1px solid #d7dde6;padding-top:2mm;margin-top:4mm}
       @media print{html,body{background:#fff}body{padding:0}.no-print{display:none!important}.report-page{margin:0}}
     </style></head><body dir="rtl">
     <div style="position:fixed;top:0;right:0;left:0;background:#0d1117;padding:10px;text-align:center;z-index:999" class="no-print"><button onclick="window.close()" style="background:#c9302c;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-weight:800;font-size:14px;cursor:pointer">✕ إغلاق والعودة</button></div>
@@ -1784,23 +1811,31 @@ async function fetchReportData(){
   const aName=cur.at?.name_ar||cur.at?.name||'الفريق الثاني';
   const hLineup=(hRoster||[]).sort((a,b)=>(a.number||99)-(b.number||99));
   const aLineup=(aRoster||[]).sort((a,b)=>(a.number||99)-(b.number||99));
-  return {hTeam,aTeam,hName,aName,hLineup,aLineup,tour,events:events||[]};
+  let matchNo=cur.match_no;
+  if(matchNo==null){
+    const {data:ordered}=await sb.from('matches').select('id').eq('tournament_id',cur.tournament_id)
+      .order('match_no',{ascending:true,nullsFirst:false}).order('match_date',{ascending:true,nullsFirst:false})
+      .order('match_time',{ascending:true,nullsFirst:false}).order('created_at',{ascending:true});
+    const index=(ordered||[]).findIndex(m=>m.id===cur.id);
+    if(index>=0)matchNo=index+1;
+  }
+  return {hTeam,aTeam,hName,aName,hLineup,aLineup,tour,events:events||[],matchNo:matchNo??'—'};
 }
 
 function reportLetterhead(tour,tourName){
-  if(tour?.report_header_image_url){
-    return `<div class="report-letterhead"><img src="${escR(tour.report_header_image_url)}" alt="ترويسة ${escR(tourName)}"></div>`;
-  }
   const showLogos=tour?.report_show_logos!==false;
   let c1=showLogos&&tour?.show_committee_logo!==false?tour?.committee_logo_url:null;
   let c2=showLogos&&tour?.show_cup_logo!==false?(tour?.cup_logo_url||tour?.logo_url):null;
   if(tour?.report_logos_swapped)[c1,c2]=[c2,c1];
-  return `<table class="report-letterhead-table"><tr>
-    <td style="width:33%;text-align:right">${c1?`<img src="${escR(c1)}" alt="شعار اللجنة">`:''}</td>
-    <td style="width:34%;text-align:center;font-weight:900;color:${REPORT_PRIMARY};font-size:14px">${escR(tourName)}</td>
-    <td style="width:33%;text-align:left">${c2?`<img src="${escR(c2)}" alt="شعار البطولة">`:''}</td>
-  </tr></table>
-  <div style="border-bottom:1.2mm solid ${REPORT_PRIMARY};margin-bottom:2mm"></div>`;
+  const brandStrip=`<div class="report-brand-strip">
+    ${c1?`<img src="${escR(c1)}" alt="شعار اللجنة">`:''}
+    <div class="report-brand-title">${escR(tourName)}</div>
+    ${c2?`<img src="${escR(c2)}" alt="شعار البطولة">`:''}
+  </div>`;
+  if(tour?.report_header_image_url){
+    return `<div class="report-letterhead"><div class="report-letterhead-banner"><img src="${escR(tour.report_header_image_url)}" alt="ترويسة ${escR(tourName)}"></div>${brandStrip}</div>`;
+  }
+  return `<div class="report-letterhead report-letterhead-fallback">${brandStrip}</div>`;
 }
 
 function reportDate(value){
@@ -1808,6 +1843,11 @@ function reportDate(value){
   const d=new Date(value+'T12:00:00');
   if(Number.isNaN(d.getTime()))return value;
   return new Intl.DateTimeFormat('ar-AE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(d);
+}
+function reportTime(value){
+  if(!value)return '—';
+  const match=String(value).match(/^(\d{1,2}):(\d{2})/);
+  return match?match[1].padStart(2,'0')+':'+match[2]:String(value);
 }
 function teamGradient(team,fallback){
   const a=team?.primary_color||fallback,b=team?.secondary_color||a;
@@ -1822,11 +1862,11 @@ function reportField(id,key,fallback='—'){
 
 async function printRefereeReport(mode='docx'){
   document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
-  const {hTeam,aTeam,hName,aName,hLineup,aLineup,tour}=await fetchReportData();
+  const {hTeam,aTeam,hName,aName,hLineup,aLineup,tour,matchNo}=await fetchReportData();
   const tourName=tour?.name||'';
 
   const infoTable=`<table class="match-meta">
-      <tr><th style="background:${REPORT_PRIMARY}">رقم المباراة</th><td>${escR(cur.match_no||'—')}</td><th style="background:${REPORT_PRIMARY}">التاريخ</th><td>${escR(reportDate(cur.match_date))}</td><th style="background:${REPORT_PRIMARY}">الوقت</th><td>${escR(cur.match_time||'—')}</td></tr>
+      <tr><th style="background:${REPORT_PRIMARY}">رقم المباراة</th><td>${escR(matchNo)}</td><th style="background:${REPORT_PRIMARY}">التاريخ</th><td>${escR(reportDate(cur.match_date))}</td><th style="background:${REPORT_PRIMARY}">الوقت</th><td>${escR(reportTime(cur.match_time))}</td></tr>
       <tr><th style="background:${REPORT_PRIMARY}">الفريقان</th><td colspan="3" style="font-weight:900"><span style="color:${hTeam?.primary_color||REPORT_PRIMARY}">${escR(hName)}</span> × <span style="color:${aTeam?.primary_color||REPORT_PRIMARY}">${escR(aName)}</span></td><th style="background:${REPORT_PRIMARY}">الملعب</th><td>${escR(cur.venue_name||cur.venue||'—')}</td></tr>
     </table>`;
 
@@ -1875,14 +1915,14 @@ window.printRefereeReport=printRefereeReport;
 
 async function printCommentatorReport(mode='docx'){
   document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
-  const {hTeam,aTeam,hName,aName,hLineup,aLineup,tour}=await fetchReportData();
+  const {hTeam,aTeam,hName,aName,hLineup,aLineup,tour,matchNo}=await fetchReportData();
   const tourName=tour?.name||'';
   const teamPage=(name,opponent,lineup,team)=>{
     const color=team?.primary_color||REPORT_PRIMARY;
     const rows=lineup.map(p=>`<tr><td style="padding:7px;text-align:right">${escR(p.full_name_ar||p.name||'—')}</td><td style="padding:7px;text-align:center">${p.number??''}</td><td style="padding:7px;text-align:center">${escR(p.nationality||'—')}</td></tr>`).join('');
     return `<section class="report-page commentator-page" style="--team-color:${color}">${reportLetterhead(tour,tourName)}
       <div class="report-title">قائمة المعلّق</div>
-      <table class="match-meta"><tr><th style="background:${color}">المباراة</th><td>رقم ${escR(cur.match_no||'—')} — أمام ${escR(opponent)}</td><th style="background:${color}">التاريخ والوقت</th><td>${escR(reportDate(cur.match_date))} — ${escR(cur.match_time||'—')}</td></tr><tr><th style="background:${color}">المعلّق</th><td>${escR(reportField('commentator','commentator'))}</td><th style="background:${color}">الملعب</th><td>${escR(reportField('venueName','venue_name',cur.venue||'—'))}</td></tr></table>
+      <table class="match-meta"><tr><th style="background:${color}">المباراة</th><td>رقم ${escR(matchNo)} — أمام ${escR(opponent)}</td><th style="background:${color}">التاريخ والوقت</th><td>${escR(reportDate(cur.match_date))} — ${escR(reportTime(cur.match_time))}</td></tr><tr><th style="background:${color}">المعلّق</th><td>${escR(reportField('commentator','commentator'))}</td><th style="background:${color}">الملعب</th><td>${escR(reportField('venueName','venue_name',cur.venue||'—'))}</td></tr></table>
       <div class="team-banner" style="background:${teamGradient(team,color)}">${team?.logo_url?`<img src="${escR(team.logo_url)}" alt="شعار ${escR(name)}">`:'<span></span>'}<div><h2>${escR(name)}</h2><small>دليل أسماء اللاعبين للمعلّق</small></div><span></span></div>
       <table class="commentator-roster"><tr><th style="background:${color}">اسم اللاعب</th><th class="num" style="background:${color}">رقم اللاعب</th><th class="nat" style="background:${color}">الجنسية</th></tr>${rows}</table>
       <table class="staff-table"><tr><th style="background:${color};width:22%">مدرب الفريق</th><td>${escR(team?.coach_name||'—')}</td></tr><tr><th style="background:${color}">إداري الفريق</th><td>${escR(team?.submitted_by_name||'—')}</td></tr></table>
@@ -1898,36 +1938,61 @@ window.printCommentatorReport=printCommentatorReport;
 
 async function printFullMatchReport(mode='docx'){
   document.getElementById('reportMsg').textContent='⏳ جاري التجهيز...';
-  const {hName,aName,hLineup,aLineup,tour}=await fetchReportData();
+  const {hTeam,aTeam,hName,aName,tour,matchNo}=await fetchReportData();
   const tourName=tour?.name||'';
-  const {data:allEvents}=await sb.from('match_events').select('event_type,event_subtype,minute,team_id,player_id,manual_player_name').eq('match_id',cur.id).order('minute');
+  const {data:allEvents}=await sb.from('match_events').select('event_type,event_subtype,minute,team_id,player_id,related_player_id,manual_player_name,notes,var_result').eq('match_id',cur.id).order('minute');
   const {data:varEvents}=await sb.from('match_var_events').select('*').eq('match_id',cur.id);
   const {data:missedPens}=await sb.from('match_penalties_missed').select('team_id,player_id').eq('match_id',cur.id);
+  const {data:shootout}=await sb.from('match_penalty_shootout').select('team_id,player_id,shot_order,result').eq('match_id',cur.id).order('shot_order');
   const {data:motmP}=cur.player_of_match_id?await sb.from('players').select('name,full_name_ar,number').eq('id',cur.player_of_match_id).single():{data:null};
 
   const rl={group:'دور المجموعات',quarter_final:'ربع النهائي',semi_final:'نصف النهائي',third_place:'مركز ثالث',final:'النهائي'};
   const teamOf=e=>e.team_id===cur.home_team_id?hName:(e.team_id===cur.away_team_id?aName:'—');
-  const playerMap=new Map([...hLineup,...aLineup].map(p=>[p.id,p]));
+  const playerIds=[...new Set([...(allEvents||[]).flatMap(e=>[e.player_id,e.related_player_id]),...(missedPens||[]).map(e=>e.player_id),...(shootout||[]).map(e=>e.player_id),cur.player_of_match_id].filter(Boolean))];
+  const {data:reportPlayers}=playerIds.length?await sb.from('players').select('id,name,full_name_ar,number').in('id',playerIds):{data:[]};
+  const playerMap=new Map((reportPlayers||[]).map(p=>[p.id,p]));
   const playerOf=e=>playerMap.get(e.player_id);
-  const EL2={goal:'⚽ هدف',yellow_card:'🟨 بطاقة صفراء',red_card:'🟥 بطاقة حمراء',substitution:'🔄 تبديل',injury:'🩹 إصابة'};
+  const playerLabel=p=>p?((p.number!=null?'#'+p.number+' — ':'')+(p.full_name_ar||p.name||'—')):'—';
+  const EL2={goal:'⚽ هدف',yellow_card:'🟨 بطاقة صفراء',red_card:'🟥 بطاقة حمراء',substitution:'🔄 تبديل',injury:'🩹 إصابة',penalty_missed:'❌ ركلة جزاء ضائعة'};
+  const eventLabel=e=>e.event_subtype==='own_goal'?'↩️ هدف عكسي':e.event_subtype==='penalty'?'⚽ هدف من ركلة جزاء':(EL2[e.event_type]||e.event_type||'حدث');
+  const eventPlayer=e=>{
+    const primary=playerOf(e),related=playerMap.get(e.related_player_id);
+    if(e.event_type==='substitution'&&related)return playerLabel(primary)+' ← '+playerLabel(related);
+    return primary?playerLabel(primary):(e.manual_player_name||'—');
+  };
 
-  const summaryTable=`
-    <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:20px;font-size:13px" dir="rtl">
-      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800;width:20%">البطولة</td><td style="padding:8px" colspan="3">${escR(tourName)}</td></tr>
-      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">رقم المباراة</td><td style="padding:8px">${escR(cur.match_no||'—')}</td>
-          <td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">التاريخ والوقت</td><td style="padding:8px">${escR(reportDate(cur.match_date))} — ${escR(cur.match_time||'—')}</td></tr>
-      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">الجولة</td><td style="padding:8px">${escR(rl[cur.round_name]||cur.round_name||'—')}</td>
-          <td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">الملعب</td><td style="padding:8px">${escR(reportField('venueName','venue_name',cur.venue||'—'))}</td></tr>
-      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800;text-align:center" colspan="4">
-        <div style="font-size:18px">${escR(hName)} &nbsp;<b style="color:${REPORT_ACCENT}">${cur.home_score??0} - ${cur.away_score??0}</b>&nbsp; ${escR(aName)}</div>
-      </td></tr>
-      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">الحكم</td><td style="padding:8px">${escR(reportField('referee1','referee_1'))}</td>
-          <td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">الحكم المساعد</td><td style="padding:8px">${escR(reportField('referee2','referee_2'))}</td></tr>
-      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">المعلّق</td><td style="padding:8px" colspan="3">${escR(reportField('commentator','commentator'))}</td></tr>
-      <tr><td style="background:${REPORT_PRIMARY};color:#fff;padding:8px;font-weight:800">⭐ نجم المباراة</td><td style="padding:8px" colspan="3">${motmP?escR((motmP.full_name_ar||motmP.name)+' (#'+(motmP.number??'')+')'):'— لم يُحدَّد —'}</td></tr>
-    </table>`;
+  const hs=cur.home_score??0,as=cur.away_score??0;
+  const isFinished=cur.status==='completed';
+  const statusText=isFinished?'منتهية':cur.status==='live'?'مباشرة الآن':'مجدولة';
+  let outcomeText=cur.status==='scheduled'?'المباراة مجدولة ولم تبدأ بعد.':cur.status==='live'?'المباراة جارية حاليًا والنتيجة المعروضة لحظية.':`انتهت المباراة بالتعادل ${hs} - ${as}.`;
+  if(isFinished&&hs>as)outcomeText=`انتهت المباراة بفوز ${hName} على ${aName} بنتيجة ${hs} - ${as}.`;
+  if(isFinished&&as>hs)outcomeText=`انتهت المباراة بفوز ${aName} على ${hName} بنتيجة ${as} - ${hs}.`;
+  if(isFinished&&hs===as&&(cur.home_penalties!=null||cur.away_penalties!=null)){
+    const ph=cur.home_penalties??0,pa=cur.away_penalties??0,winner=ph>pa?hName:aName;
+    outcomeText=`انتهت المباراة بالتعادل ${hs} - ${as}، وفاز ${winner} بركلات الترجيح ${ph} - ${pa}.`;
+  }
+  const logoCell=(team,name)=>team?.logo_url?`<img class="team-logo" src="${escR(team.logo_url)}" alt="شعار ${escR(name)}">`:`<strong style="font-size:18px;color:${REPORT_PRIMARY}">${escR(name.slice(0,2))}</strong>`;
+  const scoreValue=cur.status==='scheduled'?'—':`${hs} - ${as}`;
+  const scoreCard=`<table class="full-score-card"><tr>
+      <td style="width:34%">${logoCell(hTeam,hName)}</td><td style="width:32%"><span style="font-size:9px;color:#697589">${escR(statusText)}</span></td><td style="width:34%">${logoCell(aTeam,aName)}</td>
+    </tr><tr><td class="team-name" style="--team-color:${hTeam?.primary_color||REPORT_PRIMARY}">${escR(hName)}</td><td><div class="score-value">${escR(scoreValue)}</div><span class="score-caption">${isFinished?'النتيجة النهائية':'نتيجة المباراة'}</span></td><td class="team-name" style="--team-color:${aTeam?.primary_color||REPORT_PRIMARY}">${escR(aName)}</td></tr>
+    <tr><td class="match-outcome" colspan="3">${escR(outcomeText)}</td></tr></table>`;
 
-  const eventsRows=(allEvents||[]).map(e=>{const p=playerOf(e);return[e.minute==null?'—':e.minute+"'",e.event_subtype==='own_goal'?'↩️ هدف عكسي (لصالح المنافس)':(EL2[e.event_type]||e.event_type),p?.full_name_ar||p?.name||e.manual_player_name||'—',teamOf(e)]});
+  const metaTable=`<table class="full-meta"><tr><th style="background:${REPORT_PRIMARY}">رقم المباراة</th><td>${escR(matchNo)}</td><th style="background:${REPORT_PRIMARY}">التاريخ</th><td>${escR(reportDate(cur.match_date))}</td><th style="background:${REPORT_PRIMARY}">الوقت</th><td>${escR(reportTime(cur.match_time))}</td></tr>
+    <tr><th style="background:${REPORT_PRIMARY}">الدور</th><td>${escR(rl[cur.round_name]||cur.round_name||'—')}</td><th style="background:${REPORT_PRIMARY}">الملعب</th><td colspan="3">${escR(reportField('venueName','venue_name',cur.venue||'—'))}</td></tr></table>`;
+
+  const officialsTable=`<h2 class="report-section-title">الطاقم التحكيمي والإعلامي</h2><table class="officials-grid"><tr><th style="background:${REPORT_PRIMARY}">حكم المباراة</th><th style="background:${REPORT_PRIMARY}">الحكم المساعد</th><th style="background:${REPORT_PRIMARY}">المعلّق</th></tr><tr><td>${escR(reportField('referee1','referee_1'))}</td><td>${escR(reportField('referee2','referee_2'))}</td><td>${escR(reportField('commentator','commentator'))}</td></tr></table>`;
+
+  const goals=(allEvents||[]).filter(e=>e.event_type==='goal').length;
+  const yellow=(allEvents||[]).filter(e=>e.event_type==='yellow_card').length;
+  const red=(allEvents||[]).filter(e=>e.event_type==='red_card').length;
+  const injuries=(allEvents||[]).filter(e=>e.event_type==='injury').length;
+  const substitutions=(allEvents||[]).filter(e=>e.event_type==='substitution').length;
+  const kpis=`<table class="report-kpis"><tr><td><b>${goals}</b><small>الأهداف</small></td><td><b>${yellow}</b><small>البطاقات الصفراء</small></td><td><b>${red}</b><small>البطاقات الحمراء</small></td><td><b>${injuries}</b><small>الإصابات</small></td><td><b>${substitutions}</b><small>التبديلات</small></td><td><b>${(varEvents||[]).length}</b><small>مراجعات VAR</small></td></tr></table>`;
+  const motmText=motmP?playerLabel(motmP):'لم يُحدَّد نجم المباراة';
+  const summary=`<p class="report-summary"><strong>خلاصة المباراة:</strong> ${escR(outcomeText)} <strong>نجم المباراة:</strong> ${escR(motmText)}</p>`;
+
+  const eventsRows=(allEvents||[]).map(e=>[e.minute==null?'—':e.minute+"'",eventLabel(e),eventPlayer(e),teamOf(e)]);
   const eventsTable=rTable('⚡ سجل أحداث المباراة كاملاً',['الدقيقة','الحدث','اللاعب','الفريق'],eventsRows);
 
   let varTable='';
@@ -1940,11 +2005,16 @@ async function printFullMatchReport(mode='docx'){
   if(missedPens?.length){
     missedTable=rTable('❌ ركلات جزاء ضائعة',['اللاعب','الفريق'],missedPens.map(e=>{const p=playerOf(e);return[p?.full_name_ar||p?.name||'—',teamOf(e)]}));
   }
+  let shootoutTable='';
+  if(shootout?.length){
+    shootoutTable=rTable('🎯 سجل ركلات الترجيح',['الترتيب','اللاعب','الفريق','النتيجة'],shootout.map(e=>[e.shot_order??'—',playerLabel(playerOf(e)),teamOf(e),e.result==='scored'?'سجل':'أهدر']));
+  }
 
   const header=reportLetterhead(tour,tourName);
-  const body=summaryTable+eventsTable+varTable+missedTable;
-  if(mode==='pdf'){printReportAsPDF('محضر المباراة الشامل',body,header);document.getElementById('reportMsg').textContent='✅ فُتحت نافذة الطباعة';return;}
-  await downloadReportDoc('محضر المباراة - '+hName+' × '+aName+'.doc','محضر المباراة الشامل',body,header);
+  const content=`<div class="report-title">محضر المباراة الشامل</div>${metaTable}${scoreCard}${summary}${kpis}${officialsTable}${eventsTable}${varTable}${missedTable}${shootoutTable}<div class="report-footnote">أُنشئ هذا المحضر من سجل المباراة المعتمد في منصة البطولة.</div>`;
+  const pdfBody=`<section class="report-page full-report-page">${header}${content}</section>`;
+  if(mode==='pdf'){printReportAsPDF('محضر المباراة الشامل',pdfBody,header);document.getElementById('reportMsg').textContent='✅ فُتحت نافذة الطباعة';return;}
+  await downloadReportDoc('محضر المباراة - '+hName+' × '+aName+'.doc','',content,header);
   document.getElementById('reportMsg').textContent='✅ تم التحميل';
 }
 window.printFullMatchReport=printFullMatchReport;
