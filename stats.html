@@ -155,6 +155,9 @@ function showSec(s){
 window.showSec=showSec;
 
 function initials(name){return (name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+}[char]));
 
 function pchip(name,photo,number,role,variant=''){
   const ini=(name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
