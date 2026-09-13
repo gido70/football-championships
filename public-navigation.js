@@ -115,6 +115,17 @@
     document.querySelectorAll(BACK_SELECTOR).forEach(back=>configureBack(back));
   }
 
+  function loadUefaPlayerImages(){
+    const page=pageName(location);
+    if(page!=='team.html'&&page!=='player.html')return;
+    if(document.querySelector('script[data-uefa-player-images]'))return;
+    const script=document.createElement('script');
+    script.src='uefa-player-images.js?v=20260913-1';
+    script.defer=true;
+    script.dataset.uefaPlayerImages='';
+    document.head.appendChild(script);
+  }
+
   document.addEventListener('click',event=>{
     const back=event.target.closest?.('[data-nav-back]');
     if(back)return;
@@ -127,5 +138,6 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initBackButtons);
   else initBackButtons();
 
+  loadUefaPlayerImages();
   window.PublicNavigation={remember,configureBack,labelFor};
 })();
