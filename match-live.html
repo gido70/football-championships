@@ -602,6 +602,7 @@ async function renderPredict(){
 }
 
 function escapeHtmlPn(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+const esc=escapeHtmlPn;
 
 async function saveNameAndRender(){
   const v=document.getElementById('nameInp').value.trim();
