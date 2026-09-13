@@ -88,6 +88,8 @@ const qs=new URLSearchParams(location.search);
 const TID=qs.get('id')||qs.get('tid');
 const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
+const LEGACY_MEDIA_ROOT='https://raw.githubusercontent.com/gido70/Championship-Mansour-Bin-Zaid-Cup--2026/main/assets/';
+function mediaUrl(value){const raw=String(value||'');if(!raw.startsWith(LEGACY_MEDIA_ROOT))return raw;return 'https://cdn.jsdelivr.net/gh/gido70/Championship-Mansour-Bin-Zaid-Cup--2026@main/assets/'+raw.slice(LEGACY_MEDIA_ROOT.length);}
 
 function extractYoutubeId(url){
   const m=url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{6,})/);
@@ -138,7 +140,7 @@ function renderGroup(title,items){
     return `
     <button class="card orientation-${v.media_orientation||'landscape'}" onclick="openPlayer(${i})" style="animation-delay:${i*0.06}s">
       <div class="thumb-wrap">
-        ${v.thumbnail_url?`<img class="thumb" src="${v.thumbnail_url}" alt="${esc(v.title)}">`:'<div class="thumb-ph">🎬</div>'}
+        ${v.thumbnail_url?`<img class="thumb" src="${mediaUrl(v.thumbnail_url)}" alt="${esc(v.title)}" onerror="this.outerHTML='<div class=thumb-ph>🎬</div>'">`:'<div class="thumb-ph">🎬</div>'}
         <div class="play-badge"><div class="play-icon">▶</div></div>
       </div>
       <div class="body">
@@ -158,6 +160,7 @@ function bindVideoAccordions(container){
 
 function openPlayer(i){
   const v=VIDEOS[i];
+  const playableUrl=mediaUrl(v.video_url);
   const wrap=document.getElementById('playerFrameWrap');
   wrap.className='player-frame-wrap '+(v.media_orientation==='portrait'?'portrait':v.media_orientation==='square'?'square':'');
   if(v.video_type==='youtube'){
@@ -166,10 +169,10 @@ function openPlayer(i){
       ? `<iframe src="https://www.youtube.com/embed/${yid}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`
       : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8b949e;font-size:13px">تعذّر تشغيل هذا الرابط داخلياً — استخدم "فتح في يوتيوب"</div>`;
   }else{
-    wrap.innerHTML=`<video src="${v.video_url}" controls autoplay></video>`;
+    wrap.innerHTML=`<video src="${playableUrl}" controls autoplay playsinline></video>`;
   }
   document.getElementById('playerTitle').textContent=v.title;
-  document.getElementById('playerExternalLink').href=v.video_url;
+  document.getElementById('playerExternalLink').href=playableUrl;
   document.getElementById('playerExternalLink').textContent=v.video_type==='youtube'?'فتح في يوتيوب ↗':'فتح الرابط مباشرة ↗';
   document.getElementById('playerHomeLink').href=scopeUrl('tournament.html?id='+TID);
   document.getElementById('playerOverlay').classList.add('open');

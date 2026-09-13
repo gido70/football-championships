@@ -173,11 +173,10 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .feed-lightbox.open{display:flex;flex-direction:column}
 .feed-lightbox-top{display:flex;justify-content:flex-end;margin-bottom:10px}
 .feed-lightbox-close{background:linear-gradient(145deg,#fff0a7,#d7b54a);border:1px solid #b58e25;color:#173047;border-radius:12px;padding:11px 22px;font-size:14px;font-weight:900;cursor:pointer;font-family:inherit;box-shadow:0 5px 0 #9b7720,0 9px 18px rgba(71,92,105,.18)}
-.feed-lightbox-body{flex:1;width:100%;max-width:1000px;min-height:0;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.48);border:1px solid rgba(109,173,199,.55);border-radius:18px;padding:9px;box-shadow:0 16px 38px rgba(42,92,116,.18)}
+.feed-lightbox-body{flex:1;width:100%;max-width:1000px;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:rgba(255,255,255,.48);border:1px solid rgba(109,173,199,.55);border-radius:18px;padding:9px;box-shadow:0 16px 38px rgba(42,92,116,.18)}
 .feed-lightbox-body img{max-width:100%;max-height:100%;border-radius:8px}
 .feed-lightbox-body iframe,.feed-lightbox-body video{width:100%;max-height:100%;aspect-ratio:16/9;border:0;border-radius:10px;background:#000}
-.feed-gallery{width:100%;height:100%;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:2px}.feed-gallery img{width:100%;height:auto;max-height:none;object-fit:contain;background:#fff;border-radius:10px}.feed-gallery img:first-child:nth-last-child(odd){grid-column:1/-1}
-@media(max-width:620px){.feed-gallery{grid-template-columns:1fr}}
+.feed-gallery-view{width:100%;height:100%;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:9px}.feed-gallery-stage{min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#eef7fb;border-radius:12px}.feed-gallery-stage img{width:100%;height:100%;object-fit:contain;background:#eef7fb}.feed-gallery-nav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:9px}.feed-gallery-nav button{min-height:44px;border:1px solid #6fa8c0;border-radius:11px;background:linear-gradient(145deg,#fff,#d8eef7);color:#173047;font-family:inherit;font-weight:900;box-shadow:0 3px 0 #89afc0}.feed-gallery-nav button:disabled{opacity:.38}.feed-gallery-count{min-width:76px;text-align:center;color:#173047;font-weight:900;font-size:13px}
 
 .bulletin-wrap{max-width:900px;margin:0 auto;padding:10px 16px 4px}
 .bulletin-card{background:#161b22;border:1px solid #21262d;border-radius:14px;padding:16px}
@@ -717,7 +716,13 @@ async function loadNewsHub(){
   sec.innerHTML=`<details class="media-section media-accordion media-section--news"><summary class="media-section-head"><span class="media-section-title"><span>📰</span>مركز أخبار البطولة</span><span class="media-section-tools"><span class="media-section-count">${total}</span><span class="media-section-arrow" aria-hidden="true">⌄</span></span></summary><div class="media-section-body"><a class="section-launch" href="${scopeUrl('news-center-preview.html?id='+TID)}"><span>🗞️</span><b>فتح الأخبار والنتائج السابقة</b><small>ملخصات رياضية قصيرة وموثقة</small></a></div></details>`;
   bindMediaAccordions(sec);
 }
-function safeMediaUrl(value){try{const u=new URL(value,location.href);return ['http:','https:'].includes(u.protocol)?u.href:'';}catch(_){return'';}}
+const LEGACY_MEDIA_ROOT='https://raw.githubusercontent.com/gido70/Championship-Mansour-Bin-Zaid-Cup--2026/main/assets/';
+function localLegacyMedia(value){
+  const raw=String(value||'');if(!raw.startsWith(LEGACY_MEDIA_ROOT))return raw;
+  const rel=raw.slice(LEGACY_MEDIA_ROOT.length);
+  return 'https://cdn.jsdelivr.net/gh/gido70/Championship-Mansour-Bin-Zaid-Cup--2026@main/assets/'+rel;
+}
+function safeMediaUrl(value){try{const u=new URL(localLegacyMedia(value),location.href);return ['http:','https:'].includes(u.protocol)?u.href:'';}catch(_){return'';}}
 function gridClass(rows){const n=rows.length;return `${n>1?'multi':''} count-${Math.min(n,9)} ${n>3&&n%2===1?'odd-tail':''}`;}
 function categoryLabel(value){return ({opening:'الافتتاح',official_visit:'زيارة رسمية',interview:'لقاء',player_of_match:'نجم المباراة',awards:'الجوائز',fans:'تفاعل الجمهور',teams:'الفرق واللاعبون',behind_scenes:'كواليس البطولة',trophy:'التتويج',highlights:'ملخص مباراة',press_conference:'مؤتمر صحفي',tv_report:'تقرير تلفزيوني',other:'تغطية البطولة'})[value]||'تغطية البطولة';}
 function sourceLabel(value,name){return name||({newspaper:'صحيفة',website:'موقع إخباري',tv:'قناة تلفزيونية',radio:'إذاعة',instagram:'إنستغرام',facebook:'فيسبوك',youtube:'يوتيوب',internal:'البطولة'})[value]||'البطولة';}
@@ -728,9 +733,12 @@ function bindMediaAccordions(container){
     container.querySelectorAll('.media-accordion[open]').forEach(other=>{if(other!==section)other.open=false;});
   }));
 }
-function openFeedGallery(id){const post=PUBLIC_FEED.find(p=>p.id===id);if(!post?.image_urls?.length)return;openFeedLightbox(`<div class="feed-gallery">${post.image_urls.map(u=>`<img src="${safeMediaUrl(u)}" alt="${motdEsc(post.title)}">`).join('')}</div>`);}
+let ACTIVE_GALLERY=null,ACTIVE_GALLERY_INDEX=0;
+function openFeedGallery(id){const post=PUBLIC_FEED.find(p=>p.id===id);if(!post?.image_urls?.length)return;ACTIVE_GALLERY={title:post.title||'صور البطولة',urls:post.image_urls.map(safeMediaUrl).filter(Boolean)};ACTIVE_GALLERY_INDEX=0;openFeedLightbox(`<div class="feed-gallery-view"><div class="feed-gallery-stage"><img id="activeGalleryImage" alt="${motdEsc(ACTIVE_GALLERY.title)}"></div><div class="feed-gallery-nav"><button id="galleryPrev" onclick="moveFeedGallery(-1)">السابق</button><span id="galleryCount" class="feed-gallery-count"></span><button id="galleryNext" onclick="moveFeedGallery(1)">التالي</button></div></div>`);showFeedGalleryImage();}
+function showFeedGalleryImage(){if(!ACTIVE_GALLERY?.urls.length)return;const img=document.getElementById('activeGalleryImage');if(!img)return;img.src=ACTIVE_GALLERY.urls[ACTIVE_GALLERY_INDEX];document.getElementById('galleryCount').textContent=`${ACTIVE_GALLERY_INDEX+1} من ${ACTIVE_GALLERY.urls.length}`;document.getElementById('galleryPrev').disabled=ACTIVE_GALLERY_INDEX===0;document.getElementById('galleryNext').disabled=ACTIVE_GALLERY_INDEX===ACTIVE_GALLERY.urls.length-1;const next=ACTIVE_GALLERY.urls[ACTIVE_GALLERY_INDEX+1];if(next)(new Image()).src=next;}
+function moveFeedGallery(delta){if(!ACTIVE_GALLERY)return;ACTIVE_GALLERY_INDEX=Math.max(0,Math.min(ACTIVE_GALLERY.urls.length-1,ACTIVE_GALLERY_INDEX+delta));showFeedGalleryImage();}
 function openMediaVideo(id){const item=PUBLIC_FEED.find(p=>p.id===id);if(!item)return;const url=safeMediaUrl(item.video_url),yid=feedYoutubeId(url);if(yid)openFeedLightbox(`<iframe src="https://www.youtube.com/embed/${yid}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`);else if(url)openFeedLightbox(`<video src="${url}" controls autoplay playsinline></video>`);}
-window.openFeedGallery=openFeedGallery;window.openMediaVideo=openMediaVideo;
+window.openFeedGallery=openFeedGallery;window.moveFeedGallery=moveFeedGallery;window.openMediaVideo=openMediaVideo;
 
 async function loadFeed(){
   const sec=document.getElementById('feedSection');

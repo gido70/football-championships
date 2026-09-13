@@ -39,7 +39,7 @@
     .modal{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;padding:18px}.modal.open{display:flex}.backdrop{position:absolute;inset:0;background:rgba(2,12,20,.78);backdrop-filter:blur(8px)}.modal-card{position:relative;z-index:2;width:min(760px,100%);max-height:88vh;overflow:auto;border-radius:23px;background:#fff;box-shadow:0 35px 100px rgba(0,0,0,.42)}.modal-close{position:sticky;float:left;top:14px;left:14px;z-index:4;width:42px;height:42px;border:0;border-radius:50%;background:#071824;color:#fff;font-size:24px}.modal-cover{height:245px;background:repeating-linear-gradient(118deg,rgba(255,255,255,.055) 0 1px,transparent 1px 32px),linear-gradient(125deg,var(--theme-primary-mid),var(--theme-primary-dark),var(--theme-primary-deep))}.modal-body{padding:27px}.modal-body h2{margin:14px 0 8px;font-size:29px;line-height:1.45}.modal-body p{color:var(--muted);line-height:1.85}.fact-box{padding:15px;border-radius:14px;background:#f6f4ef;line-height:1.8}.fact-box b{display:block;color:var(--ink)}
     footer{display:flex;justify-content:space-between;gap:16px;padding:24px clamp(18px,4vw,58px);background:#071520;color:#9fb0bb;font-size:12px}
     @media(max-width:980px){.topbar{grid-template-columns:1fr auto}.top-actions{grid-column:1/-1;justify-content:space-between}.news-layout,.board-grid{grid-template-columns:1fr}.guide{position:relative;top:auto}.lanes{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:680px){.topbar{padding-right:13px;padding-left:13px;grid-template-columns:1fr}.brand-logo{width:39px;height:39px}.brand b{font-size:13px}.top-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.tour-select{max-width:100%;min-width:0}.back-link{min-width:0;padding-inline:9px;font-size:12px}.hero{min-height:390px;border-radius:23px}.hero-copy{padding:78px 21px 31px}.hero h1{font-size:29px;letter-spacing:0}.hero p{font-size:14px;line-height:1.7}.score-chip{left:12px;top:12px;padding:9px 11px}.score-chip strong{font-size:25px}.hero-orbit{display:none}.toolbar{align-items:stretch;flex-direction:column;margin-top:30px}.filters{overflow:auto;flex-wrap:nowrap}.filter{white-space:nowrap}.news-grid{grid-template-columns:1fr}.cover{height:175px}.modal{padding:10px}.modal-card{max-height:92vh}.modal-cover{height:170px}.modal-body{padding:20px}.modal-body h2{font-size:24px}footer{flex-direction:column;text-align:center}}
+    @media(max-width:680px){.topbar{padding-right:13px;padding-left:13px;grid-template-columns:1fr}.brand-logo{width:39px;height:39px}.brand b{font-size:13px}.top-actions{width:100%;display:block}.back-link{width:100%;min-width:0;padding-inline:9px;font-size:12px}.hero{min-height:390px;border-radius:23px}.hero-copy{padding:78px 21px 31px}.hero h1{font-size:29px;letter-spacing:0}.hero p{font-size:14px;line-height:1.7}.score-chip{left:12px;top:12px;padding:9px 11px}.score-chip strong{font-size:25px}.hero-orbit{display:none}.toolbar{align-items:stretch;flex-direction:column;margin-top:30px}.filters{overflow:auto;flex-wrap:nowrap}.filter{white-space:nowrap}.news-grid{grid-template-columns:1fr}.cover{height:175px}.modal{padding:10px}.modal-card{max-height:92vh}.modal-cover{height:170px}.modal-body{padding:20px}.modal-body h2{font-size:24px}footer{flex-direction:column;text-align:center}}
     @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
     /* Keep the news surfaces darker than the generic light tournament hero. */
     body.tournament-themed .hero{border:0;background:radial-gradient(circle at 18% 17%,color-mix(in srgb,var(--theme-secondary) 15%,transparent),transparent 27%),linear-gradient(112deg,var(--theme-primary-mid),var(--theme-primary-dark) 42%,var(--theme-primary-deep) 76%);color:#fff}
@@ -49,7 +49,7 @@
 <body>
   <header class="topbar">
     <div class="brand"><img id="brandLogo" class="brand-logo" src="icon-app.png" alt=""><div class="brand-meta"><b id="brandName">مركز الأخبار الذكي</b><small id="brandSeason">معاينة آمنة</small></div></div>
-    <div class="top-actions"><a id="backToTournament" class="back-link" href="tournament.html">← الرجوع للبطولة</a><select id="tournamentSelect" class="tour-select" aria-label="اختيار البطولة"><option>تحميل البطولات…</option></select></div>
+    <div class="top-actions"><a id="backToTournament" class="back-link" href="tournament.html">← الرجوع للبطولة</a></div>
   </header>
   <main>
     <section id="publicView" class="view active" aria-label="واجهة أخبار البطولة">
@@ -112,7 +112,7 @@
     function selectNews(id,rerender=true){state.selected=id;const n=state.news.find(x=>x.id===id);if(!n)return;$('#miniTitle').textContent=n.title;$('#miniSource').textContent=n.type==='external'?'تغطية خارجية':'خبر البطولة الرسمي';if(rerender)renderQueue()}
     function openArticle(id){const n=state.news.find(x=>x.id===id);if(!n)return;$('#modalBadges').innerHTML=badge(n)+(n.local?'':'<span class="badge verified">تم التحقق</span>');$('#modalTitle').textContent=n.title;$('#modalSummary').textContent=n.summary;$('#modalFacts').innerHTML=n.facts||'<b>تفاصيل الخبر</b>لا توجد تفاصيل إضافية.';$('#articleModal').classList.add('open');$('#articleModal').setAttribute('aria-hidden','false')}
     function closeModal(){$('#articleModal').classList.remove('open');$('#articleModal').setAttribute('aria-hidden','true')}
-    async function loadTournaments(){const {data,error}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});if(error)throw error;$('#tournamentSelect').innerHTML=(data||[]).map(t=>`<option value="${esc(t.id)}">${esc(nameOf(t))}${t.season_label?' — '+esc(t.season_label):''}</option>`).join('');const requested=new URLSearchParams(location.search).get('id')||DEFAULT_TOURNAMENT;$('#tournamentSelect').value=data?.some(t=>t.id===requested)?requested:(data?.[0]?.id||'');await loadTournament($('#tournamentSelect').value)}
+    async function loadRequestedTournament(){const requested=new URLSearchParams(location.search).get('id')||DEFAULT_TOURNAMENT;await loadTournament(requested)}
     async function loadTournament(id){
       $('#newsGrid').innerHTML='<div class="loading">تحميل بيانات البطولة…</div>';
       const [tr,teams,matches,events,players,settings,saved]=await Promise.all([
@@ -135,9 +135,8 @@
     }
     $$('.filter').forEach(b=>b.onclick=()=>{$$('.filter').forEach(x=>x.classList.toggle('active',x===b));state.filter=b.dataset.filter;render()});
     $$('[data-close]').forEach(el=>el.onclick=closeModal);document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
-    $('#tournamentSelect').onchange=e=>loadTournament(e.target.value).catch(showError);
     function showError(error){console.error(error);$('#newsGrid').innerHTML=`<div class="loading error">تعذر تحميل بيانات البطولة: ${esc(error?.message||error)}</div>`}
-    loadTournaments().catch(showError);
+    loadRequestedTournament().catch(showError);
   })();
   </script>
 </body>

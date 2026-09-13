@@ -4,7 +4,7 @@
   const STORAGE_KEY='football-public-navigation-v1';
   const BACK_SELECTOR='[data-nav-back],#backBtn,#teamBack,#backLink,#floatBack';
   const PUBLIC_PAGES=new Set([
-    'index.html','tournament.html','team.html','player.html','match-live.html',
+    'index.html','tournament.html','team.html','player.html','match-live.html','match-report.html',
     'stats.html','awards.html','videos.html','documents.html','leaderboard.html'
   ]);
 
@@ -47,6 +47,7 @@
         'team.html':'الفريق',
         'player.html':'اللاعب',
         'match-live.html':'المباراة',
+        'match-report.html':'تقرير المباراة',
         'stats.html':'الإحصائيات',
         'awards.html':'الجوائز',
         'videos.html':'الفيديوهات',

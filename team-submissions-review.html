@@ -21,7 +21,7 @@
 body{background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh;padding:20px}
 .wrap{max-width:920px;margin:0 auto}
 h1{font-size:20px;color:#c9a84c;margin-bottom:18px}
-.team-sel{margin-bottom:20px}
+.team-sel{margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
 select{width:100%;padding:10px;background:#161b22;border:1px solid #30363d;border-radius:8px;color:#e6edf3;font-size:14px;font-family:inherit}
 .link-box{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:12px;margin-bottom:20px;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .link-box code{background:#0d1117;padding:4px 10px;border-radius:6px;color:#3fb950;direction:ltr;display:inline-block}
@@ -41,7 +41,10 @@ select{width:100%;padding:10px;background:#161b22;border:1px solid #30363d;borde
 .btn-rej{background:#f85149;color:#fff;font-weight:800;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:13px}
 .player-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #21262d}
 .player-row img.jersey{width:40px;height:40px;border-radius:50%;object-fit:cover;background:#21262d}
+.photo-upload{display:inline-flex;align-items:center;justify-content:center;gap:6px;background:#21262d;border:1px solid #4b617c;color:#8dc8ff;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer}.photo-upload input{display:none}
+.new-player{display:grid;grid-template-columns:2fr 80px 1fr auto;gap:8px;padding:12px;background:#0d1117;border:1px dashed #3fb950;border-radius:10px;margin-bottom:12px}.new-player input{min-width:0;background:#161b22;border:1px solid #30363d;border-radius:7px;color:#fff;padding:8px;font-family:inherit}
 .empty{text-align:center;padding:30px;color:#8b949e;font-size:13px}
+@media(max-width:640px){body{padding:12px}.team-sel{grid-template-columns:1fr}.new-player{grid-template-columns:1fr 70px}.new-player .wide{grid-column:1/-1}.actions{flex-wrap:wrap}.player-row{align-items:flex-start}}
 </style>
 </head>
 <body>
@@ -51,7 +54,8 @@ select{width:100%;padding:10px;background:#161b22;border:1px solid #30363d;borde
     <a href="./admin-home.html" style="background:#21262d;border:1px solid #30363d;color:#e6edf3;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:800;text-decoration:none;white-space:nowrap">← لوحة الأدمن</a>
   </div>
   <div class="team-sel">
-    <select id="teamSel" onchange="loadTeam()"><option>اختر بطولة وفريق...</option></select>
+    <select id="tournamentSel" onchange="changeTournament()"><option>اختر البطولة...</option></select>
+    <select id="teamSel" onchange="loadTeam()"><option>اختر الفريق...</option></select>
   </div>
   <div id="content"></div>
 </div>
@@ -59,18 +63,29 @@ select{width:100%;padding:10px;background:#161b22;border:1px solid #30363d;borde
 <script src="supabase-config.js"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-let CUR=null;
+const qs=new URLSearchParams(location.search);
+let CUR=null,TOUR_ID=qs.get('tid')||localStorage.getItem('adminTournamentId')||'',ALL_TEAMS=[];
 
+async function initTournaments(){
+  const {data:tours,error}=await sb.from('tournaments').select('id,name_ar,name,season_label').order('created_at',{ascending:false});
+  const sel=document.getElementById('tournamentSel');
+  if(error||!tours?.length){sel.innerHTML='<option value="">لا توجد بطولات</option>';return;}
+  sel.innerHTML='<option value="">اختر البطولة أولًا...</option>'+tours.map(t=>`<option value="${t.id}">${t.name_ar||t.name}${t.season_label?' — '+t.season_label:''}</option>`).join('');
+  if(!tours.some(t=>String(t.id)===String(TOUR_ID)))TOUR_ID=String(tours[0].id);
+  sel.value=TOUR_ID;
+  localStorage.setItem('adminTournamentId',TOUR_ID);
+  await initTeams();
+}
 async function initTeams(){
-  const {data:teams,error:e1}=await sb.from('teams').select('id,name_ar,name,tournament_id,coach_status').order('name_ar');
+  const {data:teams,error:e1}=await sb.from('teams').select('id,name_ar,name,tournament_id,coach_status').eq('tournament_id',TOUR_ID).order('name_ar');
   if(e1){document.getElementById('teamSel').outerHTML='<div class="empty">⚠️ فشل تحميل الفرق: '+e1.message+'</div>';return;}
-  const {data:tours}=await sb.from('tournaments').select('id,name_ar,name');
-  const tMap={};(tours||[]).forEach(t=>tMap[t.id]=t.name_ar||t.name||'');
+  ALL_TEAMS=teams||[];
   const sel=document.getElementById('teamSel');
-  sel.innerHTML='<option value="">اختر فريقًا...</option>'+(teams||[]).map(t=>
-    `<option value="${t.id}">${tMap[t.tournament_id]||''} — ${t.name_ar||t.name} ${t.coach_status==='pending'?'🟡':''}</option>`
+  sel.innerHTML='<option value="">اختر فريقًا من البطولة...</option>'+ALL_TEAMS.map(t=>
+    `<option value="${t.id}">${t.name_ar||t.name} ${t.coach_status==='pending'?'🟡':''}</option>`
   ).join('');
 }
+async function changeTournament(){TOUR_ID=document.getElementById('tournamentSel').value;localStorage.setItem('adminTournamentId',TOUR_ID);CUR=null;document.getElementById('content').innerHTML='';await initTeams();}
 
 async function loadTeam(){
   const id=document.getElementById('teamSel').value;
@@ -86,7 +101,6 @@ async function loadTeam(){
 
   let coachIdUrl='',coachPhotoUrl=team.coach_photo_url||'';
   if(team.coach_id_url){const{data}=await sb.storage.from('team-docs').createSignedUrl(team.coach_id_url,3600);coachIdUrl=data?.signedUrl;}
-  if(team.coach_passport_url){const{data}=await sb.storage.from('team-docs').createSignedUrl(team.coach_passport_url,3600);coachPassUrl=data?.signedUrl;}
 
   let html=`
     <div class="link-box">
@@ -102,22 +116,20 @@ async function loadTeam(){
 
     <div class="sec">
       <h2>🧑‍💼 الإداري</h2>
-      ${(team.submitted_by_name||adminPhotoUrl||adminDocUrl)?`
       <div class="kv">
         <div>الاسم: <input id="adminNameEdit" value="${(team.submitted_by_name||'').replace(/"/g,'&quot;')}" style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit"></div>
         <div>الجنسية: <input id="adminNatEdit" value="${(team.admin_nationality||'').replace(/"/g,'&quot;')}" style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit"></div>
       </div>
       <div class="docs">
         ${adminDocUrl?`<a class="doc-link" href="${adminDocUrl}" target="_blank">🪪 الهوية/الجواز</a>`:''}
-        ${adminPhotoUrl?`<a class="doc-link" href="${adminPhotoUrl}" target="_blank">📷 الصورة الفوتوغرافية</a><button class="btn-rej" onclick="clearAdminPhoto()">🗑️ حذف الصورة</button>`:''}
+        ${adminPhotoUrl?`<a class="doc-link" href="${adminPhotoUrl}" target="_blank">📷 عرض الصورة</a><button class="btn-rej" onclick="clearAdminPhoto()">🗑️ حذف الصورة</button>`:''}
+        <label class="photo-upload">📷 رفع/استبدال الصورة<input type="file" accept="image/*" onchange="replaceStaffPhoto('admin',this)"></label>
         <button class="btn-app" onclick="saveAdmin()">💾 حفظ التعديل</button>
       </div>
-      `:'<div class="empty">لم تُدخل بيانات إداري بعد</div>'}
     </div>
 
     <div class="sec">
       <h2>🧑‍🏫 المدرب <span class="badge ${team.coach_status==='approved'?'b-approved':'b-pending'}">${team.coach_status==='approved'?'معتمد':'بانتظار المراجعة'}</span></h2>
-      ${team.coach_name?`
       <div class="kv">
         <div>الاسم: <input id="coachNameEdit" value="${(team.coach_name||'').replace(/"/g,'&quot;')}" style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit"></div>
         <div>الجنسية: <input id="coachNatEdit" value="${(team.coach_nationality||'').replace(/"/g,'&quot;')}" style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:6px 8px;font-family:inherit"></div>
@@ -125,15 +137,22 @@ async function loadTeam(){
       </div>
       <div class="docs">
         ${coachIdUrl?`<a class="doc-link" href="${coachIdUrl}" target="_blank">🪪 عرض الهوية/الجواز</a>`:''}
-        ${coachPhotoUrl?`<a class="doc-link" href="${coachPhotoUrl}" target="_blank">📷 الصورة الفوتوغرافية</a>`:''}
+        ${coachPhotoUrl?`<a class="doc-link" href="${coachPhotoUrl}" target="_blank">📷 عرض الصورة</a>`:''}
+        <label class="photo-upload">📷 رفع/استبدال الصورة<input type="file" accept="image/*" onchange="replaceStaffPhoto('coach',this)"></label>
         <button class="btn-app" onclick="saveCoach()">💾 حفظ التعديل</button>
       </div>
       ${team.coach_status!=='approved'?`<div class="actions"><button class="btn-app" onclick="approveCoach()">✓ اعتماد المدرب</button></div>`:''}
-      `:`<div class="empty">لم تُدخل بيانات مدرب بعد</div>`}
     </div>
 
     <div class="sec">
       <h2>⚽ اللاعبون (${(players||[]).length})</h2>
+      <div class="new-player">
+        <input id="newPlayerName" class="wide" placeholder="اسم اللاعب الجديد">
+        <input id="newPlayerNumber" type="number" min="0" placeholder="الرقم">
+        <input id="newPlayerNationality" placeholder="الجنسية">
+        <label class="photo-upload">📷 الصورة<input id="newPlayerPhoto" type="file" accept="image/*"></label>
+        <button class="btn-app" onclick="addNewPlayer()">➕ إضافة اللاعب</button>
+      </div>
       ${!players||!players.length?'<div class="empty">لا يوجد لاعبون مُدخلون بعد</div>':players.map(p=>`
         <div class="player-row" style="flex-wrap:wrap">
           <label style="cursor:pointer" title="اضغط لاستبدال الصورة">
@@ -196,7 +215,7 @@ async function savePlayer(id){
   if(error){alert('فشل الحفظ: '+error.message);return;}
   loadTeam();
 }
-function resizeImageToDataUrl(file,maxSize){
+function resizeImageToBlob(file,maxSize){
   return new Promise((resolve,reject)=>{
     const img=new Image();
     const reader=new FileReader();
@@ -206,7 +225,7 @@ function resizeImageToDataUrl(file,maxSize){
       const canvas=document.createElement('canvas');
       canvas.width=w;canvas.height=h;
       canvas.getContext('2d').drawImage(img,0,0,w,h);
-      resolve(canvas.toDataURL('image/png',0.85));
+      canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('تعذر تجهيز الصورة')),'image/jpeg',0.86);
     };img.onerror=reject;img.src=e.target.result};
     reader.onerror=reject;
     reader.readAsDataURL(file);
@@ -217,12 +236,31 @@ async function replacePhoto(id,input){
   if(!f)return;
   const el=document.getElementById('jimg-'+id);
   try{
-    const dataUrl=await resizeImageToDataUrl(f,200);
-    const {error}=await sb.from('players').update({jersey_photo_url:dataUrl}).eq('id',id);
+    const url=await uploadPublicPhoto(f,'player-'+id,480);
+    const {error}=await sb.from('players').update({jersey_photo_url:url}).eq('id',id);
     if(error){alert('فشل حفظ الصورة: '+error.message);return;}
-    if(el.tagName==='IMG')el.src=dataUrl;else el.outerHTML=`<img class="jersey" id="jimg-${id}" src="${dataUrl}">`;
+    if(el.tagName==='IMG')el.src=url;else el.outerHTML=`<img class="jersey" id="jimg-${id}" src="${url}">`;
   }catch(err){alert('تعذرت قراءة الصورة');}
   input.value='';
+}
+async function uploadPublicPhoto(file,label,maxSize=720){
+  const blob=await resizeImageToBlob(file,maxSize),path=`team-${CUR.id}/${label}-${Date.now()}.jpg`;
+  const {error}=await sb.storage.from('team-public').upload(path,blob,{contentType:'image/jpeg'});
+  if(error)throw error;
+  const {data}=sb.storage.from('team-public').getPublicUrl(path);
+  return data.publicUrl;
+}
+async function replaceStaffPhoto(kind,input){
+  const file=input.files?.[0];if(!file||!CUR)return;
+  try{const field=kind==='coach'?'coach_photo_url':'admin_photo_url',url=await uploadPublicPhoto(file,kind,720),{error}=await sb.from('teams').update({[field]:url}).eq('id',CUR.id);if(error)throw error;await loadTeam();}catch(error){alert('فشل رفع الصورة: '+error.message)}finally{input.value='';}
+}
+async function addNewPlayer(){
+  if(!CUR)return;const name=document.getElementById('newPlayerName').value.trim(),number=parseInt(document.getElementById('newPlayerNumber').value)||null,nationality=document.getElementById('newPlayerNationality').value.trim()||null,file=document.getElementById('newPlayerPhoto').files?.[0];
+  if(!name){alert('أدخل اسم اللاعب');return;}
+  const {data,error}=await sb.from('players').insert({team_id:CUR.id,tournament_id:CUR.tournament_id,name,full_name_ar:name,number,nationality,submission_status:'pending'}).select('id').single();
+  if(error){alert('فشل إضافة اللاعب: '+error.message);return;}
+  if(file){try{const url=await uploadPublicPhoto(file,'player-'+data.id,480);await sb.from('players').update({jersey_photo_url:url}).eq('id',data.id);}catch(error){alert('أُضيف اللاعب لكن تعذر رفع صورته: '+error.message)}}
+  await loadTeam();
 }
 async function approveCoach(){
   await sb.from('teams').update({coach_status:'approved'}).eq('id',CUR.id);
@@ -244,8 +282,8 @@ async function viewDocs(docPath){
 }
 
 window.loadTeam=loadTeam;window.approveCoach=approveCoach;window.approvePlayer=approvePlayer;window.rejectPlayer=rejectPlayer;window.viewDocs=viewDocs;
-window.saveAdmin=saveAdmin;window.clearAdminPhoto=clearAdminPhoto;window.saveCoach=saveCoach;window.savePlayer=savePlayer;window.replacePhoto=replacePhoto;
-initTeams();
+window.saveAdmin=saveAdmin;window.clearAdminPhoto=clearAdminPhoto;window.saveCoach=saveCoach;window.savePlayer=savePlayer;window.replacePhoto=replacePhoto;window.replaceStaffPhoto=replaceStaffPhoto;window.addNewPlayer=addNewPlayer;window.changeTournament=changeTournament;
+initTournaments();
 </script>
 
 <script>

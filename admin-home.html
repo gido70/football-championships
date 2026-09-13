@@ -180,6 +180,7 @@ body { font-family: "Tajawal", sans-serif !important; }
   border-radius: 20px;
   font-family: "Tajawal", sans-serif;
 }
+.admin-tournament-select{min-width:230px;max-width:360px;background:#0b1d33;color:#fff;border:1px solid #436789;border-radius:11px;padding:9px 12px;font:800 13px "Tajawal",sans-serif}
 
 /* شعار المنصة */
 .brand-mark{
@@ -209,7 +210,7 @@ body { font-family: "Tajawal", sans-serif !important; }
   .brand-mark{padding:8px 14px;margin-bottom:4px}.brand-mark .brand-text{font-size:13px}
   .topbar .page-title p{display:none}.topbar .page-icon{width:42px;height:42px;border-radius:13px}
   .conn-bar{padding:9px 12px;margin-bottom:12px;font-size:12px}
-  .active-tournament{padding:11px 14px;margin-bottom:12px;border-radius:14px}.active-tournament-info h3{font-size:15px}.active-tournament-info p{font-size:11px}
+  .active-tournament{padding:11px 14px;margin-bottom:12px;border-radius:14px;flex-wrap:wrap}.active-tournament-info{flex:1 1 100%}.active-tournament-info h3{font-size:15px}.active-tournament-info p{font-size:11px}.admin-tournament-select{min-width:0;max-width:none;flex:1}
   .stats-row{display:flex;gap:7px;overflow-x:auto;margin-bottom:14px;scrollbar-width:none}.stats-row::-webkit-scrollbar{display:none}
   .stat-card{flex:0 0 82px;padding:10px 7px;border-radius:13px}.stat-card-num{font-size:23px;margin-bottom:3px}.stat-card-lbl{font-size:11px}
   .qr-shortcut{padding:11px 13px!important;margin-bottom:14px!important;border-radius:13px!important}.qr-shortcut>div:first-child{font-size:25px!important}.qr-shortcut-title{font-size:13px!important}.qr-shortcut-desc{display:none}
@@ -262,7 +263,8 @@ body { font-family: "Tajawal", sans-serif !important; }
       <h3 id="activeTournamentName">—</h3>
       <p id="activeTournamentDesc">—</p>
     </div>
-    <span class="active-tournament-badge">🟢 نشطة</span>
+    <select id="adminTournamentSelect" class="admin-tournament-select" aria-label="اختيار بطولة العمل"></select>
+    <span class="active-tournament-badge">🎯 بطولة العمل</span>
   </div>
 
   <!-- الإحصائيات -->
@@ -455,11 +457,21 @@ async function init() {
     document.getElementById('statMatches').textContent = matches.count ?? 0;
 
     // البطولة النشطة
-    const active = (tours.data || []).find(t => t.status === 'active') || (tours.data || [])[0];
+    const allTours=tours.data||[];
+    const savedId=localStorage.getItem('adminTournamentId');
+    const active = allTours.find(t=>String(t.id)===String(savedId)) || allTours.find(t => t.status === 'active') || allTours[0];
     if (active) {
-      document.getElementById('activeTournamentName').textContent = active.name;
-      document.getElementById('activeTournamentDesc').textContent =
-        (active.season_label || '') + (active.status ? ' — ' + {draft:'مسودة',active:'نشطة',completed:'منتهية',archived:'مؤرشفة'}[active.status] : '');
+      const selector=document.getElementById('adminTournamentSelect');
+      selector.innerHTML=allTours.map(t=>`<option value="${t.id}">${t.name}${t.season_label?' — '+t.season_label:''}</option>`).join('');
+      selector.value=active.id;
+      const applyTournament=t=>{
+        localStorage.setItem('adminTournamentId',t.id);
+        document.getElementById('activeTournamentName').textContent=t.name;
+        document.getElementById('activeTournamentDesc').textContent=(t.season_label||'')+(t.status?' — '+({draft:'مسودة',active:'نشطة',completed:'منتهية',archived:'مؤرشفة'}[t.status]||t.status):'');
+        document.querySelectorAll('a.admin-card,a.qr-shortcut').forEach(link=>{const u=new URL(link.getAttribute('href'),location.href);u.searchParams.set('tid',t.id);link.href=u.href;});
+      };
+      selector.onchange=()=>applyTournament(allTours.find(t=>String(t.id)===selector.value)||active);
+      applyTournament(active);
       document.getElementById('activeTournamentBox').style.display = 'flex';
     }
 

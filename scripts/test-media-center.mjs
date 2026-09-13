@@ -20,6 +20,9 @@ assert(tournament.includes("whiteCupLogo=/أبطال أوروبا|دوري ال�
 assert(tournament.includes('rgba(235,249,255,.98)'),'in-page media viewer must use the light sky treatment');
 assert(tournament.includes('live-screen'),'live match must use the television treatment');
 assert(tournament.includes('match-report.html?id='),'completed matches must expose the automatic report');
+assert(tournament.includes("const LEGACY_MEDIA_ROOT='https://raw.githubusercontent.com/gido70/Championship-Mansour-Bin-Zaid-Cup--2026/main/assets/'"),'legacy 2026 media must be localized');
+assert(tournament.includes('feed-gallery-nav'),'gallery viewer must expose phone-friendly previous and next controls');
+assert(tournament.includes('moveFeedGallery'),'gallery viewer must load one image at a time');
 
 const videos=read('videos.html');
 assert(videos.includes('count-${Math.min(items.length,9)}'),'each video section must respond to its own item count');
@@ -27,14 +30,9 @@ assert(videos.includes("items.length>3&&items.length%2===1?'odd-tail'"),'odd vid
 assert(videos.includes("title:'ملخصات المباريات'"),'match highlights must be separated from editorial videos');
 assert(videos.includes('<details class="video-section video-accordion">'),'video groups must collapse to keep mobile pages short');
 assert(videos.includes('bindVideoAccordions(app)'),'video accordions must bind after rendering');
+assert(videos.includes('mediaUrl(v.video_url)'),'legacy videos must use their stable local copies');
+assert(videos.includes('playsinline'),'phone video playback must remain inside the app');
 
-const pdfs=fs.readdirSync(path.join(root,'legacy-2026/news')).filter(name=>name.endsWith('.pdf'));
-const covers=fs.readdirSync(path.join(root,'legacy-2026/news')).filter(name=>name.endsWith('-cover.jpg'));
-assert(pdfs.length===14,`expected 14 legacy newsletters, got ${pdfs.length}`);
-assert(covers.length===14,`expected 14 newsletter covers, got ${covers.length}`);
-
-const galleryNames=['opening','teams','atmosphere','stands','trophy','playstation'];
-const imageCount=galleryNames.reduce((sum,name)=>sum+fs.readdirSync(path.join(root,'legacy-2026/gallery',name)).filter(file=>/^img\d+\.jpg$/.test(file)).length,0);
-assert(imageCount===59,`expected 59 gallery images, got ${imageCount}`);
+assert(documents.includes('https://cdn.jsdelivr.net/gh/gido70/Championship-Mansour-Bin-Zaid-Cup--2026@main/assets/'),'legacy PDFs must use the stable media CDN');
 
 console.log('media center tests passed');
