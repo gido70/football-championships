@@ -207,9 +207,14 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .ticker-sep{margin:0 10px;color:var(--theme-secondary);font-weight:900}
 .ticker-toggle{flex-shrink:0;background:color-mix(in srgb,var(--theme-primary) 8%,#fff);border:0;border-right:1px solid color-mix(in srgb,var(--theme-primary) 16%,#e2eaf0);color:var(--theme-primary);font-size:16px;cursor:pointer;padding:0 14px;height:100%}
 .ticker-toggle:hover{color:#2C2C2A}
-.ticker-sponsor-logo{height:24px;width:auto;max-width:60px;object-fit:contain;border-radius:4px;vertical-align:middle;margin-left:8px}
-.ticker-sponsor-item{display:inline-flex;align-items:center;font-weight:800}
+.sponsors-ticker-line{height:68px;background:linear-gradient(110deg,#fff 0%,color-mix(in srgb,var(--theme-secondary) 8%,#fff) 54%,color-mix(in srgb,var(--theme-primary) 10%,#fff) 100%);border-color:color-mix(in srgb,var(--theme-secondary) 42%,#d9e5ee);box-shadow:0 6px 0 color-mix(in srgb,var(--theme-secondary) 24%,#c8d5df),0 13px 28px rgba(10,39,68,.15)}
+.sponsors-ticker-line::before{background:repeating-linear-gradient(118deg,color-mix(in srgb,var(--theme-primary) 7%,transparent) 0 1px,transparent 1px 30px)}
+.sponsors-ticker-line .ticker-label{background:radial-gradient(circle at 20% 20%,color-mix(in srgb,var(--theme-secondary) 45%,transparent),transparent 43%),linear-gradient(135deg,var(--theme-primary),var(--theme-primary-dark),var(--theme-primary-deep));color:var(--theme-on-primary);border-color:rgba(255,255,255,.2)}
+.ticker-sponsor-item{display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:5px 13px 5px 7px;background:#fff;border:1px solid color-mix(in srgb,var(--theme-secondary) 38%,#e7eef4);border-radius:13px;color:var(--theme-primary-deep);font-family:inherit;font-weight:900;box-shadow:0 3px 9px rgba(8,35,61,.11)}
+.ticker-sponsor-logo-box{width:86px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;padding:3px 7px;background:#fff;border:1px solid #edf1f4;border-radius:9px}
+.ticker-sponsor-logo{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
 @media(max-width:560px){.ticker-wrap{padding-inline:9px}.ticker-line{height:54px;border-radius:14px}.ticker-label{width:96px;font-size:11.5px}.ticker-track{font-size:12.5px}.ticker-item{padding-inline:10px}.ticker-toggle{padding-inline:11px}}
+@media(max-width:560px){.sponsors-ticker-line{height:62px}.sponsors-ticker-line .ticker-label{width:92px}.ticker-sponsor-item{min-height:44px;padding:4px 9px 4px 5px;gap:7px}.ticker-sponsor-logo-box{width:72px;height:36px;padding:3px 6px}}
 .follow-wrap{max-width:900px;margin:0 auto;padding:4px 16px 14px}
 .follow-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 .follow-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:22px 14px;border-radius:16px;color:#fff;text-decoration:none;font-weight:900;font-size:15px;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,.18);transition:transform .18s ease,box-shadow .18s ease}
@@ -1335,12 +1340,11 @@ async function loadSponsors(){
   const {data}=await sb.from('sponsors').select('*').eq('tournament_id',TID).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
   if(!data||!data.length){wrap.innerHTML='';return;}
 
-  const color='#a5813a';
   const sep='<span class="ticker-sep">رعاة البطولة</span>';
-  const items=data.map(s=>`<span class="ticker-item ticker-sponsor-item"><img class="ticker-sponsor-logo" src="${s.logo_url}" alt="${s.name}" loading="lazy">${s.name}</span>`);
+  const items=data.map(s=>`<span class="ticker-item ticker-sponsor-item"><span class="ticker-sponsor-logo-box"><img class="ticker-sponsor-logo" src="${s.logo_url}" alt="${s.name}" loading="lazy"></span><span>${s.name}</span></span>`);
 
-  wrap.innerHTML=`<div class="ticker-wrap"><div class="ticker-line" style="border-color:${color}55">
-      <div class="ticker-label" style="background:${color}22;color:${color};border-color:${color}55">🤝 رعاة البطولة</div>
+  wrap.innerHTML=`<div class="ticker-wrap"><div class="ticker-line sponsors-ticker-line">
+      <div class="ticker-label">🤝 رعاة البطولة</div>
       <div class="ticker-viewport">
         <div class="ticker-track" id="sponsorsTrack">${items.join(sep)}</div>
       </div>
