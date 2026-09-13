@@ -1,0 +1,109 @@
+/* معاينة اختيارية لهوية كأس منصور 2026 — لا تعمل إلا مع theme_preview=mansour-2026. */
+html.theme-preview-mansour-2026{
+  --preview-ink:#102b45;
+  --preview-line:color-mix(in srgb,var(--theme-primary) 24%,#d6e5ef);
+  --preview-gold:color-mix(in srgb,var(--theme-secondary) 76%,#c7982b);
+}
+
+html.theme-preview-mansour-2026 body.public-tournament{
+  background:
+    radial-gradient(circle at 8% 5%,color-mix(in srgb,var(--theme-secondary) 18%,transparent),transparent 24%),
+    radial-gradient(circle at 92% 28%,color-mix(in srgb,var(--theme-primary) 13%,transparent),transparent 28%),
+    repeating-linear-gradient(118deg,rgba(12,59,96,.035) 0 1px,transparent 1px 34px),
+    linear-gradient(155deg,#eaf5fb 0%,#f9fcfe 42%,color-mix(in srgb,var(--theme-primary) 8%,#edf7fb) 100%);
+  color:var(--preview-ink);
+}
+
+html.theme-preview-mansour-2026 .nav,
+html.theme-preview-mansour-2026 .tournament-platform-mark{
+  background:
+    radial-gradient(circle at 18% 10%,color-mix(in srgb,var(--theme-secondary) 28%,transparent),transparent 34%),
+    repeating-linear-gradient(118deg,rgba(255,255,255,.045) 0 1px,transparent 1px 32px),
+    linear-gradient(135deg,var(--theme-primary),var(--theme-primary-dark) 52%,var(--theme-primary-deep));
+}
+
+html.theme-preview-mansour-2026 .hero-overlay{
+  background:
+    repeating-linear-gradient(118deg,rgba(255,255,255,.035) 0 1px,transparent 1px 38px),
+    radial-gradient(circle at 50% 12%,rgba(255,255,255,.08),transparent 30%),
+    linear-gradient(to bottom,rgba(3,18,36,.12),rgba(3,20,40,.9));
+}
+
+html.theme-preview-mansour-2026 .hero-stats{
+  background:linear-gradient(135deg,rgba(4,25,48,.58),rgba(8,47,78,.38));
+  border-color:color-mix(in srgb,var(--theme-secondary) 42%,rgba(255,255,255,.2));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 12px 30px rgba(1,13,28,.22);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+
+html.theme-preview-mansour-2026 .hero-season{
+  background:linear-gradient(135deg,rgba(5,25,48,.62),color-mix(in srgb,var(--theme-secondary) 24%,rgba(5,25,48,.62)));
+  border-color:color-mix(in srgb,var(--theme-secondary) 58%,rgba(255,255,255,.24));
+  box-shadow:0 6px 18px rgba(2,17,34,.22);
+}
+
+html.theme-preview-mansour-2026 .qlinks-wrap{
+  margin-top:14px;
+  border:1px solid var(--preview-line);
+  border-radius:24px;
+  background:
+    repeating-linear-gradient(118deg,rgba(11,65,103,.032) 0 1px,transparent 1px 30px),
+    linear-gradient(145deg,rgba(255,255,255,.88),color-mix(in srgb,var(--theme-primary) 7%,rgba(255,255,255,.86)));
+  box-shadow:0 12px 32px rgba(6,37,65,.1),inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+html.theme-preview-mansour-2026 .qlink-orb{
+  box-shadow:
+    0 8px 0 var(--qlink-depth),
+    0 16px 25px color-mix(in srgb,var(--qlink-depth) 40%,transparent),
+    inset 0 2px 3px rgba(255,255,255,.62),
+    inset 0 -7px 12px rgba(2,24,49,.25);
+}
+
+html.theme-preview-mansour-2026 .ticker-line,
+html.theme-preview-mansour-2026 .media-section-head,
+html.theme-preview-mansour-2026 .st-wrap,
+html.theme-preview-mansour-2026 .m-card,
+html.theme-preview-mansour-2026 .feed-post{
+  border-color:var(--preview-line);
+  box-shadow:0 7px 0 color-mix(in srgb,var(--theme-primary) 14%,#cadbe7),0 15px 30px rgba(7,38,66,.11);
+}
+
+html.theme-preview-mansour-2026 .ticker-line{
+  background:
+    repeating-linear-gradient(118deg,rgba(10,49,79,.045) 0 1px,transparent 1px 30px),
+    linear-gradient(110deg,#fff,color-mix(in srgb,var(--theme-primary) 8%,#fff) 55%,color-mix(in srgb,var(--theme-secondary) 18%,#fff));
+}
+
+html.theme-preview-mansour-2026 .media-section-head{
+  background:
+    repeating-linear-gradient(118deg,rgba(10,49,79,.035) 0 1px,transparent 1px 30px),
+    linear-gradient(145deg,#f9fdff,color-mix(in srgb,var(--theme-primary) 11%,#eef8fc));
+}
+
+html.theme-preview-mansour-2026 .media-section-title,
+html.theme-preview-mansour-2026 .media-section-count{
+  color:var(--preview-ink);
+}
+
+html.theme-preview-mansour-2026 .tabs-bar{
+  background:rgba(249,253,255,.94);
+  border-color:var(--preview-line);
+  box-shadow:0 7px 22px rgba(6,37,65,.08);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+
+html.theme-preview-mansour-2026 .st-table thead{
+  background:linear-gradient(135deg,color-mix(in srgb,var(--theme-primary) 14%,#fff),color-mix(in srgb,var(--theme-secondary) 14%,#fff));
+}
+
+@media(max-width:760px){
+  html.theme-preview-mansour-2026 .qlinks-wrap{margin:12px 8px 4px;padding:18px 8px 10px;border-radius:20px}
+  html.theme-preview-mansour-2026 .hero-stats{border-radius:15px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  html.theme-preview-mansour-2026 *{scroll-behavior:auto!important}
+}

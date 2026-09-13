@@ -360,6 +360,18 @@ img[src=""], img:not([src]) { display:none !important; }
 @media(max-width:620px){.notification-control{margin:9px 8px;align-items:stretch;flex-direction:column;text-align:center}.notification-control button{width:100%}}
 </style>
 <link rel="stylesheet" href="public-ui.css?v=20260912-6">
+<script>
+(()=>{
+  const params=new URLSearchParams(location.search);
+  const mansour2026='aaaaaaaa-0000-0000-0000-000000000001';
+  if(params.get('theme_preview')!=='mansour-2026'||params.get('id')!==mansour2026)return;
+  document.documentElement.classList.add('theme-preview-mansour-2026');
+  const link=document.createElement('link');
+  link.rel='stylesheet';
+  link.href='preview-mansour-2026.css?v=20260913-1';
+  document.head.appendChild(link);
+})();
+</script>
 </head>
 <body class="public-tournament">
 <div id="accessGateOverlay" style="display:none;position:fixed;inset:0;background:#0F2A4A;z-index:9999;align-items:center;justify-content:center;padding:20px">
