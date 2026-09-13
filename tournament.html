@@ -1301,11 +1301,11 @@ async function loadScorers(){
     const big=rank===1;
     return `<${p.id?'a':'div'} class="sc-item" ${p.id?`href="player.html?id=${p.id}" aria-label="فتح صفحة ${p.name}"`:''} style="${rank<=3?'border-color:'+rc+'44;background:'+rc+'08':''}${big?';padding:14px 14px':''}">
       <div class="sc-rank" style="color:${rc};${big?'font-size:17px':''}">${rank}</div>
-      <div class="sc-av-wrap" data-uefa-player-name="${motdEsc(p.lookupName||p.name)}" data-uefa-player-alt="${motdEsc(p.name)}" data-uefa-team-id="${motdEsc(p.teamId||'')}" style="${big?'width:46px;height:46px':''}">
+      <div class="sc-av-wrap" style="${big?'width:46px;height:46px':''}">
         ${p.photo
           ?`<img class="sc-photo" style="${big?'width:46px;height:46px':''}" src="${p.photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
           :''}
-        <div class="sc-ph" style="${p.photo?'display:none':''}${big?'width:46px;height:46px;font-size:16px':''}background:${p.col}22;border-color:${p.col}55;color:${p.col}">${ini(p.name)}</div>
+        <div class="sc-ph" data-uefa-player-name="${motdEsc(p.lookupName||p.name)}" data-uefa-player-alt="${motdEsc(p.name)}" data-uefa-team-id="${motdEsc(p.teamId||'')}" style="${p.photo?'display:none':''}${big?'width:46px;height:46px;font-size:16px':''}background:${p.col}22;border-color:${p.col}55;color:${p.col};overflow:hidden">${ini(p.name)}</div>
       </div>
       ${p.number?`<span class="sc-num">#${p.number}</span>`:''}
       <div class="sc-info"><div class="sc-name" style="${big?'font-size:14px':''}">${sn}</div><div class="sc-team"><div class="sc-tdot" style="background:${p.col}"></div>${p.team}</div></div>
