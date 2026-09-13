@@ -27,6 +27,7 @@
     <div class="actions" style="justify-content:center">
       <button class="btn" onclick="downloadQR()">⬇️ تحميل الباركود كصورة</button>
       <button class="btn secondary" onclick="copyLink()">📋 نسخ الرابط</button>
+      <button class="btn secondary" onclick="shareLink()">📤 مشاركة الرابط</button>
       <a class="btn secondary" id="openPublicPage" href="#" target="_blank" rel="noopener">↗ فتح صفحة الجمهور</a>
     </div>
     <div class="status" id="msg"></div>
@@ -43,13 +44,18 @@ const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_K
 let currentUrl='';
 let qrInstance=null;
 let currentName='البطولة';
+const SHARE_PAGES={
+  'aaaaaaaa-0000-0000-0000-000000000001':'share-mansour-2026.html',
+  'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'share-mansour-2027.html',
+  'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'share-uefa-2027.html'
+};
 
 async function init(){
   const {data}=await sb.from('tournaments').select('*').order('created_at',{ascending:false});
   const sel=document.getElementById('tSel');
   sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}" data-name="${t.name_ar||t.name}">${t.name_ar||t.name}${t.season_label?' - '+t.season_label:''}</option>`).join('');
   sel.onchange=renderQR;
-  const requested=new URLSearchParams(location.search).get('tournament');
+  const params=new URLSearchParams(location.search),requested=params.get('tournament')||params.get('tid');
   if(requested&&[...sel.options].some(o=>o.value===requested))sel.value=requested;
   if(data?.length)renderQR();
 }
@@ -57,7 +63,8 @@ function renderQR(){
   const sel=document.getElementById('tSel');
   const tid=sel.value;
   currentName=sel.selectedOptions[0]?.dataset.name||'البطولة';
-  currentUrl=`https://gido70.github.io/football-championships/tournament.html?id=${tid}&standalone=1`;
+  const sharePage=SHARE_PAGES[tid];
+  currentUrl=sharePage?new URL(sharePage,location.href).href:`https://gido70.github.io/football-championships/tournament.html?id=${tid}&standalone=1`;
   document.getElementById('linkPreview').textContent=currentUrl;
   document.getElementById('openPublicPage').href=currentUrl;
   document.getElementById('qrBox').innerHTML='';
@@ -78,8 +85,9 @@ function copyLink(){
   navigator.clipboard.writeText(currentUrl);
   setMsg('✅ تم نسخ الرابط','ok');
 }
+async function shareLink(){if(navigator.share){await navigator.share({title:currentName,text:'تابع '+currentName,url:currentUrl});setMsg('✅ تم فتح المشاركة','ok');}else copyLink();}
 function setMsg(t,c){const e=document.getElementById('msg');e.className='status '+c;e.textContent=t;setTimeout(()=>e.textContent='',3000);}
-window.downloadQR=downloadQR;window.copyLink=copyLink;
+window.downloadQR=downloadQR;window.copyLink=copyLink;window.shareLink=shareLink;
 init();
 </script>
 </body>

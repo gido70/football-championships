@@ -1,9 +1,15 @@
-// sw.js — network-first public shell + Web Push — v36.4
-const VERSION = 'football-shell-v36-4';
+// sw.js — network-first public shell + Web Push — v36.5
+const VERSION = 'football-shell-v36-5';
 const CORE = [
   './',
   './index.html',
   './tournament.html',
+  './share-mansour-2026.html',
+  './share-mansour-2027.html',
+  './share-uefa-2027.html',
+  './manifest-mansour-2026.webmanifest',
+  './manifest-mansour-2027.webmanifest',
+  './manifest-uefa-2027.webmanifest',
   './match-live.html',
   './match-report.html',
   './documents.html',
@@ -25,7 +31,11 @@ const CORE = [
   './vendor/supabase.min.js',
   './icon-app.png',
   './uefa-champions-app-192.png',
-  './uefa-champions-app-512.png'
+  './uefa-champions-app-512.png',
+  './logo-cup-2026-192.png',
+  './logo-cup-2026-512.png',
+  './logo-cup-2027-192.png',
+  './logo-cup-2027-512.png'
 ];
 
 self.addEventListener('install', e => {

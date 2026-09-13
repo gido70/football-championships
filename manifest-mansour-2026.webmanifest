@@ -1,0 +1,18 @@
+{
+  "id": "./mansour-2026",
+  "name": "كأس منصور بن زايد 2026",
+  "short_name": "كأس منصور 2026",
+  "description": "التطبيق الرسمي لبطولة كأس منصور بن زايد 2026",
+  "start_url": "./tournament.html?id=aaaaaaaa-0000-0000-0000-000000000001&standalone=1",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0007fc",
+  "theme_color": "#0007fc",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {"src": "logo-cup-2026-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "logo-cup-2026-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

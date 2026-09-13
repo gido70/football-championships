@@ -6,6 +6,16 @@
   const rootTournamentId=params.get('scope_tid')||(currentPage==='tournament.html'?params.get('id'):params.get('tid'));
   let manifestUrl='';
   const EUROPE_TOURNAMENT_ID='eee33333-5d2a-4f3b-a981-d4b8f5f86143';
+  const STATIC_MANIFESTS={
+    'aaaaaaaa-0000-0000-0000-000000000001':'manifest-mansour-2026.webmanifest',
+    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'manifest-mansour-2027.webmanifest',
+    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'manifest-uefa-2027.webmanifest'
+  };
+  const STATIC_INSTALL_ICONS={
+    'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-512.png',
+    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-512.png',
+    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-512.png'
+  };
   function scopedUrl(href){
     if(!isolated||!href||href.startsWith('#')||href.startsWith('javascript:')||href.startsWith('mailto:')||href.startsWith('tel:'))return href;
     let url;try{url=new URL(href,location.href);}catch(_error){return href;}
@@ -105,15 +115,17 @@
     start.searchParams.set('id',tournamentId);start.searchParams.set('standalone','1');
     const icon=t.cup_logo_url||t.logo_url||new URL('icon-app.png',base).href;
     const isEurope=tournamentId===EUROPE_TOURNAMENT_ID;
-    const installIcon=isEurope?new URL('uefa-champions-app-512.png',base).href:icon;
+    const staticInstallIcon=STATIC_INSTALL_ICONS[tournamentId];
+    const installIcon=staticInstallIcon?new URL(staticInstallIcon,base).href:(isEurope?new URL('uefa-champions-app-512.png',base).href:icon);
     const colors=themeColors(t);
     const icons=isEurope
       ? [{src:new URL('uefa-champions-app-192.png',base).href,sizes:'192x192',type:'image/png',purpose:'any'},{src:installIcon,sizes:'512x512',type:'image/png',purpose:'any maskable'}]
       : [{src:icon,sizes:'any',purpose:'any'},{src:new URL('icon-app.png',base).href,sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:new URL('icon-app-512.png',base).href,sizes:'512x512',type:'image/png',purpose:'any maskable'}];
     const manifest={id:base.pathname+'tournament-'+tournamentId,name:name+' — منصة البطولات الاحترافية',short_name:name.slice(0,28),description:'التطبيق الرسمي لمتابعة '+name,lang:'ar',dir:'rtl',display:'standalone',orientation:'any',start_url:start.href,scope:base.pathname,background_color:colors.primary,theme_color:colors.primary,icons};
-    if(manifestUrl)URL.revokeObjectURL(manifestUrl);
-    manifestUrl=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'}));
-    let link=document.querySelector('link[rel="manifest"]');if(!link){link=document.createElement('link');link.rel='manifest';document.head.appendChild(link);}link.href=manifestUrl;
+    let link=document.querySelector('link[rel="manifest"]');if(!link){link=document.createElement('link');link.rel='manifest';document.head.appendChild(link);}
+    const staticManifest=STATIC_MANIFESTS[tournamentId];
+    if(staticManifest)link.href=new URL(staticManifest,base).href;
+    else{if(manifestUrl)URL.revokeObjectURL(manifestUrl);manifestUrl=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'}));link.href=manifestUrl;}
     const touch=document.querySelector('link[rel="apple-touch-icon"]');if(touch)touch.href=installIcon;
     document.title=name;return manifest;
   }
