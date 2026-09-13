@@ -23,6 +23,9 @@ assert(tournament.includes('match-report.html?id='),'completed matches must expo
 assert(tournament.includes("const LEGACY_MEDIA_ROOT='https://raw.githubusercontent.com/gido70/Championship-Mansour-Bin-Zaid-Cup--2026/main/assets/'"),'legacy 2026 media must be localized');
 assert(tournament.includes('feed-gallery-nav'),'gallery viewer must expose phone-friendly previous and next controls');
 assert(tournament.includes('moveFeedGallery'),'gallery viewer must load one image at a time');
+assert(tournament.includes('sponsors-ticker-line'),'sponsors must use the enhanced tournament-themed strip');
+assert(tournament.includes('ticker-sponsor-logo-box'),'sponsor logos must keep a clear white presentation area');
+assert(tournament.includes('<span>${s.name}</span>'),'sponsor names must remain visible beside their logos');
 
 const videos=read('videos.html');
 assert(videos.includes('count-${Math.min(items.length,9)}'),'each video section must respond to its own item count');

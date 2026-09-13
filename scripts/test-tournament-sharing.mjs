@@ -56,7 +56,7 @@ const scope=read('tournament-scope.js');
 for(const t of tournaments){assert.ok(scope.includes(t.key));assert.ok(scope.includes(t.manifest));}
 
 const sw=read('sw.js');
-assert.ok(sw.includes("football-shell-v36-5"));
+assert.ok(sw.includes("football-shell-v36-6"));
 for(const t of tournaments){assert.ok(sw.includes(t.page));assert.ok(sw.includes(t.manifest));}
 
 for(const file of ['tournament.html','tournament-scope.js','qr-generator.html','sw.js',...tournaments.flatMap(t=>[t.page,t.manifest])]){
