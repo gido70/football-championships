@@ -202,7 +202,7 @@ let teamPlayersPromise=null;
 function getTeamPlayers(){
   if(!teamPlayersPromise){
     teamPlayersPromise=sb.from('players')
-      .select('id,name,full_name_ar,number,shirt_number,role,nationality,jersey_photo_url')
+      .select('id,team_id,name,full_name_ar,number,shirt_number,role,nationality,jersey_photo_url')
       .eq('team_id',TID)
       .order('number')
       .then(result=>result.data||[]);
@@ -301,7 +301,7 @@ async function loadSquad(){
       ${num?`<div class="player-number" style="color:var(--tc-num)">${esc(num)}</div>`:''}
       ${photo
         ? `<img class="player-photo" src="${esc(photo)}" alt="${esc(name)}" onerror="this.outerHTML='<div class=player-ph>👤</div>'">`
-        : `<div class="player-ph" data-uefa-player-name="${esc(p.name||name)}" data-uefa-player-alt="${esc(name)}" data-uefa-team-id="${esc(p.team_id||team.id||'')}">👤</div>`}
+        : `<div class="player-ph" data-uefa-player-name="${esc(p.name||name)}" data-uefa-player-alt="${esc(name)}" data-uefa-team-id="${esc(p.team_id||TID)}">👤</div>`}
       <div class="player-name">${esc(name)}</div>
       <div class="player-nat">${esc(subtitle)}</div>
     </a>`;
@@ -343,7 +343,7 @@ async function loadStats(){
       return `<tr>
         <td style="color:#79786A">${p.number||p.shirt_number||'—'}</td>
         <td><a class="player-cell" href="player.html?id=${p.id}" aria-label="فتح صفحة ${name}">
-          ${photo?`<img class="player-mini-photo" src="${photo}" onerror="this.outerHTML='<div class=player-mini-ph>👤</div>'">`:`<div class="player-mini-ph" data-uefa-player-name="${esc(p.name||name)}" data-uefa-player-alt="${esc(name)}" data-uefa-team-id="${esc(p.team_id||team.id||'')}">👤</div>`}
+          ${photo?`<img class="player-mini-photo" src="${photo}" onerror="this.outerHTML='<div class=player-mini-ph>👤</div>'">`:`<div class="player-mini-ph" data-uefa-player-name="${esc(p.name||name)}" data-uefa-player-alt="${esc(name)}" data-uefa-team-id="${esc(p.team_id||TID)}">👤</div>`}
           <span>${name}</span>
         </a></td>
         <td><span class="stat-num stat-goals">${p.goals||0}</span></td>
