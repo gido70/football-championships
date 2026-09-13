@@ -67,10 +67,10 @@ const qs=new URLSearchParams(location.search);
 let CUR=null,TOUR_ID=qs.get('tid')||localStorage.getItem('adminTournamentId')||'',ALL_TEAMS=[];
 
 async function initTournaments(){
-  const {data:tours,error}=await sb.from('tournaments').select('id,name_ar,name,season_label').order('created_at',{ascending:false});
+  const {data:tours,error}=await sb.from('tournaments').select('id,name,season_label').order('created_at',{ascending:false});
   const sel=document.getElementById('tournamentSel');
   if(error||!tours?.length){sel.innerHTML='<option value="">لا توجد بطولات</option>';return;}
-  sel.innerHTML='<option value="">اختر البطولة أولًا...</option>'+tours.map(t=>`<option value="${t.id}">${t.name_ar||t.name}${t.season_label?' — '+t.season_label:''}</option>`).join('');
+  sel.innerHTML='<option value="">اختر البطولة أولًا...</option>'+tours.map(t=>`<option value="${t.id}">${t.name}${t.season_label?' — '+t.season_label:''}</option>`).join('');
   if(!tours.some(t=>String(t.id)===String(TOUR_ID)))TOUR_ID=String(tours[0].id);
   sel.value=TOUR_ID;
   localStorage.setItem('adminTournamentId',TOUR_ID);

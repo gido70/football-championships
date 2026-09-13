@@ -17,6 +17,8 @@ for(const [name,page] of [['team-submissions-review.html',review],['teams-admin.
 
 assert.match(review,/id="tournamentSel"/);
 assert.match(review,/id="teamSel"/);
+assert.match(review,/select\('id,name,season_label'\)/);
+assert.doesNotMatch(review,/from\('tournaments'\)\.select\('[^']*name_ar/);
 assert.match(review,/\.eq\('tournament_id',TOUR_ID\)/);
 assert.match(review,/replaceStaffPhoto/);
 assert.match(review,/addNewPlayer/);
