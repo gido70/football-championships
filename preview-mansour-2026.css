@@ -3,15 +3,18 @@ html.theme-preview-mansour-2026{
   --preview-ink:#102b45;
   --preview-line:color-mix(in srgb,var(--theme-primary) 24%,#d6e5ef);
   --preview-gold:color-mix(in srgb,var(--theme-secondary) 76%,#c7982b);
-  /* لوحة الألوان المرجعية المستخرجة من نموذج الأخبار */
-  --link-teal-1:#0f6f79;
-  --link-teal-2:#184d52;
-  --link-burgundy-1:#8c1f3f;
-  --link-burgundy-2:#49313a;
-  --link-orange-1:#a84c1c;
-  --link-orange-2:#54382d;
-  --link-blue-1:#2c659d;
-  --link-blue-2:#163f6d;
+
+  /* ألوان مأخوذة من الصورة المرجعية الأصلية: داكنة ومتدرجة، بدون تشبع زائد */
+  --link-teal-1:#234752;
+  --link-teal-2:#1d3942;
+  --link-burgundy-1:#4f2330;
+  --link-burgundy-2:#3f3138;
+  --link-orange-1:#673e2a;
+  --link-orange-2:#50372a;
+  --link-blue-1:#354e76;
+  --link-blue-2:#2d405c;
+  --link-violet-1:#5b456f;
+  --link-violet-2:#3d314d;
 }
 
 html.theme-preview-mansour-2026 body.public-tournament{
@@ -85,13 +88,13 @@ html.theme-preview-mansour-2026 .ticker-line{
     linear-gradient(110deg,#fff,color-mix(in srgb,var(--theme-primary) 8%,#fff) 55%,color-mix(in srgb,var(--theme-secondary) 18%,#fff));
 }
 
-/* روابط بطولة 2026: نفس روح ألوان نموذج الأخبار المرجعي */
+/* التغيير محصور في روابط المحتوى الخمسة فقط — الدوائر وإنستغرام ويوتيوب لا تُمس */
 html.theme-preview-mansour-2026 .media-section-head{
   position:relative;
   overflow:hidden;
   color:#fff;
-  border-color:rgba(255,255,255,.22);
-  box-shadow:0 6px 0 rgba(7,35,53,.26),0 13px 26px rgba(11,43,67,.18),inset 0 1px 0 rgba(255,255,255,.22);
+  border-color:rgba(255,255,255,.20);
+  box-shadow:0 6px 0 rgba(7,35,53,.26),0 13px 26px rgba(11,43,67,.18),inset 0 1px 0 rgba(255,255,255,.18);
 }
 html.theme-preview-mansour-2026 .media-section-head::before{
   content:"";
@@ -99,8 +102,8 @@ html.theme-preview-mansour-2026 .media-section-head::before{
   inset:0;
   pointer-events:none;
   background:
-    radial-gradient(circle at 12% 15%,rgba(255,255,255,.16),transparent 26%),
-    repeating-linear-gradient(118deg,rgba(255,255,255,.065) 0 1px,transparent 1px 34px);
+    radial-gradient(circle at 12% 15%,rgba(255,255,255,.12),transparent 28%),
+    repeating-linear-gradient(118deg,rgba(255,255,255,.045) 0 1px,transparent 1px 34px);
 }
 html.theme-preview-mansour-2026 .media-section--resources .media-section-head{
   background:linear-gradient(135deg,var(--link-teal-1),var(--link-teal-2));
@@ -115,7 +118,7 @@ html.theme-preview-mansour-2026 .media-section--videos .media-section-head{
   background:linear-gradient(135deg,var(--link-blue-1),var(--link-blue-2));
 }
 html.theme-preview-mansour-2026 .media-section--coverage .media-section-head{
-  background:linear-gradient(135deg,var(--link-teal-1),var(--link-blue-2));
+  background:linear-gradient(135deg,var(--link-violet-1),var(--link-violet-2));
 }
 html.theme-preview-mansour-2026 .media-section-title{
   position:relative;
@@ -129,32 +132,14 @@ html.theme-preview-mansour-2026 .media-section-tools{
 }
 html.theme-preview-mansour-2026 .media-section-count{
   color:#fff;
-  background:rgba(255,255,255,.14);
-  border-color:rgba(255,255,255,.42);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+  background:rgba(255,255,255,.13);
+  border-color:rgba(255,255,255,.38);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
 }
 html.theme-preview-mansour-2026 .media-section-arrow{
   color:#fff;
   background:rgba(3,27,45,.27);
-  border:1px solid rgba(255,255,255,.28);
-}
-
-/* روابط إنستغرام ويوتيوب بنفس العائلة اللونية بدل ألوان منفصلة عن الثيم */
-html.theme-preview-mansour-2026 .follow-tile.ig{
-  background:
-    radial-gradient(circle at 18% 14%,rgba(255,255,255,.16),transparent 28%),
-    repeating-linear-gradient(118deg,rgba(255,255,255,.055) 0 1px,transparent 1px 32px),
-    linear-gradient(135deg,var(--link-burgundy-1),var(--link-orange-1));
-}
-html.theme-preview-mansour-2026 .follow-tile.yt{
-  background:
-    radial-gradient(circle at 18% 14%,rgba(255,255,255,.16),transparent 28%),
-    repeating-linear-gradient(118deg,rgba(255,255,255,.055) 0 1px,transparent 1px 32px),
-    linear-gradient(135deg,var(--link-blue-1),var(--link-teal-1));
-}
-html.theme-preview-mansour-2026 .follow-tile{
-  border:1px solid rgba(255,255,255,.22);
-  box-shadow:0 6px 0 rgba(7,35,53,.25),0 13px 24px rgba(7,35,53,.17),inset 0 1px 0 rgba(255,255,255,.2);
+  border:1px solid rgba(255,255,255,.26);
 }
 
 html.theme-preview-mansour-2026 .tabs-bar{
@@ -173,7 +158,7 @@ html.theme-preview-mansour-2026 .st-table thead{
   html.theme-preview-mansour-2026 .qlinks-wrap{margin:12px 8px 4px;padding:18px 8px 10px;border-radius:20px}
   html.theme-preview-mansour-2026 .hero-stats{border-radius:15px}
 
-  /* تكبير الروابط المطوية لتكون أوضح وأسهل للمس على الهاتف */
+  /* روابط المحتوى أسمك وأوضح للمس على الهاتف فقط */
   html.theme-preview-mansour-2026 .media-section{padding-inline:8px;margin-top:17px}
   html.theme-preview-mansour-2026 .media-section-head{
     min-height:74px;
@@ -183,14 +168,6 @@ html.theme-preview-mansour-2026 .st-table thead{
   html.theme-preview-mansour-2026 .media-section-title{font-size:15.5px;gap:10px}
   html.theme-preview-mansour-2026 .media-section-count{min-width:34px;padding:6px 10px;font-size:12px;text-align:center}
   html.theme-preview-mansour-2026 .media-section-arrow{width:34px;height:34px;font-size:17px}
-  html.theme-preview-mansour-2026 .follow-grid{gap:14px}
-  html.theme-preview-mansour-2026 .follow-tile{
-    min-height:108px;
-    padding:22px 12px;
-    border-radius:18px;
-    font-size:14.5px;
-  }
-  html.theme-preview-mansour-2026 .follow-tile .follow-ic{font-size:30px}
 }
 
 @media(prefers-reduced-motion:reduce){
