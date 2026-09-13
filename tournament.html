@@ -202,7 +202,8 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .ticker-line::before{content:"";position:absolute;z-index:-1;inset:0;background:repeating-linear-gradient(118deg,rgba(10,49,79,.045) 0 1px,transparent 1px 30px)}
 .ticker-label{flex-shrink:0;width:124px;font-size:13px;font-weight:900;padding:0 10px;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;border-left:1px solid rgba(255,255,255,.18);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:radial-gradient(circle at 20% 20%,color-mix(in srgb,var(--theme-secondary) 24%,transparent),transparent 43%),linear-gradient(135deg,var(--theme-primary),var(--theme-primary-dark),var(--theme-primary-deep));color:var(--theme-on-primary);box-shadow:-7px 0 18px rgba(4,25,43,.15)}
 .ticker-viewport{flex:1;overflow:hidden;position:relative;height:100%}
-.ticker-track{position:absolute;top:0;right:0;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:14px;font-weight:800;color:#17324d;will-change:transform}
+.ticker-track{position:absolute;top:0;left:0;right:auto;white-space:nowrap;height:100%;display:flex;align-items:center;font-size:14px;font-weight:800;color:#17324d;will-change:transform;direction:rtl}
+.ticker-cycle{display:inline-flex;align-items:center;flex:none;gap:0;padding-inline-end:18px}
 .ticker-item{display:inline-flex;align-items:center;min-height:34px;padding:5px 13px;border-radius:10px;background:rgba(255,255,255,.66);border:1px solid color-mix(in srgb,var(--theme-primary) 14%,#e7eef4)}
 .ticker-sep{margin:0 10px;color:var(--theme-secondary);font-weight:900}
 .ticker-toggle{flex-shrink:0;background:color-mix(in srgb,var(--theme-primary) 8%,#fff);border:0;border-right:1px solid color-mix(in srgb,var(--theme-primary) 16%,#e2eaf0);color:var(--theme-primary);font-size:16px;cursor:pointer;padding:0 14px;height:100%}
@@ -213,6 +214,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .ticker-sponsor-item{display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:5px 13px 5px 7px;background:#fff;border:1px solid color-mix(in srgb,var(--theme-secondary) 38%,#e7eef4);border-radius:13px;color:var(--theme-primary-deep);font-family:inherit;font-weight:900;box-shadow:0 3px 9px rgba(8,35,61,.11)}
 .ticker-sponsor-logo-box{width:86px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;padding:3px 7px;background:#fff;border:1px solid #edf1f4;border-radius:9px}
 .ticker-sponsor-logo{display:block;width:100%;height:100%;object-fit:contain;object-position:center}
+.ticker-sponsor-sep{display:inline-flex;align-items:center;justify-content:center;min-height:30px;margin:0 10px;padding:4px 11px;border:1px solid color-mix(in srgb,var(--theme-secondary) 58%,#fff);border-radius:999px;background:linear-gradient(135deg,var(--theme-primary),var(--theme-primary-dark),var(--theme-primary-deep));color:var(--theme-on-primary);font-size:11px;font-weight:900;box-shadow:0 3px 8px rgba(7,35,67,.16)}
 @media(max-width:560px){.ticker-wrap{padding-inline:9px}.ticker-line{height:54px;border-radius:14px}.ticker-label{width:96px;font-size:11.5px}.ticker-track{font-size:12.5px}.ticker-item{padding-inline:10px}.ticker-toggle{padding-inline:11px}}
 @media(max-width:560px){.sponsors-ticker-line{height:62px}.sponsors-ticker-line .ticker-label{width:92px}.ticker-sponsor-item{min-height:44px;padding:4px 9px 4px 5px;gap:7px}.ticker-sponsor-logo-box{width:72px;height:36px;padding:3px 6px}}
 .follow-wrap{max-width:900px;margin:0 auto;padding:4px 16px 14px}
@@ -668,7 +670,21 @@ const tickerState={};
 function startTickerAnim(id,track){
   if(tickerState[id]?.raf)cancelAnimationFrame(tickerState[id].raf);
   const viewport=track.parentElement;
-  tickerState[id]={paused:false,pos:0,last:performance.now()};
+  // نكرر دورة المحتوى بقدر عرض الشاشة؛ عندما تنتهي الأولى تبدأ التالية
+  // فوراً، فلا تعبر مساحة فارغة بين آخر خبر وبداية الدورة الجديدة.
+  const source=track.innerHTML;
+  const firstCycle=document.createElement('span');
+  firstCycle.className='ticker-cycle';
+  firstCycle.innerHTML=source;
+  track.replaceChildren(firstCycle);
+  const baseWidth=Math.max(1,firstCycle.getBoundingClientRect().width);
+  const copies=Math.max(2,Math.ceil(viewport.clientWidth/baseWidth)+2);
+  for(let i=1;i<copies;i++){
+    const clone=firstCycle.cloneNode(true);
+    clone.setAttribute('aria-hidden','true');
+    track.appendChild(clone);
+  }
+  tickerState[id]={paused:false,pos:0,last:performance.now(),cycleWidth:baseWidth};
   const step=(now)=>{
     const state=tickerState[id];
     const elapsed=Math.min(64,now-state.last);
@@ -676,7 +692,7 @@ function startTickerAnim(id,track){
     if(!state.paused){
       // سرعة ثابتة بصرف النظر عن معدل تحديث شاشة الهاتف.
       state.pos-=elapsed*.045;
-      if(state.pos < -track.scrollWidth) state.pos=viewport.offsetWidth;
+      if(state.pos<=-state.cycleWidth)state.pos+=state.cycleWidth;
       track.style.transform='translate3d('+state.pos+'px,0,0)';
     }
     state.raf=requestAnimationFrame(step);
@@ -1340,7 +1356,7 @@ async function loadSponsors(){
   const {data}=await sb.from('sponsors').select('*').eq('tournament_id',TID).order('sort_order',{ascending:true}).order('created_at',{ascending:true});
   if(!data||!data.length){wrap.innerHTML='';return;}
 
-  const sep='<span class="ticker-sep">رعاة البطولة</span>';
+  const sep='<span class="ticker-sep ticker-sponsor-sep">رعاة البطولة</span>';
   const items=data.map(s=>`<span class="ticker-item ticker-sponsor-item"><span class="ticker-sponsor-logo-box"><img class="ticker-sponsor-logo" src="${s.logo_url}" alt="${s.name}" loading="lazy"></span><span>${s.name}</span></span>`);
 
   wrap.innerHTML=`<div class="ticker-wrap"><div class="ticker-line sponsors-ticker-line">
