@@ -21,5 +21,27 @@ body.tournament-themed .hero h1,body.tournament-themed .lb-rank,body.tournament-
 .tournament-gradient-surface{position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(circle at 18% 8%,color-mix(in srgb,var(--theme-secondary) 24%,transparent),transparent 32%),linear-gradient(125deg,var(--theme-primary-mid),var(--theme-primary-dark) 52%,var(--theme-primary-deep));color:var(--theme-on-primary)}
 .tournament-gradient-surface::before{content:"";position:absolute;z-index:-1;inset:0;background:repeating-linear-gradient(118deg,rgba(255,255,255,.055) 0 1px,transparent 1px 34px);opacity:.9;pointer-events:none}
 .tournament-gradient-surface::after{content:"";position:absolute;z-index:-1;width:290px;height:290px;left:-110px;bottom:-180px;border:1px solid rgba(255,255,255,.16);border-radius:50%;box-shadow:0 0 0 54px rgba(255,255,255,.025);pointer-events:none}
+
+/* الهوية المعتمدة لروابط المحتوى — مطبقة على جميع البطولات فقط، دون الدوائر أو إنستغرام أو يوتيوب */
+body.public-tournament{
+  --content-teal-1:#234752;--content-teal-2:#1d3942;
+  --content-burgundy-1:#4f2330;--content-burgundy-2:#3f3138;
+  --content-orange-1:#673e2a;--content-orange-2:#50372a;
+  --content-blue-1:#354e76;--content-blue-2:#2d405c;
+  --content-violet-1:#5b456f;--content-violet-2:#3d314d;
+}
+body.public-tournament .media-section-head{position:relative;overflow:hidden;color:#fff;border-color:rgba(255,255,255,.20);box-shadow:0 6px 0 rgba(7,35,53,.26),0 13px 26px rgba(11,43,67,.18),inset 0 1px 0 rgba(255,255,255,.18)}
+body.public-tournament .media-section-head::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 12% 15%,rgba(255,255,255,.12),transparent 28%),repeating-linear-gradient(118deg,rgba(255,255,255,.045) 0 1px,transparent 1px 34px)}
+body.public-tournament .media-section--resources .media-section-head{background:linear-gradient(135deg,var(--content-teal-1),var(--content-teal-2))}
+body.public-tournament .media-section--news .media-section-head{background:linear-gradient(135deg,var(--content-burgundy-1),var(--content-burgundy-2))}
+body.public-tournament .media-section--photos .media-section-head{background:linear-gradient(135deg,var(--content-orange-1),var(--content-orange-2))}
+body.public-tournament .media-section--videos .media-section-head{background:linear-gradient(135deg,var(--content-blue-1),var(--content-blue-2))}
+body.public-tournament .media-section--coverage .media-section-head{background:linear-gradient(135deg,var(--content-violet-1),var(--content-violet-2))}
+body.public-tournament .media-section-title{position:relative;z-index:1;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.28)}
+body.public-tournament .media-section-tools{position:relative;z-index:1}
+body.public-tournament .media-section-count{color:#fff;background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.38);box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+body.public-tournament .media-section-arrow{color:#fff;background:rgba(3,27,45,.27);border:1px solid rgba(255,255,255,.26)}
+
 @media(max-width:600px){.tournament-platform-mark{min-height:45px;font-size:11px}.tournament-platform-mark img{width:27px;height:27px}.tournament-nav-brand{font-size:12px!important;max-width:68vw}.tournament-nav-logo{width:30px;height:30px}}
+@media(max-width:760px){body.public-tournament .media-section{padding-inline:8px;margin-top:17px}body.public-tournament .media-section-head{min-height:74px;padding:14px 16px;border-radius:18px}body.public-tournament .media-section-title{font-size:15.5px;gap:10px}body.public-tournament .media-section-count{min-width:34px;padding:6px 10px;font-size:12px;text-align:center}body.public-tournament .media-section-arrow{width:34px;height:34px;font-size:17px}}
 @media(prefers-reduced-motion:reduce){body.tournament-themed *,body.tournament-themed *::before,body.tournament-themed *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
