@@ -26,6 +26,9 @@ assert(tournament.includes('moveFeedGallery'),'gallery viewer must load one imag
 assert(tournament.includes('sponsors-ticker-line'),'sponsors must use the enhanced tournament-themed strip');
 assert(tournament.includes('ticker-sponsor-logo-box'),'sponsor logos must keep a clear white presentation area');
 assert(tournament.includes('<span>${s.name}</span>'),'sponsor names must remain visible beside their logos');
+assert(tournament.includes('ticker-sponsor-sep'),'sponsor separators must stay visible in every tournament theme');
+assert(tournament.includes("clone.setAttribute('aria-hidden','true')"),'ticker must duplicate its cycle for seamless motion');
+assert(tournament.includes('state.pos+=state.cycleWidth'),'ticker must loop without crossing an empty viewport');
 
 const videos=read('videos.html');
 assert(videos.includes('count-${Math.min(items.length,9)}'),'each video section must respond to its own item count');
