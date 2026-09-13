@@ -3,6 +3,15 @@ html.theme-preview-mansour-2026{
   --preview-ink:#102b45;
   --preview-line:color-mix(in srgb,var(--theme-primary) 24%,#d6e5ef);
   --preview-gold:color-mix(in srgb,var(--theme-secondary) 76%,#c7982b);
+  /* لوحة الألوان المرجعية المستخرجة من نموذج الأخبار */
+  --link-teal-1:#0f6f79;
+  --link-teal-2:#184d52;
+  --link-burgundy-1:#8c1f3f;
+  --link-burgundy-2:#49313a;
+  --link-orange-1:#a84c1c;
+  --link-orange-2:#54382d;
+  --link-blue-1:#2c659d;
+  --link-blue-2:#163f6d;
 }
 
 html.theme-preview-mansour-2026 body.public-tournament{
@@ -76,15 +85,76 @@ html.theme-preview-mansour-2026 .ticker-line{
     linear-gradient(110deg,#fff,color-mix(in srgb,var(--theme-primary) 8%,#fff) 55%,color-mix(in srgb,var(--theme-secondary) 18%,#fff));
 }
 
+/* روابط بطولة 2026: نفس روح ألوان نموذج الأخبار المرجعي */
 html.theme-preview-mansour-2026 .media-section-head{
+  position:relative;
+  overflow:hidden;
+  color:#fff;
+  border-color:rgba(255,255,255,.22);
+  box-shadow:0 6px 0 rgba(7,35,53,.26),0 13px 26px rgba(11,43,67,.18),inset 0 1px 0 rgba(255,255,255,.22);
+}
+html.theme-preview-mansour-2026 .media-section-head::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
   background:
-    repeating-linear-gradient(118deg,rgba(10,49,79,.035) 0 1px,transparent 1px 30px),
-    linear-gradient(145deg,#f9fdff,color-mix(in srgb,var(--theme-primary) 11%,#eef8fc));
+    radial-gradient(circle at 12% 15%,rgba(255,255,255,.16),transparent 26%),
+    repeating-linear-gradient(118deg,rgba(255,255,255,.065) 0 1px,transparent 1px 34px);
+}
+html.theme-preview-mansour-2026 .media-section--resources .media-section-head{
+  background:linear-gradient(135deg,var(--link-teal-1),var(--link-teal-2));
+}
+html.theme-preview-mansour-2026 .media-section--news .media-section-head{
+  background:linear-gradient(135deg,var(--link-burgundy-1),var(--link-burgundy-2));
+}
+html.theme-preview-mansour-2026 .media-section--photos .media-section-head{
+  background:linear-gradient(135deg,var(--link-orange-1),var(--link-orange-2));
+}
+html.theme-preview-mansour-2026 .media-section--videos .media-section-head{
+  background:linear-gradient(135deg,var(--link-blue-1),var(--link-blue-2));
+}
+html.theme-preview-mansour-2026 .media-section--coverage .media-section-head{
+  background:linear-gradient(135deg,var(--link-teal-1),var(--link-blue-2));
+}
+html.theme-preview-mansour-2026 .media-section-title{
+  position:relative;
+  z-index:1;
+  color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.28);
+}
+html.theme-preview-mansour-2026 .media-section-tools{
+  position:relative;
+  z-index:1;
+}
+html.theme-preview-mansour-2026 .media-section-count{
+  color:#fff;
+  background:rgba(255,255,255,.14);
+  border-color:rgba(255,255,255,.42);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16);
+}
+html.theme-preview-mansour-2026 .media-section-arrow{
+  color:#fff;
+  background:rgba(3,27,45,.27);
+  border:1px solid rgba(255,255,255,.28);
 }
 
-html.theme-preview-mansour-2026 .media-section-title,
-html.theme-preview-mansour-2026 .media-section-count{
-  color:var(--preview-ink);
+/* روابط إنستغرام ويوتيوب بنفس العائلة اللونية بدل ألوان منفصلة عن الثيم */
+html.theme-preview-mansour-2026 .follow-tile.ig{
+  background:
+    radial-gradient(circle at 18% 14%,rgba(255,255,255,.16),transparent 28%),
+    repeating-linear-gradient(118deg,rgba(255,255,255,.055) 0 1px,transparent 1px 32px),
+    linear-gradient(135deg,var(--link-burgundy-1),var(--link-orange-1));
+}
+html.theme-preview-mansour-2026 .follow-tile.yt{
+  background:
+    radial-gradient(circle at 18% 14%,rgba(255,255,255,.16),transparent 28%),
+    repeating-linear-gradient(118deg,rgba(255,255,255,.055) 0 1px,transparent 1px 32px),
+    linear-gradient(135deg,var(--link-blue-1),var(--link-teal-1));
+}
+html.theme-preview-mansour-2026 .follow-tile{
+  border:1px solid rgba(255,255,255,.22);
+  box-shadow:0 6px 0 rgba(7,35,53,.25),0 13px 24px rgba(7,35,53,.17),inset 0 1px 0 rgba(255,255,255,.2);
 }
 
 html.theme-preview-mansour-2026 .tabs-bar{
@@ -102,6 +172,25 @@ html.theme-preview-mansour-2026 .st-table thead{
 @media(max-width:760px){
   html.theme-preview-mansour-2026 .qlinks-wrap{margin:12px 8px 4px;padding:18px 8px 10px;border-radius:20px}
   html.theme-preview-mansour-2026 .hero-stats{border-radius:15px}
+
+  /* تكبير الروابط المطوية لتكون أوضح وأسهل للمس على الهاتف */
+  html.theme-preview-mansour-2026 .media-section{padding-inline:8px;margin-top:17px}
+  html.theme-preview-mansour-2026 .media-section-head{
+    min-height:74px;
+    padding:14px 16px;
+    border-radius:18px;
+  }
+  html.theme-preview-mansour-2026 .media-section-title{font-size:15.5px;gap:10px}
+  html.theme-preview-mansour-2026 .media-section-count{min-width:34px;padding:6px 10px;font-size:12px;text-align:center}
+  html.theme-preview-mansour-2026 .media-section-arrow{width:34px;height:34px;font-size:17px}
+  html.theme-preview-mansour-2026 .follow-grid{gap:14px}
+  html.theme-preview-mansour-2026 .follow-tile{
+    min-height:108px;
+    padding:22px 12px;
+    border-radius:18px;
+    font-size:14.5px;
+  }
+  html.theme-preview-mansour-2026 .follow-tile .follow-ic{font-size:30px}
 }
 
 @media(prefers-reduced-motion:reduce){
