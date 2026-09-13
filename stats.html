@@ -12,6 +12,7 @@
 <title>الإحصائيات</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
+<script src="uefa-player-images.js?v=20260913-2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh}
@@ -167,7 +168,7 @@ function pchip(name,photo,number,role,variant=''){
   </span>`;
 }
 
-function leadRow(rank,name,sub,val,unit,photo,extraClass,number){
+function leadRow(rank,name,sub,val,unit,photo,extraClass,number,teamId,lookupName){
   const rClass=rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
   const rc=rank===1?'#ffd700':rank===2?'#c0c0c0':rank===3?'#cd7f32':'#3a4150';
   const vClass=extraClass||'';
@@ -177,7 +178,7 @@ function leadRow(rank,name,sub,val,unit,photo,extraClass,number){
     <div class="lead-rank" style="color:${rc}">${rank}</div>
     <div class="lead-av">
       ${photo?`<img class="lead-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
-      <div class="lead-ph" style="${photo?'display:none':'display:flex'}">${ini}</div>
+      <div class="lead-ph"${teamId?` data-uefa-player-name="${esc(lookupName||name)}" data-uefa-player-alt="${esc(name)}" data-uefa-team-id="${esc(teamId)}"`:''} style="${photo?'display:none':'display:flex'};overflow:hidden">${ini}</div>
     </div>
     ${number?`<span class="lead-num">#${number}</span>`:''}
     <div class="lead-info">
@@ -265,7 +266,7 @@ function tally(events,type,teamName={}){
     // مفتاح موحّد بالاسم فقط — يمنع تكرار نفس اللاعب من فرق مختلفة
     const key=e.player_id||('m:'+e.manual_player_name);
     const tm=teamName[e.team_id]||'';
-    if(!map[key])map[key]={name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',photo:e.player?.jersey_photo_url,number:e.player?.number,team:tm,count:0};
+    if(!map[key])map[key]={name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',lookupName:e.player?.name||e.manual_player_name||'',photo:e.player?.jersey_photo_url,number:e.player?.number,team:tm,teamId:e.team_id,count:0};
     if(!map[key].team&&tm)map[key].team=tm;
     map[key].count++;
   });
@@ -276,7 +277,8 @@ function buildScorers(events,teamName){
   const list=tally((events||[]).filter(e=>e.event_subtype!=='own_goal'),'goal',teamName);
   const wrap=document.getElementById('scorersWrap');
   if(!list.length){wrap.innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف مسجلة بعد</p></div>';return;}
-  wrap.innerHTML=list.slice(0,20).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'هدف',p.photo,'goal',p.number)).join('');
+  wrap.innerHTML=list.slice(0,20).map((p,i)=>leadRow(i+1,p.name,p.team||'',p.count,'هدف',p.photo,'goal',p.number,p.teamId,p.lookupName)).join('');
+  window.UefaPlayerImages?.hydrate(wrap);
 }
 
 function buildCards(events,teamName){
@@ -284,10 +286,11 @@ function buildCards(events,teamName){
   const red=tally(events,'red_card',teamName);
   let html='';
   html+='<div class="sec-title">🟨 الأكثر حصولاً على بطاقات صفراء</div>';
-  html+=yellow.length?yellow.slice(0,15).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'بطاقة',p.photo,'yellow',p.number)).join(''):'<div class="empty" style="padding:20px 0"><span>🟨</span><p>لا توجد بطاقات صفراء بعد</p></div>';
+  html+=yellow.length?yellow.slice(0,15).map((p,i)=>leadRow(i+1,p.name,p.team||'',p.count,'بطاقة',p.photo,'yellow',p.number,p.teamId,p.lookupName)).join(''):'<div class="empty" style="padding:20px 0"><span>🟨</span><p>لا توجد بطاقات صفراء بعد</p></div>';
   html+='<div class="sec-title">🟥 البطاقات الحمراء</div>';
-  html+=red.length?red.slice(0,15).map((p,i)=>leadRow(i+1,p.name,teamName[p.team]||'',p.count,'بطاقة',p.photo,'red',p.number)).join(''):'<div class="empty" style="padding:20px 0"><span>🟥</span><p>لا توجد بطاقات حمراء — انضباط ممتاز</p></div>';
+  html+=red.length?red.slice(0,15).map((p,i)=>leadRow(i+1,p.name,p.team||'',p.count,'بطاقة',p.photo,'red',p.number,p.teamId,p.lookupName)).join(''):'<div class="empty" style="padding:20px 0"><span>🟥</span><p>لا توجد بطاقات حمراء — انضباط ممتاز</p></div>';
   document.getElementById('cardsWrap').innerHTML=html;
+  window.UefaPlayerImages?.hydrate(document.getElementById('cardsWrap'));
 }
 
 async function buildMotm(matches,teamName){
@@ -304,7 +307,7 @@ async function buildMotm(matches,teamName){
   const leaderboard=Object.entries(count).map(([id,c])=>({id,count:c,...pMap[id]})).sort((a,b)=>b.count-a.count);
 
   let html='<div class="sec-title">🏆 الأكثر اختيارًا كنجم مباراة</div>';
-  html+=leaderboard.map((p,i)=>leadRow(i+1,p.full_name_ar||p.name||'—',teamName[p.team_id]||'',p.count,'مرة',p.jersey_photo_url,'motm',p.number)).join('');
+  html+=leaderboard.map((p,i)=>leadRow(i+1,p.full_name_ar||p.name||'—',teamName[p.team_id]||'',p.count,'مرة',p.jersey_photo_url,'motm',p.number,p.team_id,p.name)).join('');
 
   html+='<div class="sec-title">📅 نجم كل مباراة</div>';
   html+=withStar.map(m=>{
@@ -317,6 +320,7 @@ async function buildMotm(matches,teamName){
   }).join('');
 
   wrap.innerHTML=html;
+  window.UefaPlayerImages?.hydrate(wrap);
 }
 
 function buildVar(events,teamName){
@@ -372,10 +376,11 @@ async function buildInjuries(teamName){
     const nm=p.full_name_ar||p.name||'';
     const ini=nm.trim().split(' ').map(w=>w[0]).slice(0,2).join('');
     return `<div class="info-card">
-    ${p.jersey_photo_url?`<img class="lead-photo" src="${p.jersey_photo_url}">`:`<div class="info-ic" style="background:#21262d;color:#8b949e;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center">${ini}</div>`}
+    ${p.jersey_photo_url?`<img class="lead-photo" src="${p.jersey_photo_url}">`:`<div class="info-ic" data-uefa-player-name="${esc(p.name||nm)}" data-uefa-player-alt="${esc(nm)}" data-uefa-team-id="${esc(p.team_id||'')}" style="background:#21262d;color:#8b949e;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;overflow:hidden">${ini}</div>`}
     <div class="info-body"><b>${nm}</b><span>${teamName[p.team_id]||''}${p.injury_note?' — '+p.injury_note:''}</span></div>
   </div>`;
   }).join('');
+  window.UefaPlayerImages?.hydrate(wrap);
 }
 
 init().catch(err=>{

@@ -26,6 +26,7 @@ const touch=touchIcons[id];if(touch)document.getElementById('appTouchIcon').href
 <title>البطولة</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
+<script src="uefa-player-images.js?v=20260913-2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh;overflow-x:hidden}
@@ -855,7 +856,7 @@ async function loadMOTD(){
   const motmIds=matches.map(m=>m.player_of_match_id).filter(Boolean);
   let motmMap={};
   if(motmIds.length){
-    const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url').in('id',motmIds);
+    const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url,team_id').in('id',motmIds);
     (players||[]).forEach(p=>motmMap[p.id]=p);
   }
 
@@ -873,7 +874,7 @@ async function loadMOTD(){
     });
     const winnerIds=Object.values(bestByMatch).map(v=>v.pid);
     if(winnerIds.length){
-      const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url').in('id',winnerIds);
+      const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url,team_id').in('id',winnerIds);
       const pMap={};(players||[]).forEach(p=>pMap[p.id]=p);
       Object.entries(bestByMatch).forEach(([mid,v])=>{voteWinnerMap[mid]=pMap[v.pid];});
     }
@@ -886,7 +887,7 @@ async function loadMOTD(){
     const name=star.full_name_ar||star.name||'—';
     const ini=(name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
     return `<div class="motd-star">
-      ${star.jersey_photo_url?`<img class="motd-star-av" src="${star.jersey_photo_url}">`:`<div class="motd-star-av-ph">${ini}</div>`}
+      ${star.jersey_photo_url?`<img class="motd-star-av" src="${motdEsc(star.jersey_photo_url)}" alt="${motdEsc(name)}">`:`<div class="motd-star-av-ph" data-uefa-player-name="${motdEsc(star.name||name)}" data-uefa-player-alt="${motdEsc(name)}" data-uefa-team-id="${motdEsc(star.team_id||'')}">${ini}</div>`}
       <div><div class="motd-star-name">${motdEsc(name)}</div><div class="motd-star-lbl">${lbl}</div></div>
     </div>`;
   }
@@ -902,6 +903,7 @@ async function loadMOTD(){
       </a>
     `).join('')}</div>
   </div>`;
+  window.UefaPlayerImages?.hydrate(sec);
 }
 
 
@@ -1269,6 +1271,8 @@ async function loadScorers(){
       id:e.player_id||null,
       name:e.manual_player_name||e.player?.full_name_ar||e.player?.name||'—',
       photo:e.player?.jersey_photo_url,
+      lookupName:e.player?.name||e.manual_player_name||'',
+      teamId:e.team_id,
       number:e.player?.number,
       team:tm.name_ar||tm.name||'',
       col:tm.primary_color||'#79786A',
@@ -1297,7 +1301,7 @@ async function loadScorers(){
     const big=rank===1;
     return `<${p.id?'a':'div'} class="sc-item" ${p.id?`href="player.html?id=${p.id}" aria-label="فتح صفحة ${p.name}"`:''} style="${rank<=3?'border-color:'+rc+'44;background:'+rc+'08':''}${big?';padding:14px 14px':''}">
       <div class="sc-rank" style="color:${rc};${big?'font-size:17px':''}">${rank}</div>
-      <div class="sc-av-wrap" style="${big?'width:46px;height:46px':''}">
+      <div class="sc-av-wrap" data-uefa-player-name="${motdEsc(p.lookupName||p.name)}" data-uefa-player-alt="${motdEsc(p.name)}" data-uefa-team-id="${motdEsc(p.teamId||'')}" style="${big?'width:46px;height:46px':''}">
         ${p.photo
           ?`<img class="sc-photo" style="${big?'width:46px;height:46px':''}" src="${p.photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
           :''}
@@ -1308,6 +1312,7 @@ async function loadScorers(){
       <div class="sc-g"><div class="sc-gn" style="${big?'font-size:20px;color:'+rc:''}">${p.g}</div><div class="sc-gl">هدف</div></div>
     </${p.id?'a':'div'}>`;
   }).join('');
+  window.UefaPlayerImages?.hydrate(document.getElementById('scWrap'));
 }
 
 let teamLogoHydrationPromise=null;

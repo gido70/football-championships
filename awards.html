@@ -8,6 +8,7 @@
 <title>جوائز البطولة</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
+<script src="uefa-player-images.js?v=20260913-2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh;overflow-x:hidden;
@@ -147,20 +148,21 @@ async function init(){
   const teamName={};(teams||[]).forEach(tm=>teamName[tm.id]=tm.name_ar||tm.name||'');
 
   const playerIds=(awards||[]).map(a=>a.winner_player_id).filter(Boolean);
-  const numberMap={};
+  const playerMap={};
   if(playerIds.length){
-    const {data:pls}=await sb.from('players').select('id,number').in('id',playerIds);
-    (pls||[]).forEach(p=>numberMap[p.id]=p.number);
+    const {data:pls}=await sb.from('players').select('id,name,full_name_ar,number,team_id,jersey_photo_url').in('id',playerIds);
+    (pls||[]).forEach(p=>playerMap[p.id]=p);
   }
 
   const aMap={};(awards||[]).forEach(a=>aMap[a.award_key]=a);
 
   document.getElementById('awardsGrid').innerHTML=AWARD_DEFS.map((def,i)=>{
     const a=aMap[def.key];
-    const photo=a?.winner_photo_url||null;
-    const name=a?.winner_name||null;
+    const player=a?.winner_player_id?playerMap[a.winner_player_id]:null;
+    const photo=a?.winner_photo_url||player?.jersey_photo_url||null;
+    const name=a?.winner_name||player?.full_name_ar||player?.name||null;
     const team=a?.winner_team_id?teamName[a.winner_team_id]:'';
-    const number=a?.winner_player_id?numberMap[a.winner_player_id]:null;
+    const number=player?.number??null;
     return `<div class="award-card${def.key==='top_scorer'||def.key==='best_player'?' top':''}" style="animation-delay:${i*0.08}s">
       <div class="award-banner">
         <span class="award-ic">${def.ic}</span>
@@ -175,6 +177,16 @@ async function init(){
       </div>
     </div>`;
   }).join('');
+  (awards||[]).forEach(a=>{
+    if(!a.winner_player_id)return;
+    const index=AWARD_DEFS.findIndex(def=>def.key===a.award_key),player=playerMap[a.winner_player_id];
+    const slot=document.querySelectorAll('#awardsGrid .award-card')[index]?.querySelector('.award-photo-ph');
+    if(!slot||!player)return;
+    slot.dataset.uefaPlayerName=player.name||player.full_name_ar||'';
+    slot.dataset.uefaPlayerAlt=player.full_name_ar||player.name||'';
+    slot.dataset.uefaTeamId=player.team_id||a.winner_team_id||'';
+  });
+  window.UefaPlayerImages?.hydrate(document.getElementById('awardsGrid'));
 }
 
 init();

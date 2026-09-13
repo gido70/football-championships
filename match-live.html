@@ -13,6 +13,7 @@
 <title>المباراة</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
+<script src="uefa-player-images.js?v=20260913-2"></script>
 <link rel="stylesheet" href="public-navigation.css?v=20260911-1">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -219,13 +220,14 @@ a{text-decoration:none;color:inherit}
 .lu-sub-hd{font-size:11px;color:#79786A;font-weight:700;margin:12px 0 6px;letter-spacing:.5px}
 @media(max-width:600px){.lu-grid{grid-template-columns:1fr}}
 
-.motm{max-width:900px;margin:18px auto 0;background:linear-gradient(135deg,#EDEAE0,#FFFFFF);border:1px solid #c9a84c;border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:14px}
+.motm{max-width:960px;margin:18px auto 0;background:linear-gradient(135deg,#EDEAE0,#FFFFFF);border:1px solid #c9a84c;border-radius:16px;padding:18px 22px;display:flex;align-items:center;gap:16px}
 .winner-banner{max-width:900px;margin:14px auto 0;background:linear-gradient(135deg,#2d6a4f,#1e4d38);color:#fff;border-radius:14px;padding:12px 20px;text-align:center;font-size:15px;font-weight:900}
 .winner-banner .cup{font-size:18px;margin-left:6px}
 .draw-banner{max-width:900px;margin:14px auto 0;background:#EDEAE0;color:#79786A;border-radius:14px;padding:12px 20px;text-align:center;font-size:14px;font-weight:800}
 .motm-ic{font-size:30px}
 .motm-lbl{font-size:11px;color:#c9a84c;font-weight:800;letter-spacing:.5px}
 .motm-name{font-size:16px;font-weight:800}
+.motm-player-photo{width:64px;height:64px;border-radius:50%;overflow:hidden;flex:0 0 64px;background:linear-gradient(145deg,#a3364c,#721f31);color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;border:3px solid #fff;box-shadow:0 0 0 2px #c9a84c,0 8px 18px rgba(0,0,0,.2)}
 
 /* زر الرجوع العائم في الموبايل */
 .float-back{display:none;position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:16px;z-index:199;background:rgba(6,14,26,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(201,168,76,.3);border-radius:30px;padding:10px 18px;font-size:13px;font-weight:800;color:#c9a84c;text-decoration:none;box-shadow:0 4px 18px rgba(0,0,0,.4)}
@@ -397,7 +399,7 @@ async function renderVote(){
     const tColor=teamColorOf(p.team_id);
     const searchKey=`${p.full_name_ar||''} ${p.name||''} ${p.number||''}`.toLowerCase();
     return `<div class="vote-card ${isMyVote?'voted':''} ${isWinner?'winner':''}" data-vote-search="${escapeHtmlPn(searchKey)}" onclick="castVote('${p.id}','${MID}')">
-      ${p.jersey_photo_url?`<img class="vote-av" src="${p.jersey_photo_url}">`:`<div class="vote-av" style="overflow:hidden;padding:0">${genAvatarSvg(tColor,null,p.number)}</div>`}
+      ${p.jersey_photo_url?`<img class="vote-av" src="${p.jersey_photo_url}">`:`<div class="vote-av" data-uefa-player-name="${escapeHtmlPn(p.name||p.full_name_ar)}" data-uefa-player-alt="${escapeHtmlPn(p.full_name_ar||p.name)}" data-uefa-team-id="${escapeHtmlPn(p.team_id)}" style="overflow:hidden;padding:0">${genAvatarSvg(tColor,null,p.number)}</div>`}
       <div class="vote-info">
         <div class="vote-name">${p.full_name_ar||p.name}${isMyVote?' ✓':''}</div>
         <div class="vote-team">${p.team_id===cur.home_team_id?(cur.ht?.name_ar||cur.ht?.name||'الفريق الأول'):(cur.at?.name_ar||cur.at?.name||'الفريق الثاني')} ${participantIds.has(p.id)?'· ضمن قائمة المباراة':''} ${isWinner?'· 🏆 المتصدر الآن':''}</div>
@@ -427,6 +429,7 @@ async function renderVote(){
     <div class="vote-done" id="voteNoResults" style="display:none">لا يوجد لاعب مطابق للرقم أو الاسم</div>
     <div class="vote-total">${total?'إجمالي الأصوات: '+total+' صوت':'لا توجد أصوات بعد — كن أول المصوّتين'}</div>
   </div>`;
+  window.UefaPlayerImages?.hydrate(wrap);
   filterVoteCards(voteSearch);
   requestAnimationFrame(()=>wrap.scrollIntoView({behavior:'smooth',block:'start'}));
 }
@@ -885,7 +888,9 @@ async function init(){
     const {data:p}=await sb.from('players').select('name,full_name_ar,number,jersey_photo_url,team_id').eq('id',m.player_of_match_id).single();
     if(p){
       const tm=p.team_id===m.home_team_id?ht:at;
-      document.getElementById('motmWrap').innerHTML=`<div class="motm"><div class="motm-ic">⭐</div><div><div class="motm-lbl">رجل المباراة</div><div style="margin-top:6px">${pchip(p.full_name_ar||p.name,p.jersey_photo_url,p.number,tm?.name_ar||tm?.name||'','motm',tm?.primary_color,m.player_of_match_id)}</div></div></div>`;
+      const motmName=p.full_name_ar||p.name||'—',motmInitial=(motmName.trim()[0]||'★');
+      document.getElementById('motmWrap').innerHTML=`<div class="motm"><div class="motm-player-photo" data-uefa-player-name="${esc(p.name||motmName)}" data-uefa-player-alt="${esc(motmName)}" data-uefa-team-id="${esc(p.team_id||'')}">${p.jersey_photo_url?`<img src="${esc(p.jersey_photo_url)}" alt="${esc(motmName)}" style="width:100%;height:100%;object-fit:cover">`:motmInitial}</div><div><div class="motm-lbl">⭐ رجل المباراة</div><div style="margin-top:6px">${pchip(motmName,p.jersey_photo_url,p.number,tm?.name_ar||tm?.name||'','motm',tm?.primary_color,m.player_of_match_id)}</div></div></div>`;
+      window.UefaPlayerImages?.hydrate(document.getElementById('motmWrap'));
     }
   }
 
@@ -966,7 +971,7 @@ function ratingColor(r){
   return'#a3364c';
 }
 
-function pchip(name,photo,number,role,variant='',color,playerId){
+function pchip(name,photo,number,role,variant='',color,playerId,teamId,lookupName){
   const ini=(name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
   const sn=(name||'—').split(' ').slice(0,2).join(' ');
   const fallback=color?genAvatarSvg(color,null,number):`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#EDEAE0;color:#9C9A8D;font-weight:800">${number??ini}</div>`;
@@ -974,7 +979,7 @@ function pchip(name,photo,number,role,variant='',color,playerId){
   const href=playerId?` href="player.html?id=${playerId}" aria-label="فتح صفحة ${sn}"`:'';
   return `<${tag} class="pchip ${variant}"${href}>
     ${photo?`<img class="pchip-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
-    <span class="pchip-av" style="${photo?'display:none':'overflow:hidden'}">${fallback}</span>
+    <span class="pchip-av"${teamId?` data-uefa-player-name="${esc(lookupName||name)}" data-uefa-player-alt="${esc(name)}" data-uefa-team-id="${esc(teamId)}"`:''} style="${photo?'display:none':'overflow:hidden'}">${fallback}</span>
     ${number?`<span class="pchip-num">#${number}</span>`:''}
     <span class="pchip-name">${sn}</span>
     ${role?`<span class="pchip-role">${role}</span>`:''}
@@ -1004,7 +1009,7 @@ async function loadVarLog(m,ht,at){
 }
 
 async function loadEvents(m,ht,at){
-  const {data}=await sb.from('match_events').select('*,player:players!player_id(name,full_name_ar,number,jersey_photo_url,is_goalkeeper)').eq('match_id',m.id).order('minute');
+  const {data}=await sb.from('match_events').select('*,player:players!player_id(name,full_name_ar,number,jersey_photo_url,is_goalkeeper,team_id)').eq('match_id',m.id).order('minute');
   const wrap=document.getElementById('eventsWrap');
   if(!data||!data.length){wrap.innerHTML='<div class="empty"><span>⚡</span><p>لا توجد أحداث مسجلة بعد</p></div>';return;}
   const seenVarEvents=new Set();
@@ -1027,17 +1032,18 @@ async function loadEvents(m,ht,at){
     return `<div class="evt-row ${side==='away'?'away-side':''}" style="${side==='away'?`border-left-color:${tColor||'transparent'}`:`border-right-color:${tColor||'transparent'}`}">
       <span class="evt-min">${e.minute||0}'</span>
       <span class="evt-ic">${EI[e.event_type]||'📌'}</span>
-      <div style="flex:1">${name?pchip(name,photo,num,role,v,tColor,e.player_id):''} <span style="color:#9C9A8D;font-size:12px">${EL[e.event_type]||e.event_type}</span></div>
+      <div style="flex:1">${name?pchip(name,photo,num,role,v,tColor,e.player_id,e.team_id,e.player?.name||e.manual_player_name):''} <span style="color:#9C9A8D;font-size:12px">${EL[e.event_type]||e.event_type}</span></div>
     </div>`;
   }).join('');
   wrap.innerHTML=`<div class="evt-legend" style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;color:#79786A;padding:0 10px 8px;border-bottom:1px solid #EDEAE0;margin-bottom:4px">
     <span style="color:${safeTextColor(ht?.primary_color,'#F5F3EE')}">${ht?.name_ar||ht?.name||''} ▶</span>
     <span style="color:${safeTextColor(at?.primary_color,'#F5F3EE')}">◀ ${at?.name_ar||at?.name||''}</span>
   </div>`+wrap.innerHTML;
+  window.UefaPlayerImages?.hydrate(wrap);
 }
 
 async function loadLineups(m,ht,at,hColor,aColor){
-  const {data}=await sb.from('match_lineups').select('*,player:players(id,name,full_name_ar,number,jersey_photo_url,is_injured,injury_note,is_goalkeeper)').eq('match_id',m.id);
+  const {data}=await sb.from('match_lineups').select('*,player:players(id,name,full_name_ar,number,jersey_photo_url,is_injured,injury_note,is_goalkeeper,team_id)').eq('match_id',m.id);
   const wrap=document.getElementById('lineupsWrap');
 
   const fetchStaff=async(tid)=>{const {data:t}=await sb.from('teams').select('submitted_by_name,admin_photo_url,coach_name,coach_photo_url').eq('id',tid).single();return t||{};}
@@ -1065,7 +1071,7 @@ async function loadLineups(m,ht,at,hColor,aColor){
     return `<a class="pl-card${isSub?' pl-sub':''}" href="player.html?id=${p.id}" style="position:relative" aria-label="فتح صفحة ${sn}">
       <div class="pl-num">${p.number??''}</div>
       ${rating?`<div class="pl-rating" style="background:${ratingColor(rating)}">${rating}</div>`:''}
-      <div class="pl-photo-wrap">
+      <div class="pl-photo-wrap" data-uefa-player-name="${esc(p.name||name)}" data-uefa-player-alt="${esc(name)}" data-uefa-team-id="${esc(p.team_id||'')}">
         ${photo?`<img class="pl-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
         <div class="pl-initials" style="${photo?'display:none':'display:flex'};overflow:hidden;padding:0;border-width:0">${photo?ini(name):genAvatarSvg(color,null,p.number)}</div>
       </div>
@@ -1086,13 +1092,14 @@ async function loadLineups(m,ht,at,hColor,aColor){
   </div>`;
 
   if(!data||!data.length){
-    const fp=async(tid)=>{const {data:p}=await sb.from('players').select('id,name,full_name_ar,number,jersey_photo_url,is_goalkeeper,is_injured').eq('team_id',tid).order('is_goalkeeper',{ascending:false}).order('number');return p||[];};
+    const fp=async(tid)=>{const {data:p}=await sb.from('players').select('id,name,full_name_ar,number,jersey_photo_url,is_goalkeeper,is_injured,team_id').eq('team_id',tid).order('is_goalkeeper',{ascending:false}).order('number');return p||[];};
     const [hp,ap]=await Promise.all([fp(m.home_team_id),fp(m.away_team_id)]);
     if(!hp.length&&!ap.length&&!hSt.submitted_by_name&&!aSt.submitted_by_name){wrap.innerHTML='<div class="empty"><span>👥</span><p>لم تُسجَّل بيانات الفريقين بعد</p></div>';return;}
     wrap.innerHTML=`<div style="font-size:11px;text-align:center;color:#9C9A8D;padding:8px 0 4px">قائمة لاعبي الفريقين</div>
       ${teamBlock(hp,ht?.name_ar||ht?.name||'',hColor,hSt)}
       <div style="height:1px;background:#EDEAE0;margin:16px 0"></div>
       ${teamBlock(ap,at?.name_ar||at?.name||'',aColor,aSt)}`;
+    window.UefaPlayerImages?.hydrate(wrap);
     return;
   }
   const hAll=data.filter(x=>x.team_id===m.home_team_id);
@@ -1100,6 +1107,7 @@ async function loadLineups(m,ht,at,hColor,aColor){
   wrap.innerHTML=`${teamBlock(hAll,ht?.name_ar||ht?.name||'',hColor,hSt,true)}
     <div style="height:1px;background:#EDEAE0;margin:16px 0"></div>
     ${teamBlock(aAll,at?.name_ar||at?.name||'',aColor,aSt,true)}`;
+  window.UefaPlayerImages?.hydrate(wrap);
 }
 init();
 sb.channel('match-live-'+MID)

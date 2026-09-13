@@ -51,6 +51,25 @@
       return url;
     }catch(_){return '';}
   }
+  function isSelectedTeam(teamId){return SELECTED_TEAMS.has(String(teamId||''));}
+  async function hydrate(root=document){
+    const nodes=Array.from(root.querySelectorAll('[data-uefa-player-name][data-uefa-team-id]'));
+    await Promise.all(nodes.map(async node=>{
+      if(node.dataset.uefaHydrated==='1'||!isSelectedTeam(node.dataset.uefaTeamId))return;
+      node.dataset.uefaHydrated='1';
+      const url=await resolvePhoto(node.dataset.uefaPlayerName);
+      if(!url)return;
+      const img=document.createElement('img');
+      img.src=url;
+      img.alt=node.dataset.uefaPlayerAlt||node.dataset.uefaPlayerName;
+      img.loading='lazy';img.decoding='async';img.referrerPolicy='no-referrer';
+      img.className=node.dataset.uefaPhotoClass||'';
+      img.style.cssText='width:100%;height:100%;object-fit:cover;display:block';
+      img.onerror=()=>{img.remove();node.dataset.uefaHydrated='';};
+      node.replaceChildren(img);
+      node.classList.add('has-player-photo');
+    }));
+  }
   function addImageToPlaceholder(ph,name,url,large){
     if(!ph||!url)return;
     const img=document.createElement('img');
@@ -83,7 +102,7 @@
     try{
       const {data:p}=await client.from('players').select('id,team_id,tournament_id,name,full_name_ar,jersey_photo_url').eq('id',playerId).single();
       if(!p||p.tournament_id!==UEFA_TOURNAMENT_ID||!SELECTED_TEAMS.has(p.team_id)||p.jersey_photo_url)return;
-      const name=normalizeName(p.full_name_ar||p.name);
+      const name=normalizeName(p.name||p.full_name_ar);
       const url=await resolvePhoto(name);
       if(!url)return;
       const wait=()=>{
@@ -94,6 +113,8 @@
       wait();
     }catch(_){}
   }
+
+  window.UefaPlayerImages={resolvePhoto,isSelectedTeam,hydrate};
   async function init(){
     const page=(location.pathname.split('/').pop()||'').toLowerCase();
     const id=new URLSearchParams(location.search).get('id');

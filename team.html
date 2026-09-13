@@ -6,6 +6,7 @@
 <title>صفحة الفريق</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
+<script src="uefa-player-images.js?v=20260913-2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh}
@@ -300,11 +301,12 @@ async function loadSquad(){
       ${num?`<div class="player-number" style="color:var(--tc-num)">${esc(num)}</div>`:''}
       ${photo
         ? `<img class="player-photo" src="${esc(photo)}" alt="${esc(name)}" onerror="this.outerHTML='<div class=player-ph>👤</div>'">`
-        : '<div class="player-ph">👤</div>'}
+        : `<div class="player-ph" data-uefa-player-name="${esc(p.name||name)}" data-uefa-player-alt="${esc(name)}" data-uefa-team-id="${esc(p.team_id||team.id||'')}">👤</div>`}
       <div class="player-name">${esc(name)}</div>
       <div class="player-nat">${esc(subtitle)}</div>
     </a>`;
   }).join('');
+  window.UefaPlayerImages?.hydrate(document.getElementById('squadGrid'));
 }
 
 async function loadStats(){
@@ -341,7 +343,7 @@ async function loadStats(){
       return `<tr>
         <td style="color:#79786A">${p.number||p.shirt_number||'—'}</td>
         <td><a class="player-cell" href="player.html?id=${p.id}" aria-label="فتح صفحة ${name}">
-          ${photo?`<img class="player-mini-photo" src="${photo}" onerror="this.outerHTML='<div class=player-mini-ph>👤</div>'">`:'<div class="player-mini-ph">👤</div>'}
+          ${photo?`<img class="player-mini-photo" src="${photo}" onerror="this.outerHTML='<div class=player-mini-ph>👤</div>'">`:`<div class="player-mini-ph" data-uefa-player-name="${esc(p.name||name)}" data-uefa-player-alt="${esc(name)}" data-uefa-team-id="${esc(p.team_id||team.id||'')}">👤</div>`}
           <span>${name}</span>
         </a></td>
         <td><span class="stat-num stat-goals">${p.goals||0}</span></td>
@@ -350,6 +352,7 @@ async function loadStats(){
       </tr>`;
     }).join('')}</tbody>
   </table>`;
+  window.UefaPlayerImages?.hydrate(document.getElementById('statsTable'));
 }
 
 async function loadMatches(){
