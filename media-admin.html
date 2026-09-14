@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>مركز الأخبار والإعلام</title>
+<link rel="stylesheet" href="admin.css">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth-guard.js"></script>
+<style>
+body{font-family:"Tajawal",sans-serif}.hub-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.hub-card{display:block;text-decoration:none;color:#eef5ff;background:linear-gradient(180deg,rgba(16,40,70,.96),rgba(11,28,49,.96));border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:20px}.hub-card:hover{border-color:#c9a84c}.hub-card strong{display:block;color:#f1d176;font-size:18px;margin:8px 0}.hub-card p{color:#b7c6dc;line-height:1.7;margin:0}.hub-icon{font-size:28px}.hint{margin-bottom:20px;padding:14px 16px;border:1px solid rgba(201,168,76,.28);background:rgba(201,168,76,.07);border-radius:14px;color:#eadba8}.tag{display:inline-block;margin-top:12px;padding:4px 9px;border-radius:99px;background:rgba(201,168,76,.12);color:#f1d176;font-size:11px;font-weight:800}@media(max-width:620px){.hub-grid{grid-template-columns:1fr}.hub-card{padding:16px}}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">🗞️</div><div class="page-title"><h1>مركز الأخبار والإعلام</h1><p>مسار واحد لكل المحتوى المنشور في البطولة</p></div></div><div class="nav-actions"><a class="btn secondary" href="admin-home.html">← لوحة الأدمن</a></div></div></header>
+<main class="container">
+  <div class="hint">المحتوى مقسّم حسب وظيفته، بينما اختيار البطولة ينتقل تلقائيًا إلى كل أداة.</div>
+  <div class="hub-grid">
+    <a class="hub-card" data-page="news-admin.html" href="news-admin.html"><span class="hub-icon">🧠</span><strong>الأخبار والتحليل</strong><p>إنشاء الأخبار وتصنيفها ومراجعتها وترتيب ظهورها.</p><span class="tag">المركز الذكي</span></a>
+    <a class="hub-card" data-page="document-admin.html" href="document-admin.html"><span class="hub-icon">📄</span><strong>النشرات الرسمية</strong><p>رفع أعداد PDF وترتيبها من الأحدث إلى الأقدم.</p><span class="tag">الأرشيف الرسمي</span></a>
+    <a class="hub-card" data-page="feed-admin.html" href="feed-admin.html"><span class="hub-icon">📣</span><strong>الصور والتغطية</strong><p>ألبومات الصور وروابط الصحف والقنوات والتواصل الاجتماعي.</p><span class="tag">التغطية الإعلامية</span></a>
+    <a class="hub-card" data-page="video-admin.html" href="video-admin.html"><span class="hub-icon">🎬</span><strong>الفيديوهات</strong><p>الملخصات واللقاءات والزيارات والمؤتمرات.</p><span class="tag">المكتبة المرئية</span></a>
+    <a class="hub-card" data-page="content-hub-admin.html" href="content-hub-admin.html"><span class="hub-icon">🗂️</span><strong>اللوائح والقرارات</strong><p>الملفات والتعليمات والتحكم في إظهارها داخل البطولة.</p><span class="tag">معلومات البطولة</span></a>
+  </div>
+</main>
+<script>
+const tid=new URLSearchParams(location.search).get('tid')||localStorage.getItem('adminTournamentId');
+if(tid)document.querySelectorAll('[data-page]').forEach(a=>{const u=new URL(a.dataset.page,location.href);u.searchParams.set('tid',tid);a.href=u.href});
+</script>
+</body>
+</html>
