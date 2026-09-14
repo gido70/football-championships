@@ -48,22 +48,36 @@ const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_K
 const qs=new URLSearchParams(location.search);
 const TOKEN=qs.get('token');
 let TEAM=null;
+let TEAM_SESSION=sessionStorage.getItem('team-submission-session')||'';
 let playerCount=0;
 const files={}; // key -> File
 
 async function init(){
   if(!TOKEN){showErr('الرابط غير صحيح — تأكد من نسخ الرابط كاملًا.');return;}
-  const {data,error}=await sb.from('teams').select('id,tournament_id,name,name_ar,access_code,submitted_by_name,admin_nationality,admin_photo_url,admin_doc_url,coach_name,coach_nationality,coach_photo_url,coach_id_url').eq('submit_token',TOKEN).single();
-  if(error||!data){showErr('لم يتم العثور على فريق مرتبط بهذا الرابط.');return;}
-  TEAM=data;
+  if(TEAM_SESSION){
+    const restored=await gateway({action:'load',session:TEAM_SESSION});
+    if(restored.ok){TEAM=restored.data.team;EXISTING_PLAYERS=restored.data.players||[];buildForm();return;}
+    sessionStorage.removeItem('team-submission-session');TEAM_SESSION='';
+  }
   showCodeGate();
+}
+
+async function gateway(payload){
+  try{
+    const response=await fetch(window.SUPABASE_URL+'/functions/v1/team-submission',{
+      method:'POST',headers:{'Content-Type':'application/json','apikey':window.SUPABASE_ANON_KEY},
+      body:JSON.stringify(payload)
+    });
+    const data=await response.json().catch(()=>({}));
+    return{ok:response.ok,data};
+  }catch(error){console.error(error);return{ok:false,data:{error:'NETWORK_ERROR'}};}
 }
 
 function showCodeGate(){
   document.getElementById('app').innerHTML=`
     <div class="hd">
       <h1>🔐 تأكيد الهوية</h1>
-      <p>أدخل الكود المكوّن من 5 أرقام الذي أرسلته لك إدارة البطولة لفريق "${TEAM.name_ar||TEAM.name}"</p>
+      <p>أدخل الكود المكوّن من 5 أرقام الذي أرسلته لك إدارة البطولة</p>
     </div>
     <div class="card">
       <div class="field">
@@ -76,12 +90,16 @@ function showCodeGate(){
   `;
 }
 
-function checkCode(){
+async function checkCode(){
   const v=document.getElementById('codeInput').value.trim();
   const msg=document.getElementById('codeMsg');
-  if(!TEAM.access_code){msg.innerHTML='<div class="msg err">⚠️ لم يُحدَّد كود لهذا الفريق بعد — تواصل مع إدارة البطولة</div>';return;}
-  if(v===String(TEAM.access_code)){buildForm();}
-  else{msg.innerHTML='<div class="msg err">❌ الكود غير صحيح — تأكد منه مرة أخرى</div>';}
+  if(!/^\d{5}$/.test(v)){msg.innerHTML='<div class="msg err">أدخل الكود المكوّن من 5 أرقام</div>';return;}
+  msg.innerHTML='<div class="progress">⏳ جاري التحقق الآمن...</div>';
+  const result=await gateway({action:'login',token:TOKEN,code:v});
+  if(!result.ok){msg.innerHTML='<div class="msg err">❌ الرابط أو الكود غير صحيح</div>';return;}
+  TEAM_SESSION=result.data.session;TEAM=result.data.team;EXISTING_PLAYERS=result.data.players||[];
+  sessionStorage.setItem('team-submission-session',TEAM_SESSION);
+  buildForm();
 }
 
 function showErr(msg){
@@ -94,8 +112,6 @@ let EXISTING_PLAYERS=[];
 
 async function buildForm(){
   document.getElementById('app').innerHTML='<div class="loader">⏳ جاري تحميل بيانات الفريق الحالية...</div>';
-  const {data:players}=await sb.from('players').select('*').eq('team_id',TEAM.id).order('created_at',{ascending:true});
-  EXISTING_PLAYERS=players||[];
 
   document.getElementById('app').innerHTML=`
     <div class="hd">
@@ -255,8 +271,8 @@ function addPlayer(isFirst,existing){
 
 async function deleteExistingPlayer(n,id){
   if(!confirm('حذف هذا اللاعب نهائيًا من قاعدة البيانات؟'))return;
-  const {error}=await sb.from('players').delete().eq('id',id);
-  if(error){alert('فشل الحذف: '+error.message);return;}
+  const result=await gateway({action:'delete_player',session:TEAM_SESSION,player_id:id});
+  if(!result.ok){alert('تعذر الحذف؛ أعد الدخول وحاول مرة أخرى');return;}
   document.getElementById('player_'+n)?.remove();
 }
 function downloadTemplate(){
@@ -451,10 +467,7 @@ async function submitAll(){
     if(p){const {data}=sb.storage.from('team-public').getPublicUrl(p);teamUpdate.coach_photo_url=data?.publicUrl;}
   }else if(clearedFields.has('coachPhoto')){teamUpdate.coach_photo_url=null;}
 
-  const {error:teamErr}=await sb.from('teams').update(teamUpdate).eq('id',TEAM.id);
-  if(teamErr){msg.innerHTML='<div class="msg err">❌ فشل حفظ بيانات المدرب: '+teamErr.message+'</div>';btn.disabled=false;return;}
-
-  let ok=0,fail=0;
+  const playersPayload=[];
   for(const card of playerCards){
     const n=card.id.split('_')[1];
     const existingId=card.getAttribute('data-id');
@@ -477,24 +490,12 @@ async function submitAll(){
       if(dp)payload.id_photo_url=dp;
     }else if(clearedFields.has('p'+n+'_doc')){payload.id_photo_url=null;}
 
-    let error;
-    if(existingId){
-      payload.submission_status='pending';
-      ({error}=await sb.from('players').update(payload).eq('id',existingId));
-    }else{
-      payload.tournament_id=TEAM.tournament_id;
-      payload.team_id=TEAM.id;
-      payload.submission_status='pending';
-      ({error}=await sb.from('players').insert(payload));
-    }
-    if(error){fail++;console.error(error);}else ok++;
+    if(existingId)payload.id=existingId;
+    playersPayload.push(payload);
   }
-
-  if(fail===0){
-    msg.innerHTML=`<div class="msg ok">✅ تم حفظ بيانات ${ok} لاعبًا والإداري/المدرب بنجاح — يمكنك العودة والتعديل في أي وقت بنفس الرابط</div>`;
-  }else{
-    msg.innerHTML=`<div class="msg err">⚠️ تم حفظ ${ok} لاعبًا، وفشل ${fail} — أعد المحاولة لمن فشل</div>`;
-  }
+  const saved=await gateway({action:'save',session:TEAM_SESSION,team:teamUpdate,players:playersPayload});
+  if(saved.ok)msg.innerHTML=`<div class="msg ok">✅ تم حفظ بيانات ${saved.data.saved||0} لاعبًا والإداري/المدرب بنجاح — يمكنك العودة والتعديل في أي وقت بنفس الرابط</div>`;
+  else msg.innerHTML='<div class="msg err">تعذر الحفظ الآمن. أعد فتح الرابط وأدخل الكود ثم حاول مرة أخرى.</div>';
   btn.disabled=false;
 }
 
