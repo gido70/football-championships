@@ -7,17 +7,18 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" id="appTitle" content="البطولة">
 <link rel="manifest" id="appManifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" id="appTouchIcon" href="icon-app.png">
 <script>
 (()=>{const id=new URLSearchParams(location.search).get('id'),manifests={
-'aaaaaaaa-0000-0000-0000-000000000001':'manifest-mansour-2026.webmanifest',
-'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'manifest-mansour-2027.webmanifest',
-'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'manifest-uefa-2027.webmanifest'
+'aaaaaaaa-0000-0000-0000-000000000001':'manifest-mansour-2026.webmanifest?v=20260914-2',
+'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'manifest-mansour-2027.webmanifest?v=20260914-2',
+'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'manifest-uefa-2027.webmanifest?v=20260914-2'
 },touchIcons={
-'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-192.png',
-'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-192.png',
-'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-192.png'
+'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-192.png?v=20260914-2',
+'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-192.png?v=20260914-2',
+'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-192.png?v=20260914-2'
 };const href=manifests[id];if(href)document.getElementById('appManifest').href=href;
 const touch=touchIcons[id];if(touch)document.getElementById('appTouchIcon').href=touch;})();
 </script>
@@ -357,6 +358,7 @@ img[src=""], img:not([src]) { display:none !important; }
 .notification-control{max-width:680px;margin:12px auto;padding:10px 12px;border-radius:16px;background:linear-gradient(145deg,#fff,#edf4fb);border:1px solid #cfdae7;box-shadow:0 7px 18px rgba(23,49,77,.12);display:flex;align-items:center;gap:10px;justify-content:center;color:#17314d}
 .notification-control button{min-height:44px;border:0;border-radius:13px;padding:10px 16px;background:linear-gradient(#2d5f91,#173d66);box-shadow:0 4px 0 #092846;color:#fff;font:800 13px "Tajawal",sans-serif;cursor:pointer}
 .notification-control button.enabled{background:linear-gradient(#26a269,#137447);box-shadow:0 4px 0 #0a4b30}.notification-control button:disabled{opacity:.72;cursor:default}
+.notification-control .share-tournament{background:linear-gradient(#d4b65e,#a77d20);box-shadow:0 4px 0 #77540e;color:#071b35}
 .notification-control small{font-size:11px;line-height:1.5;color:#617287}
 @media(max-width:620px){.notification-control{margin:9px 8px;align-items:stretch;flex-direction:column;text-align:center}.notification-control button{width:100%}}
 </style>
@@ -429,6 +431,7 @@ img[src=""], img:not([src]) { display:none !important; }
 <div id="scopeNotice" style="display:none;background:rgba(184,134,11,.1);border-bottom:2px solid #b8860b;color:#8a6d2f;text-align:center;padding:10px 16px;font-size:13px;font-weight:700"></div>
 <section class="notification-control" aria-label="تنبيهات البطولة">
   <button type="button" id="notificationToggle">🔔 فعّل تنبيهات البطولة</button>
+  <button type="button" id="shareTournamentButton" class="share-tournament" onclick="shareTournament()">📤 مشاركة هذه البطولة</button>
   <small>بداية المباراة، الأهداف، البطاقات الصفراء والحمراء، ونهاية المباراة. يستخدم الهاتف صوت الإشعار المعتاد.</small>
 </section>
 
@@ -498,7 +501,7 @@ img[src=""], img:not([src]) { display:none !important; }
 </div>
 
 <script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260910-3"></script>
+<script src="tournament-scope.js?v=20260914-2"></script>
 <script src="public-navigation.js?v=20260911-1"></script>
 <script src="public-date.js?v=20260910-1"></script>
 <script src="push-config.js?v=20260912-1"></script>
@@ -508,6 +511,30 @@ const SUPABASE_READY=Boolean(window.supabase&&window.SUPABASE_URL&&window.SUPABA
 const sb=SUPABASE_READY?window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY):null;
 const TID=new URLSearchParams(location.search).get('id');
 let TOURNAMENT_CACHE=null;
+const TOURNAMENT_SHARE_PAGES={
+  'aaaaaaaa-0000-0000-0000-000000000001':'share-mansour-2026.html',
+  'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'share-mansour-2027.html',
+  'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'share-uefa-2027.html'
+};
+const TOURNAMENT_HEADER_ICONS={
+  'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-192.png?v=20260914-2',
+  'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-192.png?v=20260914-2',
+  'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-192.png?v=20260914-2'
+};
+function tournamentShareUrl(){
+  const page=TOURNAMENT_SHARE_PAGES[TID];
+  if(!page)return new URL('tournament.html?id='+encodeURIComponent(TID)+'&standalone=1',location.href).href;
+  const url=new URL(page,location.href);url.searchParams.set('v','20260914-2');return url.href;
+}
+async function shareTournament(){
+  const name=TOURNAMENT_CACHE?.name_ar||TOURNAMENT_CACHE?.name||document.title||'البطولة';
+  const url=tournamentShareUrl(),button=document.getElementById('shareTournamentButton');
+  try{
+    if(navigator.share)await navigator.share({title:name,text:'تابع '+name,url});
+    else{await navigator.clipboard.writeText(url);if(button){button.textContent='✅ تم نسخ رابط البطولة';setTimeout(()=>button.textContent='📤 مشاركة هذه البطولة',2200);}}
+  }catch(error){if(error?.name!=='AbortError'&&button){button.textContent='تعذر فتح المشاركة';setTimeout(()=>button.textContent='📤 مشاركة هذه البطولة',2200);}}
+}
+window.shareTournament=shareTournament;
 if(window.PushNotifications&&sb&&TID)window.PushNotifications.init({client:sb,tournamentId:TID,button:document.getElementById('notificationToggle'),onNeedsInstall:()=>{document.getElementById('iosInstallSheet').style.display='flex'}});
 
 function withTimeout(promise,ms=25000){
@@ -1003,7 +1030,10 @@ async function loadTournament(){
   const season=t.season_label||'';
 
   document.title=name;
-  document.getElementById('navName').textContent=window.TournamentScope?.isIsolated?'منصة البطولات الاحترافية':name;
+  document.getElementById('appTitle').content=name.slice(0,28);
+  document.getElementById('navName').textContent=name;
+  const navLogo=document.querySelector('.platform-mini-logo');
+  if(navLogo)navLogo.src=TOURNAMENT_HEADER_ICONS[TID]||t.cup_logo_url||t.logo_url||'icon-app.png';
   document.getElementById('installBannerText').textContent='📲 ثبّت '+name+' كتطبيق مستقل على هاتفك';
   if(t.public_notice){
     const nEl=document.getElementById('scopeNotice');
