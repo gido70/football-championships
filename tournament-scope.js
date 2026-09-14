@@ -9,12 +9,12 @@
   let manifestUrl='';
   const EUROPE_TOURNAMENT_ID='eee33333-5d2a-4f3b-a981-d4b8f5f86143';
   const STATIC_MANIFESTS={
-    'aaaaaaaa-0000-0000-0000-000000000001':'manifest-mansour-2026.webmanifest?v=20260914-5',
+    'aaaaaaaa-0000-0000-0000-000000000001':'manifest-mansour-2026.webmanifest?v=20260915-1',
     'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'manifest-mansour-2027.webmanifest?v=20260914-5',
     'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'manifest-uefa-2027.webmanifest?v=20260914-5'
   };
   const STATIC_INSTALL_ICONS={
-    'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-512.png?v=20260914-5',
+    'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-black-v3-512.png',
     'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-512.png?v=20260914-5',
     'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-512.png?v=20260914-5'
   };
