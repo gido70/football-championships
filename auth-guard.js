@@ -5,6 +5,8 @@
   إلى admin-login.html مع حفظ الصفحة المطلوبة للرجوع إليها بعد الدخول.
 */
 (function () {
+  // الحساب الإداري الوحيد المعتمد. حسابات الجمهور لا يجوز أن تفتح صفحات الإدارة.
+  var ADMIN_USER_ID = '674ed5de-14c3-47db-b88f-68cb5f50005d';
   // إخفاء الصفحة فوراً لمنع ظهور محتوى الأدمن قبل التأكد من تسجيل الدخول
   document.documentElement.style.visibility = 'hidden';
 
@@ -28,7 +30,8 @@
 
     authClient.auth.getSession().then(function (res) {
       var session = res.data && res.data.session;
-      if (!session) {
+      if (!session || !session.user || session.user.id !== ADMIN_USER_ID || session.user.is_anonymous) {
+        if (session) authClient.auth.signOut();
         goToLogin();
         return;
       }

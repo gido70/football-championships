@@ -1,0 +1,18 @@
+<!doctype html><html lang="ar" dir="rtl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>حساب المشارك</title><link rel="stylesheet" href="public-ui.css">
+<style>body{background:#eef5fb;color:#102943;font-family:Tajawal,Arial,sans-serif}.wrap{max-width:540px;margin:auto;padding:28px 16px}.box{background:#fff;border:1px solid #dce6ef;border-radius:24px;padding:24px;box-shadow:0 15px 40px #1232}.brand{text-align:center;font-size:34px}.muted{color:#63788c;line-height:1.8}.field{margin:15px 0}.field label{display:block;font-weight:800;margin-bottom:7px}.field input{width:100%;box-sizing:border-box;padding:14px;border:1px solid #cbd8e4;border-radius:13px;font:inherit}.btn{width:100%;border:0;border-radius:13px;padding:14px;background:#0b4b82;color:#fff;font:900 16px Tajawal;cursor:pointer}.code{font:900 38px monospace;letter-spacing:7px;color:#9a6d08;text-align:center}.hide{display:none}.status{min-height:24px;margin-top:12px;text-align:center}</style>
+</head><body><main class="wrap"><section class="box">
+<div class="brand">🏆</div><h1>حساب المشارك</h1>
+<p class="muted">تسجيل مجاني للمشاركة في الترشيحات. لا نطلب بريدًا إلكترونيًا أو رسالة هاتفية، ولا توجد رسوم.</p>
+<form id="profileForm"><div class="field"><label for="firstName">الاسم الأول</label><input id="firstName" maxlength="50" required autocomplete="given-name"></div><div class="field"><label for="familyName">اسم العائلة</label><input id="familyName" maxlength="50" required autocomplete="family-name"></div><button class="btn" id="saveBtn">إنشاء الحساب</button></form>
+<div id="account" class="hide"><p>مرحبًا <strong id="fullName"></strong></p><p class="muted">رقم المشارك للتعريف في المسابقات:</p><div class="code" id="code"></div><p class="muted">هذا الرقم ليس كلمة مرور. حسابك محفوظ بأمان على هذا الجهاز.</p></div>
+<div class="status" id="status"></div></section></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script>
+<script>
+const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY),form=document.getElementById('profileForm'),statusEl=document.getElementById('status');
+function show(p){form.classList.add('hide');document.getElementById('account').classList.remove('hide');document.getElementById('fullName').textContent=p.first_name+' '+p.family_name;document.getElementById('code').textContent=p.participant_code;}
+async function init(){let {data:{session}}=await sb.auth.getSession();if(!session){const r=await sb.auth.signInAnonymously();if(r.error){statusEl.textContent='التسجيل غير متاح حاليًا.';return}session=r.data.session}const {data}=await sb.from('participant_profiles').select('first_name,family_name,participant_code').eq('user_id',session.user.id).maybeSingle();if(data)show(data)}
+form.addEventListener('submit',async e=>{e.preventDefault();const btn=document.getElementById('saveBtn');btn.disabled=true;statusEl.textContent='جارٍ إنشاء الحساب…';let {data:{session}}=await sb.auth.getSession();if(!session){const r=await sb.auth.signInAnonymously();if(r.error){statusEl.textContent='تعذر بدء الحساب.';btn.disabled=false;return}session=r.data.session}const payload={user_id:session.user.id,participant_code:'000000',first_name:document.getElementById('firstName').value.trim(),family_name:document.getElementById('familyName').value.trim()};const {data,error}=await sb.from('participant_profiles').insert(payload).select('first_name,family_name,participant_code').single();if(error){statusEl.textContent='تعذر حفظ الحساب. تحقق من الاسم وحاول مرة أخرى.';btn.disabled=false;return}statusEl.textContent='تم إنشاء الحساب.';show(data)});
+init();
+</script></body></html>
