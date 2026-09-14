@@ -386,7 +386,7 @@ async function loadMatches(){
     const finished=m.status==='completed';
     const score=finished?`${isHome?m.home_score??0:m.away_score??0} — ${isHome?m.away_score??0:m.home_score??0}`:(m.status==='live'?'مباشر الآن':m.match_time||'الموعد لاحقًا');
     const date=m.match_date?window.PublicDate.format(m.match_date,{weekday:true}):'';
-    return `<a class="team-highlight" href="match-live.html?id=${m.id}"><div class="th-label">${label}</div><div class="th-opponent">أمام ${esc(oppName)}</div><div class="th-result">${score}</div><div class="th-meta">${date} ${esc(m.round_name||'')}</div></a>`;
+    return `<a class="team-highlight" href="match-live.html?id=${m.id}&scope_tid=${m.tournament_id}"><div class="th-label">${label}</div><div class="th-opponent">أمام ${esc(oppName)}</div><div class="th-result">${score}</div><div class="th-meta">${date} ${esc(m.round_name||'')}</div></a>`;
   };
   const completed=matches.filter(m=>m.status==='completed').sort((a,b)=>`${a.match_date||''} ${a.match_time||''}`.localeCompare(`${b.match_date||''} ${b.match_time||''}`));
   const scheduled=matches.filter(m=>m.status==='scheduled'&&m.match_date&&m.home_team_id&&m.away_team_id).sort((a,b)=>`${a.match_date} ${a.match_time||''}`.localeCompare(`${b.match_date} ${b.match_time||''}`));
@@ -459,7 +459,7 @@ async function loadMatches(){
     const theirScore=isHome?(m.away_score??'–'):(m.home_score??'–');
     const d=m.status==='completed';
 
-    return `<a class="match-item" href="match-live.html?id=${m.id}" style="--tc:${teamColor}">
+    return `<a class="match-item" href="match-live.html?id=${m.id}&scope_tid=${m.tournament_id}" style="--tc:${teamColor}">
       <div class="match-top">
         <span>${m.match_date?window.PublicDate.format(m.match_date):''} ${m.round_name?'— '+esc(m.round_name):''} ${m.group_code?'— المجموعة '+esc(m.group_code):''}</span>
         <span class="m-badge ${sl[m.status]||'b-sched'}">${sl2[m.status]||m.status}</span>

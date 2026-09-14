@@ -130,7 +130,7 @@ async function init(){
       const date=m.match_date?window.PublicDate.format(m.match_date,{year:true}):'';
       const badges=(eventMap[m.id]||[]).map(e=>'<span class="event">'+eventLabel(e)+(e.minute!=null?' · '+esc(e.minute)+"'":'')+'</span>').join('');
       const won=motmRows.some(x=>x.id===m.id)?'<span class="event">⭐ رجل المباراة</span>':'';
-      return '<a class="match" href="match-live.html?id='+encodeURIComponent(m.id)+'"><div class="match-top"><span>'+esc(m.round_name||'مباراة')+'</span><span>'+esc(date)+'</span></div><div class="match-main"><div class="opponent">'+(opp?.logo_url?'<img src="'+esc(opp.logo_url)+'" alt="">':'⚽')+'<span>أمام '+esc(opp?.name_ar||opp?.name||'المنافس')+'</span></div><div class="score">'+esc(score)+'</div></div><div class="events">'+badges+won+'</div></a>';
+      return '<a class="match" href="match-live.html?id='+encodeURIComponent(m.id)+'&scope_tid='+encodeURIComponent(m.tournament_id)+'"><div class="match-top"><span>'+esc(m.round_name||'مباراة')+'</span><span>'+esc(date)+'</span></div><div class="match-main"><div class="opponent">'+(opp?.logo_url?'<img src="'+esc(opp.logo_url)+'" alt="">':'⚽')+'<span>أمام '+esc(opp?.name_ar||opp?.name||'المنافس')+'</span></div><div class="score">'+esc(score)+'</div></div><div class="events">'+badges+won+'</div></a>';
     }).join('')||'<div class="empty">لا توجد مباريات مسجلة بعد</div>';
   }
   document.getElementById('loading').classList.add('hide');

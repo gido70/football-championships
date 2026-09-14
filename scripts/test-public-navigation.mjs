@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const store=new Map();
-const location={href:'https://example.test/index.html',origin:'https://example.test'};
+const location={href:'https://example.test/index.html',origin:'https://example.test',get pathname(){return new URL(this.href).pathname;}};
 const listeners={};
 const document={
   readyState:'complete',

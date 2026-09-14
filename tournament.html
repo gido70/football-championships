@@ -904,7 +904,7 @@ async function loadMOTD(){
   sec.innerHTML=`<div class="motd-wrap">
     <div class="motd-head"><h3>⭐ نجوم المباراة</h3><span class="motd-date">${dateLabel}</span></div>
     <div class="motd-scroll">${matches.map(m=>`
-      <a class="motd-card" href="match-live.html?id=${m.id}${m.player_of_match_id?'':'&tab=vote'}">
+      <a class="motd-card" href="match-live.html?id=${m.id}&scope_tid=${TID}${m.player_of_match_id?'':'&tab=vote'}">
         <div class="motd-teams"><span>${motdEsc(m.ht?.name_ar||m.ht?.name||'')}</span><span>${motdEsc(m.at?.name_ar||m.at?.name||'')}</span></div>
         <div class="motd-score">${m.home_score??0} - ${m.away_score??0}</div>
         ${starBlock(m)}
@@ -944,16 +944,19 @@ window.addEventListener('appinstalled',()=>{document.getElementById('installBann
 window.handleInstallClick=handleInstallClick;
 window.dismissInstallBanner=dismissInstallBanner;
 const TAB_ACCENT={st:'#639922',ma:'#c9a84c',sc:'#D85A30',tm:'#378ADD'};
-let liveRefreshTimer=null;
+let liveRefreshTimer=null,liveMatchesChannel=null;
 
 async function loadLiveMatch(){
   const sec=document.getElementById('liveMatchSection');
-  const {data:matches}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(4);
+  const badge=document.getElementById('liveHeaderBadge');
+  const {data:matches,error}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(4);
+  if(error)return;
+  if(badge)badge.style.display=matches?.length?'inline-flex':'none';
   if(!matches?.length){sec.innerHTML='';return;}
 
   sec.innerHTML=`<div class="live-wrap">${matches.map(m=>`
     <div class="live-card" style="margin-bottom:14px">
-      <a href="match-live.html?id=${m.id}" style="display:block;color:inherit;text-decoration:none">
+      <a href="match-live.html?id=${m.id}&scope_tid=${TID}" style="display:block;color:inherit;text-decoration:none">
         <div class="live-screen">
           <div class="live-badge-row"><span class="dot"></span><span class="txt">على الهواء الآن</span></div>
           <div class="live-teams-row">
@@ -965,7 +968,7 @@ async function loadLiveMatch(){
         </div>
         <div class="live-tv-bar"><span>شاشة البطولة المباشرة</span><i class="live-tv-light"></i></div>
       </a>
-      <a href="match-live.html?id=${m.id}&tab=vote" class="live-vote-btn">🗳️ صوّت الآن لاختيار أفضل لاعب في المباراة</a>
+      <a href="match-live.html?id=${m.id}&scope_tid=${TID}&tab=vote" class="live-vote-btn">🗳️ صوّت الآن لاختيار أفضل لاعب في المباراة</a>
     </div>
   `).join('')}</div>`;
 }
@@ -1023,12 +1026,6 @@ async function loadTournament(){
     if(t.status==='active'){ns.style.background='rgba(63,185,80,.15)';ns.style.color='#3fb950';ns.style.border='1px solid rgba(63,185,80,.2)';}
     else if(t.status==='completed'){ns.style.background='rgba(88,166,255,.15)';ns.style.color='#58a6ff';ns.style.border='1px solid rgba(88,166,255,.2)';}
     else{ns.style.background='rgba(255,255,255,.08)';ns.style.color='#b7c6dc';}
-  }
-
-  // مؤشر البث المباشر
-  const {count:liveCount}=await sb.from('matches').select('id',{count:'exact',head:true}).eq('tournament_id',TID).eq('status','live');
-  if(liveCount>0){
-    document.getElementById('liveHeaderBadge').style.display='inline-flex';
   }
 
   // الخلفية — ما ترفعه في إعداد البطولة له الأولوية دائماً
@@ -1230,7 +1227,7 @@ async function loadMatches(){
       const initials=n=>(n||'؟').trim().slice(0,2);
       const hBadgeInner=initials(hName);
       const aBadgeInner=initials(aName);
-      html+=`<a class="m-card ${lv?'live':''}" href="match-live.html?id=${m.id}" style="display:block;cursor:pointer">
+      html+=`<a class="m-card ${lv?'live':''}" href="match-live.html?id=${m.id}&scope_tid=${TID}" style="display:block;cursor:pointer">
         <div class="m-top">
           <span class="m-info">${m.match_date?window.PublicDate.format(m.match_date,{weekday:true}):''} ${m.match_time||''}</span>
           <span class="m-badge ${sm[m.status]||'b-sched'}">${lv?'<span class=live-pulse></span>':''} ${sl[m.status]||m.status}</span>
@@ -1419,6 +1416,16 @@ function startBackgroundRefresh(){
   newsRefreshTimer=setInterval(loadNews,60000);
 }
 
+function startLiveRealtime(){
+  if(liveMatchesChannel||!TID)return;
+  liveMatchesChannel=sb.channel('tournament-live-'+TID)
+    .on('postgres_changes',{event:'*',schema:'public',table:'matches',filter:'tournament_id=eq.'+TID},()=>{
+      loadLiveMatch();
+      delete loadTabData.state.ma;
+      if(document.getElementById('tc-ma')?.classList.contains('active'))loadTabData('ma');
+    }).subscribe();
+}
+
 async function loadHeaderCounts(){
   const queries=[
     sb.from('teams').select('id',{count:'exact',head:true}).eq('tournament_id',TID),
@@ -1473,6 +1480,7 @@ async function bootstrapTournament(){
 
   if(REQUESTED_TAB)setTimeout(()=>jumpToTab(REQUESTED_TAB),150);
   startBackgroundRefresh();
+  startLiveRealtime();
 }
 
 const originalJumpToTab=jumpToTab;
@@ -1490,6 +1498,7 @@ document.addEventListener('visibilitychange',()=>{
     startBackgroundRefresh();
   }
 });
+window.addEventListener('beforeunload',()=>{if(liveMatchesChannel)sb.removeChannel(liveMatchesChannel);});
 
 bootstrapTournament();
 </script>
