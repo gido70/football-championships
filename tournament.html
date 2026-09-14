@@ -11,7 +11,7 @@
 (()=>{
   const id=new URLSearchParams(location.search).get('id');
   const apps={
-    'aaaaaaaa-0000-0000-0000-000000000001':['manifest-mansour-2026.webmanifest?v=20260914-5','logo-cup-2026-192.png?v=20260914-5','كأس منصور 2026'],
+    'aaaaaaaa-0000-0000-0000-000000000001':['manifest-mansour-2026.webmanifest?v=20260915-1','logo-cup-2026-black-v3-192.png','كأس منصور 2026'],
     'c983ee0c-4434-470d-b0a2-6e6efe1ad650':['manifest-mansour-2027.webmanifest?v=20260914-5','logo-cup-2027-192.png?v=20260914-5','كأس منصور 2027'],
     'eee33333-5d2a-4f3b-a981-d4b8f5f86143':['manifest-uefa-2027.webmanifest?v=20260914-5','uefa-champions-app-192.png?v=20260914-5','دوري أبطال أوروبا']
   };
@@ -497,7 +497,7 @@ img[src=""], img:not([src]) { display:none !important; }
 </div>
 
 <script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260914-5"></script>
+<script src="tournament-scope.js?v=20260915-1"></script>
 <script src="public-navigation.js?v=20260911-1"></script>
 <script src="public-date.js?v=20260910-1"></script>
 <script src="push-config.js?v=20260912-1"></script>
@@ -508,12 +508,12 @@ const sb=SUPABASE_READY?window.supabase.createClient(window.SUPABASE_URL,window.
 const TID=new URLSearchParams(location.search).get('id');
 let TOURNAMENT_CACHE=null;
 const TOURNAMENT_SHARE_PAGES={
-  'aaaaaaaa-0000-0000-0000-000000000001':'share-mansour-2026-black.html',
+  'aaaaaaaa-0000-0000-0000-000000000001':'share-mansour-2026-app.html',
   'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'share-mansour-2027.html',
   'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'share-uefa-2027.html'
 };
 const TOURNAMENT_HEADER_ICONS={
-  'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-192.png?v=20260914-2',
+  'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-black-v3-192.png',
   'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-192.png?v=20260914-2',
   'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-192.png?v=20260914-2'
 };
@@ -525,7 +525,7 @@ const TOURNAMENT_APP_NAMES={
 function tournamentShareUrl(){
   const page=TOURNAMENT_SHARE_PAGES[TID];
   if(!page)return new URL('tournament.html?id='+encodeURIComponent(TID)+'&standalone=1',location.href).href;
-  const url=new URL(page,location.href);url.searchParams.set('v',TID==='aaaaaaaa-0000-0000-0000-000000000001'?'1':'20260914-3');return url.href;
+  const url=new URL(page,location.href);url.searchParams.set('v',TID==='aaaaaaaa-0000-0000-0000-000000000001'?'20260915-1':'20260914-3');return url.href;
 }
 async function shareTournament(){
   const name=TOURNAMENT_APP_NAMES[TID]||TOURNAMENT_CACHE?.name_ar||TOURNAMENT_CACHE?.name||document.title||'البطولة';

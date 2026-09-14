@@ -5,8 +5,8 @@ const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
 const tournaments=[
   {
     key:'aaaaaaaa-0000-0000-0000-000000000001',
-    page:'share-mansour-2026-black.html',manifest:'manifest-mansour-2026.webmanifest',
-    title:'كأس منصور بن زايد 2026',image:'share-logo-mansour-2026-white-on-black-v2.jpg',icon:'logo-cup-2026-512.png'
+    page:'share-mansour-2026-app.html',manifest:'manifest-mansour-2026.webmanifest',
+    title:'كأس منصور بن زايد 2026',image:'logo-cup-2026-black-v3-512.png',icon:'logo-cup-2026-black-v3-512.png'
   },
   {
     key:'c983ee0c-4434-470d-b0a2-6e6efe1ad650',
@@ -52,13 +52,13 @@ assert.ok(tournament.includes("86400000"));
 assert.ok(tournament.includes("appinstalled"));
 assert.ok(tournament.includes('id="shareTournamentButton"'));
 assert.ok(tournament.includes("'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'share-mansour-2027.html'"));
-assert.ok(tournament.includes("TID==='aaaaaaaa-0000-0000-0000-000000000001'?'1':'20260914-3'"));
+assert.ok(tournament.includes("TID==='aaaaaaaa-0000-0000-0000-000000000001'?'20260915-1':'20260914-3'"));
 assert.ok(tournament.includes("document.getElementById('navName').textContent=name"));
 assert.ok(tournament.includes('TOURNAMENT_HEADER_ICONS[TID]'));
 assert.ok(tournament.includes("'c983ee0c-4434-470d-b0a2-6e6efe1ad650':['manifest-mansour-2027.webmanifest?v=20260914-5','logo-cup-2027-192.png?v=20260914-5','كأس منصور 2027']"));
 assert.ok(!tournament.includes('id="appManifest" href="manifest.webmanifest"'));
 assert.ok(tournament.includes("const appName=TOURNAMENT_APP_NAMES[TID]||name"));
-assert.ok(tournament.includes('tournament-scope.js?v=20260914-5'));
+assert.ok(tournament.includes('tournament-scope.js?v=20260915-1'));
 assert.ok(tournament.indexOf('id="iosInstallSheet"')<tournament.indexOf('id="androidInstallSheet"'));
 
 const scope=read('tournament-scope.js');
@@ -70,13 +70,13 @@ assert.ok(scope.includes("'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'كأس منص�
 const matchLive=read('match-live.html');
 for(const t of tournaments){assert.ok(matchLive.includes(t.key));assert.ok(matchLive.includes(t.manifest));}
 assert.ok(!matchLive.includes('id="appManifest" href="manifest.webmanifest"'));
-assert.ok(matchLive.includes('tournament-scope.js?v=20260914-5'));
+assert.ok(matchLive.includes('tournament-scope.js?v=20260915-1'));
 for(const file of ['index.html','tournament.html','team.html','player.html']){
   assert.ok(read(file).includes('scope_tid='),`${file} does not preserve the tournament app identity in match links`);
 }
 
 const sw=read('sw.js');
-assert.ok(sw.includes("football-shell-v36-12"));
+assert.ok(sw.includes("football-shell-v36-13"));
 for(const t of tournaments){assert.ok(sw.includes(t.page));assert.ok(sw.includes(t.manifest));}
 
 for(const file of ['tournament.html','tournament-scope.js','qr-generator.html','sw.js',...tournaments.flatMap(t=>[t.page,t.manifest])]){
