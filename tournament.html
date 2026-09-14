@@ -872,7 +872,7 @@ async function loadMOTD(){
   const noMotm=matches.filter(m=>!m.player_of_match_id);
   let voteWinnerMap={};
   if(noMotm.length){
-    const {data:votes}=await sb.from('match_votes').select('match_id,player_id').in('match_id',noMotm.map(m=>m.id));
+    const {data:votes}=await sb.rpc('get_match_vote_leaders',{p_match_ids:noMotm.map(m=>m.id)});
     const counts={};
     (votes||[]).forEach(v=>{const k=v.match_id+'|'+v.player_id;counts[k]=(counts[k]||0)+1;});
     const bestByMatch={};
@@ -904,7 +904,7 @@ async function loadMOTD(){
   sec.innerHTML=`<div class="motd-wrap">
     <div class="motd-head"><h3>⭐ نجوم المباراة</h3><span class="motd-date">${dateLabel}</span></div>
     <div class="motd-scroll">${matches.map(m=>`
-      <a class="motd-card" href="match-live.html?id=${m.id}">
+      <a class="motd-card" href="match-live.html?id=${m.id}${m.player_of_match_id?'':'&tab=vote'}">
         <div class="motd-teams"><span>${motdEsc(m.ht?.name_ar||m.ht?.name||'')}</span><span>${motdEsc(m.at?.name_ar||m.at?.name||'')}</span></div>
         <div class="motd-score">${m.home_score??0} - ${m.away_score??0}</div>
         ${starBlock(m)}

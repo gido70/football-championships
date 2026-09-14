@@ -118,6 +118,10 @@ a{text-decoration:none;color:inherit}
 .vote-bar-fill{position:absolute;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#c9a84c,#ffd700);transition:width .6s ease}
 .vote-done{text-align:center;padding:24px 0;color:#79786A;font-size:13px}
 .vote-total{text-align:center;font-size:11px;color:#9C9A8D;margin-top:12px}
+.vote-card.locked{cursor:default;opacity:.86}
+.vote-hero{max-width:760px;margin:14px auto;padding:16px 18px;border-radius:18px;background:linear-gradient(135deg,#0f2a4a,#225aa8 58%,#c9a84c);color:#fff;box-shadow:0 10px 28px rgba(15,42,74,.22);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.vote-hero strong{display:block;font-size:17px}.vote-hero span{display:block;font-size:12px;opacity:.9;margin-top:3px}
+.vote-hero button{border:0;border-radius:13px;background:#fff;color:#0f2a4a;font:900 13px "Tajawal",sans-serif;padding:11px 16px;white-space:nowrap;cursor:pointer}
 
 /* ردود الفعل الحية */
 .react-wrap{padding:24px 16px;max-width:500px;margin:0 auto;text-align:center}
@@ -295,7 +299,7 @@ a{text-decoration:none;color:inherit}
   <a class="tab" href="index.html"><span class="tab-ic">🏠</span>الرئيسية</a>
   <button class="tab active" data-p="events" onclick="showTab('events')"><span class="tab-ic">⚡</span>الأحداث</button>
   <button class="tab" data-p="lineups" onclick="showTab('lineups')"><span class="tab-ic">👥</span>التشكيلة</button>
-  <button class="tab" data-p="vote" onclick="showTab('vote');loadVote()"><span class="tab-ic">⭐</span>صوّت</button>
+  <button class="tab" data-p="vote" onclick="showTab('vote');loadVote()"><span class="tab-ic">⭐</span>أفضل لاعب</button>
   <button class="tab" data-p="predict" onclick="showTab('predict');loadPredict()"><span class="tab-ic">🎯</span>توقّع</button>
   <button class="tab" data-p="react" onclick="showTab('react');loadReact()"><span class="tab-ic">⚡</span>تفاعل</button>
 </div>
@@ -379,12 +383,15 @@ async function renderVote(){
     return;
   }
 
-  // اجلب التصويتات الحالية
-  const {data:votes}=await sb.from('match_votes').select('player_id,session_key').eq('match_id',MID);
-  const myVote=(votes||[]).find(v=>v.session_key===sk)?.player_id||null;
-  const total=(votes||[]).length;
+  // لا نكشف سجلات المصوتين الخام؛ نستقبل فقط الإجماليات وصوت هذا المتصفح.
+  const {data:voteState,error:voteError}=await sb.rpc('get_match_vote_state',{p_match_id:MID,p_session_key:sk});
+  if(voteError)throw voteError;
+  const counts=Array.isArray(voteState?.counts)?voteState.counts:[];
+  const myVote=voteState?.my_player_id||null;
+  const total=Number(voteState?.total_votes||0);
+  const voteOpen=Boolean(voteState?.open);
   const countMap={};
-  (votes||[]).forEach(v=>{if(v.player_id)countMap[v.player_id]=(countMap[v.player_id]||0)+1;});
+  counts.forEach(v=>{if(v.player_id)countMap[v.player_id]=Number(v.votes||0);});
   const topId=Object.entries(countMap).sort((a,b)=>b[1]-a[1])[0]?.[0];
 
   function initials(n){return(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
@@ -398,15 +405,16 @@ async function renderVote(){
     const isWinner=p.id===topId&&total>0;
     const tColor=teamColorOf(p.team_id);
     const searchKey=`${p.full_name_ar||''} ${p.name||''} ${p.number||''}`.toLowerCase();
-    return `<div class="vote-card ${isMyVote?'voted':''} ${isWinner?'winner':''}" data-vote-search="${escapeHtmlPn(searchKey)}" onclick="castVote('${p.id}','${MID}')">
+    const canVote=voteOpen&&!myVote;
+    return `<div class="vote-card ${isMyVote?'voted':''} ${isWinner?'winner':''} ${canVote?'':'locked'}" data-vote-search="${escapeHtmlPn(searchKey)}" ${canVote?`onclick="castVote('${p.id}','${MID}')"`:myVote?'onclick="showAlreadyVoted()"':''}>
       ${p.jersey_photo_url?`<img class="vote-av" src="${p.jersey_photo_url}">`:`<div class="vote-av" data-uefa-player-name="${escapeHtmlPn(p.name||p.full_name_ar)}" data-uefa-player-alt="${escapeHtmlPn(p.full_name_ar||p.name)}" data-uefa-team-id="${escapeHtmlPn(p.team_id)}" style="overflow:hidden;padding:0">${genAvatarSvg(tColor,null,p.number)}</div>`}
       <div class="vote-info">
         <div class="vote-name">${p.full_name_ar||p.name}${isMyVote?' ✓':''}</div>
         <div class="vote-team">${p.team_id===cur.home_team_id?(cur.ht?.name_ar||cur.ht?.name||'الفريق الأول'):(cur.at?.name_ar||cur.at?.name||'الفريق الثاني')} ${participantIds.has(p.id)?'· ضمن قائمة المباراة':''} ${isWinner?'· 🏆 المتصدر الآن':''}</div>
       </div>
-      <div class="vote-pct">${myVote?pct+'%':''}</div>
+      <div class="vote-pct">${(myVote||!voteOpen)&&total?pct+'%':''}</div>
       <div class="vote-bar-bg"></div>
-      <div class="vote-bar-fill" style="width:${myVote?pct:0}%"></div>
+      <div class="vote-bar-fill" style="width:${(myVote||!voteOpen)?pct:0}%"></div>
     </div>`;
   }).join('');
 
@@ -415,7 +423,7 @@ async function renderVote(){
 
   wrap.innerHTML=`<div class="vote-wrap">
     <div class="vote-title">⭐ صوّت على نجم المباراة</div>
-    <div class="vote-sub">${myVote?'شكرًا — صوّتك سُجِّل. النتائج الآن:':'اختر اللاعب الأبرز في رأيك — صوت واحد فقط'}</div>
+    <div class="vote-sub">${myVote?'تم التصويت لهذا اللاعب ✓ لا يمكن التصويت مرة أخرى من هذا المتصفح':voteOpen?'اختر اللاعب الأبرز في رأيك — صوت واحد فقط':cur.status==='scheduled'?'يفتح التصويت عند بدء المباراة':'انتهى التصويت، وهذه هي النتيجة النهائية'}</div>
     <div class="vote-sub">اختر لاعبًا شارك في المباراة. لاعبو قائمة المباراة يظهرون أولًا إن كانت محفوظة.</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0">
       <select onchange="setVoteTeam(this.value)" style="padding:11px;border:1px solid #ddd;border-radius:10px;background:#fff">
@@ -450,19 +458,24 @@ function setVoteSearch(value){filterVoteCards(value);}
 window.setVoteTeam=setVoteTeam;
 window.setVoteSearch=setVoteSearch;
 window.filterVoteCards=filterVoteCards;
+function showAlreadyVoted(){
+  const note=document.querySelector('#voteWrap .vote-sub');
+  if(note){note.textContent='تم التصويت مسبقًا في هذه المباراة — يسمح بصوت واحد فقط.';note.style.color='#856404';note.style.fontWeight='800';}
+}
+window.showAlreadyVoted=showAlreadyVoted;
 
 async function castVote(playerId,matchId){
   const sk=getSessionKey();
-  const {error}=await sb.from('match_votes').upsert({
-    match_id:matchId,
-    tournament_id:cur.tournament_id,
-    player_id:playerId,
-    session_key:sk
-  },{onConflict:'match_id,session_key'});
+  const {data,error}=await sb.rpc('cast_match_vote_public',{p_match_id:matchId,p_player_id:playerId,p_session_key:sk});
   if(error){
     console.error(error);
     document.getElementById('voteWrap').insertAdjacentHTML('afterbegin','<div class="vote-wrap"><div class="vote-sub" style="color:#c9454d">تعذر حفظ التصويت — راجع تهيئة قاعدة البيانات</div></div>');
     return;
+  }
+  if(data?.status==='already_voted'){
+    document.getElementById('voteWrap').insertAdjacentHTML('afterbegin','<div class="vote-wrap"><div class="vote-sub" style="color:#856404;font-weight:800">تم التصويت مسبقًا في هذه المباراة — يسمح بصوت واحد فقط.</div></div>');
+  }else if(data?.status!=='recorded'){
+    document.getElementById('voteWrap').insertAdjacentHTML('afterbegin','<div class="vote-wrap"><div class="vote-sub" style="color:#c9454d;font-weight:800">التصويت غير متاح الآن.</div></div>');
   }
   voteLoaded=false;await renderVote();
 }
@@ -893,6 +906,10 @@ async function init(){
       document.getElementById('motmWrap').innerHTML=`<div class="motm"><div class="motm-player-photo" data-uefa-player-name="${esc(p.name||motmName)}" data-uefa-player-alt="${esc(motmName)}" data-uefa-team-id="${esc(p.team_id||'')}">${p.jersey_photo_url?`<img src="${esc(p.jersey_photo_url)}" alt="${esc(motmName)}" style="width:100%;height:100%;object-fit:cover">`:motmInitial}</div><div><div class="motm-lbl">⭐ رجل المباراة</div><div style="margin-top:6px">${pchip(motmName,p.jersey_photo_url,p.number,tm?.name_ar||tm?.name||'','motm',tm?.primary_color,m.player_of_match_id)}</div></div></div>`;
       window.UefaPlayerImages?.hydrate(document.getElementById('motmWrap'));
     }
+  }else if(['live','completed','finished','ended'].includes(m.status)){
+    const {data:voteState}=await sb.rpc('get_match_vote_state',{p_match_id:m.id,p_session_key:getSessionKey()});
+    const isOpen=Boolean(voteState?.open),total=Number(voteState?.total_votes||0);
+    document.getElementById('motmWrap').innerHTML=`<div class="vote-hero"><div><strong>⭐ تصويت أفضل لاعب</strong><span>${isOpen?'التصويت متاح الآن — صوت واحد لكل متصفح':`انتهى التصويت · ${total} صوت`}</span></div><button onclick="showTab('vote');loadVote()">${isOpen?'صوّت الآن':'عرض النتيجة'}</button></div>`;
   }
 
   loadEvents(m,ht,at);
