@@ -309,11 +309,11 @@ body { font-family: "Tajawal", sans-serif !important; }
       <h3>إعداد البطولة</h3>
       <p>أنشئ بطولة جديدة وحدد نوعها وموسمها وألوانها</p>
     </a>
-    <a class="admin-card" href="./teams-admin.html" style="--card-color:#4ea1ff">
+    <a class="admin-card" href="./roster-admin.html" style="--card-color:#4ea1ff">
       <span class="step-badge">2</span>
       <div class="admin-card-icon">👥</div>
-      <h3>الفرق</h3>
-      <p>أضف الفرق المشاركة وحدد ألوانها وشعاراتها</p>
+      <h3>مركز الفرق واللاعبين</h3>
+      <p>الإدخال اليدوي وExcel وروابط الفرق والمراجعة في مكان واحد</p>
     </a>
     <a class="admin-card" href="./groups-admin.html" style="--card-color:#34d399">
       <span class="step-badge">3</span>
@@ -327,27 +327,15 @@ body { font-family: "Tajawal", sans-serif !important; }
       <h3>الجدول والمباريات</h3>
       <p>أنشئ جدول المباريات يدوياً أو تلقائياً</p>
     </a>
-    <a class="admin-card" href="./admin-import.html" style="--card-color:#fbbf24">
-      <span class="step-badge">+</span>
-      <div class="admin-card-icon">📥</div>
-      <h3>استيراد لاعبين من Excel</h3>
-      <p>ارفع ملف Excel وأدخل كل اللاعبين دفعة واحدة</p>
-    </a>
-    <a class="admin-card" href="./team-submissions-review.html" style="--card-color:#ffc107">
-      <span class="step-badge">+</span>
-      <div class="admin-card-icon">✅</div>
-      <h3>مراجعة بيانات الفرق</h3>
-      <p>اعتمد أو عدّل بيانات المدربين واللاعبين وصورهم</p>
-    </a>
   </div>
 
   <!-- تشغيل البطولة يوم المباراة -->
   <button type="button" class="section-label admin-section-toggle" data-section="liveCards" aria-expanded="true"><span>🎯 تشغيل البطولة — يوم المباراة</span><span class="section-mini-icons" aria-hidden="true">🔴 ⚽ 🟨 <span class="section-chevron">⌄</span></span></button>
   <div class="admin-cards admin-section-cards is-open" id="liveCards">
-    <a class="admin-card" href="./content-hub-admin.html" style="--card-color:#c9a84c">
-      <div class="admin-card-icon">🗂️</div>
-      <h3>المعلومات والإعلام</h3>
-      <p>اللوائح والقرارات والتعليمات والفيديوهات مع الإظهار والإخفاء لكل بطولة</p>
+    <a class="admin-card" href="./media-admin.html" style="--card-color:#c9a84c">
+      <div class="admin-card-icon">🗞️</div>
+      <h3>مركز الأخبار والإعلام</h3>
+      <p>الأخبار والنشرات والصور والفيديو واللوائح في مكان واحد</p>
     </a>
     <a class="admin-card live-primary" href="./live-desk.html" style="--card-color:#ff334f">
       <div class="admin-card-icon">🔴</div>
@@ -364,36 +352,16 @@ body { font-family: "Tajawal", sans-serif !important; }
       <h3>تنبيهات البطولة</h3>
       <p>اختبار تنبيهات البداية والأهداف والنهاية ومتابعة جاهزيتها</p>
     </a>
-    <a class="admin-card" href="./repair-matches-admin.html" style="--card-color:#c9a84c">
-      <div class="admin-card-icon">🛠️</div>
-      <h3>تصحيح مباريات 8 سبتمبر</h3>
-      <p>استبدال الأهداف الخاطئة بالأسماء والدقائق الصحيحة والتحقق منها</p>
-    </a>
-    <a class="admin-card" href="./news-admin.html" style="--card-color:#58a6ff">
-      <div class="admin-card-icon">🧠</div>
-      <h3>مركز الأخبار الذكي</h3>
-      <p>توليد أخبار كل بطولة ومراجعتها وترتيبها ونشرها</p>
-    </a>
-    <a class="admin-card" href="./feed-admin.html" style="--card-color:#6b4c9a">
-      <div class="admin-card-icon">📣</div>
-      <h3>الصور والتغطية الإعلامية</h3>
-      <p>ألبومات الصور وروابط الصحف والقنوات ومواقع التواصل</p>
-    </a>
-    <a class="admin-card" href="./video-admin.html" style="--card-color:#ff6b6b">
-      <div class="admin-card-icon">🎬</div>
-      <h3>فيديوهات البطولة</h3>
-      <p>ملخصات ولقاءات وزيارات ومؤتمرات حسب نوع المصدر</p>
-    </a>
-    <a class="admin-card" href="./document-admin.html" style="--card-color:#c9a84c">
-      <div class="admin-card-icon">📄</div>
-      <h3>النشرات الرسمية (PDF)</h3>
-      <p>إدارة عدة أعداد وقراءتها داخل المنصة من الأحدث للأقدم</p>
-    </a>
   </div>
 
   <!-- تقارير وأدوات أخرى -->
   <button type="button" class="section-label admin-section-toggle" data-section="reportCards" aria-expanded="false"><span>📊 التقارير والأدوات</span><span class="section-mini-icons" aria-hidden="true">📊 📖 🌐 <span class="section-chevron">⌄</span></span></button>
   <div class="admin-cards admin-section-cards" id="reportCards">
+    <a class="admin-card" href="./repair-matches-admin.html" style="--card-color:#c9a84c">
+      <div class="admin-card-icon">🛠️</div>
+      <h3>أدوات الإصلاح القديمة</h3>
+      <p>أداة تصحيح مخصصة محفوظة للرجوع عند الحاجة</p>
+    </a>
     <a class="admin-card" href="./stats-admin.html" style="--card-color:#34d399">
       <div class="admin-card-icon">📊</div>
       <h3>تصدير التقارير والإحصائيات</h3>
