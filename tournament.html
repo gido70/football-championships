@@ -7,24 +7,20 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" id="appTitle" content="البطولة">
-<link rel="manifest" id="appManifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" id="appTouchIcon" href="icon-app.png">
 <script>
-(()=>{const id=new URLSearchParams(location.search).get('id'),manifests={
-'aaaaaaaa-0000-0000-0000-000000000001':'manifest-mansour-2026.webmanifest?v=20260914-2',
-'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'manifest-mansour-2027.webmanifest?v=20260914-2',
-'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'manifest-uefa-2027.webmanifest?v=20260914-2'
-},touchIcons={
-'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-192.png?v=20260914-2',
-'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-192.png?v=20260914-2',
-'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-192.png?v=20260914-2'
-};const href=manifests[id];if(href)document.getElementById('appManifest').href=href;
-const touch=touchIcons[id];if(touch)document.getElementById('appTouchIcon').href=touch;})();
+(()=>{
+  const id=new URLSearchParams(location.search).get('id');
+  const apps={
+    'aaaaaaaa-0000-0000-0000-000000000001':['manifest-mansour-2026.webmanifest?v=20260914-5','logo-cup-2026-192.png?v=20260914-5','كأس منصور 2026'],
+    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':['manifest-mansour-2027.webmanifest?v=20260914-5','logo-cup-2027-192.png?v=20260914-5','كأس منصور 2027'],
+    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':['manifest-uefa-2027.webmanifest?v=20260914-5','uefa-champions-app-192.png?v=20260914-5','دوري أبطال أوروبا']
+  };
+  const app=apps[id];if(!app)return;
+  document.write('<meta name="apple-mobile-web-app-title" id="appTitle" content="'+app[2]+'"><link rel="manifest" id="appManifest" href="'+app[0]+'"><link rel="apple-touch-icon" id="appTouchIcon" href="'+app[1]+'"><title>'+app[2]+'</title>');
+})();
 </script>
 <link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
 <link rel="stylesheet" href="public-navigation.css?v=20260911-1">
-<title>البطولة</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
 <script src="uefa-player-images.js?v=20260913-2"></script>
@@ -521,13 +517,18 @@ const TOURNAMENT_HEADER_ICONS={
   'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-192.png?v=20260914-2',
   'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-192.png?v=20260914-2'
 };
+const TOURNAMENT_APP_NAMES={
+  'aaaaaaaa-0000-0000-0000-000000000001':'كأس منصور 2026',
+  'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'كأس منصور 2027',
+  'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'دوري أبطال أوروبا'
+};
 function tournamentShareUrl(){
   const page=TOURNAMENT_SHARE_PAGES[TID];
   if(!page)return new URL('tournament.html?id='+encodeURIComponent(TID)+'&standalone=1',location.href).href;
   const url=new URL(page,location.href);url.searchParams.set('v','20260914-3');return url.href;
 }
 async function shareTournament(){
-  const name=TOURNAMENT_CACHE?.name_ar||TOURNAMENT_CACHE?.name||document.title||'البطولة';
+  const name=TOURNAMENT_APP_NAMES[TID]||TOURNAMENT_CACHE?.name_ar||TOURNAMENT_CACHE?.name||document.title||'البطولة';
   const url=tournamentShareUrl(),button=document.getElementById('shareTournamentButton');
   try{
     if(navigator.share)await navigator.share({title:name,text:'تابع '+name,url});
@@ -1029,8 +1030,9 @@ async function loadTournament(){
   window.TournamentScope?.configureApp(t,TID);
   const season=t.season_label||'';
 
-  document.title=name;
-  document.getElementById('appTitle').content=name.slice(0,28);
+  const appName=TOURNAMENT_APP_NAMES[TID]||name;
+  document.title=appName;
+  const appTitle=document.getElementById('appTitle');if(appTitle)appTitle.content=appName;
   document.getElementById('navName').textContent=name;
   const navLogo=document.querySelector('.platform-mini-logo');
   if(navLogo)navLogo.src=TOURNAMENT_HEADER_ICONS[TID]||t.cup_logo_url||t.logo_url||'icon-app.png';

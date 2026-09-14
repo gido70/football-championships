@@ -7,21 +7,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="البطولة">
-<link rel="manifest" id="appManifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" id="appTouchIcon" href="icon-app.png">
 <script>
 (()=>{
   const tid=new URLSearchParams(location.search).get('scope_tid');
   const apps={
-    'aaaaaaaa-0000-0000-0000-000000000001':['manifest-mansour-2026.webmanifest?v=20260914-2','logo-cup-2026-512.png?v=20260914-2'],
-    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':['manifest-mansour-2027.webmanifest?v=20260914-2','logo-cup-2027-512.png?v=20260914-2'],
-    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':['manifest-uefa-2027.webmanifest?v=20260914-2','uefa-champions-app-512.png?v=20260914-2']
+    'aaaaaaaa-0000-0000-0000-000000000001':['manifest-mansour-2026.webmanifest?v=20260914-5','logo-cup-2026-512.png?v=20260914-5','كأس منصور 2026'],
+    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':['manifest-mansour-2027.webmanifest?v=20260914-5','logo-cup-2027-512.png?v=20260914-5','كأس منصور 2027'],
+    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':['manifest-uefa-2027.webmanifest?v=20260914-5','uefa-champions-app-512.png?v=20260914-5','دوري أبطال أوروبا']
   };
-  if(apps[tid]){
-    document.getElementById('appManifest').href=apps[tid][0];
-    document.getElementById('appTouchIcon').href=apps[tid][1];
-  }
+  const app=apps[tid];if(!app)return;
+  document.write('<meta name="apple-mobile-web-app-title" content="'+app[2]+'"><link rel="manifest" id="appManifest" href="'+app[0]+'"><link rel="apple-touch-icon" id="appTouchIcon" href="'+app[1]+'">');
 })();
 </script>
 <title>المباراة</title>

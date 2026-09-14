@@ -18,6 +18,11 @@
     'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-512.png?v=20260914-2',
     'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-512.png?v=20260914-2'
   };
+  const STATIC_APP_NAMES={
+    'aaaaaaaa-0000-0000-0000-000000000001':'كأس منصور 2026',
+    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'كأس منصور 2027',
+    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'دوري أبطال أوروبا'
+  };
   function scopedUrl(href){
     if(!isolated||!href||href.startsWith('#')||href.startsWith('javascript:')||href.startsWith('mailto:')||href.startsWith('tel:'))return href;
     let url;try{url=new URL(href,location.href);}catch(_error){return href;}
@@ -113,7 +118,7 @@
   function configureApp(t,tournamentId){
     if(!t||!tournamentId)return;
     applyTournamentTheme(t);
-    const name=t.name_ar||t.name||'البطولة',base=new URL('.',location.href),start=new URL('tournament.html',base);
+    const name=t.name_ar||t.name||'البطولة',appName=STATIC_APP_NAMES[tournamentId]||name,base=new URL('.',location.href),start=new URL('tournament.html',base);
     start.searchParams.set('id',tournamentId);start.searchParams.set('standalone','1');
     const icon=t.cup_logo_url||t.logo_url||new URL('icon-app.png',base).href;
     const isEurope=tournamentId===EUROPE_TOURNAMENT_ID;
@@ -123,7 +128,7 @@
     const icons=isEurope
       ? [{src:new URL('uefa-champions-app-192.png',base).href,sizes:'192x192',type:'image/png',purpose:'any'},{src:installIcon,sizes:'512x512',type:'image/png',purpose:'any maskable'}]
       : [{src:icon,sizes:'any',purpose:'any'},{src:new URL('icon-app.png',base).href,sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:new URL('icon-app-512.png',base).href,sizes:'512x512',type:'image/png',purpose:'any maskable'}];
-    const manifest={id:base.pathname+'tournament-'+tournamentId,name,short_name:name.slice(0,28),description:'التطبيق الرسمي لمتابعة '+name,lang:'ar',dir:'rtl',display:'standalone',orientation:'any',start_url:start.href,scope:base.pathname,background_color:colors.primary,theme_color:colors.primary,icons};
+    const manifest={id:base.pathname+'tournament-'+tournamentId,name:appName,short_name:appName.slice(0,28),description:'التطبيق الرسمي لمتابعة '+name,lang:'ar',dir:'rtl',display:'standalone',orientation:'any',start_url:start.href,scope:base.pathname,background_color:colors.primary,theme_color:colors.primary,icons};
     let link=document.querySelector('link[rel="manifest"]');if(!link){link=document.createElement('link');link.rel='manifest';document.head.appendChild(link);}
     const staticManifest=STATIC_MANIFESTS[tournamentId];
     if(staticManifest)link.href=new URL(staticManifest,base).href;
@@ -131,8 +136,8 @@
     const touch=document.querySelector('link[rel="apple-touch-icon"]');if(touch)touch.href=installIcon;
     let appleTitle=document.querySelector('meta[name="apple-mobile-web-app-title"]');
     if(!appleTitle){appleTitle=document.createElement('meta');appleTitle.name='apple-mobile-web-app-title';document.head.appendChild(appleTitle);}
-    appleTitle.content=name.slice(0,28);
-    document.title=name;return manifest;
+    appleTitle.content=appName.slice(0,28);
+    document.title=appName;return manifest;
   }
   if(isolated)document.documentElement.classList.add('tournament-isolated');
   document.addEventListener('DOMContentLoaded',function(){
