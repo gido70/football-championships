@@ -6,17 +6,17 @@ const tournaments=[
   {
     key:'aaaaaaaa-0000-0000-0000-000000000001',
     page:'share-mansour-2026.html',manifest:'manifest-mansour-2026.webmanifest',
-    title:'كأس منصور بن زايد 2026',image:'bg_2026.jpg',icon:'logo-cup-2026-512.png'
+    title:'كأس منصور بن زايد 2026',image:'logo-cup-2026-512.png',icon:'logo-cup-2026-512.png'
   },
   {
     key:'c983ee0c-4434-470d-b0a2-6e6efe1ad650',
     page:'share-mansour-2027.html',manifest:'manifest-mansour-2027.webmanifest',
-    title:'كأس منصور بن زايد 2027',image:'bg_2027.jpg',icon:'logo-cup-2027-512.png'
+    title:'كأس منصور بن زايد 2027',image:'logo-cup-2027-512.png',icon:'logo-cup-2027-512.png'
   },
   {
     key:'eee33333-5d2a-4f3b-a981-d4b8f5f86143',
     page:'share-uefa-2027.html',manifest:'manifest-uefa-2027.webmanifest',
-    title:'دوري أبطال أوروبا 2026-2027',image:'bg_1788467545720.jpg',icon:'uefa-champions-app-192.png'
+    title:'دوري أبطال أوروبا 2026-2027',image:'uefa-champions-app-512.png',icon:'uefa-champions-app-192.png'
   }
 ];
 
@@ -52,7 +52,7 @@ assert.ok(tournament.includes("86400000"));
 assert.ok(tournament.includes("appinstalled"));
 assert.ok(tournament.includes('id="shareTournamentButton"'));
 assert.ok(tournament.includes("'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'share-mansour-2027.html'"));
-assert.ok(tournament.includes("url.searchParams.set('v','20260914-2')"));
+assert.ok(tournament.includes("url.searchParams.set('v','20260914-3')"));
 assert.ok(tournament.includes("document.getElementById('navName').textContent=name"));
 assert.ok(tournament.includes('TOURNAMENT_HEADER_ICONS[TID]'));
 assert.ok(tournament.indexOf('id="iosInstallSheet"')<tournament.indexOf('id="androidInstallSheet"'));

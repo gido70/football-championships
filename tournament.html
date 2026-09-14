@@ -524,7 +524,7 @@ const TOURNAMENT_HEADER_ICONS={
 function tournamentShareUrl(){
   const page=TOURNAMENT_SHARE_PAGES[TID];
   if(!page)return new URL('tournament.html?id='+encodeURIComponent(TID)+'&standalone=1',location.href).href;
-  const url=new URL(page,location.href);url.searchParams.set('v','20260914-2');return url.href;
+  const url=new URL(page,location.href);url.searchParams.set('v','20260914-3');return url.href;
 }
 async function shareTournament(){
   const name=TOURNAMENT_CACHE?.name_ar||TOURNAMENT_CACHE?.name||document.title||'البطولة';
