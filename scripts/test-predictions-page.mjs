@@ -3,6 +3,8 @@ const page=fs.readFileSync('predictions.html','utf8');
 const account=fs.readFileSync('participant-account.html','utf8');
 const admin=fs.readFileSync('predictions-admin.html','utf8');
 const tournament=fs.readFileSync('tournament.html','utf8');
+const engine=fs.readFileSync('predictions.js','utf8');
+const adminEngine=fs.readFileSync('predictions-admin.js','utf8');
 function ok(v,m){if(!v)throw new Error(m)}
 ok(page.includes("storageKey:'tournament-participant-auth'"),'participant auth storage must remain isolated');
 ok(page.includes("participant_tournament_memberships"),'page must link participant to tournament');
@@ -15,7 +17,13 @@ ok(account.includes("nextPage")&&account.includes('predictions.html'),'account c
 ok(page.includes('prediction_leaderboard'),'participant page must read the secured leaderboard');
 ok(page.includes('f.is_scored'),'scored fixtures must be locked in the UI');
 ok(admin.includes('auth-guard.js'),'prediction administration must be owner protected');
-ok(admin.includes('is_scored:true')&&admin.includes('result_winner_team_id'),'admin result approval must trigger scoring');
+ok(!admin.includes('is_scored:true')&&!admin.includes('result_winner_team_id'),'admin must not duplicate real match result entry');
 ok(page.includes("r.exact_bonus===0")&&page.includes('الحد الأقصى في دور الـ16'),'round-of-16 UI must award winner points only');
-ok(tournament.includes("predictionLink.href=scopeUrl('predictions.html')")&&tournament.includes('تحدي الترشيحات'),'Champions League page must link to the new challenge');
+ok(tournament.includes("'c983ee0c-4434-470d-b0a2-6e6efe1ad650'")&&tournament.includes("predictions.html?tid="),'Europe and Mansour 2027 must link to the new challenge');
+ok(engine.includes('PREDICTION_TOURNAMENTS')&&engine.includes('logo-cup-2027-512.png'),'prediction engine must support both tournaments');
+ok(engine.includes("const live=available.filter(r=>!r.is_test)")&&engine.includes('rounds.map(r=>r.id)'),'live rounds must replace the trial and support concurrent groups');
+ok(engine.includes("h===a?'تعادل'")&&engine.includes('predicted_winner_team_id:scoreWinner'),'group-stage draws must be supported');
+ok(adminEngine.includes('prediction_sync_settings')&&adminEngine.includes("start_mode==='all'"),'admin must show automatic sync mode');
+ok(adminEngine.includes("from('prediction_fixtures').select")&&adminEngine.includes('is_scored'),'admin must show automatically synchronized result status');
+ok(adminEngine.includes('هذه الوحدة تقرأ المباريات الحقيقية ولا تعدّلها'),'admin must explain isolation from real matches');
 console.log('prediction page safety checks passed');

@@ -1,6 +1,33 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>إدارة الترشيحات</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script><script src="supabase-config.js"></script><script src="auth-guard.js"></script><link rel="stylesheet" href="admin.css"><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet"><style>.score-grid{display:grid;grid-template-columns:1fr 90px 1fr 90px;gap:12px;align-items:end}.score-grid input{font-size:24px;text-align:center}.result-card{margin-top:18px}.status.good{color:#15804c}@media(max-width:650px){.score-grid{grid-template-columns:1fr 80px}.score-grid .field{margin:0}}</style></head><body><header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">🎯</div><div class="page-title"><h1>إدارة الترشيحات</h1><p>اعتماد النتيجة يحسب النقاط والترتيب تلقائيًا</p></div></div><div class="nav-actions"><a class="btn secondary" href="admin-home.html">لوحة الأدمن</a><a class="btn secondary" href="predictions.html" target="_blank">صفحة المشاركين ↗</a></div></div></header><main class="container"><section class="panel"><h3>الجولة التجريبية</h3><p class="note">هذه الصفحة منفصلة عن نتائج المباريات الحقيقية.</p><div id="fixtures">جارٍ التحميل…</div></section></main><script>
-const TOURNAMENT_ID='eee33333-5d2a-4f3b-a981-d4b8f5f86143',sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);let teams={};const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-async function load(){const rr=await sb.from('prediction_rounds').select('*').eq('tournament_id',TOURNAMENT_ID).eq('is_test',true).order('created_at',{ascending:false}).limit(1).single();if(rr.error){document.getElementById('fixtures').textContent='تعذر تحميل الجولة.';return}const ff=await sb.from('prediction_fixtures').select('*').eq('round_id',rr.data.id).order('kickoff_at');const ids=[...new Set((ff.data||[]).flatMap(f=>[f.home_team_id,f.away_team_id]).filter(Boolean))];const tt=await sb.from('teams').select('id,name_ar,name').in('id',ids);(tt.data||[]).forEach(t=>teams[t.id]=t);document.getElementById('fixtures').innerHTML=(ff.data||[]).map(card).join('');document.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>save((ff.data||[]).find(f=>f.id===b.dataset.save),b))}
-function card(f){return `<div class="panel result-card"><h3>${esc(teams[f.home_team_id]?.name_ar)} × ${esc(teams[f.away_team_id]?.name_ar)}</h3><div class="score-grid"><div class="field"><label>${esc(teams[f.home_team_id]?.name_ar)}</label><input id="h-${f.id}" type="number" min="0" value="${f.result_home??''}"></div><div class="field"><label>الأهداف</label></div><div class="field"><label>${esc(teams[f.away_team_id]?.name_ar)}</label><input id="a-${f.id}" type="number" min="0" value="${f.result_away??''}"></div><div class="field"><label>الأهداف</label></div></div><div class="actions"><button class="btn" data-save="${f.id}">اعتماد النتيجة وحساب النقاط</button></div><div class="status ${f.is_scored?'good':''}" id="s-${f.id}">${f.is_scored?'✓ النتيجة معتمدة والنقاط محسوبة':''}</div></div>`}
-async function save(f,b){const h=Number(document.getElementById('h-'+f.id).value),a=Number(document.getElementById('a-'+f.id).value),s=document.getElementById('s-'+f.id);if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0||h===a){s.textContent='أدخل نتيجة غير متعادلة صحيحة للاختبار.';return}b.disabled=true;const winner=h>a?f.home_team_id:f.away_team_id;const {error}=await sb.from('prediction_fixtures').update({result_home:h,result_away:a,result_winner_team_id:winner,is_scored:true}).eq('id',f.id);s.textContent=error?'تعذر الاعتماد.':`✓ اعتُمدت ${h}–${a} وحُسبت نقاط جميع المشاركين.`;s.className='status '+(error?'':'good');b.disabled=false}
-load();</script></body></html>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>إدارة الترشيحات</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth-guard.js"></script>
+  <link rel="stylesheet" href="admin.css">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    .result-card{margin-top:18px}.status.good{color:#34d399}
+    .tournament-switch{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+    .tournament-switch a{padding:10px 14px;border:1px solid #3b4f6b;border-radius:10px;color:#eef5ff;text-decoration:none;font-weight:800}
+    .tournament-switch a.active{background:#7c3aed;border-color:#a78bfa}
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="topbar-inner">
+    <div class="page-head"><div class="page-icon">🎯</div><div class="page-title"><h1>إدارة الترشيحات</h1><p>المباريات والنتائج تنتقل تلقائيًا من إدارة البطولة</p></div></div>
+    <div class="nav-actions"><a class="btn secondary" href="admin-home.html">لوحة الأدمن</a><a class="btn secondary" href="predictions.html" target="_blank">صفحة المشاركين ↗</a></div>
+  </div></header>
+  <main class="container">
+    <nav class="tournament-switch" aria-label="اختيار البطولة">
+      <a data-tid="eee33333-5d2a-4f3b-a981-d4b8f5f86143" href="predictions-admin.html?tid=eee33333-5d2a-4f3b-a981-d4b8f5f86143">دوري أبطال أوروبا</a>
+      <a data-tid="c983ee0c-4434-470d-b0a2-6e6efe1ad650" href="predictions-admin.html?tid=c983ee0c-4434-470d-b0a2-6e6efe1ad650">كأس منصور 2027</a>
+    </nav>
+    <section class="panel"><h3>حالة المزامنة التلقائية</h3><p class="note">هذه الوحدة تقرأ المباريات الحقيقية ولا تعدّلها.</p><div id="fixtures">جارٍ التحميل…</div></section>
+  </main>
+  <script src="predictions-admin.js"></script>
+</body>
+</html>

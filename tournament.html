@@ -588,8 +588,8 @@ document.getElementById('qlinkStats').href=scopeUrl('stats.html?id='+TID);
   document.getElementById('qlinkVideos').href=scopeUrl('videos.html?id='+TID);
   document.getElementById('qlinkDocs').href=scopeUrl('documents.html?id='+TID);
   const predictionLink=document.getElementById('qlinkPredictions');
-  if(TID==='eee33333-5d2a-4f3b-a981-d4b8f5f86143'){
-    predictionLink.href=scopeUrl('predictions.html');
+  if(['eee33333-5d2a-4f3b-a981-d4b8f5f86143','c983ee0c-4434-470d-b0a2-6e6efe1ad650'].includes(TID)){
+    predictionLink.href=scopeUrl('predictions.html?tid='+encodeURIComponent(TID));
     predictionLink.querySelector('.qlink-ic').textContent='🏆';
     predictionLink.querySelector('.qlink-label').textContent='تحدي الترشيحات';
   }else{

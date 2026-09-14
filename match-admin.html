@@ -59,6 +59,9 @@ select option{background:#0f2a45;color:#ffffff}
 .inj-player-card{display:grid!important;grid-template-columns:48px 1fr auto;align-items:center;gap:10px;width:100%;cursor:pointer;border:1px solid rgba(255,255,255,.08);border-radius:11px!important;padding:7px!important;margin-bottom:6px;background:rgba(255,255,255,.025);color:#eef5ff;text-align:right;font-family:inherit}
 .inj-player-card.selected{border-color:#ffd54f;background:rgba(255,213,79,.12);box-shadow:0 0 0 2px rgba(255,213,79,.18)}
 .inj-player-card.current{border-color:#f85149;background:rgba(248,81,73,.13)}
+.suspension-alert{display:none;margin:0 0 16px;padding:15px 17px;border:2px solid #f85149;border-radius:14px;background:linear-gradient(135deg,rgba(127,29,29,.96),rgba(69,10,10,.96));color:#fff;box-shadow:0 10px 28px rgba(248,81,73,.22)}
+.suspension-alert.show{display:block}.suspension-alert h3{margin:0 0 8px;color:#ffd6d6;font-size:16px}.suspension-alert ul{margin:0;padding:0 20px 0 0}.suspension-alert li{margin:5px 0;font-weight:800}.suspension-alert small{display:block;margin-top:9px;color:#ffd6d6}
+.event-player-card:disabled{cursor:not-allowed;opacity:.55;border-color:#f85149!important;background:rgba(127,29,29,.4)!important}.event-player-card .susp-label{display:block;color:#ff9a9a;font-size:11px;margin-top:3px}
 .lu-admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
 .lu-admin-team-hd{font-size:13px;font-weight:800;color:#c9a84c;margin-bottom:8px}
 .lu-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;color:#e6edf3}
@@ -223,6 +226,7 @@ select option{background:#0f2a45;color:#ffffff}
 
   <div id="matchPanel" style="display:none">
     <div id="matchLockBanner" class="match-lock-banner">🔒 المباراة ليست مباشرة الآن؛ أدوات النتيجة والأحداث مقفلة لحماية البيانات.</div>
+    <div id="suspensionAlert" class="suspension-alert" role="alert" aria-live="polite"></div>
     <!-- لوحة النتيجة -->
     <div class="match-board">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
@@ -550,7 +554,7 @@ select option{background:#0f2a45;color:#ffffff}
 <script src="admin-push.js?v=20260912-2"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-let cur=null,hPl=[],aPl=[],evtType={h:null,a:null},quickPending=null,injuryPendingId=null;
+let cur=null,hPl=[],aPl=[],suspensionMap={},evtType={h:null,a:null},quickPending=null,injuryPendingId=null;
 let varUpdateBusy=false;
 const requestedMatchId=new URLSearchParams(location.search).get('match')||'';
 const requestedTournamentId=new URLSearchParams(location.search).get('tournament')||'';
@@ -619,6 +623,13 @@ async function onMatchChange(){
   const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.home_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
   const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.away_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
   hPl=hp||[];aPl=ap||[];
+  suspensionMap={};
+  const suspendedIds=[...hPl,...aPl].filter(p=>(p.suspended_matches_remaining||0)>0).map(p=>p.id);
+  if(suspendedIds.length){
+    const {data:suspensions}=await sb.from('player_suspensions').select('player_id,reason,source_match_id').eq('tournament_id',m.tournament_id).eq('status','pending').in('player_id',suspendedIds);
+    (suspensions||[]).forEach(s=>suspensionMap[s.player_id]=s);
+  }
+  renderSuspensionAlert();
   fillEventPlayerCards('h',hPl);fillEventPlayerCards('a',aPl);
   fillManOfMatchTeams(m);
   fillManOfMatch([]);
@@ -647,7 +658,16 @@ async function onMatchChange(){
 function fillEventPlayerCards(side,players){
   const input=document.getElementById(side+'Player');
   input.value='';input.dataset.playerLabel='';
-  document.getElementById(side+'PlayerCards').innerHTML=players.map(p=>`<button type="button" class="event-player-card" onclick="selectEventPlayer('${side}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}',this)"><span class="player-number">${p.number??'—'}</span><span class="player-name">${p.full_name_ar||p.name}</span></button>`).join('')||'<div style="color:#8fa3c0;font-size:12px">لا يوجد لاعبون نشطون معتمدون</div>';
+  document.getElementById(side+'PlayerCards').innerHTML=players.map(p=>{const susp=(p.suspended_matches_remaining||0)>0;return `<button type="button" class="event-player-card" ${susp?'disabled':''} onclick="selectEventPlayer('${side}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}',this)"><span class="player-number">${p.number??'—'}</span><span class="player-name">${p.full_name_ar||p.name}${susp?'<span class="susp-label">🚫 موقوف — لا يشارك</span>':''}</span></button>`}).join('')||'<div style="color:#8fa3c0;font-size:12px">لا يوجد لاعبون نشطون معتمدون</div>';
+}
+
+function renderSuspensionAlert(){
+  const box=document.getElementById('suspensionAlert');if(!box)return;
+  const rows=[...hPl,...aPl].filter(p=>(p.suspended_matches_remaining||0)>0);
+  if(!rows.length){box.className='suspension-alert';box.innerHTML='';return;}
+  const reason=p=>suspensionMap[p.id]?.reason==='second_yellow'?'إنذاران في المباراة السابقة':'بطاقة حمراء في المباراة السابقة';
+  box.className='suspension-alert show';
+  box.innerHTML=`<h3>🚨 تنبيه للأدمن والحكم: لاعبون موقوفون</h3><ul>${rows.map(p=>`<li>${p.number?'#'+p.number+' — ':''}${p.full_name_ar||p.name} — ${reason(p)}</li>`).join('')}</ul><small>تم تعطيل اختيار هؤلاء اللاعبين في التشكيلة وسجل أحداث المباراة.</small>`;
 }
 
 function selectEventPlayer(side,playerId,playerName,button){
@@ -1500,9 +1520,9 @@ async function loadLineupAdmin(m){
   const hasSavedLineup=(lu||[]).length>0;
   const row=p=>{
     const susp=p.suspended_matches_remaining>0;
-    const selected=hasSavedLineup?!!luMap[p.id]:!susp;
+    const selected=susp?false:(hasSavedLineup?!!luMap[p.id]:true);
     return `<div class="lu-row" data-pid="${p.id}" style="${susp?'background:rgba(248,81,73,.12);border-radius:8px;padding:4px 8px':''}">
-    <label><input type="checkbox" class="lu-start" ${selected?'checked':''}><span>${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</span></label>
+    <label><input type="checkbox" class="lu-start" ${selected?'checked':''} ${susp?'disabled data-suspended="true"':''}><span>${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</span></label>
     ${susp?`<span style="color:#f85149;font-size:11px;font-weight:900;margin-right:6px">🚫 موقوف (${p.suspended_matches_remaining} مباراة متبقية)</span>`:''}
   </div>`;
   };
@@ -1514,7 +1534,7 @@ async function loadLineupAdmin(m){
 function setLineupTeam(side,checked){
   const list=document.getElementById(side==='h'?'luHList':'luAList');
   if(!list)return;
-  list.querySelectorAll('.lu-start').forEach(box=>box.checked=checked);
+  list.querySelectorAll('.lu-start:not(:disabled)').forEach(box=>box.checked=checked);
 }
 window.setLineupTeam=setLineupTeam;
 
@@ -1580,6 +1600,9 @@ async function saveLineups(){
     const teamId=r.closest('#luHList')?cur.home_team_id:cur.away_team_id;
     rows.push({match_id:cur.id,team_id:teamId,player_id:pid,is_starting:isStart});
   });
+  if(document.querySelector('.lu-start[data-suspended="true"]:checked')){
+    st.style.color='#ff6b6b';st.textContent='⚠️ لا يمكن حفظ لاعب موقوف ضمن التشكيلة.';return;
+  }
   const {error:e1}=await sb.from('match_lineups').upsert(rows,{onConflict:'match_id,player_id'});
   if(e1){st.style.color='#ff6b6b';st.textContent='⚠️ فشل حفظ التشكيلة: '+e1.message;}
   else{st.style.color='#34d399';st.textContent='✅ تم الحفظ';setTimeout(()=>st.textContent='',3000);}
