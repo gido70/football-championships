@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>مركز الفرق واللاعبين</title>
+<link rel="stylesheet" href="admin.css">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
+<script src="auth-guard.js"></script>
+<style>
+body{font-family:"Tajawal",sans-serif}.hub-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.hub-card{display:block;text-decoration:none;color:#eef5ff;background:linear-gradient(180deg,rgba(16,40,70,.96),rgba(11,28,49,.96));border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:20px}.hub-card:hover{border-color:#4ea1ff}.hub-card strong{display:block;color:#f1d176;font-size:18px;margin:8px 0}.hub-card p{color:#b7c6dc;line-height:1.7;margin:0}.hub-icon{font-size:28px}.hint{margin-bottom:20px;padding:14px 16px;border:1px solid rgba(52,211,153,.25);background:rgba(52,211,153,.07);border-radius:14px;color:#bfe9d5}.tag{display:inline-block;margin-top:12px;padding:4px 9px;border-radius:99px;background:rgba(78,161,255,.12);color:#8fc5ff;font-size:11px;font-weight:800}@media(max-width:620px){.hub-grid{grid-template-columns:1fr}.hub-card{padding:16px}}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner"><div class="page-head"><div class="page-icon">👥</div><div class="page-title"><h1>مركز الفرق واللاعبين</h1><p>كل طرق التسجيل والإدخال والمراجعة في مكان واحد</p></div></div><div class="nav-actions"><a class="btn secondary" href="admin-home.html">← لوحة الأدمن</a></div></div></header>
+<main class="container">
+  <div class="hint">اختر طريقة العمل المناسبة. كل الطرق تصل إلى سجلات الفرق واللاعبين نفسها ولا تنشئ نظامًا موازيًا.</div>
+  <div class="hub-grid">
+    <a class="hub-card" data-page="teams-admin.html" href="teams-admin.html"><span class="hub-icon">✍️</span><strong>الإدخال اليدوي</strong><p>إضافة فريق أو لاعب وتعديل بياناته مباشرة من الإدارة.</p><span class="tag">للإضافات الفردية</span></a>
+    <a class="hub-card" data-page="admin-import.html" href="admin-import.html"><span class="hub-icon">📥</span><strong>الاستيراد من ملف Excel</strong><p>إدخال قائمة كبيرة دفعة واحدة مع مراجعة الملف قبل الحفظ.</p><span class="tag">للقوائم الجماعية</span></a>
+    <a class="hub-card" data-page="team-submissions-review.html" href="team-submissions-review.html"><span class="hub-icon">🔐</span><strong>إدخال الفريق بالرابط والرمز</strong><p>إرسال رابط آمن لمسؤول الفريق ثم مراجعة واعتماد ما أدخله.</p><span class="tag">لإدخال مسؤولي الفرق</span></a>
+    <a class="hub-card" data-page="teams-admin.html" href="teams-admin.html"><span class="hub-icon">🖼️</span><strong>الشعارات والصور والبيانات</strong><p>مراجعة أسماء الفرق وألوانها وشعاراتها وقوائم لاعبيها.</p><span class="tag">للتحديث والمراجعة</span></a>
+  </div>
+</main>
+<script>
+const tid=new URLSearchParams(location.search).get('tid')||localStorage.getItem('adminTournamentId');
+if(tid)document.querySelectorAll('[data-page]').forEach(a=>{const u=new URL(a.dataset.page,location.href);u.searchParams.set('tid',tid);a.href=u.href});
+</script>
+</body>
+</html>
