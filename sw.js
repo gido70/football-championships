@@ -5,6 +5,7 @@ const CORE = [
   './index.html',
   './tournament.html',
   './share-mansour-2026.html',
+  './share-mansour-2026-black.html',
   './share-mansour-2027.html',
   './share-uefa-2027.html',
   './manifest-mansour-2026.webmanifest',
@@ -35,6 +36,7 @@ const CORE = [
   './uefa-champions-app-512.png',
   './logo-cup-2026-192.png',
   './logo-cup-2026-512.png',
+  './share-logo-mansour-2026-white-on-black-v2.jpg',
   './logo-cup-2027-192.png',
   './logo-cup-2027-512.png'
 ];

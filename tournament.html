@@ -508,7 +508,7 @@ const sb=SUPABASE_READY?window.supabase.createClient(window.SUPABASE_URL,window.
 const TID=new URLSearchParams(location.search).get('id');
 let TOURNAMENT_CACHE=null;
 const TOURNAMENT_SHARE_PAGES={
-  'aaaaaaaa-0000-0000-0000-000000000001':'share-mansour-2026.html',
+  'aaaaaaaa-0000-0000-0000-000000000001':'share-mansour-2026-black.html',
   'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'share-mansour-2027.html',
   'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'share-uefa-2027.html'
 };
@@ -525,7 +525,7 @@ const TOURNAMENT_APP_NAMES={
 function tournamentShareUrl(){
   const page=TOURNAMENT_SHARE_PAGES[TID];
   if(!page)return new URL('tournament.html?id='+encodeURIComponent(TID)+'&standalone=1',location.href).href;
-  const url=new URL(page,location.href);url.searchParams.set('v',TID==='aaaaaaaa-0000-0000-0000-000000000001'?'20260914-6':'20260914-3');return url.href;
+  const url=new URL(page,location.href);url.searchParams.set('v',TID==='aaaaaaaa-0000-0000-0000-000000000001'?'1':'20260914-3');return url.href;
 }
 async function shareTournament(){
   const name=TOURNAMENT_APP_NAMES[TID]||TOURNAMENT_CACHE?.name_ar||TOURNAMENT_CACHE?.name||document.title||'البطولة';
