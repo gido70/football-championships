@@ -3,6 +3,11 @@ import webpush from 'npm:web-push@3.6.7';
 
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type'};
 const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
+const tournamentIcons:Record<string,string>={
+  'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-512.png',
+  'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-512.png',
+  'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-512.png'
+};
 
 Deno.serve(async req=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:cors});
@@ -53,7 +58,8 @@ Deno.serve(async req=>{
     }
     if(type==='test'){title='🔔 تنبيه تجريبي ناجح';body=`${homeName} × ${awayName} — ستصل تنبيهات البداية والأهداف والبطاقات والنهاية بهذه الطريقة`;}
     const site=(Deno.env.get('PUBLIC_SITE_URL')||'https://gido70.github.io/football-championships').replace(/\/$/,'');
-    const payload=JSON.stringify({title,body,icon:site+'/icon-app.png',badge:site+'/icon-app.png',tag:eventKey,url:`${site}/match-live.html?id=${match_id}`});
+    const tournamentIcon=tournamentIcons[m.tournament_id]||'icon-app.png';
+    const payload=JSON.stringify({title,body,icon:`${site}/${tournamentIcon}`,badge:`${site}/${tournamentIcon}`,tag:eventKey,url:`${site}/match-live.html?id=${match_id}&scope_tid=${m.tournament_id}&standalone=1`});
     webpush.setVapidDetails(Deno.env.get('VAPID_SUBJECT')||site,Deno.env.get('VAPID_PUBLIC_KEY')!,Deno.env.get('VAPID_PRIVATE_KEY')!);
     const {data:subs}=await db.from('push_subscriptions').select('id,endpoint,p256dh,auth').eq('tournament_id',m.tournament_id).eq('is_active',true);
     let sent=0,failed=0;

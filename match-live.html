@@ -8,8 +8,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="البطولة">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-app.png">
+<link rel="manifest" id="appManifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" id="appTouchIcon" href="icon-app.png">
 <title>المباراة</title>
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
@@ -305,7 +305,7 @@ a{text-decoration:none;color:inherit}
 </div>
 
 <script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260910-3"></script>
+<script src="tournament-scope.js?v=20260914-1"></script>
 <script src="public-navigation.js?v=20260911-1"></script>
 <script src="public-date.js?v=20260910-1"></script>
 <script>
@@ -801,6 +801,7 @@ async function init(){
   window.PublicNavigation?.configureBack(document.getElementById('floatBack'),tournamentBack,'البطولة');
 
   const {data:t}=await sb.from('tournaments').select('*').eq('id',m.tournament_id).single();
+  window.TournamentScope?.configureApp(t,m.tournament_id);
   window.TournamentScope?.applyTournamentTheme(t);
   if(t){
     window.TournamentScope?.decorateTournamentNav(t);

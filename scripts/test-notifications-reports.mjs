@@ -13,8 +13,12 @@ for(const file of ['sw.js','admin-push.js','push-config.js','push-notifications.
 const tournament=read('tournament.html'),matchLive=read('match-live.html'),sw=read('sw.js'),matchAdmin=read('match-admin.html'),live=read('live-desk.html'),sql=read('push_notifications.sql'),voteSql=read('audience_player_vote.sql'),edge=read('supabase/functions/send-match-notification/index.ts'),report=read('match-report.html');
 must(tournament.includes('id="notificationToggle"'),'زر تفعيل التنبيهات غير موجود');
 must(!tournament.includes('requestNotifyPermissionOnce'),'ما زال طلب الإذن التلقائي موجودًا');
+must(matchLive.includes('id="appManifest"')&&matchLive.includes('id="appTouchIcon"'),'صفحة المباراة لا تجهز هوية تثبيت البطولة');
+must(matchLive.includes('configureApp(t,m.tournament_id)'),'صفحة المباراة لا تربط ملف التثبيت وشعار البطولة بهوية المباراة');
 must(sw.includes("self.addEventListener('push'"),'مستمع Push غير موجود');
 must(sw.includes("self.addEventListener('notificationclick'"),'فتح المباراة من التنبيه غير موجود');
+must(edge.includes('tournamentIcons')&&edge.includes('logo-cup-2027-512.png')&&edge.includes('uefa-champions-app-512.png'),'التنبيهات لا تستخدم شعار البطولة الصحيح');
+must(edge.includes('scope_tid=${m.tournament_id}&standalone=1'),'رابط التنبيه لا يحافظ على هوية تطبيق البطولة');
 for(const event of ['start','goal','yellow_card','red_card','end']){
   must(matchAdmin.includes(`'${event}'`),`إرسال ${event} غير مربوط بإدارة المباراة`);
   must(edge.includes(`'${event}'`),`وظيفة الخادم لا تعرف ${event}`);
