@@ -25,7 +25,7 @@ h1{font-size:19px;color:#c9a84c;margin:0 0 14px;padding:0 16px}
 .play-badge{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.25)}
 .play-icon{width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff}
 .body{padding:12px 14px}
-.title{font-weight:800;font-size:14px;margin-bottom:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.title{font-weight:800;font-size:14px;margin-bottom:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.modern-title{position:relative;padding:9px 11px;border-right:4px solid var(--theme-secondary,#c9a84c);border-radius:4px 10px 10px 4px;background:linear-gradient(90deg,color-mix(in srgb,var(--theme-secondary,#c9a84c) 16%,#fff),#fff);color:var(--theme-primary-dark,#173047);font-size:clamp(15px,2.3vw,19px);font-weight:900;line-height:1.55;display:block;overflow:visible}
 .desc{font-size:12px;color:#8b949e;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .empty-note{text-align:center;color:#6e7b8f;padding:60px 0;font-size:13px}
 .loading{text-align:center;color:#6e7b8f;padding:40px 0}
@@ -96,7 +96,7 @@ function extractYoutubeId(url){
   return m?m[1]:null;
 }
 
-let VIDEOS=[];
+let VIDEOS=[],MODERN_TITLES=false;
 async function load(){
   if(!TID){document.getElementById('app').innerHTML='<div class="empty-note">لم تُحدَّد بطولة</div>';return;}
   const backLink=document.getElementById('backLink');
@@ -104,9 +104,9 @@ async function load(){
   backLink.href=tournamentBack;
   backLink.removeAttribute('onclick');
   window.PublicNavigation?.configureBack(backLink,tournamentBack,'البطولة');
-  const {data:t}=await sb.from('tournaments').select('name,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',TID).single();
+  const {data:t}=await sb.from('tournaments').select('name,name_ar,season_label,primary_color,secondary_color,logo_url,cup_logo_url').eq('id',TID).single();
   window.TournamentScope?.applyTournamentTheme(t);
-  document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — الفيديوهات';
+  document.getElementById('tourName').textContent=(t?.name_ar||t?.name||'')+' — الفيديوهات';MODERN_TITLES=!String(t?.season_label||'').includes('2026');
 
   const {data:vidRows}=await sb.from('videos').select('*').eq('tournament_id',TID).eq('is_visible',true).order('created_at',{ascending:false});
   const {data:matchVids}=await sb.from('matches').select('id,home_score,away_score,match_date,highlight_video_url,home_team_id,away_team_id').eq('tournament_id',TID).eq('status','completed').not('highlight_video_url','is',null);
@@ -144,7 +144,7 @@ function renderGroup(title,items){
         <div class="play-badge"><div class="play-icon">▶</div></div>
       </div>
       <div class="body">
-        <div class="title">${esc(v.title)}</div>
+        <div class="title ${MODERN_TITLES?'modern-title':''}">${esc(v.title)}</div>
         ${v.description?`<div class="desc">${esc(v.description)}</div>`:''}
       </div>
     </button>`;
