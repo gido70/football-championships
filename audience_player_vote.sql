@@ -19,28 +19,15 @@ as $$
         lower(coalesce(m.status,'')) = 'live'
         or (
           lower(coalesce(m.status,'')) in ('completed','finished','ended')
+          and m.live_started_at is not null
           and not exists (
             select 1
             from public.matches n
             where n.tournament_id = m.tournament_id
               and n.id <> m.id
               and lower(coalesce(n.status,'')) in ('live','completed','finished','ended')
-              and (
-                (
-                  m.match_date is not null and n.match_date is not null
-                  and (
-                    n.match_date > m.match_date
-                    or (
-                      n.match_date = m.match_date
-                      and coalesce(n.match_time,time '00:00') > coalesce(m.match_time,time '00:00')
-                    )
-                  )
-                )
-                or (
-                  (m.match_date is null or n.match_date is null)
-                  and coalesce(n.match_no,n.match_number,0) > coalesce(m.match_no,m.match_number,0)
-                )
-              )
+              and n.live_started_at is not null
+              and n.live_started_at > m.live_started_at
           )
         )
       )

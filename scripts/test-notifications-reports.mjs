@@ -12,6 +12,7 @@ for(const file of ['sw.js','admin-push.js','push-config.js','push-notifications.
 
 const tournament=read('tournament.html'),matchLive=read('match-live.html'),sw=read('sw.js'),matchAdmin=read('match-admin.html'),live=read('live-desk.html'),sql=read('push_notifications.sql'),voteSql=read('audience_player_vote.sql'),edge=read('supabase/functions/send-match-notification/index.ts'),report=read('match-report.html');
 must(tournament.includes('id="notificationToggle"'),'زر تفعيل التنبيهات غير موجود');
+must(tournament.includes("badge.style.display=matches?.length?'inline-flex':'none'")&&tournament.includes("channel('tournament-live-'"),'مؤشر اللايف العلوي لا يتحدث فور بدء المباراة أو نهايتها');
 must(!tournament.includes('requestNotifyPermissionOnce'),'ما زال طلب الإذن التلقائي موجودًا');
 must(matchLive.includes('id="appManifest"')&&matchLive.includes('id="appTouchIcon"'),'صفحة المباراة لا تجهز هوية تثبيت البطولة');
 must(matchLive.includes('configureApp(t,m.tournament_id)'),'صفحة المباراة لا تربط ملف التثبيت وشعار البطولة بهوية المباراة');
@@ -19,11 +20,17 @@ must(sw.includes("self.addEventListener('push'"),'مستمع Push غير موج�
 must(sw.includes("self.addEventListener('notificationclick'"),'فتح المباراة من التنبيه غير موجود');
 must(edge.includes('tournamentIcons')&&edge.includes('logo-cup-2027-512.png')&&edge.includes('uefa-champions-app-512.png'),'التنبيهات لا تستخدم شعار البطولة الصحيح');
 must(edge.includes('scope_tid=${m.tournament_id}&standalone=1'),'رابط التنبيه لا يحافظ على هوية تطبيق البطولة');
+must(edge.includes("OWNER_USER_ID='674ed5de-14c3-47db-b88f-68cb5f50005d'")&&edge.includes('user.id!==OWNER_USER_ID'),'وظيفة التنبيهات لا تحصر الإرسال في حساب المالك');
+must(edge.includes("existing.status!=='failed'")&&edge.includes("status:'pending'"),'إعادة محاولة التنبيه الفاشل غير محمية أو غير مدعومة');
 for(const event of ['start','goal','yellow_card','red_card','end']){
   must(matchAdmin.includes(`'${event}'`),`إرسال ${event} غير مربوط بإدارة المباراة`);
   must(edge.includes(`'${event}'`),`وظيفة الخادم لا تعرف ${event}`);
 }
 must(live.includes("['goal','yellow_card','red_card'].includes(type)"),'أحداث مركز اللايف غير مربوطة بالتنبيهات');
+must(matchAdmin.includes("rpc('save_live_match_event_admin'")&&live.includes("rpc('save_live_match_event_admin'"),'تسجيل الحدث والنتيجة ليس ذريًا في واجهتي الإدارة');
+must(matchAdmin.includes("rpc('set_live_match_status_admin'")&&live.includes("rpc('set_live_match_status_admin'"),'بدء المباراة وإنهاؤها ليسا مربوطين بمسار الحالة الآمن');
+must(matchAdmin.includes("rpc('delete_live_match_event_admin'"),'حذف الهدف والنتيجة ليس ذريًا');
+must(matchAdmin.includes('await window.AdminPush?.send')&&live.includes('await window.AdminPush?.send'),'واجهات الإدارة لا تنتظر نتيجة إرسال التنبيه');
 must(matchAdmin.includes('id="quickPickerConfirm"'),'زر تأكيد اختيار اللاعب غير موجود');
 must(matchAdmin.includes('function quickSelect(')&&matchAdmin.includes('function quickConfirm('),'اختيار اللاعب الآمن غير مكتمل');
 must(matchAdmin.includes(".eq('is_active',true)")&&live.includes(".eq('is_active',true)"),'اللاعبون غير النشطين قد يظهرون في اللايف');
@@ -71,6 +78,7 @@ must(matchLive.includes('تم التصويت مسبقًا')&&matchLive.includes(
 must(matchAdmin.includes("rpc('get_match_vote_state'")&&tournament.includes("rpc('get_match_vote_leaders'"),'نتائج التصويت المجمعة غير مربوطة بالواجهة والإدارة');
 must(voteSql.includes("'already_voted'")&&voteSql.includes('on conflict(match_id,session_key) do nothing'),'صوت واحد لكل متصفح غير محمي في قاعدة البيانات');
 must(voteSql.includes("lower(coalesce(m.status,'')) = 'live'")&&voteSql.includes('player_of_match_id is null'),'نافذة التصويت غير مرتبطة بالمباراة والاعتماد الرسمي');
+must(voteSql.includes('n.live_started_at > m.live_started_at')&&!voteSql.includes('coalesce(n.match_no,n.match_number,0) >'),'إغلاق التصويت لا يعتمد وقت البدء الفعلي للمباراة التالية');
 must(voteSql.includes('revoke all on table public.match_votes from public,anon,authenticated'),'سجلات المصوتين الخام ما زالت مكشوفة للعامة');
 
 console.log('notification and report tests passed');

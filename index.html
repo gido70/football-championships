@@ -426,7 +426,7 @@ async function loadLive(){
     const ac2=m.at?.secondary_color||ac;
     const hn=m.ht?.name_ar||m.ht?.name||'؟';
     const an=m.at?.name_ar||m.at?.name||'؟';
-    return `<a class="live-card" href="match-live.html?id=${m.id}">
+    return `<a class="live-card" href="match-live.html?id=${m.id}&scope_tid=${m.tournament_id}">
       <div class="live-top">
         <span class="live-tourn">${m.tr?.name_ar||m.tr?.name||''}</span>
         <span class="live-badge"><span class="live-dot"></span> مباشر</span>

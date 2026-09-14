@@ -3,6 +3,7 @@ import webpush from 'npm:web-push@3.6.7';
 
 const cors={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type'};
 const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,'Content-Type':'application/json'}});
+const OWNER_USER_ID='674ed5de-14c3-47db-b88f-68cb5f50005d';
 const tournamentIcons:Record<string,string>={
   'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-512.png',
   'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-512.png',
@@ -18,6 +19,7 @@ Deno.serve(async req=>{
     const userClient=createClient(url,anon,{global:{headers:{Authorization:auth}}});
     const {data:{user}}=await userClient.auth.getUser();
     if(!user)return reply({error:'unauthorized'},401);
+    if(user.id!==OWNER_USER_ID)return reply({error:'forbidden'},403);
 
     const {type,match_id,event_id}=await req.json();
     if(!['start','goal','yellow_card','red_card','end','test'].includes(type)||!match_id)return reply({error:'invalid_payload'},400);
@@ -37,8 +39,14 @@ Deno.serve(async req=>{
     let delivery:any=null;
     if(type!=='test'){
       const {data,error}=await db.from('notification_deliveries').insert({event_key:eventKey,tournament_id:m.tournament_id,match_id,notification_type:type}).select('id').single();
-      if(error){if(error.code==='23505')return reply({ok:true,duplicate:true,sent:0});throw error;}
-      delivery=data;
+      if(error){
+        if(error.code!=='23505')throw error;
+        const {data:existing}=await db.from('notification_deliveries').select('id,status,sent_count,failed_count').eq('event_key',eventKey).maybeSingle();
+        if(!existing||existing.status!=='failed'||Number(existing.sent_count||0)>0)return reply({ok:true,duplicate:true,sent:Number(existing?.sent_count||0),failed:Number(existing?.failed_count||0)});
+        const {data:retry,error:retryError}=await db.from('notification_deliveries').update({status:'pending',sent_count:0,failed_count:0,completed_at:null}).eq('id',existing.id).select('id').single();
+        if(retryError)throw retryError;
+        delivery=retry;
+      }else delivery=data;
     }
 
     const homeName=(m.ht as any)?.name_ar||(m.ht as any)?.name||'الفريق الأول',awayName=(m.at as any)?.name_ar||(m.at as any)?.name||'الفريق الثاني';

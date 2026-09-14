@@ -551,7 +551,7 @@ select option{background:#0f2a45;color:#ffffff}
 
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <script src="supabase-config.js"></script>
-<script src="admin-push.js?v=20260912-2"></script>
+<script src="admin-push.js?v=20260914-3"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 let cur=null,hPl=[],aPl=[],suspensionMap={},evtType={h:null,a:null},quickPending=null,injuryPendingId=null;
@@ -1009,37 +1009,20 @@ let clockTimer=null;
 async function setMatchStatus(st){
   if(!cur)return;
   setMsg('جاري التحديث...');
-  const payload={status:st};
-  if(st==='live'){
-    payload.live_started_at=new Date().toISOString();
-    payload.phase_started_at=new Date().toISOString();
-    payload.current_half=1;
-    payload.is_paused=false;
-    payload.half_length_minutes=parseInt(document.getElementById('halfLenInput').value)||20;
-  }
-  if(st==='completed'){
-    payload.live_status='none';
-    payload.var_team_id=null;
-  }
-  const {error}=await sb.from('matches').update(payload).eq('id',cur.id);
+  const {data,error}=await sb.rpc('set_live_match_status_admin',{
+    p_match_id:cur.id,p_status:st,
+    p_half_length_minutes:parseInt(document.getElementById('halfLenInput').value)||20
+  });
   if(error){setMsg('❌ فشل التحديث: '+error.message,'err');console.error(error);return;}
-  Object.assign(cur,payload);
+  Object.assign(cur,data||{status:st});
   updateStatusUI(st);
   if(st==='live')updateHalfUI(1);
   startStopClock();
-  setMsg(st==='live'?'✅ بدأت المباراة — العداد يعمل الآن':'✅ انتهت المباراة','ok');
+  const push=await window.AdminPush?.send(sb,st==='live'?'start':'end',cur.id);
+  setMsg((st==='live'?'✅ بدأت المباراة — العداد يعمل الآن':'✅ انتهت المباراة')+(window.AdminPush?.message(push)||''),push?.ok===false?'warn':'ok');
 
-  const hn=cur.ht?.name_ar||cur.ht?.name||'الفريق الأول';
-  const an=cur.at?.name_ar||cur.at?.name||'الفريق الثاني';
-  if(st==='live'){
-    pushNews('🟢 بدأت مباراة '+hn+' × '+an);
-    window.AdminPush?.send(sb,'start',cur.id);
-  }else if(st==='completed'){
+  if(st==='completed'){
     const hs=cur.home_score??0,as=cur.away_score??0;
-    const winner=hs>as?hn:(as>hs?an:null);
-    let txt='🏁 انتهت المباراة: '+hn+' '+hs+' - '+as+' '+an+(winner?' — الفائز: '+winner:' — تعادل');
-    pushNews(txt);
-    window.AdminPush?.send(sb,'end',cur.id);
     announceClosestGuess(hs,as);
   }
 }
@@ -1160,21 +1143,20 @@ async function quickLog(side,type,playerId,playerName){
   const min=parseInt(document.getElementById('minInput').value)||0;
   const isOwnGoal=type==='own_goal';
   if(isOwnGoal&&!playerId){setMsg('⚠️ اختر اللاعب الذي سجّل الهدف العكسي','warn');return;}
-  const {data:created,error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:playerId||null,team_id:tid,event_type:isOwnGoal?'goal':type,minute:min,event_subtype:isOwnGoal?'own_goal':null}).select('id').single();
+  const storedType=isOwnGoal?'goal':type;
+  const {data:created,error}=await sb.rpc('save_live_match_event_admin',{
+    p_match_id:cur.id,p_event_id:null,p_team_id:tid,p_player_id:playerId||null,
+    p_event_type:storedType,p_minute:min,p_event_subtype:isOwnGoal?'own_goal':null
+  });
   if(error){setMsg('❌ فشل: '+error.message,'err');return;}
-  if(type==='goal'||isOwnGoal){
-    const f=isOwnGoal?(side==='h'?'away_score':'home_score'):(side==='h'?'home_score':'away_score');
-    const v=(cur[f]||0)+1;
-    const {error:e2}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
-    if(!e2){
-      cur[f]=v;
-      document.getElementById(f==='home_score'?'hScore':'aScore').textContent=v;
-      document.getElementById('qbScore').textContent=(cur.home_score??0)+' - '+(cur.away_score??0);
-    }
-  }
+  cur.home_score=Number(created?.home_score??cur.home_score??0);
+  cur.away_score=Number(created?.away_score??cur.away_score??0);
+  document.getElementById('hScore').textContent=cur.home_score;
+  document.getElementById('aScore').textContent=cur.away_score;
+  document.getElementById('qbScore').textContent=cur.home_score+' - '+cur.away_score;
   quickClose();
   loadEvts();
-  setMsg('✅ تم تسجيل '+({goal:'هدف',own_goal:'هدف عكسي',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء'}[type]||type)+' — '+playerName,'ok');
+  const baseMsg='✅ تم تسجيل '+({goal:'هدف',own_goal:'هدف عكسي',yellow_card:'بطاقة صفراء',red_card:'بطاقة حمراء'}[type]||type)+' — '+playerName;
 
   const tn=side==='h'?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name);
   const min2=parseInt(document.getElementById('minInput').value)||0;
@@ -1182,9 +1164,12 @@ async function quickLog(side,type,playerId,playerName){
   else if(isOwnGoal)pushNews('↩️ هدف عكسي على '+(playerName||'لاعب')+' ('+tn+') في الدقيقة '+min2+' — يُحتسب للفريق المنافس');
   else if(type==='yellow_card')pushNews('🟨 بطاقة صفراء لـ '+(playerName||'لاعب')+' ('+tn+')');
   else if(type==='red_card')pushNews('🟥 بطاقة حمراء لـ '+(playerName||'لاعب')+' ('+tn+')');
-  if(created?.id){
+  if(created?.event_id){
     const pushType=(type==='goal'||isOwnGoal)?'goal':(type==='yellow_card'||type==='red_card'?type:null);
-    if(pushType)window.AdminPush?.send(sb,pushType,cur.id,created.id);
+    const push=pushType?await window.AdminPush?.send(sb,pushType,cur.id,created.event_id):null;
+    setMsg(baseMsg+(window.AdminPush?.message(push)||''),push?.ok===false?'warn':'ok');
+  }else{
+    setMsg(baseMsg,'ok');
   }
 }
 
@@ -1445,28 +1430,31 @@ async function submitEvt(side){
   const isOwnGoal=type==='own_goal';
   if(isOwnGoal&&!pid){setMsg('⚠️ اختر لاعب الفريق الذي سجل الهدف العكسي','warn');return;}
   const storedType=isOwnGoal?'goal':type;
-  const {data:created,error}=await sb.from('match_events').insert({match_id:cur.id,tournament_id:cur.tournament_id,player_id:pid||null,team_id:tid,event_type:storedType,minute:min,event_subtype:isOwnGoal?'own_goal':(isPenalty?'penalty':null)}).select('id').single();
+  const {data:created,error}=await sb.rpc('save_live_match_event_admin',{
+    p_match_id:cur.id,p_event_id:null,p_team_id:tid,p_player_id:pid||null,
+    p_event_type:storedType,p_minute:min,p_event_subtype:isOwnGoal?'own_goal':(isPenalty?'penalty':null)
+  });
   if(error){setMsg('❌ فشل تسجيل الحدث: '+error.message,'err');return;}
-
-  if(type==='goal'||isOwnGoal){
-    const f=isOwnGoal?(side==='h'?'away_score':'home_score'):(side==='h'?'home_score':'away_score');
-    const v=(cur[f]||0)+1;
-    const {error:e2}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
-    if(e2){await sb.from('match_events').delete().eq('id',created.id);setMsg('❌ لم تُحدّث النتيجة، لذلك أُلغي تسجيل الهدف لحماية البيانات','err');return;}
-    cur[f]=v;document.getElementById(f==='home_score'?'hScore':'aScore').textContent=v;document.getElementById('qbScore').textContent=(cur.home_score??0)+' - '+(cur.away_score??0);
-  }
+  cur.home_score=Number(created?.home_score??cur.home_score??0);
+  cur.away_score=Number(created?.away_score??cur.away_score??0);
+  document.getElementById('hScore').textContent=cur.home_score;
+  document.getElementById('aScore').textContent=cur.away_score;
+  document.getElementById('qbScore').textContent=cur.home_score+' - '+cur.away_score;
   closeEvt(side);
   loadEvts();
-  setMsg('✅ تم تسجيل '+(EL[type]||type)+(isPenalty?' (ركلة جزاء)':'')+' — '+playerLabel,'ok');
+  const baseMsg='✅ تم تسجيل '+(EL[type]||type)+(isPenalty?' (ركلة جزاء)':'')+' — '+playerLabel;
 
   const tn2=side==='h'?(cur.ht?.name_ar||cur.ht?.name):(cur.at?.name_ar||cur.at?.name);
   if(type==='goal')pushNews((isPenalty?'⚽🎯 هدف من ركلة جزاء! ':'⚽ هدف! ')+playerLabel+' يسجل لـ'+tn2+' في الدقيقة '+min+' — '+(cur.home_score??0)+' - '+(cur.away_score??0));
   else if(isOwnGoal)pushNews('↩️ هدف عكسي على '+playerLabel+' ('+tn2+') في الدقيقة '+min+' — يُحتسب للفريق المنافس');
   else if(type==='yellow_card')pushNews('🟨 بطاقة صفراء لـ '+playerLabel+' ('+tn2+')');
   else if(type==='red_card')pushNews('🟥 بطاقة حمراء لـ '+playerLabel+' ('+tn2+')');
-  if(created?.id){
+  if(created?.event_id){
     const pushType=(type==='goal'||isOwnGoal)?'goal':(type==='yellow_card'||type==='red_card'?type:null);
-    if(pushType)window.AdminPush?.send(sb,pushType,cur.id,created.id);
+    const push=pushType?await window.AdminPush?.send(sb,pushType,cur.id,created.event_id):null;
+    setMsg(baseMsg+(window.AdminPush?.message(push)||''),push?.ok===false?'warn':'ok');
+  }else{
+    setMsg(baseMsg,'ok');
   }
 }
 
@@ -1501,14 +1489,13 @@ async function delEvt(id,type,teamId,subtype,btn){
   }
   clearTimeout(armedEventDeletes.get(id));
   armedEventDeletes.delete(id);
-  await sb.from('match_events').delete().eq('id',id);
-  if(type==='goal'&&cur){
-    const ownGoal=subtype==='own_goal';
-    const f=ownGoal?(teamId===cur.home_team_id?'away_score':'home_score'):(teamId===cur.home_team_id?'home_score':'away_score');
-    const v=Math.max(0,(cur[f]||0)-1);
-    const {error}=await sb.from('matches').update({[f]:v}).eq('id',cur.id);
-    if(!error){cur[f]=v;document.getElementById(f==='home_score'?'hScore':'aScore').textContent=v;}
-  }
+  const {data,error}=await sb.rpc('delete_live_match_event_admin',{p_match_id:cur.id,p_event_id:id});
+  if(error){setMsg('❌ فشل حذف الحدث: '+error.message,'err');return;}
+  cur.home_score=Number(data?.home_score??cur.home_score??0);
+  cur.away_score=Number(data?.away_score??cur.away_score??0);
+  document.getElementById('hScore').textContent=cur.home_score;
+  document.getElementById('aScore').textContent=cur.away_score;
+  document.getElementById('qbScore').textContent=cur.home_score+' - '+cur.away_score;
   loadEvts();
 }
 
