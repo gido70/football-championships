@@ -1215,14 +1215,16 @@ async function loadVoteResults(matchId){
   const box=document.getElementById('voteResultBox');
   const list=document.getElementById('voteResultList');
   if(!matchId){box.style.display='none';return;}
-  const {data:votes}=await sb.from('match_votes').select('player_id,player:players!player_id(name,full_name_ar)').eq('match_id',matchId);
-  if(!votes?.length){box.style.display='block';list.textContent='لا توجد أصوات بعد';return;}
-  const total=votes.length;
-  const cnt={};
-  votes.forEach(v=>{const k=v.player_id;if(k){if(!cnt[k])cnt[k]={name:v.player?.full_name_ar||v.player?.name||'—',n:0};cnt[k].n++;}});
-  const sorted=Object.values(cnt).sort((a,b)=>b.n-a.n);
+  const {data:state,error}=await sb.rpc('get_match_vote_state',{p_match_id:matchId,p_session_key:null});
+  if(error){box.style.display='block';list.textContent='تعذر تحميل نتائج التصويت';return;}
+  const counts=Array.isArray(state?.counts)?state.counts:[];
+  if(!counts.length){box.style.display='block';list.textContent='لا توجد أصوات بعد';return;}
+  const total=Number(state.total_votes||0),ids=counts.map(v=>v.player_id);
+  const {data:players}=await sb.from('players').select('id,name,full_name_ar').in('id',ids);
+  const names=Object.fromEntries((players||[]).map(p=>[p.id,p.full_name_ar||p.name||'—']));
+  const sorted=counts.map(v=>({name:names[v.player_id]||'—',n:Number(v.votes||0)})).sort((a,b)=>b.n-a.n);
   box.style.display='block';
-  list.innerHTML=sorted.map((p,i)=>`
+  list.innerHTML='<div style="font-size:11px;color:#6e7b8f;margin-bottom:8px">نتائج مجهولة الهوية · صوت واحد لكل متصفح · '+(state.open?'التصويت مفتوح':'التصويت مغلق')+'</div>'+sorted.map((p,i)=>`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
       <span style="font-size:12px;color:${i===0?'#ffd700':'#6e7b8f'};width:14px">${i===0?'🏆':i+1}</span>
       <span style="flex:1;font-size:13px">${p.name}</span>

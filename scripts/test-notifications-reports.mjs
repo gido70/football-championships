@@ -5,12 +5,12 @@ const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
 const must=(condition,message)=>{if(!condition)throw new Error(message)};
 const scriptsFrom=html=>[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)].map(x=>x[1]).filter(Boolean);
 
-for(const file of ['match-admin.html','live-desk.html','tournament.html','match-report.html','notification-admin.html']){
+for(const file of ['match-admin.html','match-live.html','live-desk.html','tournament.html','match-report.html','notification-admin.html']){
   scriptsFrom(read(file)).forEach((source,index)=>new vm.Script(source,{filename:file+'#'+index}));
 }
 for(const file of ['sw.js','admin-push.js','push-config.js','push-notifications.js'])new vm.Script(read(file),{filename:file});
 
-const tournament=read('tournament.html'),sw=read('sw.js'),matchAdmin=read('match-admin.html'),live=read('live-desk.html'),sql=read('push_notifications.sql'),edge=read('supabase/functions/send-match-notification/index.ts'),report=read('match-report.html');
+const tournament=read('tournament.html'),matchLive=read('match-live.html'),sw=read('sw.js'),matchAdmin=read('match-admin.html'),live=read('live-desk.html'),sql=read('push_notifications.sql'),voteSql=read('audience_player_vote.sql'),edge=read('supabase/functions/send-match-notification/index.ts'),report=read('match-report.html');
 must(tournament.includes('id="notificationToggle"'),'زر تفعيل التنبيهات غير موجود');
 must(!tournament.includes('requestNotifyPermissionOnce'),'ما زال طلب الإذن التلقائي موجودًا');
 must(sw.includes("self.addEventListener('push'"),'مستمع Push غير موجود');
@@ -62,5 +62,11 @@ for(const label of ['الأهداف','البطاقات الصفراء','البط
 for(const label of ['أفضل لاعب في المباراة','تفاصيل إصابات المباراة','تفاصيل التبديلات','تفاصيل مراجعات VAR','ملخص الحالات الخاصة'])must(matchAdmin.includes(label),'المحضر الشامل لا يعرض قسم '+label);
 must(matchAdmin.includes('jersey_photo_url,injury_note')&&matchAdmin.includes('p?.injury_note'),'تفاصيل أفضل لاعب أو الإصابة غير مربوطة ببيانات اللاعب');
 must(matchAdmin.includes('full-report-page')&&matchAdmin.includes('overflow:visible'),'محضر المباراة الطويل قد يُقص عند الطباعة');
+must(matchLive.includes("rpc('cast_match_vote_public'")&&!matchLive.includes("from('match_votes').upsert"),'تصويت الجمهور ما زال يكتب مباشرة في الجدول');
+must(matchLive.includes('تم التصويت مسبقًا')&&matchLive.includes('أفضل لاعب</button>'),'منع التصويت المكرر أو إبراز أفضل لاعب غير واضح');
+must(matchAdmin.includes("rpc('get_match_vote_state'")&&tournament.includes("rpc('get_match_vote_leaders'"),'نتائج التصويت المجمعة غير مربوطة بالواجهة والإدارة');
+must(voteSql.includes("'already_voted'")&&voteSql.includes('on conflict(match_id,session_key) do nothing'),'صوت واحد لكل متصفح غير محمي في قاعدة البيانات');
+must(voteSql.includes("lower(coalesce(m.status,'')) = 'live'")&&voteSql.includes('player_of_match_id is null'),'نافذة التصويت غير مرتبطة بالمباراة والاعتماد الرسمي');
+must(voteSql.includes('revoke all on table public.match_votes from public,anon,authenticated'),'سجلات المصوتين الخام ما زالت مكشوفة للعامة');
 
 console.log('notification and report tests passed');
