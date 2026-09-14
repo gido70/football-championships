@@ -14,9 +14,9 @@
 (()=>{
   const tid=new URLSearchParams(location.search).get('scope_tid');
   const apps={
-    'aaaaaaaa-0000-0000-0000-000000000001':['manifest-mansour-2026.webmanifest','logo-cup-2026-512.png'],
-    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':['manifest-mansour-2027.webmanifest','logo-cup-2027-512.png'],
-    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':['manifest-uefa-2027.webmanifest','uefa-champions-app-512.png']
+    'aaaaaaaa-0000-0000-0000-000000000001':['manifest-mansour-2026.webmanifest?v=20260914-2','logo-cup-2026-512.png?v=20260914-2'],
+    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':['manifest-mansour-2027.webmanifest?v=20260914-2','logo-cup-2027-512.png?v=20260914-2'],
+    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':['manifest-uefa-2027.webmanifest?v=20260914-2','uefa-champions-app-512.png?v=20260914-2']
   };
   if(apps[tid]){
     document.getElementById('appManifest').href=apps[tid][0];
@@ -319,7 +319,7 @@ a{text-decoration:none;color:inherit}
 </div>
 
 <script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260914-1"></script>
+<script src="tournament-scope.js?v=20260914-2"></script>
 <script src="public-navigation.js?v=20260911-1"></script>
 <script src="public-date.js?v=20260910-1"></script>
 <script>

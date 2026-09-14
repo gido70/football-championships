@@ -1,20 +1,22 @@
 (function(){
   'use strict';
   const params=new URLSearchParams(location.search);
-  const isolated=params.get('standalone')==='1';
   const currentPage=location.pathname.split('/').pop()||'index.html';
   const rootTournamentId=params.get('scope_tid')||(currentPage==='tournament.html'?params.get('id'):params.get('tid'));
+  // A tournament identifier is itself an isolation boundary. Do not depend on
+  // callers remembering to append standalone=1 to keep visitors in one cup.
+  const isolated=params.get('standalone')==='1'||Boolean(rootTournamentId);
   let manifestUrl='';
   const EUROPE_TOURNAMENT_ID='eee33333-5d2a-4f3b-a981-d4b8f5f86143';
   const STATIC_MANIFESTS={
-    'aaaaaaaa-0000-0000-0000-000000000001':'manifest-mansour-2026.webmanifest',
-    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'manifest-mansour-2027.webmanifest',
-    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'manifest-uefa-2027.webmanifest'
+    'aaaaaaaa-0000-0000-0000-000000000001':'manifest-mansour-2026.webmanifest?v=20260914-2',
+    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'manifest-mansour-2027.webmanifest?v=20260914-2',
+    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'manifest-uefa-2027.webmanifest?v=20260914-2'
   };
   const STATIC_INSTALL_ICONS={
-    'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-512.png',
-    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-512.png',
-    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-512.png'
+    'aaaaaaaa-0000-0000-0000-000000000001':'logo-cup-2026-512.png?v=20260914-2',
+    'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'logo-cup-2027-512.png?v=20260914-2',
+    'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'uefa-champions-app-512.png?v=20260914-2'
   };
   function scopedUrl(href){
     if(!isolated||!href||href.startsWith('#')||href.startsWith('javascript:')||href.startsWith('mailto:')||href.startsWith('tel:'))return href;
@@ -121,17 +123,20 @@
     const icons=isEurope
       ? [{src:new URL('uefa-champions-app-192.png',base).href,sizes:'192x192',type:'image/png',purpose:'any'},{src:installIcon,sizes:'512x512',type:'image/png',purpose:'any maskable'}]
       : [{src:icon,sizes:'any',purpose:'any'},{src:new URL('icon-app.png',base).href,sizes:'192x192',type:'image/png',purpose:'any maskable'},{src:new URL('icon-app-512.png',base).href,sizes:'512x512',type:'image/png',purpose:'any maskable'}];
-    const manifest={id:base.pathname+'tournament-'+tournamentId,name:name+' — منصة البطولات الاحترافية',short_name:name.slice(0,28),description:'التطبيق الرسمي لمتابعة '+name,lang:'ar',dir:'rtl',display:'standalone',orientation:'any',start_url:start.href,scope:base.pathname,background_color:colors.primary,theme_color:colors.primary,icons};
+    const manifest={id:base.pathname+'tournament-'+tournamentId,name,short_name:name.slice(0,28),description:'التطبيق الرسمي لمتابعة '+name,lang:'ar',dir:'rtl',display:'standalone',orientation:'any',start_url:start.href,scope:base.pathname,background_color:colors.primary,theme_color:colors.primary,icons};
     let link=document.querySelector('link[rel="manifest"]');if(!link){link=document.createElement('link');link.rel='manifest';document.head.appendChild(link);}
     const staticManifest=STATIC_MANIFESTS[tournamentId];
     if(staticManifest)link.href=new URL(staticManifest,base).href;
     else{if(manifestUrl)URL.revokeObjectURL(manifestUrl);manifestUrl=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'}));link.href=manifestUrl;}
     const touch=document.querySelector('link[rel="apple-touch-icon"]');if(touch)touch.href=installIcon;
+    let appleTitle=document.querySelector('meta[name="apple-mobile-web-app-title"]');
+    if(!appleTitle){appleTitle=document.createElement('meta');appleTitle.name='apple-mobile-web-app-title';document.head.appendChild(appleTitle);}
+    appleTitle.content=name.slice(0,28);
     document.title=name;return manifest;
   }
   if(isolated)document.documentElement.classList.add('tournament-isolated');
   document.addEventListener('DOMContentLoaded',function(){
-    if(!isolated)return;document.body.classList.add('tournament-isolated');addPlatformBrand();decorate(document);
+    if(!isolated)return;document.body.classList.add('tournament-isolated');decorate(document);
     document.addEventListener('click',event=>{
       const link=event.target.closest?.('a[href]');if(!link)return;
       const next=scopedUrl(link.getAttribute('href'));

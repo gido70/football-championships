@@ -32,7 +32,7 @@ for(const t of tournaments){
   assert.equal(manifest.display,'standalone');
   assert.ok(manifest.start_url.includes(t.key));
   assert.ok(manifest.start_url.includes('standalone=1'));
-  assert.ok(manifest.icons.some(icon=>icon.src===t.icon));
+  assert.ok(manifest.icons.some(icon=>icon.src.startsWith(t.icon)));
   assert.ok(manifest.icons.some(icon=>icon.sizes==='192x192'));
   assert.ok(manifest.icons.some(icon=>icon.sizes==='512x512'));
 }
@@ -50,10 +50,17 @@ assert.ok(tournament.includes("beforeinstallprompt"));
 assert.ok(tournament.includes("Samsung Internet"));
 assert.ok(tournament.includes("86400000"));
 assert.ok(tournament.includes("appinstalled"));
+assert.ok(tournament.includes('id="shareTournamentButton"'));
+assert.ok(tournament.includes("'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'share-mansour-2027.html'"));
+assert.ok(tournament.includes("url.searchParams.set('v','20260914-2')"));
+assert.ok(tournament.includes("document.getElementById('navName').textContent=name"));
+assert.ok(tournament.includes('TOURNAMENT_HEADER_ICONS[TID]'));
 assert.ok(tournament.indexOf('id="iosInstallSheet"')<tournament.indexOf('id="androidInstallSheet"'));
 
 const scope=read('tournament-scope.js');
 for(const t of tournaments){assert.ok(scope.includes(t.key));assert.ok(scope.includes(t.manifest));}
+assert.ok(scope.includes("const isolated=params.get('standalone')==='1'||Boolean(rootTournamentId)"));
+assert.ok(!scope.includes("addPlatformBrand();decorate(document)"));
 
 const matchLive=read('match-live.html');
 for(const t of tournaments){assert.ok(matchLive.includes(t.key));assert.ok(matchLive.includes(t.manifest));}
@@ -62,7 +69,7 @@ for(const file of ['index.html','tournament.html','team.html','player.html']){
 }
 
 const sw=read('sw.js');
-assert.ok(sw.includes("football-shell-v36-11"));
+assert.ok(sw.includes("football-shell-v36-12"));
 for(const t of tournaments){assert.ok(sw.includes(t.page));assert.ok(sw.includes(t.manifest));}
 
 for(const file of ['tournament.html','tournament-scope.js','qr-generator.html','sw.js',...tournaments.flatMap(t=>[t.page,t.manifest])]){
