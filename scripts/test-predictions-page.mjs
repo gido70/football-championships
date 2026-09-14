@@ -2,6 +2,7 @@ import fs from 'node:fs';
 const page=fs.readFileSync('predictions.html','utf8');
 const account=fs.readFileSync('participant-account.html','utf8');
 const admin=fs.readFileSync('predictions-admin.html','utf8');
+const tournament=fs.readFileSync('tournament.html','utf8');
 function ok(v,m){if(!v)throw new Error(m)}
 ok(page.includes("storageKey:'tournament-participant-auth'"),'participant auth storage must remain isolated');
 ok(page.includes("participant_tournament_memberships"),'page must link participant to tournament');
@@ -15,4 +16,6 @@ ok(page.includes('prediction_leaderboard'),'participant page must read the secur
 ok(page.includes('f.is_scored'),'scored fixtures must be locked in the UI');
 ok(admin.includes('auth-guard.js'),'prediction administration must be owner protected');
 ok(admin.includes('is_scored:true')&&admin.includes('result_winner_team_id'),'admin result approval must trigger scoring');
+ok(page.includes("r.exact_bonus===0")&&page.includes('الحد الأقصى في دور الـ16'),'round-of-16 UI must award winner points only');
+ok(tournament.includes("predictionLink.href=scopeUrl('predictions.html')")&&tournament.includes('تحدي الترشيحات'),'Champions League page must link to the new challenge');
 console.log('prediction page safety checks passed');
