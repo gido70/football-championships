@@ -13,7 +13,7 @@ let user,profile,rounds=[],fixtures=[],teams={},predictions={},leaderboard=[];
 const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const roundFor=f=>rounds.find(r=>r.id===f.round_id);
 const scoreWinner=(f,h,a)=>h===a?null:(h>a?f.home_team_id:f.away_team_id);
-const locked=(r,f)=>f.is_scored||Date.now()>=Math.min(new Date(r.closes_at).getTime(),new Date(f.kickoff_at).getTime()-r.lock_minutes*60000)||r.status!=='open';
+const locked=(r,f)=>f.is_locked||f.is_scored||Date.now()>=Math.min(new Date(r.closes_at).getTime(),new Date(f.kickoff_at).getTime()-r.lock_minutes*60000)||r.status!=='open';
 
 function setupBrand(){
   document.title=tournamentConfig.title;
@@ -52,7 +52,8 @@ function render(){
   }
   const roundSections=rounds.map(r=>{
     const list=fixtures.filter(f=>f.round_id===r.id);
-    return `<div class="heading"><h2>${esc(r.name)}</h2><span>الإغلاق قبل البداية بـ${r.lock_minutes} دقائق</span></div>${list.map(f=>matchHtml(r,f)).join('')||'<div class="empty">بانتظار مباريات هذه المرحلة.</div>'}`;
+    const lockText=r.lock_minutes===0?'الإغلاق فور بدء المباراة':`الإغلاق قبل البداية بـ${r.lock_minutes} دقائق`;
+    return `<div class="heading"><h2>${esc(r.name)}</h2><span>${lockText}</span></div>${list.map(f=>matchHtml(r,f)).join('')||'<div class="empty">بانتظار مباريات هذه المرحلة.</div>'}`;
   }).join('');
   app.innerHTML=`<div class="account"><span>✓ مرحبًا ${esc(profile.first_name)}</span><span>رمزك: ${esc(profile.participant_code)}</span></div>${pointsHtml()}<div class="tabs"><button class="tab active" data-tab="picks">الترشيحات</button><button class="tab" data-tab="journey">مساري</button><button class="tab" data-tab="ranking">الترتيب</button></div><section class="panel" id="picks">${roundSections}<div class="waiting"><span>🔄</span><span>الفرق والمواعيد والنتائج تصل تلقائيًا من إدارة البطولة.</span></div></section><section class="panel" id="journey" hidden><div class="heading"><h2>مساري</h2><span>${Object.keys(predictions).length} ترشيح محفوظ</span></div>${fixtures.map(journeyHtml).join('')}</section><section class="panel" id="ranking" hidden><div class="heading"><h2>ترتيب المشاركين</h2><span>النقاط ثم دقة النتائج</span></div>${leaderboard.map((x,i)=>`<div class="rank ${x.participant_id===user.id?'mine':''}"><span>${i<3?['🥇','🥈','🥉'][i]:i+1}</span><span>${esc(x.display_name)}<small style="display:block;opacity:.8">${x.correct_winners} اختيار صحيح · ${x.exact_scores} نتيجة دقيقة</small></span><b>${x.points} نقطة</b></div>`).join('')||'<div class="empty">بانتظار اعتماد أول نتيجة.</div>'}</section><p class="foot">الترشيحات محفوظة في حسابك، ولا يمكن تعديلها بعد وقت الإغلاق.</p>`;
   bind();

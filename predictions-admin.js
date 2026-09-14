@@ -25,7 +25,8 @@ async function loadPredictionStatus(){
   if(rounds.length){const result=await adminSb.from('prediction_fixtures').select('id,round_id,is_scored,kickoff_at').in('round_id',rounds.map(r=>r.id));fixtures=result.data||[];}
   const start=setting?.start_mode==='all'?'من أول مباراة':'عند وصول البطولة إلى دور الـ16';
   const cards=rounds.map(r=>{const rows=fixtures.filter(f=>f.round_id===r.id);return `<div class="panel result-card"><h3>${adminEsc(r.name)} ${r.is_test?'— تجربة':''}</h3><p>${rows.length} مباراة · ${rows.filter(f=>f.is_scored).length} نتيجة محتسبة</p><div class="status good">${r.status==='open'?'✓ الجولة مفتوحة للترشيحات':'حالة الجولة: '+adminEsc(r.status)}</div></div>`;}).join('');
-  document.getElementById('fixtures').innerHTML=`<div class="panel result-card"><h3>${setting?.enabled?'✅ المزامنة مفعلة':'⏸ المزامنة متوقفة'}</h3><p><strong>بداية الترشيحات:</strong> ${start}</p><p><strong>قفل الترشيح:</strong> قبل المباراة بـ${setting?.lock_minutes??5} دقائق</p></div>${cards||'<div class="panel result-card"><h3>⏳ بانتظار الجدول الحقيقي</h3><p>عند تسجيل مباراة بتاريخ ووقت وفريقين ستظهر هنا وفي صفحة المشاركين تلقائيًا.</p></div>'}`;
+  const lockText=(setting?.lock_minutes??0)===0?'فور بدء المباراة':'قبل المباراة بـ'+setting.lock_minutes+' دقائق';
+  document.getElementById('fixtures').innerHTML=`<div class="panel result-card"><h3>${setting?.enabled?'✅ المزامنة مفعلة':'⏸ المزامنة متوقفة'}</h3><p><strong>بداية الترشيحات:</strong> ${start}</p><p><strong>قفل الترشيح:</strong> ${lockText}</p></div>${cards||'<div class="panel result-card"><h3>⏳ بانتظار الجدول الحقيقي</h3><p>عند تسجيل مباراة بتاريخ ووقت وفريقين ستظهر هنا وفي صفحة المشاركين تلقائيًا.</p></div>'}`;
 }
 
 loadPredictionStatus();
