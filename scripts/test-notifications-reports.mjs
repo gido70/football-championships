@@ -30,6 +30,10 @@ must(matchAdmin.includes('id="hPlayerCards"')&&matchAdmin.includes('id="aPlayerC
 must(matchAdmin.includes('function selectEventPlayer('),'تحديد بطاقة اللاعب في النموذج التفصيلي غير مربوط');
 must(matchAdmin.includes('function saveInjurySelection(')&&matchAdmin.includes('id="saveInjuryBtn"'),'الإصابة لا تستخدم الاختيار ثم التأكيد');
 must(!matchAdmin.includes('class="inj-check"'),'ما زال حفظ الإصابة الفوري بضغطة واحدة موجودًا');
+must(matchAdmin.includes("from('player_suspensions')")&&matchAdmin.includes(".eq('status','pending')"),'تنبيه الإيقافات غير مربوط بسجل الانضباط');
+must(matchAdmin.includes('id="suspensionAlert"')&&matchAdmin.includes('تنبيه للأدمن والحكم'),'تنبيه الإيقاف قبل المباراة غير موجود');
+must(matchAdmin.includes('disabled data-suspended="true"')&&matchAdmin.includes('.lu-start:not(:disabled)'),'اللاعب الموقوف ما زال قابلًا للاختيار في التشكيلة');
+must(matchAdmin.includes('🚫 موقوف — لا يشارك'),'اللاعب الموقوف غير مميز في سجل الأحداث');
 must(sql.includes('unique(tournament_id,endpoint)'),'منع تكرار الاشتراك غير موجود');
 must(sql.includes('event_key text not null unique'),'منع تكرار التنبيه غير موجود');
 must(report.includes('الفائز')&&report.includes('الخاسر')&&report.includes('وقت البداية')&&report.includes('حكم المباراة')&&report.includes('المعلّق'),'تقرير المباراة ينقصه أحد الحقول المطلوبة');
