@@ -7,13 +7,17 @@ const publicPage=read('playstation.html'),adminPage=read('playstation-admin.html
 scripts(publicPage).forEach((s,i)=>new vm.Script(s,{filename:'playstation.html#'+i}));
 scripts(adminPage).forEach((s,i)=>new vm.Script(s,{filename:'playstation-admin.html#'+i}));
 must(publicPage.includes("channel('ps-"),'النتائج المباشرة غير مربوطة بـ Realtime');
-must(publicPage.includes('photo_url?')&&publicPage.includes('🎮'),'بديل الصورة الاختيارية غير موجود');
+must(publicPage.includes("p?.photo_public?(p?._photoUrl||p?.photo_url):''")&&publicPage.includes('🎮'),'حماية صورة الطفل أو بديل الصورة الاختيارية غير موجود');
 must(publicPage.includes('playstation-logo-2027.js')&&publicPage.includes('PLAYSTATION_LOGO_2027')&&publicPage.includes('id="formatInfo"'),'شعار 2027 أو صيغة الثلاثين مشاركاً غير ظاهرة');
 must(publicPage.includes("const MANSOUR_TID='c983ee0c-4434-470d-b0a2-6e6efe1ad650'")&&publicPage.includes('if(TID!==MANSOUR_TID)'),'صفحة البلايستيشن لا ترفض معرفات البطولات الأخرى');
 must(publicPage.includes('tournament-scope.js')&&publicPage.includes("MANSOUR_TID+'&standalone=1'"),'العودة من البلايستيشن لا تحافظ على نطاق كأس منصور');
 must(adminPage.includes("from('playstation_admins')")&&adminPage.includes("signInWithPassword"),'دخول المشغل محدود الصلاحية غير مربوط');
 must(adminPage.includes("u+'@ps.mansour.app'"),'اسم مستخدم مشغل الصالة غير مدعوم');
-must(adminPage.includes("const codes=['A','B','C','D','E','F']")&&adminPage.includes("rows.length} مباراة"),'إنشاء مباريات المجموعات الست تلقائياً غير موجود');
+must(adminPage.includes("['A','B','C','D','E','F']")&&adminPage.includes('groupMatches(roster)')&&adminPage.includes('60 مباراة'),'إنشاء مباريات المجموعات الست تلقائياً غير موجود');
+must(adminPage.includes('downloadTemplate')&&adminPage.includes('parseRoster')&&adminPage.includes('validateRoster'),'الاستيراد الجماعي من Excel/CSV غير مكتمل');
+must(adminPage.includes('bulkPhotos')&&adminPage.includes("storage.from('playstation-photos')")&&adminPage.includes('participant_no'),'رفع الصور الجماعي وربطها بالأرقام غير مكتمل');
+must(adminPage.includes("currentRole==='owner'")&&adminPage.includes("a.role==='owner'?'المدير الرئيسي':'مشغّل الصالة'"),'فصل واجهة المالك عن مشغّل الصالة غير مكتمل');
+must(publicPage.includes('قوانين ونظام بطولة البلايستيشن')&&publicPage.includes('الفوز 3 نقاط')&&publicPage.includes('موافقة ولي الأمر'),'مطوية قوانين الجمهور غير مكتملة');
 must(tournament.includes("TID==='c983ee0c-4434-470d-b0a2-6e6efe1ad650'")&&tournament.includes('playstation-entry')&&tournament.includes('PLAYSTATION_LOGO_2027'),'مدخل البلايستيشن المربع غير محصور في كأس منصور 2027');
 must(tournament.includes(".eq('is_visible',true).maybeSingle()")&&tournament.includes('showPlaystation=Boolean(psCompetition?.is_visible)'),'مدخل البلايستيشن يظهر قبل فتح البطولة للجمهور');
 must(tournament.includes('playstation.html?tid=${TID}&amp;standalone=1&amp;scope_tid=${TID}'),'رابط البلايستيشن لا يحافظ على نطاق كأس منصور في الهاتف');
@@ -21,4 +25,6 @@ must(home.includes('./playstation-admin.html'),'لوحة البلايستيشن 
 for(const table of ['playstation_competitions','playstation_participants','playstation_matches','playstation_admins'])must(sql.includes('enable row level security')&&sql.includes(table),'جدول أو RLS البلايستيشن ناقص: '+table);
 must(sql.includes("role in ('owner','operator')")&&sql.includes('a.user_id=(select auth.uid())'),'عزل صلاحيات مشغل البلايستيشن غير مكتمل');
 must(sql.includes('participant_target integer not null default 30')&&sql.includes("'round_of_16'")&&sql.includes('best_thirds_count integer not null default 4'),'نظام 30 مشاركاً والتأهل إلى دور 16 غير مثبت');
+must(sql.includes('guard_playstation_operator_match_update')&&sql.includes("operator_role='operator'")&&sql.includes("a.role='owner'"),'حصر مشغّل الصالة في النتائج والحالة غير مثبت بقاعدة البيانات');
+must(sql.includes("'playstation-photos'")&&sql.includes("file_size_limit,allowed_mime_types")&&sql.includes("values ('playstation-photos','playstation-photos',false"),'حاوية صور المشاركين الخاصة غير موجودة');
 console.log('playstation competition tests passed');

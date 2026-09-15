@@ -21,13 +21,19 @@ create table if not exists public.playstation_competitions (
 create table if not exists public.playstation_participants (
   id uuid primary key default gen_random_uuid(),
   competition_id uuid not null references public.playstation_competitions(id) on delete cascade,
+  participant_no integer check (participant_no is null or participant_no between 1 and 128),
   name text not null check (char_length(trim(name)) between 2 and 80),
   nickname text,
   photo_url text,
+  photo_path text,
+  photo_public boolean not null default false,
   group_code text,
   sort_order integer not null default 0,
   created_at timestamptz not null default now()
 );
+alter table public.playstation_participants add column if not exists participant_no integer check (participant_no is null or participant_no between 1 and 128);
+alter table public.playstation_participants add column if not exists photo_path text;
+alter table public.playstation_participants add column if not exists photo_public boolean not null default false;
 
 create table if not exists public.playstation_matches (
   id uuid primary key default gen_random_uuid(),
@@ -62,6 +68,7 @@ create table if not exists public.playstation_admins (
 );
 
 create index if not exists playstation_participants_comp_idx on public.playstation_participants(competition_id,group_code,sort_order);
+create unique index if not exists playstation_participants_number_uidx on public.playstation_participants(competition_id,participant_no) where participant_no is not null;
 create index if not exists playstation_matches_comp_idx on public.playstation_matches(competition_id,status,match_order);
 
 alter table public.playstation_competitions enable row level security;
@@ -100,6 +107,53 @@ with check (exists (select 1 from public.playstation_competitions c join public.
 drop policy if exists "operators view own playstation scope" on public.playstation_admins;
 create policy "operators view own playstation scope" on public.playstation_admins for select to authenticated
 using (user_id=(select auth.uid()));
+
+-- صور المشاركين: القراءة عامة للبطولة، والرفع محصور بمالك البطولة أو مشغّلها المخوّل.
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
+values ('playstation-photos','playstation-photos',false,2097152,array['image/jpeg','image/png','image/webp'])
+on conflict (id) do update set public=false,file_size_limit=2097152,allowed_mime_types=array['image/jpeg','image/png','image/webp'];
+
+drop policy if exists "playstation scoped view participant photos" on storage.objects;
+create policy "playstation scoped view participant photos" on storage.objects for select to anon,authenticated
+using (bucket_id='playstation-photos' and ((exists (select 1 from public.playstation_participants p join public.playstation_competitions c on c.id=p.competition_id where p.photo_path=storage.objects.name and p.photo_public and c.is_visible)) or (exists (select 1 from public.playstation_admins a where a.tournament_id='c983ee0c-4434-470d-b0a2-6e6efe1ad650' and a.user_id=(select auth.uid()) and a.is_active))));
+
+drop policy if exists "playstation operators upload participant photos" on storage.objects;
+create policy "playstation operators upload participant photos" on storage.objects for insert to authenticated
+with check (bucket_id='playstation-photos' and (storage.foldername(name))[1]='c983ee0c-4434-470d-b0a2-6e6efe1ad650' and exists (select 1 from public.playstation_admins a where a.tournament_id='c983ee0c-4434-470d-b0a2-6e6efe1ad650' and a.user_id=(select auth.uid()) and a.is_active and a.role='owner'));
+drop policy if exists "playstation operators update participant photos" on storage.objects;
+create policy "playstation operators update participant photos" on storage.objects for update to authenticated
+using (bucket_id='playstation-photos' and (storage.foldername(name))[1]='c983ee0c-4434-470d-b0a2-6e6efe1ad650' and exists (select 1 from public.playstation_admins a where a.tournament_id='c983ee0c-4434-470d-b0a2-6e6efe1ad650' and a.user_id=(select auth.uid()) and a.is_active and a.role='owner'))
+with check (bucket_id='playstation-photos' and (storage.foldername(name))[1]='c983ee0c-4434-470d-b0a2-6e6efe1ad650' and exists (select 1 from public.playstation_admins a where a.tournament_id='c983ee0c-4434-470d-b0a2-6e6efe1ad650' and a.user_id=(select auth.uid()) and a.is_active and a.role='owner'));
+
+-- المالك يجهّز البطولة؛ المشغّل يحدّث النتيجة والحالة فقط.
+drop policy if exists "scoped operators manage playstation competitions" on public.playstation_competitions;
+create policy "playstation owner manages competition" on public.playstation_competitions for all to authenticated
+using (exists (select 1 from public.playstation_admins a where a.tournament_id=playstation_competitions.tournament_id and a.user_id=(select auth.uid()) and a.is_active and a.role='owner'))
+with check (exists (select 1 from public.playstation_admins a where a.tournament_id=playstation_competitions.tournament_id and a.user_id=(select auth.uid()) and a.is_active and a.role='owner'));
+drop policy if exists "scoped operators manage playstation participants" on public.playstation_participants;
+create policy "playstation owner manages participants" on public.playstation_participants for all to authenticated
+using (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active and a.role='owner'))
+with check (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active and a.role='owner'));
+drop policy if exists "scoped operators manage playstation matches" on public.playstation_matches;
+create policy "playstation owner creates and deletes matches" on public.playstation_matches for all to authenticated
+using (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active and a.role='owner'))
+with check (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active and a.role='owner'));
+create policy "playstation operator updates matches" on public.playstation_matches for update to authenticated
+using (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active))
+with check (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active));
+
+create or replace function public.guard_playstation_operator_match_update()
+returns trigger language plpgsql security invoker set search_path=public as $$
+declare operator_role text;
+begin
+  select a.role into operator_role from public.playstation_admins a join public.playstation_competitions c on c.tournament_id=a.tournament_id where c.id=old.competition_id and a.user_id=(select auth.uid()) and a.is_active limit 1;
+  if operator_role='operator' and (new.competition_id,new.stage,new.group_code,new.round_no,new.player1_id,new.player2_id,new.match_order,new.station_no,new.scheduled_at) is distinct from (old.competition_id,old.stage,old.group_code,old.round_no,old.player1_id,old.player2_id,old.match_order,old.station_no,old.scheduled_at) then
+    raise exception 'مشغّل الصالة مخوّل بتسجيل النتيجة وحالة المباراة فقط';
+  end if;
+  return new;
+end $$;
+drop trigger if exists guard_playstation_operator_match_update on public.playstation_matches;
+create trigger guard_playstation_operator_match_update before update on public.playstation_matches for each row execute function public.guard_playstation_operator_match_update();
 
 insert into public.playstation_admins(tournament_id,user_id,display_name,role)
 values ('c983ee0c-4434-470d-b0a2-6e6efe1ad650','674ed5de-14c3-47db-b88f-68cb5f50005d','مدير البطولة','owner')
