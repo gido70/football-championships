@@ -1462,14 +1462,17 @@ async function loadSponsors(){
 async function loadFollowSection(){
   const sec=document.getElementById('followSection');
   if(!TID){sec.innerHTML='';return;}
-  const {data}=await sb.from('tournaments').select('instagram_url,youtube_url').eq('id',TID).single();
+  const [{data},{data:psCompetition}]=await Promise.all([
+    sb.from('tournaments').select('instagram_url,youtube_url').eq('id',TID).single(),
+    TID==='c983ee0c-4434-470d-b0a2-6e6efe1ad650'?sb.from('playstation_competitions').select('id,is_visible').eq('tournament_id',TID).eq('is_visible',true).maybeSingle():Promise.resolve({data:null})
+  ]);
   const ig=CONTENT_VIS.instagram===false?'':data?.instagram_url, yt=CONTENT_VIS.youtube===false?'':data?.youtube_url;
-  const showPlaystation=TID==='c983ee0c-4434-470d-b0a2-6e6efe1ad650';
+  const showPlaystation=Boolean(psCompetition?.is_visible);
   if(!ig&&!yt&&!showPlaystation){sec.innerHTML='';return;}
   sec.innerHTML=`<div class="follow-wrap"><div class="follow-grid">
       ${ig?`<a class="follow-tile ig" href="${ig}" target="_blank" rel="noopener"><span class="follow-ic">📷</span>إنستغرام البطولة</a>`:''}
       ${yt?`<a class="follow-tile yt" href="${yt}" target="_blank" rel="noopener"><span class="follow-ic">▶️</span>يوتيوب البطولة</a>`:''}
-      ${showPlaystation?`<a class="follow-tile playstation-entry" href="${scopeUrl('playstation.html?tid='+TID)}" aria-label="الدخول إلى بطولة البلايستيشن للصغار"><img src="${window.PLAYSTATION_LOGO_2027||''}" alt="بطولة البلايستيشن للصغار 2027"></a>`:''}
+      ${showPlaystation?`<a class="follow-tile playstation-entry" href="playstation.html?tid=${TID}&amp;standalone=1&amp;scope_tid=${TID}" aria-label="الدخول إلى بطولة البلايستيشن للصغار"><img src="${window.PLAYSTATION_LOGO_2027||''}" alt="بطولة البلايستيشن للصغار 2027"></a>`:''}
     </div></div>`;
 }
 

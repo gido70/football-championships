@@ -9,10 +9,14 @@ scripts(adminPage).forEach((s,i)=>new vm.Script(s,{filename:'playstation-admin.h
 must(publicPage.includes("channel('ps-"),'النتائج المباشرة غير مربوطة بـ Realtime');
 must(publicPage.includes('photo_url?')&&publicPage.includes('🎮'),'بديل الصورة الاختيارية غير موجود');
 must(publicPage.includes('playstation-logo-2027.js')&&publicPage.includes('PLAYSTATION_LOGO_2027')&&publicPage.includes('id="formatInfo"'),'شعار 2027 أو صيغة الثلاثين مشاركاً غير ظاهرة');
+must(publicPage.includes("const MANSOUR_TID='c983ee0c-4434-470d-b0a2-6e6efe1ad650'")&&publicPage.includes('if(TID!==MANSOUR_TID)'),'صفحة البلايستيشن لا ترفض معرفات البطولات الأخرى');
+must(publicPage.includes('tournament-scope.js')&&publicPage.includes("MANSOUR_TID+'&standalone=1'"),'العودة من البلايستيشن لا تحافظ على نطاق كأس منصور');
 must(adminPage.includes("from('playstation_admins')")&&adminPage.includes("signInWithPassword"),'دخول المشغل محدود الصلاحية غير مربوط');
 must(adminPage.includes("u+'@ps.mansour.app'"),'اسم مستخدم مشغل الصالة غير مدعوم');
 must(adminPage.includes("const codes=['A','B','C','D','E','F']")&&adminPage.includes("rows.length} مباراة"),'إنشاء مباريات المجموعات الست تلقائياً غير موجود');
 must(tournament.includes("TID==='c983ee0c-4434-470d-b0a2-6e6efe1ad650'")&&tournament.includes('playstation-entry')&&tournament.includes('PLAYSTATION_LOGO_2027'),'مدخل البلايستيشن المربع غير محصور في كأس منصور 2027');
+must(tournament.includes(".eq('is_visible',true).maybeSingle()")&&tournament.includes('showPlaystation=Boolean(psCompetition?.is_visible)'),'مدخل البلايستيشن يظهر قبل فتح البطولة للجمهور');
+must(tournament.includes('playstation.html?tid=${TID}&amp;standalone=1&amp;scope_tid=${TID}'),'رابط البلايستيشن لا يحافظ على نطاق كأس منصور في الهاتف');
 must(home.includes('./playstation-admin.html'),'لوحة البلايستيشن غير مضافة للأدمن');
 for(const table of ['playstation_competitions','playstation_participants','playstation_matches','playstation_admins'])must(sql.includes('enable row level security')&&sql.includes(table),'جدول أو RLS البلايستيشن ناقص: '+table);
 must(sql.includes("role in ('owner','operator')")&&sql.includes('a.user_id=(select auth.uid())'),'عزل صلاحيات مشغل البلايستيشن غير مكتمل');
