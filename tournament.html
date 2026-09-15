@@ -479,6 +479,7 @@ img[src=""], img:not([src]) { display:none !important; }
     <a class="qlink qlink--blue" id="qlinkVideos" href="#"><span class="qlink-orb"><span class="qlink-ic">🎬</span></span><span class="qlink-label">الفيديوهات</span></a>
     <a class="qlink qlink--azure" id="qlinkDocs" href="#"><span class="qlink-orb"><span class="qlink-ic">📰</span></span><span class="qlink-label">النشرات</span></a>
     <a class="qlink qlink--gold" id="qlinkPredictions" href="#"><span class="qlink-orb"><span class="qlink-ic">🥇</span></span><span class="qlink-label">توقعات الأصدقاء</span></a>
+    <a class="qlink qlink--blue" id="qlinkPlaystation" href="#" style="display:none;background:linear-gradient(135deg,#704ee9,#16a9d8)"><span class="qlink-orb"><span class="qlink-ic">🎮</span></span><span class="qlink-label">بطولة البلايستيشن للصغار</span></a>
   </div>
 </div>
 
@@ -630,6 +631,12 @@ document.getElementById('qlinkStats').href=scopeUrl('stats.html?id='+TID);
     predictionLink.querySelector('.qlink-label').textContent='تحدي الترشيحات';
   }else{
     predictionLink.href=scopeUrl('leaderboard.html?tid='+TID);
+  }
+  const psLink=document.getElementById('qlinkPlaystation');
+  if(TID==='c983ee0c-4434-470d-b0a2-6e6efe1ad650'){
+    sb.from('playstation_competitions').select('id').eq('tournament_id',TID).eq('is_visible',true).maybeSingle().then(({data:psCompetition})=>{
+      if(psCompetition){psLink.href=scopeUrl('playstation.html?tid='+TID);psLink.style.display='flex';}
+    });
   }
 
 async function generateAutoBulletin(){
