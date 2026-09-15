@@ -43,26 +43,30 @@ a{text-decoration:none;color:inherit}
 .award-card.top{border-color:rgba(201,168,76,.7);background:linear-gradient(160deg,#FFFBF0,#FFFFFF)}
 
 .award-banner{
-  height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:190px;display:flex;flex-direction:column;align-items:center;justify-content:center;
   position:relative;overflow:hidden;
-  background:linear-gradient(180deg,rgba(201,168,76,.12),rgba(201,168,76,.04));
+  background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.95) 0 28%,transparent 29%),linear-gradient(145deg,var(--award-soft,#fff7dc),#fff 65%);
   border-bottom:1px solid rgba(201,168,76,.15);
 }
+.award-banner::before{content:"";position:absolute;inset:14px;border:1px solid color-mix(in srgb,var(--award-color,#c9a84c) 35%,transparent);border-radius:18px}
+.award-banner::after{content:"";position:absolute;width:190px;height:190px;border:24px solid color-mix(in srgb,var(--award-color,#c9a84c) 10%,transparent);border-radius:50%;top:-98px;left:-70px}
 .award-photo{
-  width:80px;height:80px;border-radius:50%;object-fit:cover;
-  border:3px solid rgba(201,168,76,.5);
-  box-shadow:0 0 20px rgba(201,168,76,.2);
+  width:112px;height:112px;border-radius:50%;object-fit:cover;position:relative;z-index:2;
+  border:4px solid #fff;outline:3px solid var(--award-color,#c9a84c);
+  box-shadow:0 12px 26px rgba(15,42,74,.2);
 }
 .award-photo-ph{
-  width:80px;height:80px;border-radius:50%;
+  width:112px;height:112px;border-radius:50%;position:relative;z-index:2;
   background:rgba(201,168,76,.08);
   border:3px dashed rgba(201,168,76,.3);
   display:flex;align-items:center;justify-content:center;
-  font-size:28px;color:rgba(201,168,76,.4);
+  font-size:12px;text-align:center;padding:12px;color:#8b6b20;font-weight:800;
   cursor:pointer;transition:.2s;
 }
 .award-photo-ph:hover{background:rgba(201,168,76,.14);border-color:rgba(201,168,76,.5)}
-.award-ic{font-size:44px;position:absolute;top:10px;right:12px;opacity:.25}
+.award-emblem{position:absolute;z-index:4;right:22px;bottom:18px;width:62px;height:62px;border-radius:18px;display:grid;place-items:center;background:linear-gradient(145deg,#fff,#f3e8c3);border:2px solid var(--award-color,#c9a84c);box-shadow:0 8px 18px rgba(15,42,74,.2);transform:rotate(-7deg)}
+.award-emblem-icon{font-size:34px;line-height:1;filter:drop-shadow(0 3px 2px rgba(0,0,0,.15))}
+.award-emblem-label{position:absolute;left:18px;top:18px;background:var(--award-color,#c9a84c);color:#fff;border-radius:999px;padding:5px 10px;font-size:10px;font-weight:900;z-index:3;box-shadow:0 4px 12px rgba(0,0,0,.12)}
 
 .award-body{padding:16px}
 .award-type{font-size:11px;font-weight:800;color:#c9a84c;letter-spacing:1px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
@@ -126,11 +130,11 @@ const TID=new URLSearchParams(location.search).get('id');
 const scopeUrl=url=>window.TournamentScope?.scopedUrl(url)||url;
 
 const AWARD_DEFS=[
-  {key:'top_scorer',     title:'هداف البطولة',        ic:'⚽', color:'#f85149'},
-  {key:'best_player',    title:'أفضل لاعب',            ic:'🏅', color:'#c9a84c'},
-  {key:'best_goalkeeper',title:'أفضل حارس مرمى',      ic:'🧤', color:'#58a6ff'},
-  {key:'best_admin',     title:'أفضل إداري',           ic:'🧑‍💼', color:'#3fb950'},
-  {key:'best_management',title:'أفضل إدارة فريق',     ic:'🏆', color:'#a855f7'},
+  {key:'top_scorer',     title:'هداف البطولة',        ic:'👟', badge:'الحذاء الذهبي', color:'#c79016',soft:'#fff5cf'},
+  {key:'best_player',    title:'أفضل لاعب',            ic:'⚽', badge:'الكرة الذهبية', color:'#c9a84c',soft:'#fff8de'},
+  {key:'best_goalkeeper',title:'أفضل حارس مرمى',      ic:'🧤', badge:'القفاز الذهبي', color:'#287dcc',soft:'#e7f4ff'},
+  {key:'best_admin',     title:'أفضل إداري',           ic:'💼', badge:'التميز الإداري', color:'#278a57',soft:'#e7f8ef'},
+  {key:'best_management',title:'أفضل إدارة فريق',     ic:'🏆', badge:'الإدارة المتميزة', color:'#8153c7',soft:'#f1eaff'},
 ];
 
 async function init(){
@@ -150,7 +154,7 @@ async function init(){
   const playerIds=(awards||[]).map(a=>a.winner_player_id).filter(Boolean);
   const playerMap={};
   if(playerIds.length){
-    const {data:pls}=await sb.from('players').select('id,name,full_name_ar,number,team_id,jersey_photo_url').in('id',playerIds);
+    const {data:pls}=await sb.from('players').select('id,name,full_name_ar,number,shirt_number,team_id,jersey_photo_url,photo_url,image').in('id',playerIds);
     (pls||[]).forEach(p=>playerMap[p.id]=p);
   }
 
@@ -159,16 +163,17 @@ async function init(){
   document.getElementById('awardsGrid').innerHTML=AWARD_DEFS.map((def,i)=>{
     const a=aMap[def.key];
     const player=a?.winner_player_id?playerMap[a.winner_player_id]:null;
-    const photo=a?.winner_photo_url||player?.jersey_photo_url||null;
+    const photo=a?.winner_photo_url||player?.jersey_photo_url||player?.photo_url||player?.image||null;
     const name=a?.winner_name||player?.full_name_ar||player?.name||null;
     const team=a?.winner_team_id?teamName[a.winner_team_id]:'';
-    const number=player?.number??null;
-    return `<div class="award-card${def.key==='top_scorer'||def.key==='best_player'?' top':''}" style="animation-delay:${i*0.08}s">
+    const number=player?.number??player?.shirt_number??null;
+    return `<div class="award-card${def.key==='top_scorer'||def.key==='best_player'?' top':''}" style="animation-delay:${i*0.08}s;--award-color:${def.color};--award-soft:${def.soft}">
       <div class="award-banner">
-        <span class="award-ic">${def.ic}</span>
+        <span class="award-emblem-label">${def.badge}</span>
         ${photo
           ?`<img class="award-photo" src="${photo}" alt="${name||''}">`
-          :`<div class="award-photo-ph" title="ارفع صورة من stats-admin.html">${def.ic}</div>`}
+          :`<div class="award-photo-ph" title="أرفق الصورة في ملف اللاعب أو الإداري">الصورة الحقيقية<br>غير مرفقة</div>`}
+        <span class="award-emblem" aria-label="${def.badge}"><span class="award-emblem-icon">${def.ic}</span></span>
       </div>
       <div class="award-body">
         <div class="award-type">${def.ic} ${def.title}</div>
