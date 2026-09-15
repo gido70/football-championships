@@ -22,7 +22,11 @@ ok(!admin.includes('is_scored:true')&&!admin.includes('result_winner_team_id'),'
 ok(page.includes("r.exact_bonus===0")&&page.includes('الحد الأقصى في دور الـ16'),'round-of-16 UI must award winner points only');
 ok(tournament.includes("'c983ee0c-4434-470d-b0a2-6e6efe1ad650'")&&tournament.includes("predictions.html?tid="),'Europe and Mansour 2027 must link to the new challenge');
 ok(engine.includes('PREDICTION_TOURNAMENTS')&&engine.includes('logo-cup-2027-512.png'),'prediction engine must support both tournaments');
-ok(engine.includes("const live=available.filter(r=>!r.is_test)")&&engine.includes('rounds.map(r=>r.id)'),'live rounds must replace the trial and support concurrent groups');
+ok(engine.includes("live=available.filter(r=>!r.is_test)")&&engine.includes('rounds.map(r=>r.id)'),'live rounds must replace the trial and support concurrent groups');
+ok(engine.includes("TOURNAMENT_ID===EUROPE&&!rounds.length")&&engine.indexOf("TOURNAMENT_ID===EUROPE&&!rounds.length")<engine.indexOf("participant_tournament_memberships').upsert"),'Europe must lock before profile creation or tournament membership until round 16');
+ok(engine.includes("TOURNAMENT_ID===MANSOUR_2027?available.filter(r=>r.is_test):[]"),'trial-round fallback must never leak from Mansour into Europe');
+ok(engine.includes("podium p")&&page.includes('.rank.p1')&&page.includes('.rank.p2')&&page.includes('.rank.p3'),'public leaderboard must visually distinguish the podium');
+ok(adminEngine.includes('rounds.filter(r=>!r.is_test)')&&adminEngine.includes('الترشيحات لم تبدأ'),'admin must hide Europe test rounds and show the round-16 lock');
 ok(engine.includes("h===a?'تعادل'")&&engine.includes('scoreWinner(f,h,a)'),'group-stage draws must be supported');
 ok(engine.includes("stageKey")&&engine.includes('phase_points?.group')&&engine.includes('ترتيب دور المجموعات')&&engine.includes('الترتيب التراكمي'),'group and cumulative rankings must use separate scores');
 ok(engine.includes('predicts_penalties')&&engine.includes('predicted_home_penalties')&&engine.includes('predicted_away_penalties'),'knockout penalty predictions must be captured');
