@@ -11,7 +11,7 @@ for(const file of ['match-admin.html','match-live.html','live-desk.html','tourna
 for(const file of ['sw.js','admin-push.js','push-config.js','push-notifications.js'])new vm.Script(read(file),{filename:file});
 
 const tournament=read('tournament.html'),matchLive=read('match-live.html'),sw=read('sw.js'),matchAdmin=read('match-admin.html'),live=read('live-desk.html'),sql=read('push_notifications.sql'),voteSql=read('audience_player_vote.sql'),edge=read('supabase/functions/send-match-notification/index.ts'),report=read('match-report.html');
-const statsAdmin=read('stats-admin.html');
+const statsAdmin=read('stats-admin.html'),awardsPage=read('awards.html');
 must(tournament.includes('id="notificationToggle"'),'زر تفعيل التنبيهات غير موجود');
 must(read('push-notifications.js').includes('await save(client,tournamentId,subscription)'),'اشتراك الهاتف لا يُصالح تلقائيًا بعد تحديث التطبيق');
 must(tournament.includes("badge.style.display=matches?.length?'inline-flex':'none'")&&tournament.includes("channel('tournament-live-'"),'مؤشر اللايف العلوي لا يتحدث فور بدء المباراة أو نهايتها');
@@ -68,6 +68,9 @@ must(!statsAdmin.includes('onclick="shareReport('),'ما زالت أزرار ا�
 must(statsAdmin.includes("automatic:true")&&statsAdmin.includes("event_type==='goal'")&&statsAdmin.includes("event_subtype!=='own_goal'"),'هداف البطولة لا يُحتسب تلقائياً من سجل الأهداف');
 must(statsAdmin.includes('finalGoalkeepers')&&statsAdmin.includes('finalPlayers')&&statsAdmin.includes('semiAdmins'),'مرشحو جوائز الختام غير محصورين في المتأهلين');
 must(!statsAdmin.includes('<select id="award_'),'جوائز ختام البطولة ما زالت تستخدم قوائم منسدلة طويلة');
+must(awardsPage.includes("ic:'👟'")&&awardsPage.includes("ic:'🧤'")&&awardsPage.includes("ic:'⚽'")&&awardsPage.includes("ic:'💼'"),'رموز أغلفة الجوائز الفردية غير مكتملة');
+must(awardsPage.includes('award-emblem')&&awardsPage.includes('الصورة الحقيقية<br>غير مرفقة'),'غلاف الجائزة لا يجمع الصورة الحقيقية مع رمز الجائزة أو لا ينبه عند فقد الصورة');
+must(awardsPage.includes('player?.photo_url||player?.image'),'صفحة الجوائز لا تبحث في جميع حقول صورة اللاعب الحقيقية');
 must(statsAdmin.includes("background:${i===0?'#f3f8ee':i%2?'#fafafa':'#fff'}")&&!statsAdmin.includes('background:${themeColor};color:#fff"><td'),'صفوف تقرير المجموعات ما زالت تستهلك حبرًا ملونًا كثيفًا');
 must(matchAdmin.includes('referee-page')&&matchAdmin.includes('commentator-page'),'قوالب الحكم والمعلّق غير موجودة');
 must(matchAdmin.includes('slice(0,15)'),'حد الصفحة الواحدة للاعبين غير مطبق');
