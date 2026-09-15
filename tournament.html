@@ -21,9 +21,10 @@
 </script>
 <link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
 <link rel="stylesheet" href="public-navigation.css?v=20260911-1">
-<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
 <script src="uefa-player-images.js?v=20260913-2"></script>
+<script src="playstation-logo-2027.js?v=20260916-1"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction:rtl;min-height:100vh;overflow-x:hidden}
@@ -223,10 +224,14 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .follow-tile .follow-ic{font-size:30px;line-height:1}
 .follow-tile.ig{background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)}
 .follow-tile.yt{background:linear-gradient(135deg,#ff2e2e,#b30000)}
+.playstation-entry{grid-column:1/-1;justify-self:center;width:min(210px,58vw);aspect-ratio:1/1;padding:10px;border-radius:24px;background:linear-gradient(145deg,#172b62,#65258c,#0aa6d4);border:2px solid #55eaff;box-shadow:0 9px 0 #071831,0 17px 28px rgba(0,0,0,.34),0 0 22px rgba(36,215,255,.35);position:relative;overflow:hidden}
+.playstation-entry:before{content:"";position:absolute;inset:7px;border:1px solid #ffffff55;border-radius:18px;pointer-events:none}.playstation-entry img{width:100%;height:100%;object-fit:contain;position:relative;z-index:1;filter:drop-shadow(0 8px 10px #0008)}
+.playstation-entry:hover{transform:translateY(-5px) scale(1.035);box-shadow:0 11px 0 #071831,0 22px 34px rgba(0,0,0,.42),0 0 28px rgba(74,229,255,.55)}
 @media (max-width:480px){
   .follow-grid{grid-template-columns:1fr 1fr}
   .follow-tile{padding:18px 10px;font-size:13px}
   .follow-tile .follow-ic{font-size:26px}
+  .playstation-entry{width:min(164px,48vw);padding:8px;border-radius:21px}
 }
 .tabs{max-width:1200px;margin:0 auto;display:flex;padding:0 20px}
 @keyframes livepulse{0%{box-shadow:0 0 0 0 rgba(255,59,59,.6)}70%{box-shadow:0 0 0 8px rgba(255,59,59,0)}100%{box-shadow:0 0 0 0 rgba(255,59,59,0)}}
@@ -479,7 +484,6 @@ img[src=""], img:not([src]) { display:none !important; }
     <a class="qlink qlink--blue" id="qlinkVideos" href="#"><span class="qlink-orb"><span class="qlink-ic">🎬</span></span><span class="qlink-label">الفيديوهات</span></a>
     <a class="qlink qlink--azure" id="qlinkDocs" href="#"><span class="qlink-orb"><span class="qlink-ic">📰</span></span><span class="qlink-label">النشرات</span></a>
     <a class="qlink qlink--gold" id="qlinkPredictions" href="#"><span class="qlink-orb"><span class="qlink-ic">🥇</span></span><span class="qlink-label">توقعات الأصدقاء</span></a>
-    <a class="qlink qlink--blue" id="qlinkPlaystation" href="#" style="display:none;background:linear-gradient(135deg,#704ee9,#16a9d8)"><span class="qlink-orb"><span class="qlink-ic">🎮</span></span><span class="qlink-label">بطولة البلايستيشن للصغار</span></a>
   </div>
 </div>
 
@@ -631,12 +635,6 @@ document.getElementById('qlinkStats').href=scopeUrl('stats.html?id='+TID);
     predictionLink.querySelector('.qlink-label').textContent='تحدي الترشيحات';
   }else{
     predictionLink.href=scopeUrl('leaderboard.html?tid='+TID);
-  }
-  const psLink=document.getElementById('qlinkPlaystation');
-  if(TID==='c983ee0c-4434-470d-b0a2-6e6efe1ad650'){
-    sb.from('playstation_competitions').select('id').eq('tournament_id',TID).eq('is_visible',true).maybeSingle().then(({data:psCompetition})=>{
-      if(psCompetition){psLink.href=scopeUrl('playstation.html?tid='+TID);psLink.style.display='flex';}
-    });
   }
 
 async function generateAutoBulletin(){
@@ -1466,10 +1464,12 @@ async function loadFollowSection(){
   if(!TID){sec.innerHTML='';return;}
   const {data}=await sb.from('tournaments').select('instagram_url,youtube_url').eq('id',TID).single();
   const ig=CONTENT_VIS.instagram===false?'':data?.instagram_url, yt=CONTENT_VIS.youtube===false?'':data?.youtube_url;
-  if(!ig&&!yt){sec.innerHTML='';return;}
+  const showPlaystation=TID==='c983ee0c-4434-470d-b0a2-6e6efe1ad650';
+  if(!ig&&!yt&&!showPlaystation){sec.innerHTML='';return;}
   sec.innerHTML=`<div class="follow-wrap"><div class="follow-grid">
       ${ig?`<a class="follow-tile ig" href="${ig}" target="_blank" rel="noopener"><span class="follow-ic">📷</span>إنستغرام البطولة</a>`:''}
       ${yt?`<a class="follow-tile yt" href="${yt}" target="_blank" rel="noopener"><span class="follow-ic">▶️</span>يوتيوب البطولة</a>`:''}
+      ${showPlaystation?`<a class="follow-tile playstation-entry" href="${scopeUrl('playstation.html?tid='+TID)}" aria-label="الدخول إلى بطولة البلايستيشن للصغار"><img src="${window.PLAYSTATION_LOGO_2027||''}" alt="بطولة البلايستيشن للصغار 2027"></a>`:''}
     </div></div>`;
 }
 
