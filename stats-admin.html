@@ -34,7 +34,7 @@
 
   <section class="panel" style="margin-top:24px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.25)">
     <h3>🏆 جوائز ختام البطولة</h3>
-    <p class="note">حدّد الفائزين، ستظهر تلقائيًا في أعلى صفحة الإحصائيات للجمهور</p>
+    <p class="note">الهداف يُحتسب تلقائيًا من سجل الأهداف، وبقية المرشحين تُحصر حسب الفرق المتأهلة</p>
     <div id="awardsForm" class="form-grid"></div>
     <div class="actions"><button class="btn" style="background:#c9a84c;color:#0d1117" onclick="saveAwards()">💾 حفظ الجوائز</button></div>
     <div class="status" id="awardsMsg"></div>
@@ -45,48 +45,48 @@
     <div class="cards-row" style="grid-template-columns:repeat(3,1fr)">
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">⚽</div><h3>الهدافون</h3><p>قائمة كاملة بالأهداف لكل لاعب</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportScorers()">📊 إكسل</button><button class="btn secondary" onclick="exportScorersWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportScorersWord)">🖨️ PDF</button><button class="btn secondary" onclick="shareReport(exportScorersWord)">📤 مشاركة</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportScorers()">📊 إكسل</button><button class="btn secondary" onclick="exportScorersWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportScorersWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🟨🟥</div><h3>البطاقات</h3><p>الصفراء والحمراء لكل لاعب</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportCards()">📊 إكسل</button><button class="btn secondary" onclick="exportCardsWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportCardsWord)">🖨️ PDF</button><button class="btn secondary" onclick="shareReport(exportCardsWord)">📤 مشاركة</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportCards()">📊 إكسل</button><button class="btn secondary" onclick="exportCardsWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportCardsWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">⭐</div><h3>أفضل اللاعبين</h3><p>عدد مرات اختيار نجم المباراة</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMotm()">📊 إكسل</button><button class="btn secondary" onclick="exportMotmWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportMotmWord)">🖨️ PDF</button><button class="btn secondary" onclick="shareReport(exportMotmWord)">📤 مشاركة</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMotm()">📊 إكسل</button><button class="btn secondary" onclick="exportMotmWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportMotmWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">👨‍⚖️</div><h3>الحكام والمعلقون</h3><p>عدد المباريات لكل حكم/معلّق</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportOfficials()">📊 إكسل</button><button class="btn secondary" onclick="exportOfficialsWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportOfficialsWord)">🖨️ PDF</button><button class="btn secondary" onclick="shareReport(exportOfficialsWord)">📤 مشاركة</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportOfficials()">📊 إكسل</button><button class="btn secondary" onclick="exportOfficialsWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportOfficialsWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">📺</div><h3>إحصائيات الـ VAR</h3><p>سجل قرارات الفار وعدد كل نوع لكل فريق</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportVAR()">📊 إكسل</button><button class="btn secondary" onclick="exportVARWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportVARWord)">🖨️ PDF</button><button class="btn secondary" onclick="shareReport(exportVARWord)">📤 مشاركة</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportVAR()">📊 إكسل</button><button class="btn secondary" onclick="exportVARWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportVARWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🏅</div><h3>أفضل لاعب في كل مباراة</h3><p>سجل رجل المباراة لكل مباراة على حدة</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMotmByMatch()">📊 إكسل</button><button class="btn secondary" onclick="exportMotmByMatchWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportMotmByMatchWord)">🖨️ PDF</button><button class="btn secondary" onclick="shareReport(exportMotmByMatchWord)">📤 مشاركة</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMotmByMatch()">📊 إكسل</button><button class="btn secondary" onclick="exportMotmByMatchWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportMotmByMatchWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">📅</div><h3>جدول المباريات والنتائج</h3><p>كل المباريات بتفاصيلها الكاملة</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMatches()">📊 إكسل</button><button class="btn secondary" onclick="exportMatchesWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportMatchesWord)">🖨️ PDF</button><button class="btn secondary" onclick="shareReport(exportMatchesWord)">📤 مشاركة</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportMatches()">📊 إكسل</button><button class="btn secondary" onclick="exportMatchesWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportMatchesWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🌍</div><h3>الجنسيات المشاركة</h3><p>عدد اللاعبين لكل جنسية</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportNationalities()">📊 إكسل</button><button class="btn secondary" onclick="exportNationalitiesWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportNationalitiesWord)">🖨️ PDF</button><button class="btn secondary" onclick="shareReport(exportNationalitiesWord)">📤 مشاركة</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportNationalities()">📊 إكسل</button><button class="btn secondary" onclick="exportNationalitiesWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportNationalitiesWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🎯</div><h3>ضربات الجزاء</h3><p>الأهداف المُحرَزة والضائعة من ركلات الجزاء أثناء اللعب</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportPenalties()">📊 إكسل</button><button class="btn secondary" onclick="exportPenaltiesWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportPenaltiesWord)">🖨️ PDF</button><button class="btn secondary" onclick="shareReport(exportPenaltiesWord)">📤 مشاركة</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportPenalties()">📊 إكسل</button><button class="btn secondary" onclick="exportPenaltiesWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportPenaltiesWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🥅</div><h3>ركلات الترجيح</h3><p>عدد المباريات المحسومة بالترجيح، وتفاصيل كل ضربة</p>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportShootouts()">📊 إكسل</button><button class="btn secondary" onclick="exportShootoutsWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportShootoutsWord)">🖨️ PDF</button><button class="btn secondary" onclick="shareReport(exportShootoutsWord)">📤 مشاركة</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportShootouts()">📊 إكسل</button><button class="btn secondary" onclick="exportShootoutsWord()">📄 وورد</button><button class="btn secondary" onclick="runAsPDF(exportShootoutsWord)">🖨️ PDF</button></div>
       </div>
       <div class="feature-card" style="text-align:right">
         <div class="feature-icon">🏆</div><h3>جدول الترتيب الرسمي (للنشر)</h3><p>بنفس التصميم الرسمي المعتمد — شعارا اللجنة والكأس، شريط أحمر، جدول داكن</p>
         <div style="margin-top:8px"><select id="standingsGroupSel" style="width:100%"><option value="__all__">كل المجموعات</option></select></div>
-        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportGroupStandings()">📊 إكسل</button><button class="btn secondary" onclick="printOfficialStandings()">📄 وورد (رسمي)</button><button class="btn secondary" onclick="runAsPDF(printOfficialStandings)">🖨️ PDF</button><button class="btn secondary" onclick="shareReport(printOfficialStandings)">📤 مشاركة</button></div>
+        <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportGroupStandings()">📊 إكسل</button><button class="btn secondary" onclick="printOfficialStandings()">📄 وورد (رسمي)</button><button class="btn secondary" onclick="runAsPDF(printOfficialStandings)">🖨️ PDF</button></div>
         <div id="groupReportButtons" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px"></div>
       </div>
     </div>
@@ -99,9 +99,14 @@
       <button class="btn" id="fullReportBtn" style="background:linear-gradient(135deg,#c9a84c,#a8842e)" onclick="exportFullReport()">📦 التقرير الشامل — إكسل</button>
       <button class="btn" id="fullReportWordBtn" style="background:linear-gradient(135deg,#1d4e89,#153a66)" onclick="exportFullReportWord()">📄 التقرير الشامل — وورد</button>
       <button class="btn" style="background:linear-gradient(135deg,#8b5a2b,#5a3a1c)" onclick="runAsPDF(exportFullReportWord)">🖨️ التقرير الشامل — PDF</button>
-      <button class="btn" style="background:linear-gradient(135deg,#16834f,#25a968)" onclick="shareReport(exportFullReportWord)">📤 مشاركة التقرير الشامل</button>
     </div>
     <div style="font-size:11px;color:#8b949e;margin-top:6px">💡 وورد مناسب للعربية بالكامل بلا مشاكل ترميز (بدلاً من PDF)</div>
+  </section>
+
+  <section id="shareReadyPanel" class="panel" style="display:none;margin-top:24px;border:2px solid #25a968;background:rgba(37,169,104,.1)">
+    <h3>📤 التقرير المحدد جاهز للمشاركة</h3>
+    <p class="note">الملف: <strong id="shareReadyName" style="color:#fff"></strong></p>
+    <div class="actions"><button class="btn" style="background:linear-gradient(135deg,#16834f,#25a968)" onclick="shareReadyReport()">مشاركة هذا الملف الآن</button></div>
   </section>
 
   <div class="status" id="msg" style="margin-top:14px"></div>
@@ -146,53 +151,82 @@ async function loadNationalitiesLive(){
 }
 
 const AWARD_DEFS=[
-  {key:'top_scorer',title:'👟 هداف البطولة',isPlayer:true},
-  {key:'best_goalkeeper',title:'🧤 أفضل حارس مرمى',isPlayer:true},
-  {key:'best_player',title:'🏅 أفضل لاعب في البطولة',isPlayer:true},
-  {key:'best_admin',title:'🧑‍💼 أفضل إداري'},
-  {key:'best_management',title:'🏆 أفضل إدارة فريق'},
+  {key:'top_scorer',title:'👟 هداف البطولة',automatic:true},
+  {key:'best_goalkeeper',title:'🧤 أفضل حارس مرمى',candidateType:'finalGoalkeepers'},
+  {key:'best_player',title:'🏅 أفضل لاعب في البطولة',candidateType:'finalPlayers'},
+  {key:'best_admin',title:'🧑‍💼 أفضل إداري',candidateType:'semiAdmins'},
+  {key:'best_management',title:'🏆 أفضل إدارة فريق',candidateType:'semiTeams'},
 ];
 
-let ALL_PLAYERS=[];
-async function loadAllPlayers(){
-  const {data}=await sb.from('players').select('id,name,full_name_ar,number,jersey_photo_url,team_id,teams!inner(name,name_ar,tournament_id)').eq('teams.tournament_id',TID);
-  ALL_PLAYERS=data||[];
+let ALL_PLAYERS=[],ALL_TEAMS=[],AWARD_CANDIDATES={},AUTO_TOP_SCORERS=[];
+const normStage=s=>String(s||'').trim().toLowerCase().replace(/[ _-]/g,'');
+const isFinalMatch=m=>{const s=normStage((m.round_name||'')+' '+(m.stage_code||'')),code=normStage(m.stage_code);return (s.includes('final')||s.includes('النهائي')||code==='f')&&!s.includes('semi')&&!s.includes('نصف');};
+const isSemiMatch=m=>{const s=normStage((m.round_name||'')+' '+(m.stage_code||'')),code=normStage(m.stage_code);return s.includes('semifinal')||s.includes('نصفالنهائي')||s.includes('دورالأربعة')||code==='sf';};
+const playerName=p=>p?.full_name_ar||p?.name||'—';
+const playerPhoto=p=>p?.jersey_photo_url||p?.photo_url||p?.image||'';
+const teamLabel=t=>t?.name_ar||t?.name||'—';
+
+async function loadAwardContext(){
+  const [{data:players},{data:teams},{data:matches}]=await Promise.all([
+    sb.from('players').select('id,name,full_name_ar,number,shirt_number,jersey_photo_url,photo_url,image,team_id,is_goalkeeper,position,role').eq('tournament_id',TID),
+    sb.from('teams').select('id,name,name_ar,logo,logo_url,manager_name,manager_image,admin_photo_url,submitted_by_name').eq('tournament_id',TID),
+    sb.from('matches').select('id,stage_code,round_name,home_team_id,away_team_id,team1_id,team2_id').eq('tournament_id',TID)
+  ]);
+  ALL_PLAYERS=players||[];ALL_TEAMS=teams||[];
+  const idsFrom=rows=>new Set(rows.flatMap(m=>[m.home_team_id||m.team1_id,m.away_team_id||m.team2_id]).filter(Boolean));
+  const finalistIds=idsFrom((matches||[]).filter(isFinalMatch));
+  const semiIds=idsFrom((matches||[]).filter(isSemiMatch));
+  const finalists=ALL_TEAMS.filter(t=>finalistIds.has(t.id));
+  const semifinalists=ALL_TEAMS.filter(t=>semiIds.has(t.id));
+  const finalPlayers=ALL_PLAYERS.filter(p=>finalistIds.has(p.team_id));
+  AWARD_CANDIDATES={
+    finalPlayers,
+    finalGoalkeepers:finalPlayers.filter(p=>p.is_goalkeeper||/goal|حارس/i.test(String(p.position||p.role||''))),
+    semiAdmins:semifinalists.filter(t=>t.manager_name||t.submitted_by_name).map(t=>({id:t.id,name:t.manager_name||t.submitted_by_name,team_id:t.id,photo:t.admin_photo_url||t.manager_image||'',team:t})),
+    semiTeams:semifinalists.map(t=>({id:t.id,name:teamLabel(t),team_id:t.id,photo:t.logo_url||t.logo||'',team:t})),
+    finalists,semifinalists
+  };
+  const mids=(matches||[]).map(m=>m.id),events=await getEvents(mids);
+  const totals={};
+  events.filter(e=>e.event_type==='goal'&&e.event_subtype!=='own_goal'&&e.player_id).forEach(e=>totals[e.player_id]=(totals[e.player_id]||0)+1);
+  const maxGoals=Math.max(0,...Object.values(totals));
+  AUTO_TOP_SCORERS=maxGoals?ALL_PLAYERS.filter(p=>(totals[p.id]||0)===maxGoals).map(p=>({...p,goal_count:maxGoals})):[];
 }
 
-function buildAwardsForm(){
+function awardCard(a,c,saved){
+  const isPlayer=a.candidateType==='finalPlayers'||a.candidateType==='finalGoalkeepers';
+  const id=isPlayer?c.id:c.id,name=isPlayer?playerName(c):c.name;
+  const team=isPlayer?ALL_TEAMS.find(t=>t.id===c.team_id):c.team;
+  const photo=isPlayer?playerPhoto(c):c.photo;
+  const checked=(saved?.winner_player_id&&saved.winner_player_id===id)||(!isPlayer&&saved?.winner_team_id===id);
+  return `<label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #355071;border-radius:12px;background:#0b2038;cursor:pointer">
+    <input type="radio" name="award_${a.key}" value="${escW2(id)}" ${checked?'checked':''} style="width:20px;height:20px;accent-color:#c9a84c">
+    ${photo?`<img src="${escW2(photo)}" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:50%;background:#fff">`:'<span style="width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:#173452">👤</span>'}
+    <span><strong>${escW2(name)}</strong>${isPlayer?` <b style="color:#c9a84c">#${c.number??c.shirt_number??'—'}</b>`:''}<small style="display:block;color:#9fb3c8">${escW2(teamLabel(team))}</small></span>
+  </label>`;
+}
+
+function buildAwardsForm(savedRows=[]){
+  const saved=Object.fromEntries(savedRows.map(r=>[r.award_key,r]));
   document.getElementById('awardsForm').innerHTML=AWARD_DEFS.map(a=>{
-    if(a.isPlayer){
-      const opts=ALL_PLAYERS.map(p=>`<option value="${p.id}">${p.full_name_ar||p.name} — #${p.number??''} — ${p.teams?.name_ar||p.teams?.name||''}</option>`).join('');
-      return `<div class="field full">
-        <label>${a.title}</label>
-        <select id="award_${a.key}_player">
-          <option value="">— اختر لاعباً —</option>
-          ${opts}
-        </select>
-      </div>`;
+    if(a.automatic){
+      if(!AUTO_TOP_SCORERS.length)return `<div class="field full"><label>${a.title}</label><div class="note">بانتظار تسجيل الأهداف</div></div>`;
+      return `<div class="field full"><label>${a.title} — احتساب تلقائي</label><div style="display:grid;gap:8px">${AUTO_TOP_SCORERS.map(p=>`<div style="padding:12px;border:1px solid #c9a84c;border-radius:12px;background:#0b2038"><strong>${escW2(playerName(p))}</strong> — <b style="color:#c9a84c">${p.goal_count} هدف</b> — ${escW2(teamLabel(ALL_TEAMS.find(t=>t.id===p.team_id)))}</div>`).join('')}</div>${AUTO_TOP_SCORERS.length>1?'<div class="note" style="color:#f5c451">تعادل في صدارة الهدافين؛ يعرض النظام جميع المتصدرين ولا يختار اسماً عشوائياً.</div>':''}</div>`;
     }
-    return `<div class="field full">
-      <label>${a.title}</label>
-      <input type="text" id="award_${a.key}_name" placeholder="اسم الفائز">
-    </div>`;
+    const list=AWARD_CANDIDATES[a.candidateType]||[];
+    const wait=a.candidateType==='finalPlayers'||a.candidateType==='finalGoalkeepers'?'بانتظار إنشاء المباراة النهائية وتحديد فريقيها':'بانتظار إنشاء مباريات نصف النهائي وتحديد الفرق الأربعة';
+    return `<div class="field full"><label>${a.title}</label>${list.length?`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">${list.map(c=>awardCard(a,c,saved[a.key])).join('')}</div>`:`<div class="note">${wait}</div>`}</div>`;
   }).join('');
 }
 
 async function loadAwards(){
-  await loadAllPlayers();
-  buildAwardsForm();
+  await loadAwardContext();
   const {data}=await sb.from('tournament_awards').select('*').eq('tournament_id',TID);
-  (data||[]).forEach(a=>{
-    const def=AWARD_DEFS.find(d=>d.key===a.award_key);
-    if(!def)return;
-    if(def.isPlayer){
-      const el=document.getElementById('award_'+a.award_key+'_player');
-      if(el&&a.winner_player_id)el.value=a.winner_player_id;
-    }else{
-      const el=document.getElementById('award_'+a.award_key+'_name');
-      if(el)el.value=a.winner_name||'';
-    }
-  });
+  buildAwardsForm(data||[]);
+  if(AUTO_TOP_SCORERS.length){
+    const p=AUTO_TOP_SCORERS[0],isTie=AUTO_TOP_SCORERS.length>1;
+    await sb.from('tournament_awards').upsert({tournament_id:TID,award_key:'top_scorer',title:'👟 هداف البطولة',winner_player_id:isTie?null:p.id,winner_name:isTie?AUTO_TOP_SCORERS.map(playerName).join(' / '):playerName(p),winner_team_id:isTie?null:p.team_id,winner_photo_url:isTie?null:(playerPhoto(p)||null)},{onConflict:'tournament_id,award_key'});
+  }
 }
 
 async function saveAwards(){
@@ -200,26 +234,30 @@ async function saveAwards(){
   msg.className='status';msg.textContent='⏳ جاري الحفظ...';
   let ok=0,fail=0;
   for(const a of AWARD_DEFS){
+    if(a.automatic)continue;
     let payload={tournament_id:TID,award_key:a.key,title:a.title};
-    if(a.isPlayer){
-      const pid=document.getElementById('award_'+a.key+'_player').value;
-      if(!pid)continue;
-      const p=ALL_PLAYERS.find(pp=>pp.id===pid);
-      payload.winner_player_id=pid;
+    const selected=document.querySelector(`input[name="award_${a.key}"]:checked`);
+    if(!selected)continue;
+    if(a.candidateType==='finalPlayers'||a.candidateType==='finalGoalkeepers'){
+      const p=(AWARD_CANDIDATES[a.candidateType]||[]).find(pp=>pp.id===selected.value);
+      if(!p)continue;
+      payload.winner_player_id=p.id;
       payload.winner_name=p?.full_name_ar||p?.name||null;
       payload.winner_team_id=p?.team_id||null;
-      payload.winner_photo_url=p?.jersey_photo_url||null;
+      payload.winner_photo_url=playerPhoto(p)||null;
     }else{
-      const name=document.getElementById('award_'+a.key+'_name').value.trim();
-      if(!name)continue;
-      payload.winner_name=name;
+      const c=(AWARD_CANDIDATES[a.candidateType]||[]).find(x=>x.id===selected.value);
+      if(!c)continue;
+      payload.winner_name=c.name;
+      payload.winner_team_id=c.team_id;
+      payload.winner_photo_url=c.photo||null;
       payload.winner_player_id=null;
     }
     const {error}=await sb.from('tournament_awards').upsert(payload,{onConflict:'tournament_id,award_key'});
     if(error)fail++;else ok++;
   }
   if(fail){msg.className='status err';msg.textContent='⚠️ تم حفظ '+ok+'، وفشل '+fail;}
-  else{msg.className='status ok';msg.textContent='✅ تم حفظ الجوائز — الصورة والرقم والفريق تُسحب تلقائياً من ملف اللاعب';}
+  else{msg.className='status ok';msg.textContent='✅ تم حفظ الجوائز المختارة — والهداف يُحدّث تلقائياً من سجل الأهداف';}
 }
 window.saveAwards=saveAwards;
 
@@ -247,7 +285,19 @@ function tally(events,type){
   });
   return Object.values(map).sort((a,b)=>b.count-a.count);
 }
-function dl(wb,filename){XLSX.writeFile(wb,filename);}
+let LAST_REPORT_FILE=null;
+function markReportReady(blob,filename,type){
+  LAST_REPORT_FILE=new File([blob],filename,{type});
+  const panel=document.getElementById('shareReadyPanel'),name=document.getElementById('shareReadyName');
+  if(name)name.textContent=filename;
+  if(panel){panel.style.display='block';panel.scrollIntoView({behavior:'smooth',block:'nearest'});}
+}
+function dl(wb,filename){
+  const bytes=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  markReportReady(blob,filename,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
 function sheetFromRows(rows,headers){
   const ws=XLSX.utils.json_to_sheet(rows,{header:headers});
   ws['!cols']=headers.map(()=>({wch:20}));
@@ -361,18 +411,22 @@ async function downloadReportDoc(filename,pageTitle,bodyHtml,headerHtml){
   const doc=new Document({sections:[{children}]});
   const blob=await Packer.toBlob(doc);
   const outputName=filename.replace(/\.doc$/,'.docx');
-  if(CURRENT_EXPORT_MODE==='share'){
-    const file=new File([blob],outputName,{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-    if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){await navigator.share({title:pageTitle||outputName,files:[file]});setMsg('✅ تم فتح خيارات المشاركة — اختر واتساب','ok');return;}
-    const fallback=URL.createObjectURL(blob),a=document.createElement('a');a.href=fallback;a.download=outputName;a.click();URL.revokeObjectURL(fallback);
-    window.open('https://wa.me/?text='+encodeURIComponent('تم تنزيل تقرير '+(pageTitle||TNAME)+'؛ أرفق الملف المحمّل في هذه المحادثة.'),'_blank');
-    setMsg('تم تنزيل التقرير؛ أرفقه من التنزيلات في واتساب.','ok');return;
-  }
+  markReportReady(blob,outputName,'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url;a.download=outputName;a.click();
   URL.revokeObjectURL(url);
 }
+async function shareReadyReport(){
+  if(!LAST_REPORT_FILE){setMsg('اختر تقريراً وأنشئ ملف إكسل أو وورد أولاً.','warn');return;}
+  if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[LAST_REPORT_FILE]}))){
+    try{await navigator.share({title:LAST_REPORT_FILE.name,files:[LAST_REPORT_FILE]});setMsg('✅ تم فتح خيارات مشاركة الملف المحدد','ok');return;}catch(e){if(e?.name==='AbortError')return;}
+  }
+  const url=URL.createObjectURL(LAST_REPORT_FILE),a=document.createElement('a');a.href=url;a.download=LAST_REPORT_FILE.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  window.open('https://wa.me/?text='+encodeURIComponent('تم تنزيل '+LAST_REPORT_FILE.name+'؛ أرفق الملف من التنزيلات.'),'_blank');
+  setMsg('تم تنزيل الملف المحدد؛ أرفقه من التنزيلات في واتساب.','ok');
+}
+window.shareReadyReport=shareReadyReport;
 function printReportAsPDF(pageTitle,bodyHtml,headerHtml){
   const w=window.open('','_blank');
   if(!w){alert('فضلاً اسمح للمتصفح بفتح النوافذ المنبثقة لهذه الصفحة');return;}
@@ -408,8 +462,6 @@ async function runAsPDF(fn){
   }
 }
 window.runAsPDF=runAsPDF;
-async function shareReport(fn){CURRENT_EXPORT_MODE='share';try{await fn();}finally{CURRENT_EXPORT_MODE='docx';}}
-window.shareReport=shareReport;
 async function buildLetterheadHtml(){
   if(!TID)return '';
   const {data:tour}=await sb.from('tournaments').select('report_header_image_url,committee_logo_url,cup_logo_url,logo_url,show_committee_logo,show_cup_logo').eq('id',TID).single();
