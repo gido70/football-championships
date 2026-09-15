@@ -13,6 +13,7 @@ create table if not exists public.playstation_competitions (
   win_points integer not null default 3,
   draw_points integer not null default 1,
   loss_points integer not null default 0,
+  stations_count integer not null default 8 check (stations_count between 1 and 12),
   is_visible boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -50,6 +51,7 @@ create table if not exists public.playstation_matches (
   status text not null default 'scheduled' check (status in ('scheduled','live','completed')),
   match_order integer not null default 0,
   station_no integer,
+  wave_no integer,
   scheduled_at timestamptz,
   started_at timestamptz,
   completed_at timestamptz,
@@ -64,8 +66,14 @@ create table if not exists public.playstation_admins (
   role text not null default 'operator' check (role in ('owner','operator')),
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
+  device_token text,
+  device_bound_at timestamptz,
   primary key (tournament_id,user_id)
 );
+alter table public.playstation_competitions add column if not exists stations_count integer not null default 8 check (stations_count between 1 and 12);
+alter table public.playstation_matches add column if not exists wave_no integer;
+alter table public.playstation_admins add column if not exists device_token text;
+alter table public.playstation_admins add column if not exists device_bound_at timestamptz;
 
 create index if not exists playstation_participants_comp_idx on public.playstation_participants(competition_id,group_code,sort_order);
 create unique index if not exists playstation_participants_number_uidx on public.playstation_participants(competition_id,participant_no) where participant_no is not null;
@@ -79,6 +87,7 @@ alter table public.playstation_admins enable row level security;
 grant select on public.playstation_competitions,public.playstation_participants,public.playstation_matches to anon,authenticated;
 grant insert,update,delete on public.playstation_competitions,public.playstation_participants,public.playstation_matches to authenticated;
 grant select on public.playstation_admins to authenticated;
+grant update (device_token,device_bound_at) on public.playstation_admins to authenticated;
 
 drop policy if exists "public view visible playstation competitions" on public.playstation_competitions;
 create policy "public view visible playstation competitions" on public.playstation_competitions for select to anon,authenticated
@@ -107,6 +116,22 @@ with check (exists (select 1 from public.playstation_competitions c join public.
 drop policy if exists "operators view own playstation scope" on public.playstation_admins;
 create policy "operators view own playstation scope" on public.playstation_admins for select to authenticated
 using (user_id=(select auth.uid()));
+
+-- أول جهاز يستخدم حساب المشغّل يصبح الجهاز المعتمد. المالك غير مقيّد بجهاز.
+create or replace function public.claim_playstation_operator_device(p_tournament_id uuid,p_device_token text)
+returns boolean language plpgsql security definer set search_path=public as $$
+declare claimed boolean;
+begin
+  if (select auth.uid()) is null or p_device_token is null or char_length(p_device_token) < 20 then return false; end if;
+  update public.playstation_admins
+     set device_token=coalesce(device_token,p_device_token),device_bound_at=coalesce(device_bound_at,now())
+   where tournament_id=p_tournament_id and user_id=(select auth.uid()) and is_active
+     and (role='owner' or device_token is null or device_token=p_device_token)
+  returning true into claimed;
+  return coalesce(claimed,false);
+end $$;
+revoke all on function public.claim_playstation_operator_device(uuid,text) from public,anon;
+grant execute on function public.claim_playstation_operator_device(uuid,text) to authenticated;
 
 -- صور المشاركين: القراءة عامة للبطولة، والرفع محصور بمالك البطولة أو مشغّلها المخوّل.
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
@@ -139,15 +164,15 @@ create policy "playstation owner creates and deletes matches" on public.playstat
 using (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active and a.role='owner'))
 with check (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active and a.role='owner'));
 create policy "playstation operator updates matches" on public.playstation_matches for update to authenticated
-using (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active))
-with check (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active));
+using (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active and (a.role='owner' or a.device_token=current_setting('request.headers',true)::jsonb->>'x-ps-device')))
+with check (exists (select 1 from public.playstation_competitions c join public.playstation_admins a on a.tournament_id=c.tournament_id where c.id=competition_id and a.user_id=(select auth.uid()) and a.is_active and (a.role='owner' or a.device_token=current_setting('request.headers',true)::jsonb->>'x-ps-device')));
 
 create or replace function public.guard_playstation_operator_match_update()
 returns trigger language plpgsql security invoker set search_path=public as $$
 declare operator_role text;
 begin
   select a.role into operator_role from public.playstation_admins a join public.playstation_competitions c on c.tournament_id=a.tournament_id where c.id=old.competition_id and a.user_id=(select auth.uid()) and a.is_active limit 1;
-  if operator_role='operator' and (new.competition_id,new.stage,new.group_code,new.round_no,new.player1_id,new.player2_id,new.match_order,new.station_no,new.scheduled_at) is distinct from (old.competition_id,old.stage,old.group_code,old.round_no,old.player1_id,old.player2_id,old.match_order,old.station_no,old.scheduled_at) then
+  if operator_role='operator' and (new.competition_id,new.stage,new.group_code,new.round_no,new.player1_id,new.player2_id,new.match_order,new.station_no,new.wave_no,new.scheduled_at) is distinct from (old.competition_id,old.stage,old.group_code,old.round_no,old.player1_id,old.player2_id,old.match_order,old.station_no,old.wave_no,old.scheduled_at) then
     raise exception 'مشغّل الصالة مخوّل بتسجيل النتيجة وحالة المباراة فقط';
   end if;
   return new;
