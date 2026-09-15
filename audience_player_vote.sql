@@ -15,22 +15,7 @@ as $$
     from public.matches m
     where m.id = p_match_id
       and m.player_of_match_id is null
-      and (
-        lower(coalesce(m.status,'')) = 'live'
-        or (
-          lower(coalesce(m.status,'')) in ('completed','finished','ended')
-          and m.live_started_at is not null
-          and not exists (
-            select 1
-            from public.matches n
-            where n.tournament_id = m.tournament_id
-              and n.id <> m.id
-              and lower(coalesce(n.status,'')) in ('live','completed','finished','ended')
-              and n.live_started_at is not null
-              and n.live_started_at > m.live_started_at
-          )
-        )
-      )
+      and lower(coalesce(m.status,'')) = 'live'
   );
 $$;
 

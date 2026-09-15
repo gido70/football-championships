@@ -11,6 +11,7 @@ for(const file of ['match-admin.html','match-live.html','live-desk.html','tourna
 for(const file of ['sw.js','admin-push.js','push-config.js','push-notifications.js'])new vm.Script(read(file),{filename:file});
 
 const tournament=read('tournament.html'),matchLive=read('match-live.html'),sw=read('sw.js'),matchAdmin=read('match-admin.html'),live=read('live-desk.html'),sql=read('push_notifications.sql'),voteSql=read('audience_player_vote.sql'),edge=read('supabase/functions/send-match-notification/index.ts'),report=read('match-report.html');
+const statsAdmin=read('stats-admin.html');
 must(tournament.includes('id="notificationToggle"'),'زر تفعيل التنبيهات غير موجود');
 must(read('push-notifications.js').includes('await save(client,tournamentId,subscription)'),'اشتراك الهاتف لا يُصالح تلقائيًا بعد تحديث التطبيق');
 must(tournament.includes("badge.style.display=matches?.length?'inline-flex':'none'")&&tournament.includes("channel('tournament-live-'"),'مؤشر اللايف العلوي لا يتحدث فور بدء المباراة أو نهايتها');
@@ -55,6 +56,11 @@ must(!matchAdmin.includes('phaseOffsetMin(')&&!matchLive.includes('phaseOffsetMi
 must(sql.includes('unique(tournament_id,endpoint)'),'منع تكرار الاشتراك غير موجود');
 must(sql.includes('event_key text not null unique'),'منع تكرار التنبيه غير موجود');
 must(report.includes('الفائز')&&report.includes('الخاسر')&&report.includes('وقت البداية')&&report.includes('حكم المباراة')&&report.includes('المعلّق'),'تقرير المباراة ينقصه أحد الحقول المطلوبة');
+must(voteSql.includes("lower(coalesce(m.status,'')) = 'live'")&&!voteSql.includes("live_started_at > m.live_started_at"),'التصويت يجب أن يغلق فور انتهاء المباراة');
+must(matchLive.includes('predictionOpenForMatch')&&matchLive.includes('أُغلق ترشيح هذه المباراة فور انطلاقها'),'واجهة المباراة لا توضح إغلاق الترشيح عند البداية');
+must(statsAdmin.includes('PDF — كل المجموعات في صفحة واحدة')&&statsAdmin.includes('PDF — المجموعة'),'أزرار PDF المستقلة للمجموعات غير موجودة');
+must(statsAdmin.includes("@page{size:A4 ${allGroups?'landscape':'portrait'}")&&statsAdmin.includes('group-report-card'),'تقرير كل المجموعات غير مضبوط للطباعة في صفحة واحدة');
+must(statsAdmin.includes('h2h(a,b)')&&statsAdmin.includes('yellow+a.red*3'),'ترتيب تقرير المجموعات لا يطبق المواجهة المباشرة واللعب النظيف');
 must(matchAdmin.includes('referee-page')&&matchAdmin.includes('commentator-page'),'قوالب الحكم والمعلّق غير موجودة');
 must(matchAdmin.includes('slice(0,15)'),'حد الصفحة الواحدة للاعبين غير مطبق');
 must(matchAdmin.includes('rosters-layout'),'قائمتا الحكم ليستا مثبتتين جنبًا إلى جنب للطباعة');
@@ -85,7 +91,7 @@ must(matchLive.includes('تم التصويت مسبقًا')&&matchLive.includes(
 must(matchAdmin.includes("rpc('get_match_vote_state'")&&tournament.includes("rpc('get_match_vote_leaders'"),'نتائج التصويت المجمعة غير مربوطة بالواجهة والإدارة');
 must(voteSql.includes("'already_voted'")&&voteSql.includes('on conflict(match_id,session_key) do nothing'),'صوت واحد لكل متصفح غير محمي في قاعدة البيانات');
 must(voteSql.includes("lower(coalesce(m.status,'')) = 'live'")&&voteSql.includes('player_of_match_id is null'),'نافذة التصويت غير مرتبطة بالمباراة والاعتماد الرسمي');
-must(voteSql.includes('n.live_started_at > m.live_started_at')&&!voteSql.includes('coalesce(n.match_no,n.match_number,0) >'),'إغلاق التصويت لا يعتمد وقت البدء الفعلي للمباراة التالية');
+must(!voteSql.includes('n.live_started_at > m.live_started_at'),'المباراة المنتهية يجب ألا تبقى مفتوحة انتظارًا لمباراة لاحقة');
 must(voteSql.includes('revoke all on table public.match_votes from public,anon,authenticated'),'سجلات المصوتين الخام ما زالت مكشوفة للعامة');
 
 console.log('notification and report tests passed');

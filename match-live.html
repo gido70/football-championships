@@ -497,8 +497,9 @@ window.castVote=castVote;
 let predictLoaded=false;
 async function loadPredict(){
   if(!cur){document.getElementById('predictWrap').innerHTML='<div class="pred-wrap"><div class="empty"><span>🎯</span><p>اختر مباراة للتوقع</p></div></div>';return;}
-  const allowed=predictionAllowed(cur),url='predictions.html?tid='+encodeURIComponent(cur.tournament_id);
-  document.getElementById('predictWrap').innerHTML=`<div class="pred-wrap" style="text-align:center"><div class="pred-title">🎯 الترشيحات الرسمية للبطولة</div><div class="pred-sub">${allowed?'التسجيل بالاسم العربي ورقم الهاتف، ثم اختيار نتائج المباريات ومتابعة ترتيبك.':'ترشيحات دوري أبطال أوروبا تبدأ عند وصول البطولة إلى دور الـ16.'}</div>${allowed?`<a class="pred-btn" style="display:block;text-decoration:none" href="${url}">فتح الترشيحات الرسمية</a>`:''}</div>`;
+  const tournamentAllowed=predictionAllowed(cur),allowed=predictionOpenForMatch(cur),url='predictions.html?tid='+encodeURIComponent(cur.tournament_id);
+  const closedText=!tournamentAllowed&&cur.tournament_id===EUROPE?'ترشيحات دوري أبطال أوروبا تبدأ عند وصول البطولة إلى دور الـ16.':'أُغلق ترشيح هذه المباراة فور انطلاقها، ولا يمكن التسجيل بعد البداية.';
+  document.getElementById('predictWrap').innerHTML=`<div class="pred-wrap" style="text-align:center"><div class="pred-title">🎯 الترشيحات الرسمية للبطولة</div><div class="pred-sub">${allowed?'التسجيل بالاسم العربي ورقم الهاتف، ثم اختيار نتائج المباريات ومتابعة ترتيبك.':closedText}</div>${allowed?`<a class="pred-btn" style="display:block;text-decoration:none" href="${url}">فتح الترشيحات الرسمية</a>`:'<div class="pred-done">🔒 الترشيح مغلق لهذه المباراة</div>'}</div>`;
 }
 
 const MANSOUR_2027='c983ee0c-4434-470d-b0a2-6e6efe1ad650',EUROPE='eee33333-5d2a-4f3b-a981-d4b8f5f86143';
@@ -506,6 +507,11 @@ function predictionAllowed(m){
   if(m.tournament_id===MANSOUR_2027)return true;
   if(m.tournament_id!==EUROPE)return false;
   return ['round_of_16','round-of-16','last_16','r16','quarter_final','quarterfinal','semi_final','semifinal','third_place','final'].includes(String(m.stage_code||m.round_name||'').toLowerCase());
+}
+function predictionOpenForMatch(m){
+  if(!predictionAllowed(m)||String(m.status||'').toLowerCase()!=='scheduled')return false;
+  const kickoff=m.scheduled_at||m.match_datetime||(m.match_date&&m.match_time?`${m.match_date}T${m.match_time}`:null);
+  return !kickoff||Date.now()<new Date(kickoff).getTime();
 }
 
 function getPlayerName(){return localStorage.getItem('wc_player_name')||'';}
@@ -918,10 +924,11 @@ async function init(){
     document.getElementById('motmWrap').innerHTML='';
   }
 
-  const voteVisible=['live','completed','finished','ended'].includes(m.status),allowed=predictionAllowed(m),predictionUrl='predictions.html?tid='+encodeURIComponent(m.tournament_id);
+  const voteVisible=['live','completed','finished','ended'].includes(m.status),allowed=predictionOpenForMatch(m),predictionUrl='predictions.html?tid='+encodeURIComponent(m.tournament_id);
   let voteCard='';
   if(voteVisible){const {data:vs}=await sb.rpc('get_match_vote_state',{p_match_id:m.id,p_session_key:getSessionKey()});const open=Boolean(vs?.open),total=Number(vs?.total_votes||0);voteCard=`<div class="vote-hero"><div><strong>⭐ تصويت أفضل لاعب</strong><span>${open?'التصويت متاح الآن — صوت واحد لكل متصفح':`انتهى التصويت · ${total} صوت`}</span></div><button onclick="showTab('vote');loadVote()">${open?'صوّت الآن':'عرض النتيجة'}</button></div>`;}
-  const predictionCard=`<div class="predict-hero${allowed?'':' closed'}"><div><strong>🎯 ترشيحات نتائج البطولة</strong><span>${allowed?'سجّل بالاسم العربي ورقم الهاتف ونافس في الترتيب':'دوري أبطال أوروبا: تفتح الترشيحات من دور الـ16'}</span></div><a href="${allowed?predictionUrl:'#'}">${allowed?'رشّح الآن':'غير متاح الآن'}</a></div>`;
+  const closedPredictionText=m.tournament_id===EUROPE&&!predictionAllowed(m)?'دوري أبطال أوروبا: تفتح الترشيحات من دور الـ16':'أُغلق ترشيح هذه المباراة فور انطلاقها';
+  const predictionCard=`<div class="predict-hero${allowed?'':' closed'}"><div><strong>🎯 ترشيحات نتائج البطولة</strong><span>${allowed?'سجّل بالاسم العربي ورقم الهاتف ونافس في الترتيب':closedPredictionText}</span></div><a href="${allowed?predictionUrl:'#'}">${allowed?'رشّح الآن':'الترشيح مغلق'}</a></div>`;
   document.getElementById('engagementWrap').innerHTML=voteCard+predictionCard;
 
   loadEvents(m,ht,at);
