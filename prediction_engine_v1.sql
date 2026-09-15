@@ -10,7 +10,7 @@ alter table public.prediction_fixtures
   add column if not exists is_locked boolean not null default false;
 
 -- قواعد النقاط حسب مرحلة خروج المغلوب:
--- دور الـ16: نقطتان للفائز فقط. من ربع النهائي: نقطتان للفائز + نقطتان للنتيجة الدقيقة.
+-- دور المجموعات ودور الـ16: نقطتان للفائز/التعادل فقط. من ربع النهائي: +2 للنتيجة الدقيقة.
 create schema if not exists private;
 create or replace function private.enforce_prediction_round_scoring()
 returns trigger
@@ -20,7 +20,7 @@ set search_path = pg_catalog, public, private
 as $$
 declare v_stage text := lower(coalesce(new.stage_code,''));
 begin
-  if v_stage in ('round_of_16','round-of-16','last_16','r16') then
+  if v_stage in ('group','groups','group_stage','group-stage','round_of_16','round-of-16','last_16','r16') then
     new.winner_points := 2;
     new.exact_bonus := 0;
   elsif v_stage in (

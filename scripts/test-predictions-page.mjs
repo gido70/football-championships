@@ -14,6 +14,7 @@ ok(page.includes('winner_points')&&page.includes('exact_bonus'),'scoring must co
 ok(page.includes('lock_minutes'),'lock window must come from round settings');
 ok(page.includes('العودة للبطولة'),'page must provide a return path');
 ok(account.includes("nextPage")&&account.includes('predictions.html'),'account creation must return to predictions');
+ok(account.includes('id="phone"')&&account.includes('لا يظهر للجمهور')&&account.includes('family_name:family,phone'),'phone must be collected privately for winner contact');
 ok(page.includes('prediction_leaderboard'),'participant page must read the secured leaderboard');
 ok(page.includes('f.is_scored'),'scored fixtures must be locked in the UI');
 ok(admin.includes('auth-guard.js'),'prediction administration must be owner protected');
@@ -23,8 +24,10 @@ ok(tournament.includes("'c983ee0c-4434-470d-b0a2-6e6efe1ad650'")&&tournament.inc
 ok(engine.includes('PREDICTION_TOURNAMENTS')&&engine.includes('logo-cup-2027-512.png'),'prediction engine must support both tournaments');
 ok(engine.includes("const live=available.filter(r=>!r.is_test)")&&engine.includes('rounds.map(r=>r.id)'),'live rounds must replace the trial and support concurrent groups');
 ok(engine.includes("h===a?'تعادل'")&&engine.includes('predicted_winner_team_id:scoreWinner'),'group-stage draws must be supported');
+ok(engine.includes("stageKey")&&engine.includes('phase_points?.group')&&engine.includes('ترتيب دور المجموعات')&&engine.includes('الترتيب التراكمي'),'group and cumulative rankings must use separate scores');
 ok(engine.includes('f.is_locked||f.is_scored')&&engine.includes('الإغلاق فور بدء المباراة'),'fixture must lock at actual match start');
 ok(adminEngine.includes('prediction_sync_settings')&&adminEngine.includes("start_mode==='all'"),'admin must show automatic sync mode');
 ok(adminEngine.includes("from('prediction_fixtures').select")&&adminEngine.includes('is_scored'),'admin must show automatically synchronized result status');
 ok(adminEngine.includes('هذه الوحدة تقرأ المباريات الحقيقية ولا تعدّلها'),'admin must explain isolation from real matches');
+ok(admin.includes('id="participantContacts"')&&admin.includes('تظهر للإدارة فقط')&&adminEngine.includes("select('user_id,participant_code,first_name,family_name,phone')"),'admin must show private winner contact details');
 console.log('prediction page safety checks passed');
