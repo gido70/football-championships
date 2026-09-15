@@ -2,6 +2,7 @@ const PREDICTION_TOURNAMENTS={
   'eee33333-5d2a-4f3b-a981-d4b8f5f86143':{title:'تحدي دوري أبطال أوروبا',logo:'uefa-champions-app-512.png'},
   'c983ee0c-4434-470d-b0a2-6e6efe1ad650':{title:'تحدي كأس منصور بن زايد 2027',logo:'logo-cup-2027-512.png'}
 };
+const EUROPE='eee33333-5d2a-4f3b-a981-d4b8f5f86143',MANSOUR_2027='c983ee0c-4434-470d-b0a2-6e6efe1ad650';
 const query=new URLSearchParams(location.search);
 const requestedTournament=query.get('tid');
 const TOURNAMENT_ID=PREDICTION_TOURNAMENTS[requestedTournament]?requestedTournament:'eee33333-5d2a-4f3b-a981-d4b8f5f86143';
@@ -48,7 +49,7 @@ function journeyHtml(f){
 }
 
 const stageKey=r=>['group','groups','group_stage','group-stage'].includes(String(r?.stage_code||'').toLowerCase())?'groups':'knockout';
-function rankingRows(rows){return rows.map((x,i)=>`<div class="rank ${x.participant_id===user.id?'mine':''}"><span>${i<3?['🥇','🥈','🥉'][i]:i+1}</span><span>${esc(x.display_name)}<small style="display:block;opacity:.8">${x.correct_winners} اختيار صحيح · ${x.exact_scores} نتيجة دقيقة</small></span><b>${x.points} نقطة</b></div>`).join('')||'<div class="empty">بانتظار اعتماد أول نتيجة.</div>'}
+function rankingRows(rows){return rows.map((x,i)=>`<div class="rank ${i<3?'podium p'+(i+1):''} ${x.participant_id===user.id?'mine':''}"><span class="rank-medal">${i<3?['🥇','🥈','🥉'][i]:i+1}</span><span>${esc(x.display_name)}<small style="display:block;opacity:.8">${x.correct_winners} اختيار صحيح · ${x.exact_scores} نتيجة دقيقة</small></span><b>${x.points} نقطة</b></div>`).join('')||'<div class="empty">بانتظار اعتماد أول نتيجة.</div>'}
 function groupRanking(){
   const stats=x=>x.phase_points?.group||x.phase_points?.groups||x.phase_points?.group_stage||{};
   return leaderboard.map(x=>({...x,...stats(x)})).filter(x=>Number(x.predictions_count||0)>0).sort((a,b)=>Number(b.points||0)-Number(a.points||0)||Number(b.correct_winners||0)-Number(a.correct_winners||0));
@@ -108,15 +109,18 @@ async function init(){
   let {data:{session}}=await sb.auth.getSession();
   if(!session){const signed=await sb.auth.signInAnonymously();if(signed.error){app.textContent='تعذر بدء الحساب.';return}session=signed.data.session;}
   user=session.user;
+  const roundResult=await sb.from('prediction_rounds').select('*').eq('tournament_id',TOURNAMENT_ID).neq('status','draft').order('opens_at');
+  if(roundResult.error){app.textContent='تعذر تحميل الجولات.';return;}
+  const available=roundResult.data||[],live=available.filter(r=>!r.is_test);
+  rounds=live.length?live:(TOURNAMENT_ID===MANSOUR_2027?available.filter(r=>r.is_test):[]);
+  if(TOURNAMENT_ID===EUROPE&&!rounds.length){
+    app.innerHTML='<div class="waiting" style="margin-top:18px;min-height:120px"><span>🔒</span><span><strong style="display:block;color:#0a1d3a;font-size:17px;margin-bottom:7px">الترشيحات لم تبدأ بعد</strong>تُفتح ترشيحات دوري أبطال أوروبا تلقائيًا عند الوصول إلى دور الـ16.</span></div>';
+    return;
+  }
   const profileResult=await sb.from('participant_profiles').select('first_name,family_name,participant_code').eq('user_id',user.id).maybeSingle();
   if(!profileResult.data){location.replace(`participant-account.html?next=predictions&tid=${encodeURIComponent(TOURNAMENT_ID)}`);return;}
   profile=profileResult.data;
   await sb.from('participant_tournament_memberships').upsert({participant_id:user.id,tournament_id:TOURNAMENT_ID},{onConflict:'participant_id,tournament_id',ignoreDuplicates:true});
-  const roundResult=await sb.from('prediction_rounds').select('*').eq('tournament_id',TOURNAMENT_ID).neq('status','draft').order('opens_at');
-  if(roundResult.error){app.textContent='تعذر تحميل الجولات.';return;}
-  const available=roundResult.data||[];
-  const live=available.filter(r=>!r.is_test);
-  rounds=live.length?live:available.filter(r=>r.is_test);
   if(!rounds.length){render();return;}
   const fixtureResult=await sb.from('prediction_fixtures').select('*').in('round_id',rounds.map(r=>r.id)).order('kickoff_at');
   fixtures=fixtureResult.data||[];
@@ -126,6 +130,7 @@ async function init(){
   const leaders=await sb.from('prediction_leaderboard').select('*').eq('tournament_id',TOURNAMENT_ID).order('points',{ascending:false}).order('exact_scores',{ascending:false}).order('correct_winners',{ascending:false});
   leaderboard=leaders.data||[];
   render();
+  if(query.get('tab')==='ranking')setTimeout(()=>document.querySelector('[data-tab="ranking"]')?.click(),0);
 }
 
 init();
