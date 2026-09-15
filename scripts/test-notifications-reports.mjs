@@ -63,7 +63,11 @@ must(statsAdmin.includes("@page{size:A4 ${multiGroup?'landscape':'portrait'}")&&
 must(statsAdmin.includes('h2h(a,b)')&&statsAdmin.includes('yellow+a.red*3'),'ترتيب تقرير المجموعات لا يطبق المواجهة المباشرة واللعب النظيف');
 must(statsAdmin.includes("const REQUESTED_TID=new URLSearchParams(location.search).get('tid')")&&statsAdmin.includes('data.findIndex(t=>t.id===REQUESTED_TID)'),'صفحة التقارير لا تحترم البطولة المطلوبة في الرابط');
 must(statsAdmin.includes("filter(t=>t.group_code)")&&statsAdmin.includes('button.disabled=!groups.length'),'تقرير المجموعات يجب أن يتوقف للبطولات التي لا تحتوي مجموعات');
-must(statsAdmin.includes("CURRENT_EXPORT_MODE==='share'")&&statsAdmin.includes('navigator.canShare({files:[file]})')&&statsAdmin.includes('اختر واتساب'),'مشاركة ملفات التقارير الأصلية غير مفعلة');
+must(statsAdmin.includes('id="shareReadyPanel"')&&statsAdmin.includes('LAST_REPORT_FILE')&&statsAdmin.includes('navigator.canShare({files:[LAST_REPORT_FILE]})'),'مشاركة الملف المحدد بعد إنشائه غير مفعلة');
+must(!statsAdmin.includes('onclick="shareReport('),'ما زالت أزرار المشاركة العامة غير المرتبطة بملف محدد موجودة');
+must(statsAdmin.includes("automatic:true")&&statsAdmin.includes("event_type==='goal'")&&statsAdmin.includes("event_subtype!=='own_goal'"),'هداف البطولة لا يُحتسب تلقائياً من سجل الأهداف');
+must(statsAdmin.includes('finalGoalkeepers')&&statsAdmin.includes('finalPlayers')&&statsAdmin.includes('semiAdmins'),'مرشحو جوائز الختام غير محصورين في المتأهلين');
+must(!statsAdmin.includes('<select id="award_'),'جوائز ختام البطولة ما زالت تستخدم قوائم منسدلة طويلة');
 must(statsAdmin.includes("background:${i===0?'#f3f8ee':i%2?'#fafafa':'#fff'}")&&!statsAdmin.includes('background:${themeColor};color:#fff"><td'),'صفوف تقرير المجموعات ما زالت تستهلك حبرًا ملونًا كثيفًا');
 must(matchAdmin.includes('referee-page')&&matchAdmin.includes('commentator-page'),'قوالب الحكم والمعلّق غير موجودة');
 must(matchAdmin.includes('slice(0,15)'),'حد الصفحة الواحدة للاعبين غير مطبق');
