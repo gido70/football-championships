@@ -132,6 +132,7 @@ a{text-decoration:none;color:inherit}
 @keyframes voteHeroAlert{0%,100%{box-shadow:0 0 0 0 rgba(237,35,63,.55),0 10px 28px rgba(125,0,21,.28)}60%{box-shadow:0 0 0 9px rgba(237,35,63,0),0 10px 28px rgba(125,0,21,.28)}}
 .vote-hero strong{display:block;font-size:17px}.vote-hero span{display:block;font-size:12px;opacity:.9;margin-top:3px}
 .vote-hero button{border:0;border-radius:13px;background:#fff;color:#0f2a4a;font:900 13px "Tajawal",sans-serif;padding:11px 16px;white-space:nowrap;cursor:pointer}
+.engagement-stack{max-width:760px;margin:14px auto;display:grid;gap:12px;padding:0 14px}.engagement-stack .vote-hero{margin:0;max-width:none}.predict-hero{padding:19px 18px;border-radius:18px;background:linear-gradient(135deg,#061f4e,#1558b8 58%,#6d2bc3);color:#fff;box-shadow:0 10px 28px rgba(6,31,78,.28);display:flex;align-items:center;justify-content:space-between;gap:12px}.predict-hero strong{display:block;font-size:17px}.predict-hero span{display:block;font-size:12px;opacity:.9;margin-top:3px}.predict-hero a{border:0;border-radius:13px;background:#ffd65c;color:#102943;font:900 13px "Tajawal",sans-serif;padding:12px 16px;white-space:nowrap;text-decoration:none}.predict-hero.closed{filter:saturate(.55);opacity:.86}.predict-hero.closed a{pointer-events:none;background:#d9dfeb;color:#657083}
 
 /* ردود الفعل الحية */
 .react-wrap{padding:24px 16px;max-width:500px;margin:0 auto;text-align:center}
@@ -290,6 +291,7 @@ a{text-decoration:none;color:inherit}
 <div id="winnerWrap"></div>
 
 <div id="motmWrap"></div>
+<div id="engagementWrap" class="engagement-stack"></div>
 
 <div class="main" style="padding-bottom:0">
   <div id="streamWrap"></div>
@@ -495,10 +497,15 @@ window.castVote=castVote;
 let predictLoaded=false;
 async function loadPredict(){
   if(!cur){document.getElementById('predictWrap').innerHTML='<div class="pred-wrap"><div class="empty"><span>🎯</span><p>اختر مباراة للتوقع</p></div></div>';return;}
-  if(predictLoaded)return;
-  predictLoaded=true;
-  document.getElementById('predictWrap').innerHTML='<div class="pred-wrap"><div class="pred-title">🎯 توقّع النتيجة</div><div class="pred-done">جاري تحميل التوقعات...</div></div>';
-  try{await renderPredict();}catch(e){console.error(e);predictLoaded=false;document.getElementById('predictWrap').innerHTML='<div class="pred-wrap"><div class="pred-title">🎯 توقّع النتيجة</div><div class="pred-done" style="color:#c9454d">تعذر تشغيل التوقعات — يجب تهيئة جدول التوقعات في قاعدة البيانات</div></div>';}
+  const allowed=predictionAllowed(cur),url='predictions.html?tid='+encodeURIComponent(cur.tournament_id);
+  document.getElementById('predictWrap').innerHTML=`<div class="pred-wrap" style="text-align:center"><div class="pred-title">🎯 الترشيحات الرسمية للبطولة</div><div class="pred-sub">${allowed?'التسجيل بالاسم العربي ورقم الهاتف، ثم اختيار نتائج المباريات ومتابعة ترتيبك.':'ترشيحات دوري أبطال أوروبا تبدأ عند وصول البطولة إلى دور الـ16.'}</div>${allowed?`<a class="pred-btn" style="display:block;text-decoration:none" href="${url}">فتح الترشيحات الرسمية</a>`:''}</div>`;
+}
+
+const MANSOUR_2027='c983ee0c-4434-470d-b0a2-6e6efe1ad650',EUROPE='eee33333-5d2a-4f3b-a981-d4b8f5f86143';
+function predictionAllowed(m){
+  if(m.tournament_id===MANSOUR_2027)return true;
+  if(m.tournament_id!==EUROPE)return false;
+  return ['round_of_16','round-of-16','last_16','r16','quarter_final','quarterfinal','semi_final','semifinal','third_place','final'].includes(String(m.stage_code||m.round_name||'').toLowerCase());
 }
 
 function getPlayerName(){return localStorage.getItem('wc_player_name')||'';}
@@ -908,10 +915,14 @@ async function init(){
       window.UefaPlayerImages?.hydrate(document.getElementById('motmWrap'));
     }
   }else if(['live','completed','finished','ended'].includes(m.status)){
-    const {data:voteState}=await sb.rpc('get_match_vote_state',{p_match_id:m.id,p_session_key:getSessionKey()});
-    const isOpen=Boolean(voteState?.open),total=Number(voteState?.total_votes||0);
-    document.getElementById('motmWrap').innerHTML=`<div class="vote-hero"><div><strong>⭐ تصويت أفضل لاعب</strong><span>${isOpen?'التصويت متاح الآن — صوت واحد لكل متصفح':`انتهى التصويت · ${total} صوت`}</span></div><button onclick="showTab('vote');loadVote()">${isOpen?'صوّت الآن':'عرض النتيجة'}</button></div>`;
+    document.getElementById('motmWrap').innerHTML='';
   }
+
+  const voteVisible=['live','completed','finished','ended'].includes(m.status),allowed=predictionAllowed(m),predictionUrl='predictions.html?tid='+encodeURIComponent(m.tournament_id);
+  let voteCard='';
+  if(voteVisible){const {data:vs}=await sb.rpc('get_match_vote_state',{p_match_id:m.id,p_session_key:getSessionKey()});const open=Boolean(vs?.open),total=Number(vs?.total_votes||0);voteCard=`<div class="vote-hero"><div><strong>⭐ تصويت أفضل لاعب</strong><span>${open?'التصويت متاح الآن — صوت واحد لكل متصفح':`انتهى التصويت · ${total} صوت`}</span></div><button onclick="showTab('vote');loadVote()">${open?'صوّت الآن':'عرض النتيجة'}</button></div>`;}
+  const predictionCard=`<div class="predict-hero${allowed?'':' closed'}"><div><strong>🎯 ترشيحات نتائج البطولة</strong><span>${allowed?'سجّل بالاسم العربي ورقم الهاتف ونافس في الترتيب':'دوري أبطال أوروبا: تفتح الترشيحات من دور الـ16'}</span></div><a href="${allowed?predictionUrl:'#'}">${allowed?'رشّح الآن':'غير متاح الآن'}</a></div>`;
+  document.getElementById('engagementWrap').innerHTML=voteCard+predictionCard;
 
   loadEvents(m,ht,at);
   loadVarLog(m,ht,at);
