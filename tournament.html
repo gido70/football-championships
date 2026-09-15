@@ -354,6 +354,7 @@ img[src=""], img:not([src]) { display:none !important; }
 .notification-control{max-width:680px;margin:12px auto;padding:10px 12px;border-radius:16px;background:linear-gradient(145deg,#fff,#edf4fb);border:1px solid #cfdae7;box-shadow:0 7px 18px rgba(23,49,77,.12);display:flex;align-items:center;gap:10px;justify-content:center;color:#17314d}
 .notification-control button{min-height:44px;border:0;border-radius:13px;padding:10px 16px;background:linear-gradient(#2d5f91,#173d66);box-shadow:0 4px 0 #092846;color:#fff;font:800 13px "Tajawal",sans-serif;cursor:pointer}
 .notification-control button.enabled{background:linear-gradient(#26a269,#137447);box-shadow:0 4px 0 #0a4b30}.notification-control button:disabled{opacity:.72;cursor:default}
+.notification-control .install-app{background:linear-gradient(#20834f,#11643b);box-shadow:0 4px 0 #08472a;color:#fff}
 .notification-control .share-tournament{background:linear-gradient(#d4b65e,#a77d20);box-shadow:0 4px 0 #77540e;color:#071b35}
 .notification-control small{font-size:11px;line-height:1.5;color:#617287}
 @media(max-width:620px){.notification-control{margin:9px 8px;align-items:stretch;flex-direction:column;text-align:center}.notification-control button{width:100%}}
@@ -404,12 +405,17 @@ img[src=""], img:not([src]) { display:none !important; }
   <div id="androidInstallSheet" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:flex-end;justify-content:center">
     <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px calc(30px + env(safe-area-inset-bottom,0px));max-width:480px;width:100%;text-align:center">
       <div style="font-size:40px;margin-bottom:10px">📲</div>
-      <div style="font-weight:900;font-size:16px;margin-bottom:14px;color:#0F2A4A">تثبيت البطولة على سامسونج وأندرويد</div>
-      <div style="text-align:right;font-size:14px;line-height:2;color:#333">
-        <b>Chrome:</b> القائمة ⋮ ثم «إضافة إلى الشاشة الرئيسية» أو «تثبيت التطبيق».<br>
-        <b>Samsung Internet:</b> القائمة ☰ ثم «إضافة الصفحة إلى» ثم «الشاشة الرئيسية».
+      <div style="font-weight:900;font-size:18px;margin-bottom:10px;color:#0F2A4A">تثبيت تطبيق البطولة على سامسونج</div>
+      <div id="androidInstallHint" style="background:#edf7f1;border:1px solid #b9ddc7;border-radius:12px;padding:11px;margin-bottom:12px;color:#145c36;font-size:13px;font-weight:800;line-height:1.7"></div>
+      <div style="text-align:right;font-size:14px;line-height:2;color:#333;background:#f6f8fb;border-radius:12px;padding:12px 14px">
+        <b>في Samsung Internet:</b><br>اضغط القائمة ☰ أسفل الشاشة ← «إضافة الصفحة إلى» ← «الشاشة الرئيسية».<br>
+        <b>في Chrome:</b><br>اضغط القائمة ⋮ أعلى الشاشة ← «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية».
       </div>
-      <button onclick="document.getElementById('androidInstallSheet').style.display='none'" style="margin-top:18px;background:#0F2A4A;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-weight:800;cursor:pointer">فهمت</button>
+      <div id="androidBrowserButtons" style="display:none;gap:8px;margin-top:14px">
+        <button onclick="openInAndroidBrowser('com.sec.android.app.sbrowser')" style="flex:1;background:#5d36d5;color:#fff;border:none;border-radius:11px;padding:11px 8px;font-weight:900;cursor:pointer">فتح في Samsung Internet</button>
+        <button onclick="openInAndroidBrowser('com.android.chrome')" style="flex:1;background:#1769aa;color:#fff;border:none;border-radius:11px;padding:11px 8px;font-weight:900;cursor:pointer">فتح في Chrome</button>
+      </div>
+      <button onclick="closeAndroidInstallSheet()" style="margin-top:14px;background:#0F2A4A;color:#fff;border:none;border-radius:10px;padding:10px 24px;font-weight:800;cursor:pointer">إغلاق</button>
     </div>
   </div>
 <nav class="nav" data-platform-brand>
@@ -426,6 +432,7 @@ img[src=""], img:not([src]) { display:none !important; }
 </nav>
 <div id="scopeNotice" style="display:none;background:rgba(184,134,11,.1);border-bottom:2px solid #b8860b;color:#8a6d2f;text-align:center;padding:10px 16px;font-size:13px;font-weight:700"></div>
 <section class="notification-control" aria-label="تنبيهات البطولة">
+  <button type="button" id="installAppButton" class="install-app" onclick="handleInstallClick()">📲 تثبيت تطبيق البطولة</button>
   <button type="button" id="notificationToggle">🔔 فعّل تنبيهات البطولة</button>
   <button type="button" id="shareTournamentButton" class="share-tournament" onclick="shareTournament()">📤 مشاركة هذه البطولة</button>
   <small>بداية المباراة، الأهداف، البطاقات الصفراء والحمراء، ونهاية المباراة. يستخدم الهاتف صوت الإشعار المعتاد.</small>
@@ -508,7 +515,7 @@ const sb=SUPABASE_READY?window.supabase.createClient(window.SUPABASE_URL,window.
 const TID=new URLSearchParams(location.search).get('id');
 let TOURNAMENT_CACHE=null;
 const TOURNAMENT_SHARE_PAGES={
-  'aaaaaaaa-0000-0000-0000-000000000001':'share-mansour-2026-app.html',
+  'aaaaaaaa-0000-0000-0000-000000000001':'share-mansour-2026-small.html',
   'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'share-mansour-2027.html',
   'eee33333-5d2a-4f3b-a981-d4b8f5f86143':'share-uefa-2027.html'
 };
@@ -525,7 +532,7 @@ const TOURNAMENT_APP_NAMES={
 function tournamentShareUrl(){
   const page=TOURNAMENT_SHARE_PAGES[TID];
   if(!page)return new URL('tournament.html?id='+encodeURIComponent(TID)+'&standalone=1',location.href).href;
-  const url=new URL(page,location.href);url.searchParams.set('v',TID==='aaaaaaaa-0000-0000-0000-000000000001'?'20260915-1':'20260914-3');return url.href;
+  const url=new URL(page,location.href);url.searchParams.set('v',TID==='aaaaaaaa-0000-0000-0000-000000000001'?'20260915-2':'20260914-3');return url.href;
 }
 async function shareTournament(){
   const name=TOURNAMENT_APP_NAMES[TID]||TOURNAMENT_CACHE?.name_ar||TOURNAMENT_CACHE?.name||document.title||'البطولة';
@@ -948,13 +955,15 @@ async function loadMOTD(){
 let deferredInstallPrompt=null;
 function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}
 function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent);}
+function isSamsungBrowser(){return /SamsungBrowser/i.test(navigator.userAgent);}
+function isInAppBrowser(){return /; wv\)|\bwv\b|WhatsApp|FBAN|FBAV|Instagram/i.test(navigator.userAgent);}
 
 const installDismissKey='installBannerDismissed_'+(TID||'platform');
 const installDismissedRecently=()=>Date.now()-Number(localStorage.getItem(installDismissKey)||0)<86400000;
 if(!isStandalone()){
-  window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredInstallPrompt=e;if(!installDismissedRecently())document.getElementById('installBanner').style.display='block';});
+  window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();deferredInstallPrompt=e;if(!installDismissedRecently())document.getElementById('installBanner').style.display='block';const button=document.getElementById('installAppButton');if(button)button.textContent='📲 تثبيت الآن بضغطة واحدة';});
   if(!installDismissedRecently())document.getElementById('installBanner').style.display='block';
-}
+}else document.getElementById('installAppButton')?.remove();
 async function handleInstallClick(){
   if(deferredInstallPrompt){
     deferredInstallPrompt.prompt();
@@ -962,15 +971,34 @@ async function handleInstallClick(){
     if(outcome==='accepted')dismissInstallBanner();
     deferredInstallPrompt=null;
   }else if(isIOS())document.getElementById('iosInstallSheet').style.display='flex';
-  else document.getElementById('androidInstallSheet').style.display='flex';
+  else showAndroidInstallSheet();
+}
+function showAndroidInstallSheet(){
+  const hint=document.getElementById('androidInstallHint');
+  const buttons=document.getElementById('androidBrowserButtons');
+  if(isInAppBrowser()){
+    hint.textContent='أنت داخل واتساب أو متصفح داخلي. افتح البطولة أولًا في متصفح سامسونج أو Chrome، ثم ثبّتها.';
+    buttons.style.display='flex';
+  }else{
+    hint.textContent=isSamsungBrowser()?'أنت تستخدم Samsung Internet: اتبع الخطوات الأولى أدناه.':'إذا لم يظهر زر التثبيت المباشر، اتبع خطوات المتصفح أدناه.';
+    buttons.style.display='none';
+  }
+  document.getElementById('androidInstallSheet').style.display='flex';
+}
+function closeAndroidInstallSheet(){document.getElementById('androidInstallSheet').style.display='none';}
+function openInAndroidBrowser(packageName){
+  const target=new URL(location.href);target.searchParams.set('standalone','1');
+  location.href='intent://'+target.href.replace(/^https?:\/\//,'')+'#Intent;scheme=https;package='+packageName+';end';
 }
 function dismissInstallBanner(){
   document.getElementById('installBanner').style.display='none';
   localStorage.setItem(installDismissKey,String(Date.now()));
 }
-window.addEventListener('appinstalled',()=>{document.getElementById('installBanner').style.display='none';localStorage.removeItem(installDismissKey);});
+window.addEventListener('appinstalled',()=>{document.getElementById('installBanner').style.display='none';document.getElementById('installAppButton')?.remove();localStorage.removeItem(installDismissKey);});
 window.handleInstallClick=handleInstallClick;
 window.dismissInstallBanner=dismissInstallBanner;
+window.closeAndroidInstallSheet=closeAndroidInstallSheet;
+window.openInAndroidBrowser=openInAndroidBrowser;
 const TAB_ACCENT={st:'#639922',ma:'#c9a84c',sc:'#D85A30',tm:'#378ADD'};
 let liveRefreshTimer=null,liveMatchesChannel=null;
 

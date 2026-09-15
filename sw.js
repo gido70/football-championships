@@ -1,5 +1,5 @@
-// sw.js — network-first public shell + Web Push — v36.13
-const VERSION = 'football-shell-v36-13';
+// sw.js — network-first public shell + Web Push — v36.14
+const VERSION = 'football-shell-v36-14';
 const CORE = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const CORE = [
   './share-mansour-2026.html',
   './share-mansour-2026-black.html',
   './share-mansour-2026-app.html',
+  './share-mansour-2026-small.html',
   './share-mansour-2027.html',
   './share-uefa-2027.html',
   './manifest-mansour-2026.webmanifest',
@@ -40,6 +41,7 @@ const CORE = [
   './share-logo-mansour-2026-white-on-black-v2.jpg',
   './logo-cup-2026-black-v3-192.png',
   './logo-cup-2026-black-v3-512.png',
+  './logo-cup-2026-share-small-v4.png',
   './logo-cup-2027-192.png',
   './logo-cup-2027-512.png'
 ];
