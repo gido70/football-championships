@@ -8,6 +8,8 @@ scripts(publicPage).forEach((s,i)=>new vm.Script(s,{filename:'playstation.html#'
 scripts(adminPage).forEach((s,i)=>new vm.Script(s,{filename:'playstation-admin.html#'+i}));
 scripts(operatorPage).forEach((s,i)=>new vm.Script(s,{filename:'playstation-operator.html#'+i}));
 must(publicPage.includes("channel('ps-"),'النتائج المباشرة غير مربوطة بـ Realtime');
+must(publicPage.includes("matches.filter(m=>m.status==='live')")&&publicPage.includes('class="live-card"'),'صفحة الجمهور لا تعرض جميع مباريات البلايستيشن المباشرة');
+must(publicPage.includes('Realtime callbacks refresh data only')&&publicPage.includes('load=async function()'),'تحديث Realtime ما زال ينشئ اشتراكًا جديدًا عند كل حدث');
 must(publicPage.includes("p?.photo_public?(p?._photoUrl||p?.photo_url):''")&&publicPage.includes('🎮'),'حماية صورة الطفل أو بديل الصورة الاختيارية غير موجود');
 must(publicPage.includes('playstation-logo-2027.js')&&publicPage.includes('PLAYSTATION_LOGO_2027')&&publicPage.includes('id="formatInfo"'),'شعار 2027 أو صيغة الثلاثين مشاركاً غير ظاهرة');
 must(publicPage.includes("const MANSOUR_TID='c983ee0c-4434-470d-b0a2-6e6efe1ad650'")&&publicPage.includes('if(TID!==MANSOUR_TID)'),'صفحة البلايستيشن لا ترفض معرفات البطولات الأخرى');
