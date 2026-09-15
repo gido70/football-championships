@@ -87,6 +87,7 @@
         <div class="feature-icon">🏆</div><h3>جدول الترتيب الرسمي (للنشر)</h3><p>بنفس التصميم الرسمي المعتمد — شعارا اللجنة والكأس، شريط أحمر، جدول داكن</p>
         <div style="margin-top:8px"><select id="standingsGroupSel" style="width:100%"><option value="__all__">كل المجموعات</option></select></div>
         <div class="actions" style="margin-top:10px"><button class="btn secondary" onclick="exportGroupStandings()">📊 إكسل</button><button class="btn secondary" onclick="printOfficialStandings()">📄 وورد (رسمي)</button><button class="btn secondary" onclick="runAsPDF(printOfficialStandings)">🖨️ PDF</button></div>
+        <div id="groupReportButtons" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px"></div>
       </div>
     </div>
   </section>
@@ -900,14 +901,15 @@ async function exportFullReportWord(){
 }
 window.exportFullReportWord=exportFullReportWord;
 
-function computeGroupStandings(matches,teams){
+function computeGroupStandings(matches,teams,cardEvents=[]){
   const groups={};
   teams.forEach(t=>{
     const g=t.group_code||'بلا مجموعة';
     if(!groups[g])groups[g]=[];
-    groups[g].push({id:t.id,name:t.name_ar||t.name,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0});
+    groups[g].push({id:t.id,name:t.name_ar||t.name,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0,yellow:0,red:0});
   });
-  matches.filter(m=>m.status==='completed').forEach(m=>{
+  const completed=matches.filter(m=>['completed','finished','ended'].includes(String(m.status||'').toLowerCase()));
+  completed.forEach(m=>{
     const g=teams.find(t=>t.id===m.home_team_id)?.group_code||'بلا مجموعة';
     const list=groups[g];if(!list)return;
     const h=list.find(t=>t.id===m.home_team_id), a=list.find(t=>t.id===m.away_team_id);
@@ -918,15 +920,29 @@ function computeGroupStandings(matches,teams){
     else if(hs<as){a.w++;a.pts+=3;h.l++;}
     else{h.d++;a.d++;h.pts++;a.pts++;}
   });
-  Object.keys(groups).forEach(g=>groups[g].sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf));
+  cardEvents.forEach(e=>Object.values(groups).flat().forEach(t=>{if(t.id===e.team_id){if(e.event_type==='yellow_card')t.yellow++;if(e.event_type==='red_card')t.red++;}}));
+  const h2h=(a,b)=>{
+    const games=completed.filter(m=>(m.home_team_id===a.id&&m.away_team_id===b.id)||(m.home_team_id===b.id&&m.away_team_id===a.id));
+    let ap=0,bp=0,agd=0;
+    games.forEach(m=>{const ah=m.home_team_id===a.id,as=Number(ah?m.home_score:m.away_score)||0,bs=Number(ah?m.away_score:m.home_score)||0;agd+=as-bs;if(as>bs)ap+=3;else if(as<bs)bp+=3;else{ap++;bp++;}});
+    return ap!==bp?bp-ap:(agd?-agd:0);
+  };
+  Object.keys(groups).forEach(g=>groups[g].sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf||h2h(a,b)||(a.yellow+a.red*3)-(b.yellow+b.red*3)||a.name.localeCompare(b.name,'ar')));
   return groups;
+}
+
+async function getGroupReportData(){
+  const [matches,{data:teams},{data:cards}]=await Promise.all([
+    getMatches(),
+    sb.from('teams').select('id,name,name_ar,group_code').eq('tournament_id',TID),
+    sb.from('match_events').select('team_id,event_type').eq('tournament_id',TID).in('event_type',['yellow_card','red_card'])
+  ]);
+  return{matches,teams:teams||[],groups:computeGroupStandings(matches,teams||[],cards||[])};
 }
 
 async function exportGroupStandings(){
   setMsg('⏳ جاري التجهيز...');
-  const matches=await getMatches();
-  const {data:teams}=await sb.from('teams').select('id,name,name_ar,group_code').eq('tournament_id',TID);
-  const groups=computeGroupStandings(matches,teams||[]);
+  const {groups}=await getGroupReportData();
   const wb=XLSX.utils.book_new();
   Object.entries(groups).forEach(([g,list])=>{
     const rows=list.map((t,i)=>({المركز:i+1,الفريق:t.name,لعب:t.p,فوز:t.w,تعادل:t.d,خسارة:t.l,له:t.gf,عليه:t.ga,الفارق:t.gf-t.ga,النقاط:t.pts}));
@@ -939,9 +955,7 @@ window.exportGroupStandings=exportGroupStandings;
 
 async function exportGroupStandingsWord(){
   setMsg('⏳ جاري التجهيز...');
-  const matches=await getMatches();
-  const {data:teams}=await sb.from('teams').select('id,name,name_ar,group_code').eq('tournament_id',TID);
-  const groups=computeGroupStandings(matches,teams||[]);
+  const {groups}=await getGroupReportData();
   const headers=['المركز','الفريق','لعب','فوز','تعادل','خسارة','له','عليه','الفارق','النقاط'];
   const sections=Object.entries(groups).map(([g,list])=>({
     title:'🏆 مجموعة '+g,headers,
@@ -958,16 +972,19 @@ async function loadGroupOptions(){
   const sel=document.getElementById('standingsGroupSel');
   if(!sel)return;
   sel.innerHTML='<option value="__all__">كل المجموعات</option>'+groups.map(g=>`<option value="${g}">المجموعة ${g} فقط</option>`).join('');
+  const box=document.getElementById('groupReportButtons');
+  if(box)box.innerHTML=`<button class="btn" style="grid-column:1/-1;background:linear-gradient(135deg,#7c2d3d,#d04455)" onclick="printGroupPDF('__all__')">🖨️ PDF — كل المجموعات في صفحة واحدة</button>`+groups.map((g,i)=>`<button class="btn secondary" style="border-color:${['#3b82f6','#22c55e','#f59e0b','#a855f7'][i%4]}" onclick="printGroupPDF('${escS(g)}')">PDF — المجموعة ${escS(g)}</button>`).join('');
 }
+
+async function printGroupPDF(group){document.getElementById('standingsGroupSel').value=group;await runAsPDF(printOfficialStandings);}
+window.printGroupPDF=printGroupPDF;
 
 function escS(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
 
 async function printOfficialStandings(){
   setMsg('⏳ جاري التجهيز...');
-  const matches=await getMatches();
-  const {data:teams}=await sb.from('teams').select('id,name,name_ar,group_code').eq('tournament_id',TID);
+  const {groups}=await getGroupReportData();
   const {data:tour}=await sb.from('tournaments').select('name_ar,name,committee_logo_url,cup_logo_url,logo_url,report_color,report_header_image_url,show_committee_logo,show_cup_logo').eq('id',TID).single();
-  const groups=computeGroupStandings(matches,teams||[]);
   const tourName=tour?.name_ar||tour?.name||TNAME;
   const c1=tour?.show_committee_logo!==false?tour?.committee_logo_url:null, c2=tour?.show_cup_logo!==false?(tour?.cup_logo_url||tour?.logo_url):null;
   const themeColor=tour?.report_color||'#1a5c3a';
@@ -977,17 +994,17 @@ async function printOfficialStandings(){
   const groupEntries=Object.entries(groups).filter(([g])=>selectedGroup==='__all__'||g===selectedGroup);
   if(!groupEntries.length){setMsg('⚠️ لا توجد بيانات مجموعات بعد','warn');return;}
 
-  const groupTable=(g,list)=>`
-    <div style="background:${accentColor};padding:6px 14px;font-weight:900;text-align:center;font-size:13px;margin-bottom:0;color:#0d1117">المجموعة (${escS(g)})</div>
+  const groupTable=(g,list)=>`<section class="group-report-card">
+    <div style="background:${accentColor};padding:7px 14px;font-weight:900;text-align:center;font-size:14px;margin-bottom:0;color:#0d1117">المجموعة (${escS(g)}) — المتصدر: ${escS(list[0]?.name||'—')}</div>
     <table border="1" style="width:100%;border-collapse:collapse;margin-bottom:18px;font-size:12.5px" dir="rtl">
       <tr style="background:#ffffff">
-        <th style="padding:7px;color:#000">النقاط</th><th style="padding:7px;color:#000">الفرق</th><th style="padding:7px;color:#000">عليه</th><th style="padding:7px;color:#000">له</th><th style="padding:7px;color:#000">الخسارة</th><th style="padding:7px;color:#000">التعادل</th><th style="padding:7px;color:#000">الفوز</th><th style="padding:7px;color:#000">عدد المباريات</th><th style="padding:7px;color:#000">أسم الفريق</th>
+        <th style="padding:7px;color:#000">النقاط</th><th style="padding:7px;color:#000">الفارق</th><th style="padding:7px;color:#000">عليه</th><th style="padding:7px;color:#000">له</th><th style="padding:7px;color:#000">الخسارة</th><th style="padding:7px;color:#000">التعادل</th><th style="padding:7px;color:#000">الفوز</th><th style="padding:7px;color:#000">لعب</th><th style="padding:7px;color:#000">اسم الفريق</th>
       </tr>
       ${list.map(t=>{
         const pts=t.w*3+t.d, gd=t.gf-t.ga;
         return `<tr style="background:${themeColor};color:#fff"><td style="padding:7px;text-align:center">${pts}</td><td style="padding:7px;text-align:center">${gd}</td><td style="padding:7px;text-align:center">${t.ga}</td><td style="padding:7px;text-align:center">${t.gf}</td><td style="padding:7px;text-align:center">${t.l}</td><td style="padding:7px;text-align:center">${t.d}</td><td style="padding:7px;text-align:center">${t.w}</td><td style="padding:7px;text-align:center">${t.p}</td><td style="padding:7px;text-align:right;font-weight:800">${escS(t.name)}</td></tr>`;
       }).join('')}
-    </table>`;
+    </table></section>`;
 
   const header=tour?.report_header_image_url
     ? `<div style="width:100%;height:70px;overflow:hidden;margin-bottom:0;border-bottom:4px solid #c9a84c"><img src="${tour.report_header_image_url}" style="width:100%;height:100%;object-fit:cover;display:block"></div>
@@ -999,8 +1016,11 @@ async function printOfficialStandings(){
   </tr></table>
   <div style="background:${themeColor};color:#fff;text-align:center;font-weight:900;font-size:16px;padding:10px;margin-bottom:0">جدول المجموعات</div>`;
 
-  const body=groupEntries.map(([g,list])=>groupTable(g,list)).join('');
-  await downloadReportDoc('جدول الترتيب الرسمي - '+tourName+'.doc','',body,header);
+  const allGroups=selectedGroup==='__all__';
+  const printCss=`<style>@page{size:A4 ${allGroups?'landscape':'portrait'};margin:8mm}.groups-report{display:${allGroups?'grid':'block'};grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.group-report-card{break-inside:avoid;page-break-inside:avoid}.group-report-card table{margin-bottom:0!important}.group-report-card th,.group-report-card td{padding:${allGroups?'5px':'7px'}!important;font-size:${allGroups?'10px':'12.5px'}!important}</style>`;
+  const body=printCss+`<div class="groups-report">${groupEntries.map(([g,list])=>groupTable(g,list)).join('')}</div>`;
+  const fileLabel=allGroups?'كل المجموعات':'المجموعة '+selectedGroup;
+  await downloadReportDoc('جدول الترتيب الرسمي - '+fileLabel+' - '+tourName+'.doc','',body,header);
   setMsg('✅ تم التحميل','ok');
 }
 window.printOfficialStandings=printOfficialStandings;
