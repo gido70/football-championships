@@ -30,6 +30,8 @@ must(tournament.includes("TID==='c983ee0c-4434-470d-b0a2-6e6efe1ad650'")&&tourna
 must(tournament.includes(".eq('is_visible',true).maybeSingle()")&&tournament.includes('showPlaystation=Boolean(psCompetition?.is_visible)'),'مدخل البلايستيشن يظهر قبل فتح البطولة للجمهور');
 must(tournament.includes('playstation.html?tid=${TID}&amp;standalone=1&amp;scope_tid=${TID}'),'رابط البلايستيشن لا يحافظ على نطاق كأس منصور في الهاتف');
 must(home.includes('./playstation-admin.html'),'لوحة البلايستيشن غير مضافة للأدمن');
+must(adminPage.includes('رابط المشغّل المساعد')&&adminPage.includes('copyAssistantLink')&&adminPage.includes('shareAssistantLink'),'رابط المشغّل المساعد وأزرار نسخه ومشاركته غير موجودة في لوحة الإدارة');
+must(adminPage.includes("new URL('playstation-operator.html',location.href).href")&&adminPage.includes('كلمة المرور تُرسل للمشغّل بصورة منفصلة'),'رابط المشغّل أو تنبيه حماية كلمة المرور غير مكتمل');
 for(const table of ['playstation_competitions','playstation_participants','playstation_matches','playstation_admins'])must(sql.includes('enable row level security')&&sql.includes(table),'جدول أو RLS البلايستيشن ناقص: '+table);
 must(sql.includes("role in ('owner','operator')")&&sql.includes('a.user_id=(select auth.uid())'),'عزل صلاحيات مشغل البلايستيشن غير مكتمل');
 must(sql.includes('participant_target integer not null default 30')&&sql.includes("'round_of_16'")&&sql.includes('best_thirds_count integer not null default 4'),'نظام 30 مشاركاً والتأهل إلى دور 16 غير مثبت');
