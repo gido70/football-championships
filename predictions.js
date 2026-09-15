@@ -31,13 +31,15 @@ function teamBlock(id){
 function pointsHtml(){
   const hasExact=rounds.some(r=>r.exact_bonus>0);
   if(!hasExact)return `<div class="points" style="grid-template-columns:1fr 24px 1fr"><div><strong>+2</strong><small>الفائز أو التعادل الصحيح</small></div><span>=</span><div><strong>2</strong><small>الحد الأقصى للمباراة</small></div></div>`;
-  return `<div class="points"><div><strong>+2</strong><small>الفائز أو التعادل الصحيح</small></div><span>+</span><div><strong>+2</strong><small>نتيجة دقيقة</small></div><span>=</span><div><strong>4</strong><small>من ربع النهائي</small></div></div>`;
+  return `<div class="points"><div><strong>+2</strong><small>المتأهل الصحيح</small></div><span>+</span><div><strong>+2</strong><small>الحسم بالترجيح</small></div><span>+</span><div><strong>+2</strong><small>نتيجة الترجيح الدقيقة</small></div></div>`;
 }
 
 function matchHtml(r,f){
   const p=predictions[f.id],isLocked=locked(r,f);
+  const knockout=stageKey(r)==='knockout';
   const date=new Intl.DateTimeFormat('ar-AE',{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}).format(new Date(f.kickoff_at));
-  return `<article class="match"><div class="meta"><span>${r.is_test?'مباراة تجريبية':esc(r.name)}</span><span>${date}</span></div><div class="teams">${teamBlock(f.home_team_id)}<div class="score"><input inputmode="numeric" min="0" max="50" type="number" data-home="${f.id}" value="${p?.predicted_home??''}" ${isLocked?'disabled':''} aria-label="أهداف الفريق الأول"><span>–</span><input inputmode="numeric" min="0" max="50" type="number" data-away="${f.id}" value="${p?.predicted_away??''}" ${isLocked?'disabled':''} aria-label="أهداف الفريق الثاني"></div>${teamBlock(f.away_team_id)}</div><button class="save" data-save="${f.id}" ${isLocked?'disabled':''}>${isLocked?'أُغلق الترشيح':p?'تحديث الترشيح':'حفظ الترشيح'}</button><div class="notice" data-note="${f.id}" style="display:${p?'block':'none'}">${p?'ترشيحك محفوظ: '+p.predicted_home+'–'+p.predicted_away:''}</div></article>`;
+  const pens=knockout?`<div style="margin-top:14px;padding:13px;border-radius:15px;background:#fff7dc"><label style="display:flex;gap:8px;align-items:center;font-weight:700"><input type="checkbox" data-pens="${f.id}" ${p?.predicts_penalties?'checked':''} ${isLocked?'disabled':''}> أتوقع أن تُحسم المباراة بركلات الترجيح</label><div data-pens-box="${f.id}" style="display:${p?.predicts_penalties?'grid':'none'};grid-template-columns:1fr 1fr;gap:9px;margin-top:10px"><select data-qualifier="${f.id}" ${isLocked?'disabled':''}><option value="">اختر الفريق المتأهل</option><option value="${f.home_team_id}" ${p?.predicted_winner_team_id===f.home_team_id?'selected':''}>${esc(teams[f.home_team_id]?.name_ar||teams[f.home_team_id]?.name)}</option><option value="${f.away_team_id}" ${p?.predicted_winner_team_id===f.away_team_id?'selected':''}>${esc(teams[f.away_team_id]?.name_ar||teams[f.away_team_id]?.name)}</option></select><div class="score"><input inputmode="numeric" type="number" min="0" max="20" data-home-pens="${f.id}" value="${p?.predicted_home_penalties??''}" placeholder="ترجيح الأول" ${isLocked?'disabled':''}><span>–</span><input inputmode="numeric" type="number" min="0" max="20" data-away-pens="${f.id}" value="${p?.predicted_away_penalties??''}" placeholder="ترجيح الثاني" ${isLocked?'disabled':''}></div></div></div>`:'';
+  return `<article class="match"><div class="meta"><span>${r.is_test?'مباراة تجريبية':esc(r.name)}</span><span>${date}</span></div><div class="teams">${teamBlock(f.home_team_id)}<div class="score"><input inputmode="numeric" min="0" max="50" type="number" data-home="${f.id}" value="${p?.predicted_home??''}" ${isLocked?'disabled':''} aria-label="أهداف الفريق الأول"><span>–</span><input inputmode="numeric" min="0" max="50" type="number" data-away="${f.id}" value="${p?.predicted_away??''}" ${isLocked?'disabled':''} aria-label="أهداف الفريق الثاني"></div>${teamBlock(f.away_team_id)}</div>${pens}<button class="save" data-save="${f.id}" ${isLocked?'disabled':''}>${isLocked?'أُغلق الترشيح':p?'تحديث الترشيح':'حفظ الترشيح'}</button><div class="notice" data-note="${f.id}" style="display:${p?'block':'none'}">${p?'ترشيحك محفوظ: '+p.predicted_home+'–'+p.predicted_away:''}</div></article>`;
 }
 
 function journeyHtml(f){
@@ -67,6 +69,7 @@ function render(){
 }
 
 function bind(){
+  document.querySelectorAll('[data-pens]').forEach(x=>x.onchange=()=>{document.querySelector(`[data-pens-box="${x.dataset.pens}"]`).style.display=x.checked?'grid':'none'});
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));
     document.querySelectorAll('.panel').forEach(x=>x.hidden=x.id!==b.dataset.tab);
@@ -84,8 +87,12 @@ async function savePrediction(r,f,button){
   if(!Number.isInteger(h)||!Number.isInteger(a)||h<0||a<0||h>50||a>50){
     note.className='notice error';note.style.display='block';note.textContent='أدخل نتيجة صحيحة.';return;
   }
+  const pensEl=document.querySelector(`[data-pens="${f.id}"]`),predictsPens=!!pensEl?.checked;
+  const qualifier=predictsPens?document.querySelector(`[data-qualifier="${f.id}"]`)?.value:scoreWinner(f,h,a);
+  const hp=predictsPens?Number(document.querySelector(`[data-home-pens="${f.id}"]`)?.value):null,ap=predictsPens?Number(document.querySelector(`[data-away-pens="${f.id}"]`)?.value):null;
+  if(predictsPens&&(h!==a||!qualifier||!Number.isInteger(hp)||!Number.isInteger(ap)||hp===ap)){note.className='notice error';note.style.display='block';note.textContent='للترجيح: اجعل نتيجة المباراة متعادلة، واختر المتأهل وأدخل نتيجة ترجيح صحيحة غير متعادلة.';return;}
   button.disabled=true;
-  const payload={participant_id:user.id,fixture_id:f.id,predicted_home:h,predicted_away:a,predicted_winner_team_id:scoreWinner(f,h,a),updated_at:new Date().toISOString()};
+  const payload={participant_id:user.id,fixture_id:f.id,predicted_home:h,predicted_away:a,predicted_winner_team_id:qualifier||null,predicts_penalties:predictsPens,predicted_home_penalties:hp,predicted_away_penalties:ap,updated_at:new Date().toISOString()};
   const old=predictions[f.id];
   const request=old?sb.from('participant_predictions').update(payload).eq('id',old.id).select().single():sb.from('participant_predictions').insert(payload).select().single();
   const {data,error}=await request;

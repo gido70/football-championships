@@ -128,7 +128,8 @@ a{text-decoration:none;color:inherit}
 .vote-done{text-align:center;padding:24px 0;color:#79786A;font-size:13px}
 .vote-total{text-align:center;font-size:11px;color:#9C9A8D;margin-top:12px}
 .vote-card.locked{cursor:default;opacity:.86}
-.vote-hero{max-width:760px;margin:14px auto;padding:16px 18px;border-radius:18px;background:linear-gradient(135deg,#0f2a4a,#225aa8 58%,#c9a84c);color:#fff;box-shadow:0 10px 28px rgba(15,42,74,.22);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.vote-hero{max-width:760px;margin:14px auto;padding:19px 18px;border-radius:18px;background:linear-gradient(135deg,#7d0015,#ed233f 54%,#ffca42);color:#fff;box-shadow:0 0 0 0 rgba(237,35,63,.55),0 10px 28px rgba(125,0,21,.28);display:flex;align-items:center;justify-content:space-between;gap:12px;animation:voteHeroAlert 1.6s infinite}
+@keyframes voteHeroAlert{0%,100%{box-shadow:0 0 0 0 rgba(237,35,63,.55),0 10px 28px rgba(125,0,21,.28)}60%{box-shadow:0 0 0 9px rgba(237,35,63,0),0 10px 28px rgba(125,0,21,.28)}}
 .vote-hero strong{display:block;font-size:17px}.vote-hero span{display:block;font-size:12px;opacity:.9;margin-top:3px}
 .vote-hero button{border:0;border-radius:13px;background:#fff;color:#0f2a4a;font:900 13px "Tajawal",sans-serif;padding:11px 16px;white-space:nowrap;cursor:pointer}
 
@@ -745,14 +746,6 @@ window.sendReact=sendReact;
 function initials(name){return (name||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');}
 
 let clockTimer=null;
-function phaseOffsetMinPub(half,HL){
-  const ET=15;
-  if(half===1)return 0;
-  if(half===2)return HL;
-  if(half===3)return HL*2;
-  if(half===4)return HL*2+ET;
-  return HL*2+ET*2;
-}
 const HALF_LABELS={1:'⏱️ الشوط الأول',2:'⏱️ الشوط الثاني',3:'⏱️ وقت إضافي 1',4:'⏱️ وقت إضافي 2',5:'🎯 ركلات ترجيح'};
 function startClock(m){
   stopClock();
@@ -760,11 +753,9 @@ function startClock(m){
   if(m.current_half===5){liveMinEl.textContent='🎯 ركلات ترجيح'+((m.home_penalties!=null&&m.away_penalties!=null)?(' '+m.home_penalties+'-'+m.away_penalties):'');return;}
   if(m.is_paused){liveMinEl.textContent='⏸️ استراحة';return;}
   if(!m.phase_started_at)return;
-  const HL=m.half_length_minutes||20;
-  const offset=phaseOffsetMinPub(m.current_half||1,HL);
   const startedMs=new Date(m.phase_started_at).getTime();
   const tick=()=>{
-    const elapsedMin=offset+Math.floor((Date.now()-startedMs)/60000)+1;
+    const elapsedMin=Math.floor((Date.now()-startedMs)/60000)+1;
     liveMinEl.textContent=elapsedMin+"'";
   };
   tick();

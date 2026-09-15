@@ -49,6 +49,9 @@ must(matchAdmin.includes("from('player_suspensions')")&&matchAdmin.includes(".eq
 must(matchAdmin.includes('id="suspensionAlert"')&&matchAdmin.includes('تنبيه للأدمن والحكم'),'تنبيه الإيقاف قبل المباراة غير موجود');
 must(matchAdmin.includes('disabled data-suspended="true"')&&matchAdmin.includes('.lu-start:not(:disabled)'),'اللاعب الموقوف ما زال قابلًا للاختيار في التشكيلة');
 must(matchAdmin.includes('🚫 موقوف — لا يشارك'),'اللاعب الموقوف غير مميز في سجل الأحداث');
+must(matchAdmin.includes('redCardPlayerIds.has(playerId)')&&matchAdmin.includes('اللاعب مطرود ولا يمكن تسجيل هدف'),'اللاعب المطرود ما زال قابلًا لتسجيل هدف لاحق');
+must(matchAdmin.includes('id="soPlayerSel" type="hidden"')&&matchAdmin.includes('id="soPlayerCards"'),'منفذو ركلات الترجيح ما زالوا في قائمة منسدلة');
+must(!matchAdmin.includes('phaseOffsetMin(')&&!matchLive.includes('phaseOffsetMinPub('),'عداد الشوط الثاني ما زال تراكميًا');
 must(sql.includes('unique(tournament_id,endpoint)'),'منع تكرار الاشتراك غير موجود');
 must(sql.includes('event_key text not null unique'),'منع تكرار التنبيه غير موجود');
 must(report.includes('الفائز')&&report.includes('الخاسر')&&report.includes('وقت البداية')&&report.includes('حكم المباراة')&&report.includes('المعلّق'),'تقرير المباراة ينقصه أحد الحقول المطلوبة');
