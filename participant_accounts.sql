@@ -4,12 +4,16 @@ create table if not exists public.participant_profiles (
   participant_code text not null unique,
   first_name text not null check (char_length(trim(first_name)) between 2 and 50),
   family_name text not null check (char_length(trim(family_name)) between 2 and 50),
+  phone text,
   status text not null default 'active' check (status in ('active','suspended')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   last_seen_at timestamptz not null default now(),
   constraint participant_code_six_digits check (participant_code ~ '^[0-9]{6}$')
 );
+alter table public.participant_profiles add column if not exists phone text;
+alter table public.participant_profiles drop constraint if exists participant_phone_format;
+alter table public.participant_profiles add constraint participant_phone_format check (phone is null or phone ~ '^[+0-9٠-٩ ()-]{7,20}$');
 
 create table if not exists public.participant_tournament_memberships (
   id uuid primary key default gen_random_uuid(),

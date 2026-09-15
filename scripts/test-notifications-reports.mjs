@@ -12,6 +12,7 @@ for(const file of ['sw.js','admin-push.js','push-config.js','push-notifications.
 
 const tournament=read('tournament.html'),matchLive=read('match-live.html'),sw=read('sw.js'),matchAdmin=read('match-admin.html'),live=read('live-desk.html'),sql=read('push_notifications.sql'),voteSql=read('audience_player_vote.sql'),edge=read('supabase/functions/send-match-notification/index.ts'),report=read('match-report.html');
 must(tournament.includes('id="notificationToggle"'),'زر تفعيل التنبيهات غير موجود');
+must(read('push-notifications.js').includes('await save(client,tournamentId,subscription)'),'اشتراك الهاتف لا يُصالح تلقائيًا بعد تحديث التطبيق');
 must(tournament.includes("badge.style.display=matches?.length?'inline-flex':'none'")&&tournament.includes("channel('tournament-live-'"),'مؤشر اللايف العلوي لا يتحدث فور بدء المباراة أو نهايتها');
 must(!tournament.includes('requestNotifyPermissionOnce'),'ما زال طلب الإذن التلقائي موجودًا');
 must(matchLive.includes('id="appManifest"')&&matchLive.includes('id="appTouchIcon"'),'صفحة المباراة لا تجهز هوية تثبيت البطولة');
@@ -39,12 +40,18 @@ must(live.includes('id="playerSelect" type="hidden"'),'ما زالت قائمة 
 must(live.includes("if(!playerId){toast('اختر اللاعب من البطاقة"),'مركز اللايف يسمح بحفظ حدث دون اختيار بطاقة لاعب');
 must(matchAdmin.includes('id="hPlayerCards"')&&matchAdmin.includes('id="aPlayerCards"'),'بطاقات اللاعبين غير موجودة في نموذج إدارة المباراة التفصيلي');
 must(matchAdmin.includes('function selectEventPlayer('),'تحديد بطاقة اللاعب في النموذج التفصيلي غير مربوط');
+must(matchAdmin.includes('id="manOfMatch" type="hidden"')&&matchAdmin.includes('id="manOfMatchCards"'),'أفضل لاعب ما زال يستخدم قائمة منسدلة');
+must(matchAdmin.includes('function selectManOfMatch(')&&matchAdmin.includes('jersey_photo_url,team_id'),'بطاقات أفضل لاعب أو صورها غير مربوطة');
+must(matchAdmin.includes('sorted.slice(0,3)')&&matchAdmin.includes('للاسترشاد قبل قرار اللجنة'),'أوائل تصويت الجمهور غير ظاهرين بجانب قرار اللجنة');
 must(matchAdmin.includes('function saveInjurySelection(')&&matchAdmin.includes('id="saveInjuryBtn"'),'الإصابة لا تستخدم الاختيار ثم التأكيد');
 must(!matchAdmin.includes('class="inj-check"'),'ما زال حفظ الإصابة الفوري بضغطة واحدة موجودًا');
 must(matchAdmin.includes("from('player_suspensions')")&&matchAdmin.includes(".eq('status','pending')"),'تنبيه الإيقافات غير مربوط بسجل الانضباط');
 must(matchAdmin.includes('id="suspensionAlert"')&&matchAdmin.includes('تنبيه للأدمن والحكم'),'تنبيه الإيقاف قبل المباراة غير موجود');
 must(matchAdmin.includes('disabled data-suspended="true"')&&matchAdmin.includes('.lu-start:not(:disabled)'),'اللاعب الموقوف ما زال قابلًا للاختيار في التشكيلة');
 must(matchAdmin.includes('🚫 موقوف — لا يشارك'),'اللاعب الموقوف غير مميز في سجل الأحداث');
+must(matchAdmin.includes('redCardPlayerIds.has(playerId)')&&matchAdmin.includes('اللاعب مطرود ولا يمكن تسجيل هدف'),'اللاعب المطرود ما زال قابلًا لتسجيل هدف لاحق');
+must(matchAdmin.includes('id="soPlayerSel" type="hidden"')&&matchAdmin.includes('id="soPlayerCards"'),'منفذو ركلات الترجيح ما زالوا في قائمة منسدلة');
+must(!matchAdmin.includes('phaseOffsetMin(')&&!matchLive.includes('phaseOffsetMinPub('),'عداد الشوط الثاني ما زال تراكميًا');
 must(sql.includes('unique(tournament_id,endpoint)'),'منع تكرار الاشتراك غير موجود');
 must(sql.includes('event_key text not null unique'),'منع تكرار التنبيه غير موجود');
 must(report.includes('الفائز')&&report.includes('الخاسر')&&report.includes('وقت البداية')&&report.includes('حكم المباراة')&&report.includes('المعلّق'),'تقرير المباراة ينقصه أحد الحقول المطلوبة');

@@ -15,11 +15,16 @@
     if(error)throw error;
   }
   let subscription=null;
-  async function state(tournamentId){
+  async function state(tournamentId,client){
     if(!supported())return 'unsupported';
     if(Notification.permission==='denied')return 'denied';
     const reg=await registration();subscription=await reg.pushManager.getSubscription();
-    return subscription&&localStorage.getItem(storageKey(tournamentId))==='1'?'enabled':'disabled';
+    const enabled=subscription&&localStorage.getItem(storageKey(tournamentId))==='1';
+    // A browser/PWA update can rotate the Push endpoint while the local marker
+    // remains enabled. Re-save the current subscription on every app launch so
+    // the database never keeps sending only to an obsolete phone endpoint.
+    if(enabled&&client)await save(client,tournamentId,subscription);
+    return enabled?'enabled':'disabled';
   }
   async function enable(client,tournamentId){
     if(!supported())throw new Error('unsupported');
@@ -52,7 +57,7 @@
     if(!button||!client||!tournamentId)return;
     const ios=/iphone|ipad|ipod/i.test(navigator.userAgent||''),standalone=window.matchMedia?.('(display-mode: standalone)').matches||navigator.standalone===true;
     if(ios&&!standalone){paint(button,'needs-install');button.addEventListener('click',()=>onNeedsInstall?.());return;}
-    let s='disabled';try{s=await state(tournamentId)}catch(_e){s='disabled'}paint(button,s);
+    let s='disabled';try{s=await state(tournamentId,client)}catch(_e){s='disabled'}paint(button,s);
     button.addEventListener('click',async()=>{
       const current=button.dataset.state;paint(button,'working','⏳ جاري تحديث التنبيهات...');
       try{paint(button,current==='enabled'?await disable(client,tournamentId):await enable(client,tournamentId))}

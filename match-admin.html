@@ -56,6 +56,13 @@ select option{background:#0f2a45;color:#ffffff}
 .event-player-card.selected{border-color:#ffd54f;background:#24496f;box-shadow:0 0 0 2px rgba(255,213,79,.22)}
 .event-player-card .player-number{display:flex;align-items:center;justify-content:center;height:40px;border-radius:10px;background:#4ea1ff;color:#071426;font-size:17px;font-weight:900;direction:ltr}
 .event-player-card .player-name{font-size:14px;font-weight:800;line-height:1.35}
+.motm-picker{grid-column:1/-1}.motm-team-title{margin:10px 2px 7px;color:#c9a84c;font-size:12px;font-weight:900}
+.motm-player-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:370px;overflow:auto;padding:2px}
+.motm-player-card{display:grid;grid-template-columns:50px 48px 1fr;align-items:center;gap:9px;min-height:62px;padding:7px 9px;border:1px solid rgba(255,255,255,.12);border-radius:13px;background:#162941;color:#eef5ff;text-align:right;cursor:pointer;font-family:inherit}
+.motm-player-card.selected{border-color:#ffd54f;background:#24496f;box-shadow:0 0 0 2px rgba(255,213,79,.22)}
+.motm-player-card img,.motm-avatar{width:46px;height:46px;border-radius:50%;object-fit:cover;background:#0f2a45;border:1px solid rgba(255,255,255,.16);display:grid;place-items:center;font-weight:900}
+.motm-player-card .player-number{display:grid;place-items:center;height:42px;border-radius:10px;background:#4ea1ff;color:#071426;font-size:17px;font-weight:900;direction:ltr}
+.motm-player-card .player-name{font-size:14px;font-weight:900;line-height:1.35}.motm-player-card small{display:block;color:#9eb2ca;font-size:11px;margin-top:3px}
 .inj-player-card{display:grid!important;grid-template-columns:48px 1fr auto;align-items:center;gap:10px;width:100%;cursor:pointer;border:1px solid rgba(255,255,255,.08);border-radius:11px!important;padding:7px!important;margin-bottom:6px;background:rgba(255,255,255,.025);color:#eef5ff;text-align:right;font-family:inherit}
 .inj-player-card.selected{border-color:#ffd54f;background:rgba(255,213,79,.12);box-shadow:0 0 0 2px rgba(255,213,79,.18)}
 .inj-player-card.current{border-color:#f85149;background:rgba(248,81,73,.13)}
@@ -71,7 +78,7 @@ select option{background:#0f2a45;color:#ffffff}
 .lu-row .inj-btn{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #ff6b6b;background:transparent;color:#ff6b6b;cursor:pointer}
 .lu-row .inj-btn.active{background:#ff6b6b;color:#fff}
 @media(max-width:680px){.lu-admin-grid{grid-template-columns:1fr}}
-@media(max-width:520px){.event-player-grid{grid-template-columns:1fr;max-height:340px}.event-player-card{min-height:60px}.event-player-card .player-number{font-size:19px}.inj-player-card{min-height:58px}.inj-player-number{font-size:18px;height:42px}}
+@media(max-width:520px){.event-player-grid,.motm-player-grid{grid-template-columns:1fr;max-height:340px}.event-player-card{min-height:60px}.event-player-card .player-number{font-size:19px}.inj-player-card{min-height:58px}.inj-player-number{font-size:18px;height:42px}.motm-player-card{min-height:66px}}
 .min-row{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px}
 .min-row input{width:80px;text-align:center;padding:8px 12px;font-size:15px;border-radius:10px}
 
@@ -320,12 +327,10 @@ select option{background:#0f2a45;color:#ffffff}
         <div class="meta-field"><label>الحكم الثاني</label><div style="display:flex;gap:6px"><input id="referee2" placeholder="اسم الحكم الثاني / مساعد" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('referee2','referee_2')">🎤</button></div></div>
         <div class="meta-field"><label>المعلق</label><div style="display:flex;gap:6px"><input id="commentator" placeholder="اسم المعلق" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('commentator','commentator')">🎤</button></div></div>
         <div class="meta-field"><label>الملعب</label><div style="display:flex;gap:6px"><input id="venueName" placeholder="اسم الملعب" style="flex:1"><button type="button" class="voice-btn" onclick="startVoiceText('venueName','venue_name')">🎤</button></div></div>
-        <div class="meta-field"><label>نجم المباراة (اختيارك)</label>
-          <div style="display:grid;grid-template-columns:.8fr 1.2fr auto;gap:6px">
-            <select id="manOfMatchTeam" onchange="onMotmTeamChange()"><option value="">— اختر الفريق أولًا —</option></select>
-            <select id="manOfMatch"><option value="">— اختر اللاعب —</option></select>
-            <button type="button" class="voice-btn" onclick="startVoiceMotm()">🎤</button>
-          </div>
+        <div class="meta-field motm-picker"><label>نجم المباراة — قرار اللجنة والإدارة</label>
+          <input id="manOfMatch" type="hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><span style="font-size:11.5px;color:#8fa3c0">اختر البطاقة بعد مراجعة ترتيب الجمهور أدناه</span><button type="button" class="voice-btn" onclick="startVoiceMotm()">🎤</button></div>
+          <div id="manOfMatchCards" class="motm-player-grid"></div>
         </div>
       </div>
       <div id="voteResultBox" style="display:none;margin:12px 0;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:12px;padding:12px 14px">
@@ -451,7 +456,7 @@ select option{background:#0f2a45;color:#ffffff}
       <div class="collapsible-body" id="shootoutPanel">
       <div class="meta-grid">
         <div class="meta-field"><label>الفريق</label><select id="soTeamSel"></select></div>
-        <div class="meta-field"><label>الضارب</label><select id="soPlayerSel"><option value="">— اختر —</option></select></div>
+        <div class="meta-field"><label>الضارب</label><input id="soPlayerSel" type="hidden"><div id="soPlayerCards" class="event-player-grid"></div></div>
       </div>
       <div style="display:flex;gap:10px;margin-top:10px">
         <button class="btn-sm btn-sm-ok" style="flex:1" onclick="recordShootout('scored')">✅ سجّل الهدف</button>
@@ -554,7 +559,7 @@ select option{background:#0f2a45;color:#ffffff}
 <script src="admin-push.js?v=20260914-3"></script>
 <script>
 const sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
-let cur=null,hPl=[],aPl=[],suspensionMap={},evtType={h:null,a:null},quickPending=null,injuryPendingId=null;
+let cur=null,hPl=[],aPl=[],suspensionMap={},redCardPlayerIds=new Set(),evtType={h:null,a:null},quickPending=null,injuryPendingId=null;
 let varUpdateBusy=false;
 const requestedMatchId=new URLSearchParams(location.search).get('match')||'';
 const requestedTournamentId=new URLSearchParams(location.search).get('tournament')||'';
@@ -620,8 +625,8 @@ async function onMatchChange(){
   cur=m;
   document.getElementById('evtsList').innerHTML='<div class="no-evts">⏳ جاري تحميل الأحداث...</div>';
 
-  const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.home_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
-  const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,is_injured,suspended_matches_remaining').eq('team_id',m.away_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
+  const {data:hp}=await sb.from('players').select('id,name,full_name_ar,number,jersey_photo_url,is_injured,suspended_matches_remaining').eq('team_id',m.home_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
+  const {data:ap}=await sb.from('players').select('id,name,full_name_ar,number,jersey_photo_url,is_injured,suspended_matches_remaining').eq('team_id',m.away_team_id).eq('is_active',true).or('submission_status.eq.approved,submission_status.is.null').order('number');
   hPl=hp||[];aPl=ap||[];
   suspensionMap={};
   const suspendedIds=[...hPl,...aPl].filter(p=>(p.suspended_matches_remaining||0)>0).map(p=>p.id);
@@ -678,22 +683,14 @@ function selectEventPlayer(side,playerId,playerName,button){
 }
 window.selectEventPlayer=selectEventPlayer;
 
-function fillManOfMatch(players){
-  const s=document.getElementById('manOfMatch');
-  s.innerHTML='<option value="">— اختر اللاعب —</option>';
-  players.forEach(p=>s.innerHTML+=`<option value="${p.id}">${p.number?'#'+p.number+' ':''}${p.full_name_ar||p.name}</option>`);
+function fillManOfMatch(){
+  const selected=document.getElementById('manOfMatch').value;
+  const teamBlock=(players,label)=>`<div><div class="motm-team-title">${label}</div>${players.map(p=>{const name=p.full_name_ar||p.name||'—';return `<button type="button" class="motm-player-card${p.id===selected?' selected':''}" data-player-id="${p.id}" onclick="selectManOfMatch('${p.id}',this)">${p.jersey_photo_url?`<img src="${p.jersey_photo_url}" alt="${name}">`:`<span class="motm-avatar">${name.trim()[0]||'★'}</span>`}<span class="player-number">${p.number??'—'}</span><span class="player-name">${name}<small>${label}</small></span></button>`}).join('')}</div>`;
+  document.getElementById('manOfMatchCards').innerHTML=teamBlock(hPl,cur?.ht?.name_ar||cur?.ht?.name||'الفريق الأول')+teamBlock(aPl,cur?.at?.name_ar||cur?.at?.name||'الفريق الثاني');
 }
-
-function fillManOfMatchTeams(m){
-  const s=document.getElementById('manOfMatchTeam');
-  s.innerHTML='<option value="">— اختر الفريق أولًا —</option>'+`<option value="h">${m.ht?.name_ar||m.ht?.name||'الفريق الأول'}</option><option value="a">${m.at?.name_ar||m.at?.name||'الفريق الثاني'}</option>`;
-}
-
-function onMotmTeamChange(){
-  const side=document.getElementById('manOfMatchTeam').value;
-  fillManOfMatch(side==='h'?hPl:side==='a'?aPl:[]);
-}
-window.onMotmTeamChange=onMotmTeamChange;
+function fillManOfMatchTeams(){fillManOfMatch()}
+function selectManOfMatch(playerId,button){document.getElementById('manOfMatch').value=playerId;document.querySelectorAll('.motm-player-card').forEach(b=>b.classList.toggle('selected',b===button))}
+window.selectManOfMatch=selectManOfMatch;
 
 async function renderMatch(m){
   document.getElementById('hName').textContent=m.ht?.name_ar||m.ht?.name||'الفريق الأول';
@@ -726,10 +723,8 @@ function fillMeta(m){
   document.getElementById('streamUrl').value=m.stream_url||'';
   document.getElementById('highlightVideoUrl').value=m.highlight_video_url||'';
   const motmId=m.player_of_match_id||'';
-  const motmTeam=hPl.some(p=>p.id===motmId)?'h':aPl.some(p=>p.id===motmId)?'a':'';
-  document.getElementById('manOfMatchTeam').value=motmTeam;
-  fillManOfMatch(motmTeam==='h'?hPl:motmTeam==='a'?aPl:[]);
   document.getElementById('manOfMatch').value=motmId;
+  fillManOfMatch();
   updateCollapsedSummaries();
 }
 
@@ -799,10 +794,12 @@ async function loadShootoutTeamSel(){
 }
 async function loadShootoutPlayers(){
   const tid=document.getElementById('soTeamSel').value;
-  const {data}=await sb.from('players').select('id,name,full_name_ar,number').eq('team_id',tid).order('number');
-  const sel=document.getElementById('soPlayerSel');
-  sel.innerHTML='<option value="">— اختر —</option>'+(data||[]).map(p=>`<option value="${p.id}">#${p.number??''} ${p.full_name_ar||p.name}</option>`).join('');
+  const players=tid===cur?.home_team_id?hPl:aPl;
+  document.getElementById('soPlayerSel').value='';
+  document.getElementById('soPlayerCards').innerHTML=(players||[]).map(p=>{const blocked=redCardPlayerIds.has(p.id);return `<button type="button" class="event-player-card${blocked?' suspended':''}" ${blocked?'disabled':''} onclick="selectShootoutPlayer('${p.id}',this)"><span class="player-number">${p.number??'—'}</span><span class="player-name">${p.full_name_ar||p.name}${blocked?'<span class="susp-label">🟥 مطرود — لا يشارك</span>':''}</span></button>`}).join('');
 }
+function selectShootoutPlayer(id,button){document.getElementById('soPlayerSel').value=id;document.querySelectorAll('#soPlayerCards .event-player-card').forEach(b=>b.classList.toggle('selected',b===button))}
+window.selectShootoutPlayer=selectShootoutPlayer;
 async function recordShootout(result){
   if(!ensureLiveMatch())return;
   const tid=document.getElementById('soTeamSel').value;
@@ -811,7 +808,7 @@ async function recordShootout(result){
   const {count}=await sb.from('match_penalty_shootout').select('id',{count:'exact',head:true}).eq('match_id',cur.id).eq('team_id',tid);
   const {error}=await sb.from('match_penalty_shootout').insert({match_id:cur.id,team_id:tid,player_id:pid,shot_order:(count||0)+1,result});
   if(error){setMsg('❌ فشل التسجيل: '+error.message,'err');return;}
-  document.getElementById('soPlayerSel').value='';
+  document.getElementById('soPlayerSel').value='';document.querySelectorAll('#soPlayerCards .event-player-card').forEach(b=>b.classList.remove('selected'));
   setMsg(result==='scored'?'✅ هدف!':'❌ ضائعة','ok');
   loadShootoutLog();
 }
@@ -1060,15 +1057,6 @@ async function resetForTest(){
   setMsg('✅ تمت إعادة فتح المباراة للاختبار — كل البيانات (نتيجة، أحداث، تشكيلة، حكام، معلق، ملعب) صُفّرت','ok');
 }
 
-function phaseOffsetMin(half,HL){
-  const ET=15; // طول كل شوط إضافي (دقيقة) — ثابت افتراضي
-  if(half===1)return 0;
-  if(half===2)return HL;
-  if(half===3)return HL*2;
-  if(half===4)return HL*2+ET;
-  return HL*2+ET*2; // 5: ركلات ترجيح
-}
-
 function startStopClock(){
   stopClock();
   if(cur.status==='live'&&!cur.is_paused&&cur.phase_started_at&&cur.current_half!==5){
@@ -1088,9 +1076,7 @@ function startStopClock(){
 function tickClock(){
   if(!cur.phase_started_at)return;
   const startedMs=new Date(cur.phase_started_at).getTime();
-  const HL=cur.half_length_minutes||20;
-  const offset=phaseOffsetMin(cur.current_half||1,HL);
-  const elapsedMin=offset+Math.floor((Date.now()-startedMs)/60000)+1;
+  const elapsedMin=Math.floor((Date.now()-startedMs)/60000)+1;
   const label=elapsedMin+"'";
   document.getElementById('mMin').textContent=label;
   document.getElementById('minInput').value=elapsedMin;
@@ -1110,7 +1096,7 @@ function quickOpen(side,type){
   const grid=document.getElementById('quickPickerGrid');
   if(!players||!players.length){grid.innerHTML='<span style="color:#7d8694;font-size:12px">لا يوجد لاعبون محمّلون لهذا الفريق</span>';}
   else{
-    grid.innerHTML=players.map(p=>`<button type="button" class="btn-quick quick-player-chip" onclick="quickSelect('${side}','${type}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}',this)"><span class="qp-number">${p.number||'—'}</span><span class="qp-name">${p.full_name_ar||p.name}</span></button>`).join('');
+    grid.innerHTML=players.map(p=>{const blocked=redCardPlayerIds.has(p.id);return `<button type="button" class="btn-quick quick-player-chip${blocked?' suspended':''}" ${blocked?'disabled':''} onclick="quickSelect('${side}','${type}','${p.id}','${(p.full_name_ar||p.name||'').replace(/'/g,"\\'")}',this)"><span class="qp-number">${p.number||'—'}</span><span class="qp-name">${p.full_name_ar||p.name}${blocked?'<small class="susp-label">🟥 اللاعب مطرود</small>':''}</span></button>`}).join('');
   }
   const picker=document.getElementById('quickPicker');
   picker.style.display='block';
@@ -1139,6 +1125,7 @@ function quickClose(){quickPending=null;document.getElementById('quickPicker').s
 
 async function quickLog(side,type,playerId,playerName){
   if(!ensureLiveMatch())return;
+  if(redCardPlayerIds.has(playerId)){setMsg('⛔ اللاعب مطرود ولا يمكن تسجيل هدف أو حدث جديد باسمه','err');return;}
   const tid=side==='h'?cur.home_team_id:cur.away_team_id;
   const min=parseInt(document.getElementById('minInput').value)||0;
   const isOwnGoal=type==='own_goal';
@@ -1205,14 +1192,15 @@ async function loadVoteResults(matchId){
   const counts=Array.isArray(state?.counts)?state.counts:[];
   if(!counts.length){box.style.display='block';list.textContent='لا توجد أصوات بعد';return;}
   const total=Number(state.total_votes||0),ids=counts.map(v=>v.player_id);
-  const {data:players}=await sb.from('players').select('id,name,full_name_ar').in('id',ids);
-  const names=Object.fromEntries((players||[]).map(p=>[p.id,p.full_name_ar||p.name||'—']));
-  const sorted=counts.map(v=>({name:names[v.player_id]||'—',n:Number(v.votes||0)})).sort((a,b)=>b.n-a.n);
+  const {data:players}=await sb.from('players').select('id,name,full_name_ar,number,jersey_photo_url,team_id').in('id',ids);
+  const playerMap=Object.fromEntries((players||[]).map(p=>[p.id,p]));
+  const sorted=counts.map(v=>({...(playerMap[v.player_id]||{}),id:v.player_id,n:Number(v.votes||0)})).sort((a,b)=>b.n-a.n);
   box.style.display='block';
-  list.innerHTML='<div style="font-size:11px;color:#6e7b8f;margin-bottom:8px">نتائج مجهولة الهوية · صوت واحد لكل متصفح · '+(state.open?'التصويت مفتوح':'التصويت مغلق')+'</div>'+sorted.map((p,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+  list.innerHTML='<div style="font-size:11px;color:#9eb2ca;margin-bottom:8px">للاسترشاد قبل قرار اللجنة · صوت واحد لكل متصفح · '+(state.open?'التصويت مفتوح':'التصويت مغلق')+'</div>'+sorted.slice(0,3).map((p,i)=>`
+    <div style="display:grid;grid-template-columns:24px 38px 1fr auto;align-items:center;gap:8px;margin-bottom:7px;padding:6px;border-radius:10px;background:rgba(255,255,255,.04)">
       <span style="font-size:12px;color:${i===0?'#ffd700':'#6e7b8f'};width:14px">${i===0?'🏆':i+1}</span>
-      <span style="flex:1;font-size:13px">${p.name}</span>
+      ${p.jersey_photo_url?`<img src="${p.jersey_photo_url}" alt="" style="width:36px;height:36px;border-radius:50%;object-fit:cover">`:`<span class="motm-avatar" style="width:36px;height:36px">${(p.full_name_ar||p.name||'★').trim()[0]}</span>`}
+      <span style="font-size:13px;font-weight:800">${p.number?'#'+p.number+' — ':''}${p.full_name_ar||p.name||'—'}</span>
       <span style="font-size:12px;font-weight:800;color:#c9a84c">${p.n} صوت (${Math.round(p.n/total*100)}%)</span>
     </div>
   `).join('')+'<div style="font-size:10px;color:#6e7b8f;margin-top:4px">إجمالي: '+total+' صوت</div>';
@@ -1237,24 +1225,23 @@ function startVoiceMotm(){
     const text=e.results[0][0].transcript;
     const sel=document.getElementById('manOfMatch');
     const norm=normalizeArabic(text);
-    let bestPlayer=null,bestScore=0,bestSide='';
+    let bestPlayer=null,bestScore=0;
     [...hPl,...aPl].forEach(p=>{
       const label=(p.number?'#'+p.number+' ':'')+(p.full_name_ar||p.name);
       const oNorm=normalizeArabic(label);
       let score=0;
       if(oNorm.includes(norm)&&norm.length>=2)score+=10;
       norm.split(/\s+/).forEach(w=>{if(w.length>=2&&oNorm.includes(w))score+=2;});
-      if(score>bestScore){bestScore=score;bestPlayer=p;bestSide=hPl.some(x=>x.id===p.id)?'h':'a';}
+      if(score>bestScore){bestScore=score;bestPlayer=p;}
     });
     if(bestPlayer&&cur){
-      document.getElementById('manOfMatchTeam').value=bestSide;
-      fillManOfMatch(bestSide==='h'?hPl:aPl);
       sel.value=bestPlayer.id;
+      fillManOfMatch();
       const {error}=await sb.from('matches').update({player_of_match_id:bestPlayer.id}).eq('id',cur.id);
       if(!error){cur.player_of_match_id=bestPlayer.id;setMsg('✅ سمعت: "'+text+'" — أفضل لاعب: '+(bestPlayer.full_name_ar||bestPlayer.name)+' (حُفظ تلقائياً)','ok');}
       else setMsg('❌ فشل الحفظ: '+error.message,'err');
     }else{
-      setMsg('⚠️ سمعت: "'+text+'" — لم أجد لاعباً مطابقاً، اختره يدوياً من القائمة','warn');
+      setMsg('⚠️ سمعت: "'+text+'" — لم أجد لاعباً مطابقاً، اختر بطاقته يدويًا','warn');
     }
   };
   rec.onerror=(e)=>setMsg('⚠️ تعذّر الاستماع ('+e.error+')','warn');
@@ -1414,6 +1401,7 @@ async function submitEvt(side){
   const tid=side==='h'?cur.home_team_id:cur.away_team_id;
   const type=evtType[side];
   if(!pid){setMsg('⚠️ اختر اللاعب من البطاقة أولًا','warn');return;}
+  if(redCardPlayerIds.has(pid)){setMsg('⛔ اللاعب مطرود ولا يمكن تسجيل هدف أو حدث جديد باسمه','err');return;}
 
   if(type==='penalty_missed'){
     if(!pid){setMsg('⚠️ اختر اللاعب الذي أضاع ركلة الجزاء','warn');return;}
@@ -1462,6 +1450,7 @@ async function loadEvts(){
   const matchId=cur?.id;
   if(!matchId)return;
   const {data,error}=await sb.from('match_events').select('*,player:players!player_id(name,full_name_ar,number),team:teams(name,name_ar)').eq('match_id',matchId).order('minute');
+  redCardPlayerIds=new Set((data||[]).filter(e=>e.event_type==='red_card'&&e.player_id).map(e=>e.player_id));
   if(cur?.id!==matchId)return;
   const list=document.getElementById('evtsList');
   if(error){list.innerHTML='<div class="no-evts">⚠️ تعذر تحميل الأحداث — حاول تنشيط الصفحة.</div>';return;}
@@ -2058,12 +2047,13 @@ window.toggleSection=toggleSection;
 function updateCollapsedSummaries(){
   const ref1=document.getElementById('referee1')?.value;
   const comm=document.getElementById('commentator')?.value;
-  const motmSel=document.getElementById('manOfMatch');
-  const motmTxt=motmSel?.options[motmSel.selectedIndex]?.text;
+  const motmId=document.getElementById('manOfMatch')?.value;
+  const motmPlayer=[...hPl,...aPl].find(p=>p.id===motmId);
+  const motmTxt=motmPlayer?.full_name_ar||motmPlayer?.name;
   const parts=[];
   if(ref1)parts.push('حكم: '+ref1);
   if(comm)parts.push('معلق: '+comm);
-  if(motmTxt&&motmTxt!=='— اختر اللاعب —')parts.push('نجم: '+motmTxt);
+  if(motmTxt)parts.push('نجم: '+motmTxt);
   const refSum=document.getElementById('refSummary');
   if(refSum)refSum.textContent=parts.length?'('+parts.join(' | ')+')':'';
 

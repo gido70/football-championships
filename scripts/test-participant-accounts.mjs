@@ -9,6 +9,7 @@ ok(sql.includes("auth.uid()) = participant_id"),'membership access must be owner
 ok(sql.includes('revoke all on public.participant_profiles from anon'),'anon table grants must be revoked');
 ok(sql.includes("participant_code ~ '^[0-9]{6}$'"),'participant code must be six digits');
 ok(page.includes('signInAnonymously()'),'free anonymous auth must be used');
-ok(!page.includes('phone')&&!page.includes('email'),'page must not collect unused contact data');
+ok(page.includes('id="phone"')&&page.includes('لا يظهر للجمهور'),'winner contact phone must be private and clearly explained');
+ok(page.includes("select('first_name,family_name,participant_code,phone')")&&page.includes(".update(fields).eq('user_id',session.user.id)"),'existing participants must be prompted once for their phone');
 ok(guard.includes("session.user.id !== ADMIN_USER_ID")&&guard.includes('session.user.is_anonymous'),'admin guard must reject participant sessions');
 console.log('participant account safety checks passed');

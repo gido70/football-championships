@@ -14,6 +14,8 @@
     .tournament-switch{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
     .tournament-switch a{padding:10px 14px;border:1px solid #3b4f6b;border-radius:10px;color:#eef5ff;text-decoration:none;font-weight:800}
     .tournament-switch a.active{background:#7c3aed;border-color:#a78bfa}
+    .contact-table{width:100%;border-collapse:collapse;margin-top:10px}.contact-table th,.contact-table td{padding:11px 9px;border-bottom:1px solid rgba(255,255,255,.09);text-align:right}.contact-table th{color:#c9a84c;font-size:12px}.contact-table td{color:#eef5ff}.contact-table .phone{direction:ltr;text-align:right;font-weight:800}.private-note{color:#f0c96c;font-size:12px}
+    @media(max-width:620px){.contact-table{font-size:12px}.contact-table th,.contact-table td{padding:10px 5px}}
   </style>
 </head>
 <body>
@@ -27,6 +29,7 @@
       <a data-tid="c983ee0c-4434-470d-b0a2-6e6efe1ad650" href="predictions-admin.html?tid=c983ee0c-4434-470d-b0a2-6e6efe1ad650">كأس منصور 2027</a>
     </nav>
     <section class="panel"><h3>حالة المزامنة التلقائية</h3><p class="note">هذه الوحدة تقرأ المباريات الحقيقية ولا تعدّلها.</p><div id="fixtures">جارٍ التحميل…</div></section>
+    <section class="panel result-card"><h3>المشاركون ووسيلة التواصل</h3><p class="private-note">🔒 تظهر للإدارة فقط للتواصل مع الفائز، ولا تظهر في صفحة الجمهور أو الترتيب.</p><div id="participantContacts">جارٍ التحميل…</div></section>
   </main>
   <script src="predictions-admin.js"></script>
 </body>
