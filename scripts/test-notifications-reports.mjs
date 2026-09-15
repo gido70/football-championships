@@ -59,8 +59,12 @@ must(report.includes('الفائز')&&report.includes('الخاسر')&&report.in
 must(voteSql.includes("lower(coalesce(m.status,'')) = 'live'")&&!voteSql.includes("live_started_at > m.live_started_at"),'التصويت يجب أن يغلق فور انتهاء المباراة');
 must(matchLive.includes('predictionOpenForMatch')&&matchLive.includes('أُغلق ترشيح هذه المباراة فور انطلاقها'),'واجهة المباراة لا توضح إغلاق الترشيح عند البداية');
 must(statsAdmin.includes('PDF — كل المجموعات في صفحة واحدة')&&statsAdmin.includes('PDF — المجموعة'),'أزرار PDF المستقلة للمجموعات غير موجودة');
-must(statsAdmin.includes("@page{size:A4 ${allGroups?'landscape':'portrait'}")&&statsAdmin.includes('group-report-card'),'تقرير كل المجموعات غير مضبوط للطباعة في صفحة واحدة');
+must(statsAdmin.includes("@page{size:A4 ${multiGroup?'landscape':'portrait'}")&&statsAdmin.includes('group-report-card'),'تقرير كل المجموعات غير مضبوط للطباعة في صفحة واحدة');
 must(statsAdmin.includes('h2h(a,b)')&&statsAdmin.includes('yellow+a.red*3'),'ترتيب تقرير المجموعات لا يطبق المواجهة المباشرة واللعب النظيف');
+must(statsAdmin.includes("const REQUESTED_TID=new URLSearchParams(location.search).get('tid')")&&statsAdmin.includes('data.findIndex(t=>t.id===REQUESTED_TID)'),'صفحة التقارير لا تحترم البطولة المطلوبة في الرابط');
+must(statsAdmin.includes("filter(t=>t.group_code)")&&statsAdmin.includes('button.disabled=!groups.length'),'تقرير المجموعات يجب أن يتوقف للبطولات التي لا تحتوي مجموعات');
+must(statsAdmin.includes("CURRENT_EXPORT_MODE==='share'")&&statsAdmin.includes('navigator.canShare({files:[file]})')&&statsAdmin.includes('اختر واتساب'),'مشاركة ملفات التقارير الأصلية غير مفعلة');
+must(statsAdmin.includes("background:${i===0?'#f3f8ee':i%2?'#fafafa':'#fff'}")&&!statsAdmin.includes('background:${themeColor};color:#fff"><td'),'صفوف تقرير المجموعات ما زالت تستهلك حبرًا ملونًا كثيفًا');
 must(matchAdmin.includes('referee-page')&&matchAdmin.includes('commentator-page'),'قوالب الحكم والمعلّق غير موجودة');
 must(matchAdmin.includes('slice(0,15)'),'حد الصفحة الواحدة للاعبين غير مطبق');
 must(matchAdmin.includes('rosters-layout'),'قائمتا الحكم ليستا مثبتتين جنبًا إلى جنب للطباعة');
