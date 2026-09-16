@@ -94,14 +94,14 @@
 
   async function exportMansour2027(sb,tournamentId=MANSOUR_2027){
     ensureReady(tournamentId);
-    const [{data:t,error:te},teams,players,matches,events,varEvents,awards]=await Promise.all([
-      sb.from('tournaments').select('id,name,name_ar,season_label').eq('id',tournamentId).single(),
+    const {data:t,error:te}=await sb.from('tournaments').select('id,name,season_label').eq('id',tournamentId).single();
+    if(te)throw new Error('تعذر قراءة بيانات البطولة: '+te.message);
+    const [teams,players,matches,events,varEvents,awards]=await Promise.all([
       query(sb,'teams','tournament_id',tournamentId,'name'),query(sb,'players','tournament_id',tournamentId,'number'),
       query(sb,'matches','tournament_id',tournamentId,'match_no'),query(sb,'match_events','tournament_id',tournamentId,'created_at'),
       optionalQuery(sb,'match_var_events','tournament_id',tournamentId,'created_at'),
       optionalQuery(sb,'tournament_awards','tournament_id',tournamentId)
     ]);
-    if(te)throw new Error('تعذر قراءة بيانات البطولة: '+te.message);
     const matchIds=matches.map(m=>m.id);
     const [lineups,missed,shootout]=await Promise.all([
       optionalByMatches(sb,'match_lineups',matchIds),optionalByMatches(sb,'match_penalties_missed',matchIds),optionalByMatches(sb,'match_penalty_shootout',matchIds)
@@ -124,7 +124,7 @@
     append(wb,rowsSheet(varEvents.map(v=>({'رقم المباراة':mm[v.match_id]?.match_no??'',الدقيقة:clean(v.minute),الفريق:teamName(tm[v.team_id]),النوع:v.var_type||'',القرار:v.var_result||'',ملاحظات:v.notes||'',وقت_التسجيل:labelDate(v.created_at)})),['رقم المباراة','الدقيقة','الفريق','النوع','القرار','ملاحظات','وقت_التسجيل']),'VAR');
     append(wb,rowsSheet(lineups.map(l=>({'رقم المباراة':mm[l.match_id]?.match_no??'',الفريق:teamName(tm[l.team_id]),اللاعب:personName(pm[l.player_id]),أساسي:l.is_starting?'نعم':'لا',القائد:l.is_captain?'نعم':'لا',حارس:l.is_goalkeeper?'نعم':'لا'})),['رقم المباراة','الفريق','اللاعب','أساسي','القائد','حارس']),'التشكيلات');
     append(wb,rowsSheet(missed.map(x=>({'رقم المباراة':mm[x.match_id]?.match_no??'',الفريق:teamName(tm[x.team_id]),اللاعب:personName(pm[x.player_id]),الدقيقة:clean(x.minute),ملاحظات:x.notes||''})),['رقم المباراة','الفريق','اللاعب','الدقيقة','ملاحظات']),'جزاء ضائعة');
-    append(wb,rowsSheet(shootout.map(x=>({'رقم المباراة':mm[x.match_id]?.match_no??'',الفريق:teamName(tm[x.team_id]),اللاعب:personName(pm[x.player_id]),الترتيب:x.kick_order??'',النتيجة:x.result||''})),['رقم المباراة','الفريق','اللاعب','الترتيب','النتيجة']),'ركلات الترجيح');
+    append(wb,rowsSheet(shootout.map(x=>({'رقم المباراة':mm[x.match_id]?.match_no??'',الفريق:teamName(tm[x.team_id]),اللاعب:personName(pm[x.player_id]),الترتيب:x.shot_order??'',النتيجة:x.result||''})),['رقم المباراة','الفريق','اللاعب','الترتيب','النتيجة']),'ركلات الترجيح');
     append(wb,rowsSheet(matches.map(m=>({'رقم المباراة':m.match_no??'','الفريق الأول':teamName(tm[m.home_team_id]),النتيجة:resultText(m.home_score,m.away_score),'الفريق الثاني':teamName(tm[m.away_team_id]),'أفضل لاعب':personName(pm[m.player_of_match_id])})),['رقم المباراة','الفريق الأول','النتيجة','الفريق الثاني','أفضل لاعب']),'أفضل لاعب');
     const refs={},commentators={};matches.forEach(m=>{[m.referee_1,m.referee_2].filter(Boolean).forEach(n=>refs[n]=(refs[n]||0)+1);if(m.commentator)commentators[m.commentator]=(commentators[m.commentator]||0)+1});
     append(wb,rowsSheet([...Object.entries(refs).map(([n,c])=>({الدور:'حكم',الاسم:n,'عدد المباريات':c})),...Object.entries(commentators).map(([n,c])=>({الدور:'معلّق',الاسم:n,'عدد المباريات':c}))].sort((a,b)=>b['عدد المباريات']-a['عدد المباريات']),['الدور','الاسم','عدد المباريات']),'الحكام والمعلقون');
