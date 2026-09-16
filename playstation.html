@@ -33,9 +33,9 @@ if(TID!==MANSOUR_TID){document.querySelector('main').innerHTML='<div class="empt
 const renderPlaystationBase=render;
 render=function(){
   renderPlaystationBase();
-  const box=document.getElementById('live'),liveMatches=matches.filter(m=>m.status==='live').sort((a,b)=>(a.station_no||99)-(b.station_no||99));
+  const box=document.getElementById('live'),liveMatches=matches.filter(m=>m.status==='live').sort((a,b)=>(a.scheduled_at?new Date(a.scheduled_at).getTime():Infinity)-(b.scheduled_at?new Date(b.scheduled_at).getTime():Infinity)||a.match_order-b.match_order);
   box.classList.toggle('show',liveMatches.length>0);
-  box.innerHTML=liveMatches.map(live=>{const a=person(live.player1_id),b=person(live.player2_id);return `<article class="live-card"><div class="live-head"><b class="dot">مباشر الآن</b><span>${live.station_no?'الجهاز '+live.station_no+' · ':''}${live.group_code?'المجموعة '+esc(live.group_code):'الأدوار النهائية'}</span></div><div class="score"><span>${esc(a?.name||'—')}<small>${esc(a?.nickname||'')}</small></span><b>${live.score1??0} — ${live.score2??0}</b><span>${esc(b?.name||'—')}<small>${esc(b?.nickname||'')}</small></span></div></article>`}).join('');
+  box.innerHTML=liveMatches.map(live=>{const a=person(live.player1_id),b=person(live.player2_id),time=live.scheduled_at?new Intl.DateTimeFormat('ar-AE',{hour:'numeric',minute:'2-digit'}).format(new Date(live.scheduled_at)):'';return `<article class="live-card"><div class="live-head"><b class="dot">مباشر الآن</b><span>${time?'⏰ '+time+' · ':''}${live.group_code?'المجموعة '+esc(live.group_code):'الأدوار النهائية'}</span></div><div class="score"><span>${esc(a?.name||'—')}<small>${esc(a?.nickname||'')}</small></span><b>${live.score1??0} — ${live.score2??0}</b><span>${esc(b?.name||'—')}<small>${esc(b?.nickname||'')}</small></span></div></article>`}).join('');
 };
 /* Realtime callbacks refresh data only; they must not create another channel on every event. */
 load=async function(){
