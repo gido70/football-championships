@@ -27,6 +27,8 @@ must(operatorPage.includes('حفظ التصحيح')&&operatorPage.includes("stat
 must(operatorPage.includes('persistLiveScore')&&operatorPage.includes(".eq('status','live')"),'نتيجة المباراة المباشرة لا تُنشر تلقائياً');
 must(operatorPage.includes('كل هدف يُنشر تلقائيًا للأهالي')&&operatorPage.includes('الجدول والأسماء جاهزة')&&!operatorPage.includes('شاشة اللعب'),'واجهة المشغّل ليست مبسطة لإدخال النتائج فقط');
 must(operatorPage.includes("order('scheduled_at'")&&operatorPage.includes('displayTime(m.scheduled_at)'),'مباريات المشغّل غير مرتبة حسب الموعد');
+must(operatorPage.includes('class="day-group"')&&operatorPage.includes("key===todayKey()")&&operatorPage.includes('مباريات اليوم'),'مباريات المشغّل غير مجمعة في مطويات يومية تفتح يومها تلقائياً');
+must(operatorPage.includes("['live','🟢 مباشر الآن']")&&!operatorPage.includes('.game.live-now{border-color:#ff526d}'),'ألوان صفحة المشغّل ما زالت تعتمد على الأحمر القوي');
 must(adminPage.includes('id="autoSchedule"')&&adminPage.includes('saveMatchTime')&&adminPage.includes('Math.floor(i/parallel)*interval'),'جدولة المباريات المتزامنة من لوحة المدير غير مكتملة');
 must(publicPage.includes("time?'⏰ '+time")&&!publicPage.includes("live.station_no?'الجهاز"),'بطاقات الجمهور ما زالت تعتمد على رقم الجهاز بدل موعد المباراة');
 must(operatorPage.includes('manifest-playstation-operator.webmanifest')&&operatorPage.includes("serviceWorker.register('./sw.js')"),'صفحة المشغّل ليست تطبيقاً قابلاً للتثبيت');
