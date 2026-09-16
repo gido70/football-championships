@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="admin.css">
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="emergency-excel.js?v=20260916-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <script src="supabase-config.js"></script>
 </head>
@@ -30,6 +31,13 @@
   <section class="panel">
     <h3>اختر البطولة</h3>
     <div class="form-grid"><div class="field full"><label>البطولة</label><select id="tSel"></select></div></div>
+  </section>
+
+  <section id="emergencyPanel" class="panel" style="display:none;margin-top:24px;border:2px solid #e3b93f;background:rgba(227,185,63,.08)">
+    <h3>🛟 نسخة Excel للطوارئ — كأس منصور 2027</h3>
+    <p class="note">ملف مستقل كامل: المباريات والنتائج، ترتيب المجموعات، الفرق واللاعبون والجنسيات، الأهداف والبطاقات، VAR، التشكيلات، الجوائز، وسجل الأحداث، مع ورقة جاهزة للإدخال اليدوي عند الطوارئ.</p>
+    <div class="actions"><button class="btn" id="emergencyDownloadBtn" style="background:linear-gradient(135deg,#d7ad31,#a97c13);color:#071426" onclick="downloadMansourEmergency()">⬇️ تنزيل أحدث نسخة كاملة</button></div>
+    <div class="status" id="emergencyMsg"></div>
   </section>
 
   <section class="panel" style="margin-top:24px;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.25)">
@@ -126,8 +134,20 @@ async function initTournaments(){
   if(error){sel.innerHTML=`<option value="">⚠️ خطأ: ${error.message}</option>`;setMsg('فشل تحميل البطولات: '+error.message,'err');return;}
   if(!data||!data.length){sel.innerHTML='<option value="">لا توجد بطولات</option>';return;}
   sel.innerHTML=(data||[]).map(t=>`<option value="${t.id}">${t.name_ar||t.name} ${t.season_label?'- '+t.season_label:''}</option>`).join('');
-  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;history.replaceState(null,'','stats-admin.html?tid='+encodeURIComponent(TID));loadTeamNames();loadAwards();loadGroupOptions();updateReportColor();};
-  if(data&&data.length){const wantedIndex=Math.max(0,data.findIndex(t=>t.id===REQUESTED_TID));sel.selectedIndex=wantedIndex;TID=sel.value;TNAME=sel.options[wantedIndex].text;await loadTeamNames();await loadAwards();await loadGroupOptions();await updateReportColor();}
+  sel.onchange=()=>{TID=sel.value;TNAME=sel.options[sel.selectedIndex].text;history.replaceState(null,'','stats-admin.html?tid='+encodeURIComponent(TID));refreshEmergencyVisibility();loadTeamNames();loadAwards();loadGroupOptions();updateReportColor();};
+  if(data&&data.length){const wantedIndex=Math.max(0,data.findIndex(t=>t.id===REQUESTED_TID));sel.selectedIndex=wantedIndex;TID=sel.value;TNAME=sel.options[wantedIndex].text;refreshEmergencyVisibility();await loadTeamNames();await loadAwards();await loadGroupOptions();await updateReportColor();}
+}
+
+function refreshEmergencyVisibility(){
+  const panel=document.getElementById('emergencyPanel');
+  if(panel)panel.style.display=TID===window.EmergencyExcel?.MANSOUR_2027?'block':'none';
+}
+async function downloadMansourEmergency(){
+  const out=document.getElementById('emergencyMsg'),btn=document.getElementById('emergencyDownloadBtn');
+  out.className='status';out.textContent='⏳ جاري جمع أحدث بيانات البطولة...';btn.disabled=true;
+  try{const file=await window.EmergencyExcel.exportMansour2027(sb,TID);out.className='status ok';out.textContent='✅ تم تنزيل '+file.filename+' — احفظه على جهازك.';}
+  catch(error){out.className='status err';out.textContent='❌ لم تتغير أي بيانات. تعذر إنشاء الملف: '+error.message;}
+  finally{btn.disabled=false;}
 }
 
 async function loadNationalitiesLive(){
