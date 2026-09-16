@@ -26,12 +26,14 @@ must(operatorPage.includes("rpc('claim_playstation_operator_device'")&&operatorP
 must(operatorPage.includes('حفظ التصحيح')&&operatorPage.includes("status==='completed'"),'تصحيح واعتماد النتيجة غير مكتمل');
 must(operatorPage.includes('persistLiveScore')&&operatorPage.includes(".eq('status','live')"),'نتيجة المباراة المباشرة لا تُنشر تلقائياً');
 must(operatorPage.includes('بدأ النظام التوقيت الفعلي وينشر كل هدف للأهالي')&&operatorPage.includes('الجدول والأسماء جاهزة')&&!operatorPage.includes('شاشة اللعب'),'واجهة المشغّل ليست مبسطة لإدخال النتائج فقط');
-must(operatorPage.includes("order('scheduled_at'")&&operatorPage.includes('displayTime(m.scheduled_at)'),'مباريات المشغّل غير مرتبة حسب الموعد');
+must(operatorPage.includes("order('scheduled_at'")&&operatorPage.includes('slotLabel(m.scheduled_at)'),'مباريات المشغّل غير مرتبة حسب الموعد');
 must(operatorPage.includes('class="day-group"')&&operatorPage.includes("key===todayKey()")&&operatorPage.includes('مباريات اليوم'),'مباريات المشغّل غير مجمعة في مطويات يومية تفتح يومها تلقائياً');
+must(operatorPage.includes('class="slot-group"')&&operatorPage.includes('slotMatches.map(matchCard)'),'دفعات كل يوم غير مجمعة في مطويات زمنية داخل اليوم');
+must(operatorPage.includes('class="player-side"')&&operatorPage.includes('class="participant-number"')&&!operatorPage.includes("<small>#${a?.participant_no"),'بطاقة الهاتف لا تفصل نتيجة كل لاعب أو ما زالت تعرض علامة الهاش');
 must(operatorPage.includes("['live','🟢 مباشر الآن']")&&!operatorPage.includes('.game.live-now{border-color:#ff526d}'),'ألوان صفحة المشغّل ما زالت تعتمد على الأحمر القوي');
 must(operatorPage.includes("if(status==='live'&&!old?.started_at)patch.started_at=new Date().toISOString()")&&!operatorPage.includes('saveActualStart'),'وقت البداية الفعلي لا يُسجل تلقائياً أو ما زال قابلاً للتعديل اليدوي');
 must(operatorPage.includes('أنشأ النظام الأسماء والموعد من الجدول')&&!operatorPage.includes('الأسماء والموعد جهزهما المدير مسبقًا'),'واجهة المشغّل تنسب إنشاء الجدول إلى المدير بدل النظام');
-must(adminPage.includes('id="autoSchedule"')&&adminPage.includes('saveMatchTime')&&adminPage.includes('Math.floor(i/parallel)*interval'),'جدولة المباريات المتزامنة من لوحة المدير غير مكتملة');
+must(adminPage.includes('id="autoSchedule"')&&adminPage.includes('saveMatchTime')&&adminPage.includes('scheduleWavesPerDay')&&adminPage.includes('day*86400000+wave*interval*60000'),'جدولة الأيام والدفعات المتزامنة من لوحة المدير غير مكتملة');
 must(adminPage.includes('المشغّل لا يغيّر أي زمن')&&adminPage.includes('يسجل النظام لحظة البداية الفعلية تلقائيًا'),'شرح فصل موعد الجدول عن وقت البداية الفعلي غير واضح');
 must(publicPage.includes("time?'⏰ بدأت '+time")&&!publicPage.includes("live.station_no?'الجهاز"),'بطاقات الجمهور ما زالت تعتمد على رقم الجهاز بدل وقت المباراة');
 must(publicPage.includes('actual=live.started_at||live.scheduled_at')&&publicPage.includes("'⏰ بدأت '+time"),'صفحة الجمهور لا تعرض وقت البداية الفعلي للمباراة المباشرة');
