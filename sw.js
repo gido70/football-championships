@@ -1,5 +1,5 @@
-// sw.js — network-first public shell + Web Push — v36.14
-const VERSION = 'football-shell-v36-14';
+// sw.js — network-first public shell + Web Push — v36.15
+const VERSION = 'football-shell-v36-15';
 const CORE = [
   './',
   './index.html',
@@ -14,6 +14,8 @@ const CORE = [
   './manifest-mansour-2027.webmanifest',
   './manifest-uefa-2027.webmanifest',
   './match-live.html',
+  './playstation-operator.html',
+  './manifest-playstation-operator.webmanifest',
   './match-report.html',
   './documents.html',
   './resources.html',
@@ -43,7 +45,9 @@ const CORE = [
   './logo-cup-2026-black-v3-512.png',
   './logo-cup-2026-share-small-v4.png',
   './logo-cup-2027-192.png',
-  './logo-cup-2027-512.png'
+  './logo-cup-2027-512.png',
+  './playstation-icon-192.png',
+  './playstation-icon-512.png'
 ];
 
 self.addEventListener('install', e => {
