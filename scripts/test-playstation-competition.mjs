@@ -25,12 +25,16 @@ must(operatorPage.includes("auth:{storageKey:'playstation-operator-auth'}")&&ope
 must(operatorPage.includes("rpc('claim_playstation_operator_device'")&&operatorPage.includes("'x-ps-device':token"),'ربط حساب المشغّل بجهاز واحد غير مكتمل');
 must(operatorPage.includes('حفظ التصحيح')&&operatorPage.includes("status==='completed'"),'تصحيح واعتماد النتيجة غير مكتمل');
 must(operatorPage.includes('persistLiveScore')&&operatorPage.includes(".eq('status','live')"),'نتيجة المباراة المباشرة لا تُنشر تلقائياً');
-must(operatorPage.includes('كل هدف يُنشر تلقائيًا للأهالي')&&operatorPage.includes('الجدول والأسماء جاهزة')&&!operatorPage.includes('شاشة اللعب'),'واجهة المشغّل ليست مبسطة لإدخال النتائج فقط');
+must(operatorPage.includes('بدأ النظام التوقيت الفعلي وينشر كل هدف للأهالي')&&operatorPage.includes('الجدول والأسماء جاهزة')&&!operatorPage.includes('شاشة اللعب'),'واجهة المشغّل ليست مبسطة لإدخال النتائج فقط');
 must(operatorPage.includes("order('scheduled_at'")&&operatorPage.includes('displayTime(m.scheduled_at)'),'مباريات المشغّل غير مرتبة حسب الموعد');
 must(operatorPage.includes('class="day-group"')&&operatorPage.includes("key===todayKey()")&&operatorPage.includes('مباريات اليوم'),'مباريات المشغّل غير مجمعة في مطويات يومية تفتح يومها تلقائياً');
 must(operatorPage.includes("['live','🟢 مباشر الآن']")&&!operatorPage.includes('.game.live-now{border-color:#ff526d}'),'ألوان صفحة المشغّل ما زالت تعتمد على الأحمر القوي');
+must(operatorPage.includes("if(status==='live'&&!old?.started_at)patch.started_at=new Date().toISOString()")&&!operatorPage.includes('saveActualStart'),'وقت البداية الفعلي لا يُسجل تلقائياً أو ما زال قابلاً للتعديل اليدوي');
+must(operatorPage.includes('أنشأ النظام الأسماء والموعد من الجدول')&&!operatorPage.includes('الأسماء والموعد جهزهما المدير مسبقًا'),'واجهة المشغّل تنسب إنشاء الجدول إلى المدير بدل النظام');
 must(adminPage.includes('id="autoSchedule"')&&adminPage.includes('saveMatchTime')&&adminPage.includes('Math.floor(i/parallel)*interval'),'جدولة المباريات المتزامنة من لوحة المدير غير مكتملة');
-must(publicPage.includes("time?'⏰ '+time")&&!publicPage.includes("live.station_no?'الجهاز"),'بطاقات الجمهور ما زالت تعتمد على رقم الجهاز بدل موعد المباراة');
+must(adminPage.includes('المشغّل لا يغيّر أي زمن')&&adminPage.includes('يسجل النظام لحظة البداية الفعلية تلقائيًا'),'شرح فصل موعد الجدول عن وقت البداية الفعلي غير واضح');
+must(publicPage.includes("time?'⏰ بدأت '+time")&&!publicPage.includes("live.station_no?'الجهاز"),'بطاقات الجمهور ما زالت تعتمد على رقم الجهاز بدل وقت المباراة');
+must(publicPage.includes('actual=live.started_at||live.scheduled_at')&&publicPage.includes("'⏰ بدأت '+time"),'صفحة الجمهور لا تعرض وقت البداية الفعلي للمباراة المباشرة');
 must(operatorPage.includes('manifest-playstation-operator.webmanifest')&&operatorPage.includes("serviceWorker.register('./sw.js')"),'صفحة المشغّل ليست تطبيقاً قابلاً للتثبيت');
 must(operatorManifest.includes('playstation-operator.html')&&operatorManifest.includes('playstation-icon-512.png'),'بيانات تطبيق مشغّل البلايستيشن ناقصة');
 must(serviceWorker.includes('manifest-playstation-operator.webmanifest')&&serviceWorker.includes('playstation-icon-192.png'),'تطبيق المشغّل غير مضاف إلى Service Worker');
