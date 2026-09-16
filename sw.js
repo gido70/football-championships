@@ -1,5 +1,5 @@
-// sw.js — network-first public shell + Web Push — v36.19
-const VERSION = 'football-shell-v36-19';
+// sw.js — network-first public shell + Web Push — v36.20
+const VERSION = 'football-shell-v36-20';
 const CORE = [
   './',
   './index.html',
@@ -30,6 +30,7 @@ const CORE = [
   './supabase-config.js',
   './tournament-scope.js',
   './public-date.js',
+  './emergency-excel.js',
   './uefa-player-images.js',
   './push-config.js',
   './push-notifications.js',
