@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 
 const read=file=>fs.readFileSync(new URL('../'+file,import.meta.url),'utf8');
 const tournaments=[
@@ -62,25 +63,45 @@ assert.ok(tournament.includes('TOURNAMENT_HEADER_ICONS[TID]'));
 assert.ok(tournament.includes("'c983ee0c-4434-470d-b0a2-6e6efe1ad650':['manifest-mansour-2027.webmanifest?v=20260914-5','logo-cup-2027-192.png?v=20260914-5','كأس منصور 2027']"));
 assert.ok(!tournament.includes('id="appManifest" href="manifest.webmanifest"'));
 assert.ok(tournament.includes("const appName=TOURNAMENT_APP_NAMES[TID]||name"));
-assert.ok(tournament.includes('tournament-scope.js?v=20260915-1'));
+assert.ok(tournament.includes('tournament-scope.js?v=20260922-1'));
 assert.ok(tournament.indexOf('id="iosInstallSheet"')<tournament.indexOf('id="androidInstallSheet"'));
 
 const scope=read('tournament-scope.js');
 for(const t of tournaments){assert.ok(scope.includes(t.key));assert.ok(scope.includes(t.manifest));}
-assert.ok(scope.includes("const isolated=params.get('standalone')==='1'||Boolean(rootTournamentId)"));
+assert.ok(scope.includes("const fromPortal=currentPage==='tournament.html'&&params.get('portal')==='1'"));
+assert.ok(scope.includes("const isolated=!fromPortal&&(params.get('standalone')==='1'||Boolean(rootTournamentId))"));
+assert.ok(tournament.includes('class="nav-back">← جميع البطولات</a>'));
+const index=read('index.html');
+assert.ok(index.includes('tournament.html?id=${t.id}&portal=1'),'روابط بوابة جميع البطولات يجب أن تحمل مسار الرجوع العام');
+for(const t of tournaments)assert.ok(!read(t.page).includes('portal=1'),'روابط البطولات المستقلة لا يجوز أن تفتح بوابة جميع البطولات');
+
+function isolationFor(search){
+  const context={
+    URL,URLSearchParams,Blob,console,
+    location:{search,pathname:'/football-championships/tournament.html',origin:'https://example.test',href:'https://example.test/football-championships/tournament.html'+search},
+    window:{},document:{documentElement:{classList:{add(){}}},addEventListener(){},querySelector(){return null}},
+    MutationObserver:class{observe(){}}
+  };
+  vm.runInNewContext(scope,context);
+  return context.window.TournamentScope.isIsolated;
+}
+assert.equal(isolationFor('?id=test&portal=1'),false,'الدخول من بوابة البطولات يجب أن يسمح بالرجوع إلى جميع البطولات');
+assert.equal(isolationFor('?id=test'),true,'الرابط المباشر للبطولة يجب أن يبقى معزولًا افتراضيًا');
+assert.equal(isolationFor('?id=test&standalone=1&portal=1'),true,'التطبيق المستقل لا يجوز أن يفتح بوابة جميع البطولات');
+assert.equal(isolationFor('?id=test&scope_tid=test&portal=1'),true,'نطاق البطولة الصريح يجب أن يتغلب على مسار البوابة');
 assert.ok(!scope.includes("addPlatformBrand();decorate(document)"));
 assert.ok(scope.includes("'c983ee0c-4434-470d-b0a2-6e6efe1ad650':'كأس منصور 2027'"));
 
 const matchLive=read('match-live.html');
 for(const t of tournaments){assert.ok(matchLive.includes(t.key));assert.ok(matchLive.includes(t.manifest));}
 assert.ok(!matchLive.includes('id="appManifest" href="manifest.webmanifest"'));
-assert.ok(matchLive.includes('tournament-scope.js?v=20260915-1'));
+assert.ok(matchLive.includes('tournament-scope.js?v=20260922-1'));
 for(const file of ['index.html','tournament.html','team.html','player.html']){
   assert.ok(read(file).includes('scope_tid='),`${file} does not preserve the tournament app identity in match links`);
 }
 
 const sw=read('sw.js');
-assert.ok(sw.includes("football-shell-v36-21"));
+assert.ok(sw.includes("football-shell-v36-22"));
 for(const t of tournaments){assert.ok(sw.includes(t.page));assert.ok(sw.includes(t.manifest));}
 
 for(const file of ['tournament.html','tournament-scope.js','qr-generator.html','sw.js',...tournaments.flatMap(t=>[t.page,t.manifest])]){

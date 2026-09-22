@@ -3,9 +3,11 @@
   const params=new URLSearchParams(location.search);
   const currentPage=location.pathname.split('/').pop()||'index.html';
   const rootTournamentId=params.get('scope_tid')||(currentPage==='tournament.html'?params.get('id'):params.get('tid'));
+  const fromPortal=currentPage==='tournament.html'&&params.get('portal')==='1'&&params.get('standalone')!=='1'&&!params.get('scope_tid');
   // A tournament identifier is itself an isolation boundary. Do not depend on
   // callers remembering to append standalone=1 to keep visitors in one cup.
-  const isolated=params.get('standalone')==='1'||Boolean(rootTournamentId);
+  // Only the explicit portal route may return to the all-tournaments index.
+  const isolated=!fromPortal&&(params.get('standalone')==='1'||Boolean(rootTournamentId));
   let manifestUrl='';
   const EUROPE_TOURNAMENT_ID='eee33333-5d2a-4f3b-a981-d4b8f5f86143';
   const STATIC_MANIFESTS={
