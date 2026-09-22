@@ -469,7 +469,7 @@ async function loadTournaments(){
     const logo=t.cup_logo_url||t.logo_url||(s.includes('2027')?base+'logo_cup_2027.png':s.includes('2026')?base+'logo_cup_2026.png':'');
     document.getElementById('tGridTitle').style.display='none';
     g.className='t-grid t-grid-single';
-    g.innerHTML=`<a class="t-featured" href="tournament.html?id=${t.id}" style="background:${bg}">
+    g.innerHTML=`<a class="t-featured" href="tournament.html?id=${t.id}&portal=1" style="background:${bg}">
       ${t.status!=='draft'?`<span class="t-pill ${pc[t.status]||''}" style="position:absolute">${sl[t.status]||''}</span>`:''}
       ${logo?`<img class="t-featured-logo" src="${logo}" alt="" onerror="this.style.display='none'">`:'<span class="t-featured-logo-ph">🏆</span>'}
       <div class="t-featured-name">${t.name_ar||t.name||''}</div>
@@ -489,7 +489,7 @@ async function loadTournaments(){
     const bg=tournamentGradient(t,Boolean(t.bg_image_url));
     const s=t.season_label||'';
     const logo=t.cup_logo_url||t.logo_url||(s.includes('2027')?base+'logo_cup_2027.png':s.includes('2026')?base+'logo_cup_2026.png':'');
-    return `<a class="t-card" href="tournament.html?id=${t.id}" style="animation-delay:${i*0.08}s">
+    return `<a class="t-card" href="tournament.html?id=${t.id}&portal=1" style="animation-delay:${i*0.08}s">
       <div class="t-banner" style="background:${bg}">
         ${logo?`<img class="t-logo" src="${logo}" alt="" onerror="this.style.display='none';this.nextSibling.style.display='block'">`:''}
         <span class="t-logo-ph" style="${logo?'display:none':''}">🏆</span>
