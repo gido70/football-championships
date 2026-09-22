@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 30448)
+Total output lines: 1584
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -510,7 +513,7 @@ img[src=""], img:not([src]) { display:none !important; }
 </div>
 
 <script src="supabase-config.js"></script>
-<script src="tournament-scope.js?v=20260915-1"></script>
+<script src="tournament-scope.js?v=20260922-1"></script>
 <script src="public-navigation.js?v=20260911-1"></script>
 <script src="public-date.js?v=20260910-1"></script>
 <script src="push-config.js?v=20260912-1"></script>
@@ -644,34 +647,7 @@ async function generateAutoBulletin(){
   const bulletinColor=window.TournamentScope?.themeColors(tour).secondary||'#c9a84c';
 
   // 1) المتصدر الحالي من جدول الترتيب
-  const {data:teams}=await sb.from('teams').select('id,name,name_ar').eq('tournament_id',TID);
-  const {data:matches}=await sb.from('matches').select('*').eq('tournament_id',TID).eq('status','completed');
-  if(teams?.length&&matches?.length){
-    const st={};teams.forEach(t=>st[t.id]={t,p:0,w:0,d:0,l:0,gf:0,ga:0});
-    matches.forEach(m=>{
-      if(!st[m.home_team_id]||!st[m.away_team_id])return;
-      const h=st[m.home_team_id],a=st[m.away_team_id],hs=m.home_score||0,as=m.away_score||0;
-      h.p++;a.p++;h.gf+=hs;h.ga+=as;a.gf+=as;a.ga+=hs;
-      if(hs>as){h.w++;a.l++;}else if(hs<as){a.w++;h.l++;}else{h.d++;a.d++;}
-    });
-    const table=Object.values(st).sort((a,b)=>((b.w*3+b.d)-(a.w*3+a.d))||((b.gf-b.ga)-(a.gf-a.ga)));
-    if(table[0]?.p>0){
-      const leader=table[0];
-      items.push(`🏆 المتصدر حالياً: ${leader.t.name_ar||leader.t.name} برصيد ${leader.w*3+leader.d} نقطة`);
-    }
-    // 2) آخر نتيجة
-    const lastMatch=matches.sort((a,b)=>new Date(b.match_date||0)-new Date(a.match_date||0))[0];
-    if(lastMatch){
-      const hn=teams.find(t=>t.id===lastMatch.home_team_id)?.name_ar||'';
-      const an=teams.find(t=>t.id===lastMatch.away_team_id)?.name_ar||'';
-      items.push(`📊 آخر نتيجة: ${hn} ${lastMatch.home_score} - ${lastMatch.away_score} ${an}`);
-    }
-  }
-  // 3) الهداف الحالي (إن وُجد إسناد لاعب حقيقي لأي هدف)
-  const {data:goalEvents}=await sb.from('match_events').select('player_id,player:players(full_name_ar,name)').eq('tournament_id',TID).eq('event_type','goal').or('event_subtype.neq.own_goal,event_subtype.is.null').not('player_id','is',null);
-  if(goalEvents?.length){
-    const cnt={};goalEvents.forEach(e=>{const n=e.player?.full_name_ar||e.player?.name;if(n)cnt[n]=(cnt[n]||0)+1;});
-    const top=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
+  const {data:teams}=await sb.from('teams').select('id,name,na…448 tokens truncated…,b)=>b[1]-a[1])[0];
     if(top)items.push(`⚽ هداف البطولة حتى الآن: ${top[0]} برصيد ${top[1]} ${top[1]===1?'هدف':'أهداف'}`);
   }
   // 4) المباراة القادمة
