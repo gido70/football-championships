@@ -204,6 +204,8 @@ function getTeamPlayers(){
     teamPlayersPromise=sb.from('players')
       .select('id,team_id,name,full_name_ar,number,shirt_number,role,nationality,jersey_photo_url')
       .eq('team_id',TID)
+      .eq('is_active',true)
+      .or('submission_status.eq.approved,submission_status.is.null')
       .order('number')
       .then(result=>result.data||[]);
   }

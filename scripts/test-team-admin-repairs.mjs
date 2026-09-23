@@ -9,8 +9,9 @@ const teams=read('teams-admin.html');
 const home=read('admin-home.html');
 const report=read('match-report.html');
 const player=read('player.html');
+const wordRoster=read('word-roster-import.html');
 
-for(const [name,page] of [['team-submissions-review.html',review],['teams-admin.html',teams],['admin-home.html',home],['match-report.html',report]]){
+for(const [name,page] of [['team-submissions-review.html',review],['teams-admin.html',teams],['admin-home.html',home],['match-report.html',report],['word-roster-import.html',wordRoster]]){
   const scripts=[...page.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/gi)].map(match=>match[1]).filter(Boolean);
   for(const [index,script] of scripts.entries())new vm.Script(script,{filename:`${name}:${index}`});
 }
@@ -30,5 +31,10 @@ assert.match(home,/localStorage\.setItem\('adminTournamentId'/);
 assert.match(player,/const teamBack='team\.html\?id='/);
 assert.match(report,/team\.html\?id=/);
 assert.match(report,/configureBack\(\$\('backLink'\),back,'السابق'\)/);
+assert.match(wordRoster,/teamPayload\.submitted_by_name=currentTeamMeta\.admin/);
+assert.match(wordRoster,/teamPayload\.manager_name=currentTeamMeta\.admin/);
+assert.match(wordRoster,/teamPayload\.admin_nationality=currentTeamMeta\.adminNation/);
+assert.match(wordRoster,/teamPayload\.coach_name=currentTeamMeta\.coach/);
+assert.match(wordRoster,/isLegacy2026&&p\.role/);
 
 console.log('team and admin repair tests passed');
