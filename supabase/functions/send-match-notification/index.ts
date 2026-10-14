@@ -16,13 +16,18 @@ Deno.serve(async req=>{
   try{
     const url=Deno.env.get('SUPABASE_URL')!,anon=Deno.env.get('SUPABASE_ANON_KEY')!,service=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const auth=req.headers.get('Authorization')||'';
-    const userClient=createClient(url,anon,{global:{headers:{Authorization:auth}}});
-    const {data:{user}}=await userClient.auth.getUser();
-    if(!user)return reply({error:'unauthorized'},401);
-    if(user.id!==OWNER_USER_ID)return reply({error:'forbidden'},403);
+    // Internal caller (football-live-sync, server-side only) may send start/end notifications.
+    const isInternal=!!service&&auth===`Bearer ${service}`;
+    if(!isInternal){
+      const userClient=createClient(url,anon,{global:{headers:{Authorization:auth}}});
+      const {data:{user}}=await userClient.auth.getUser();
+      if(!user)return reply({error:'unauthorized'},401);
+      if(user.id!==OWNER_USER_ID)return reply({error:'forbidden'},403);
+    }
 
     const {type,match_id,event_id}=await req.json();
     if(!['start','goal','yellow_card','red_card','end','test'].includes(type)||!match_id)return reply({error:'invalid_payload'},400);
+    if(isInternal&&!['start','end'].includes(type))return reply({error:'forbidden'},403);
     const db=createClient(url,service);
     const {data:m,error:matchError}=await db.from('matches').select('id,tournament_id,home_team_id,away_team_id,home_score,away_score,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('id',match_id).single();
     if(matchError||!m)return reply({error:'match_not_found'},404);
