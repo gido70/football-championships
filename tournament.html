@@ -1011,8 +1011,14 @@ let liveRefreshTimer=null,liveMatchesChannel=null;
 async function loadLiveMatch(){
   const sec=document.getElementById('liveMatchSection');
   const badge=document.getElementById('liveHeaderBadge');
-  const {data:matches,error}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(4);
+  const {data:matches,error}=await sb.from('matches').select('*,ht:teams!matches_home_team_id_fkey(name,name_ar),at:teams!matches_away_team_id_fkey(name,name_ar)').eq('tournament_id',TID).eq('status','live').limit(30);
   if(error)return;
+  // Show at most 4 live matches; when more are live, prefer the biggest clubs, then earliest kick-off.
+  const BIG={'real madrid':10,'barcelona':10,'manchester city':10,'bayern':10,'paris saint':10,'liverpool':9,'arsenal':9,'inter':8,'atletico':8,'manchester united':8,'chelsea':8,'juventus':8,'dortmund':7,'milan':7,'napoli':7,'roma':6,'tottenham':6,'leverkusen':6,'benfica':6,'porto':6,'sporting':5,'ajax':5,'galatasaray':5,'fenerbahce':5,'aston villa':5,'psv':4,'feyenoord':4,'lazio':4,'atalanta':4,'leipzig':4,'newcastle':4,'marseille':4};
+  const weight=t=>{const n=String(t?.name||'').toLowerCase();let w=0;for(const k in BIG)if(n.includes(k))w=Math.max(w,BIG[k]);return w;};
+  const rank=m=>weight(m.ht)+weight(m.at)+(weight(m.ht)&&weight(m.at)?5:0);
+  matches?.sort((a,b)=>rank(b)-rank(a)||String(a.match_time||'').localeCompare(String(b.match_time||'')));
+  if(matches&&matches.length>4)matches.length=4;
   if(badge)badge.style.display=matches?.length?'inline-flex':'none';
   if(!matches?.length){sec.innerHTML='';return;}
 
