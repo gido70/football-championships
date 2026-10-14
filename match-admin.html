@@ -282,6 +282,17 @@ select option{background:#0f2a45;color:#ffffff}
           <button class="btn secondary half-btn" data-half="5" onclick="setHalf(5)" style="padding:8px 14px;font-size:13px">🎯 ركلات الترجيح</button>
           <button class="btn secondary" onclick="pauseHalf()" style="padding:8px 14px;font-size:13px;background:rgba(255,180,0,.1);border-color:rgba(255,180,0,.4);color:#ffb400">⏸ نهاية الشوط الحالي (استراحة)</button>
         </div>
+        <div class="min-row" id="addedRow" style="gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+          <label style="color:#b7c6dc;font-size:14px">الوقت بدل الضائع:</label>
+          <button class="btn secondary half-btn" onclick="announceAdded(1)" style="padding:8px 12px;font-size:13px">+1</button>
+          <button class="btn secondary half-btn" onclick="announceAdded(2)" style="padding:8px 12px;font-size:13px">+2</button>
+          <button class="btn secondary half-btn" onclick="announceAdded(3)" style="padding:8px 12px;font-size:13px">+3</button>
+          <button class="btn secondary half-btn" onclick="announceAdded(4)" style="padding:8px 12px;font-size:13px">+4</button>
+          <button class="btn secondary half-btn" onclick="announceAdded(5)" style="padding:8px 12px;font-size:13px">+5</button>
+          <input type="number" id="addedInput" min="1" max="20" placeholder="دقائق" style="width:70px">
+          <button class="btn secondary half-btn" onclick="announceAdded(parseInt(document.getElementById('addedInput').value))" style="padding:8px 12px;font-size:13px">إعلان</button>
+          <span id="addedNow" style="color:#c9a84c;font-size:13px;font-weight:700"></span>
+        </div>
         <div id="pensRow" style="display:none;align-items:center;gap:14px;margin-top:10px;padding:12px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.25);border-radius:10px">
           <span style="color:#c9a84c;font-size:13px;font-weight:700">🎯 نتيجة ركلات الترجيح:</span>
           <input type="number" id="homePensInput" min="0" max="20" placeholder="—" style="width:60px">
@@ -623,7 +634,7 @@ async function onTournChange(preferredMatchId=''){
 async function onMatchChange(){
   const mid=document.getElementById('selM').value;
   if(!mid){document.getElementById('matchPanel').style.display='none';document.getElementById('quickBar').style.display='none';return;}
-  const {data:m,error}=await sb.from('matches').select('id,tournament_id,home_team_id,away_team_id,home_score,away_score,status,match_date,match_time,match_no,round_name,referee_1,referee_2,commentator,current_half,half_length_minutes,is_paused,phase_started_at,live_status,player_of_match_id,var_team_id,venue,venue_name,highlight_video_url,stream_url,home_penalties,away_penalties,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color)').eq('id',mid).single();
+  const {data:m,error}=await sb.from('matches').select('id,tournament_id,home_team_id,away_team_id,home_score,away_score,status,match_date,match_time,match_no,round_name,referee_1,referee_2,commentator,current_half,half_length_minutes,is_paused,phase_started_at,added_minutes,live_status,player_of_match_id,var_team_id,venue,venue_name,highlight_video_url,stream_url,home_penalties,away_penalties,ht:teams!matches_home_team_id_fkey(id,name,name_ar,primary_color),at:teams!matches_away_team_id_fkey(id,name,name_ar,primary_color)').eq('id',mid).single();
   if(error||!m){setMsg('تعذر تحميل المباراة: '+(error?.message||''),'err');return;}
   cur=m;
   document.getElementById('emergencyExcelBtn').style.display=m.tournament_id===window.EmergencyExcel?.MANSOUR_2027?'inline-flex':'none';
@@ -948,7 +959,7 @@ function updateHalfUI(h){
 
 async function setHalf(h){
   if(!cur||!ensureLiveMatch())return;
-  const payload={current_half:h,phase_started_at:new Date().toISOString(),is_paused:(h===5)};
+  const payload={current_half:h,phase_started_at:new Date().toISOString(),is_paused:(h===5),added_minutes:null};
   const {error}=await sb.from('matches').update(payload).eq('id',cur.id);
   if(error){setMsg('❌ فشل تحديث المرحلة: '+error.message,'err');return;}
   Object.assign(cur,payload);
@@ -964,9 +975,9 @@ window.setHalf=setHalf;
 
 async function pauseHalf(){
   if(!cur||!ensureLiveMatch())return;
-  const {error}=await sb.from('matches').update({is_paused:true}).eq('id',cur.id);
+  const {error}=await sb.from('matches').update({is_paused:true,added_minutes:null}).eq('id',cur.id);
   if(error){setMsg('❌ فشل: '+error.message,'err');return;}
-  cur.is_paused=true;
+  cur.is_paused=true;cur.added_minutes=null;
   startStopClock();
   const halfLabels={1:'الشوط الأول',2:'الشوط الثاني',3:'الوقت الإضافي الأول',4:'الوقت الإضافي الثاني'};
   const hn=cur.ht?.name_ar||cur.ht?.name||'';
@@ -1085,15 +1096,39 @@ function startStopClock(){
   }
 }
 
+function phaseClock(m){
+  const hl=m.half_length_minutes||45, h=m.current_half||1;
+  const base={1:0,2:hl,3:hl*2,4:hl*2+15}[h]||0, len={1:hl,2:hl,3:15,4:15}[h]||hl;
+  const el=Math.floor((Date.now()-new Date(m.phase_started_at).getTime())/60000)+1;
+  const minute=base+Math.max(1,el);
+  const label=(el>len?(base+len)+'+'+(el-len):String(minute))+"'";
+  return {minute,label};
+}
 function tickClock(){
   if(!cur.phase_started_at)return;
-  const startedMs=new Date(cur.phase_started_at).getTime();
-  const elapsedMin=Math.floor((Date.now()-startedMs)/60000)+1;
-  const label=elapsedMin+"'";
-  document.getElementById('mMin').textContent=label;
-  document.getElementById('minInput').value=elapsedMin;
+  const {minute,label}=phaseClock(cur);
+  const full=label+(cur.added_minutes?' (+'+cur.added_minutes+')':'');
+  document.getElementById('mMin').textContent=full;
+  document.getElementById('minInput').value=minute;
   document.getElementById('qbMin').textContent=label;
+  const an=document.getElementById('addedNow');if(an)an.textContent=cur.added_minutes?('معلن: +'+cur.added_minutes):'';
 }
+
+async function announceAdded(n){
+  if(!cur||!ensureLiveMatch())return;
+  n=parseInt(n);
+  if(!n||n<1||n>20){setMsg('اكتب عدد دقائق بين 1 و20.','warn');return;}
+  if(cur.is_paused||cur.current_half===5){setMsg('الوقت بدل الضائع يُعلن أثناء اللعب فقط.','warn');return;}
+  const {error}=await sb.from('matches').update({added_minutes:n}).eq('id',cur.id);
+  if(error){setMsg('❌ فشل إعلان الوقت بدل الضائع: '+error.message,'err');return;}
+  cur.added_minutes=n;
+  tickClock();
+  const phase={1:'الشوط الأول',2:'الشوط الثاني',3:'الوقت الإضافي الأول',4:'الوقت الإضافي الثاني'}[cur.current_half]||'';
+  const hn=cur.ht?.name_ar||cur.ht?.name||'', an=cur.at?.name_ar||cur.at?.name||'';
+  pushNews('⏱️ الوقت بدل الضائع: +'+n+' دقائق — '+phase+' — '+hn+' × '+an);
+  setMsg('✅ أُعلن الوقت بدل الضائع: +'+n,'ok');
+}
+window.announceAdded=announceAdded;
 
 function quickOpen(side,type){
   if(!ensureLiveMatch())return;

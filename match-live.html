@@ -767,9 +767,12 @@ function startClock(m){
   if(m.is_paused){liveMinEl.textContent='⏸️ استراحة';return;}
   if(!m.phase_started_at)return;
   const startedMs=new Date(m.phase_started_at).getTime();
+  const hl=m.half_length_minutes||45, h=m.current_half||1;
+  const base={1:0,2:hl,3:hl*2,4:hl*2+15}[h]||0, len={1:hl,2:hl,3:15,4:15}[h]||hl;
   const tick=()=>{
-    const elapsedMin=Math.floor((Date.now()-startedMs)/60000)+1;
-    liveMinEl.textContent=elapsedMin+"'";
+    const el=Math.max(1,Math.floor((Date.now()-startedMs)/60000)+1);
+    const label=(el>len?(base+len)+'+'+(el-len):String(base+el))+"'";
+    liveMinEl.textContent=label+(m.added_minutes?' (+'+m.added_minutes+')':'');
   };
   tick();
   clockTimer=setInterval(tick,1000);
