@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
-// v12 (2026-10-14): auto kick-off on the official clock, midnight carry-over, per-match sync toggle,
+// v13 (2026-10-15): ticker news for kick-off/goals/full time; auto kick-off on the official clock, midnight carry-over, per-match sync toggle,
 // start/end push notifications, admin-safe scores/status, phase-aware halves, post-match event import.
 
 const UEFA_TOURNAMENT_ID = "eee33333-5d2a-4f3b-a981-d4b8f5f86143";
@@ -340,6 +340,8 @@ Deno.serve(async (req) => {
   }).length;
   const RANK: Record<string, number> = { scheduled: 0, live: 1, completed: 2 };
   const notifications: { type: "start" | "end"; matchId: string }[] = [];
+  const tickerNews: { key: string; matchId: string; text: string }[] = [];
+  const nm = (t: any) => t?.name_ar || t?.name || "";
   for (const { local, fixture } of mappings) {
     const fixtureId = Number(fixture.id);
     const short = String(fixture.status || "SCHEDULED");
@@ -361,17 +363,26 @@ Deno.serve(async (req) => {
       finishedForEvents.push({ local, fixtureId });
       // Skip a stale "match ended" push (e.g. a match closed hours late).
       const koMs = fixture.utcDate ? new Date(fixture.utcDate).getTime() : now.getTime();
-      if (localStatus !== "completed" && now.getTime() - koMs < 4 * 3600000) notifications.push({ type: "end", matchId: local.id });
+      if (localStatus !== "completed" && now.getTime() - koMs < 4 * 3600000) {
+        notifications.push({ type: "end", matchId: local.id });
+        tickerNews.push({ key: `sync-end:${local.id}`, matchId: local.id, text: `🏁 انتهت المباراة: ${nm(local.home)} ${provHome} - ${provAway} ${nm(local.away)}` });
+      }
     } else if (status === "live") {
       // While live the free feed lags: score never drops below the goals the admin logged.
       matchUpdate.home_score = Math.max(Number(provHome), loggedGoals(local, "home"));
       matchUpdate.away_score = Math.max(Number(provAway), loggedGoals(local, "away"));
+      // Ticker: a goal the admin did not already log (admin-logged goals post their own news).
+      if (localStatus === "live" && (matchUpdate.home_score > Number(local.home_score ?? 0) || matchUpdate.away_score > Number(local.away_score ?? 0))) {
+        tickerNews.push({ key: `sync-goal:${local.id}:${matchUpdate.home_score}-${matchUpdate.away_score}`, matchId: local.id,
+          text: `⚽ هدف! ${nm(local.home)} ${matchUpdate.home_score} - ${matchUpdate.away_score} ${nm(local.away)}` });
+      }
       if (localStatus === "scheduled") {
         // Auto kick-off: start the in-app clock from the official kick-off time and notify.
         const kickoff = fixture.utcDate ? new Date(fixture.utcDate).toISOString() : now.toISOString();
         Object.assign(matchUpdate, { auto_live_managed: true, live_status: "live", live_started_at: kickoff, phase_started_at: kickoff,
           period_start_at: kickoff, current_half: 1, current_period: "first_half", is_paused: false, half_length_minutes: 45, clock_running: true });
         notifications.push({ type: "start", matchId: local.id });
+        tickerNews.push({ key: `sync-start:${local.id}`, matchId: local.id, text: `🔴 بدأت المباراة: ${nm(local.home)} × ${nm(local.away)}` });
       } else if (local.auto_live_managed) {
         // Halves only for matches the sync started; admin-run matches keep the admin's clock.
         // The free feed rarely reports PAUSED, so halves also follow the clock:
@@ -399,6 +410,18 @@ Deno.serve(async (req) => {
       db.from("teams").update({ external_source: SOURCE, external_team_id: fixture.homeTeam?.id }).eq("id", local.home_team_id),
       db.from("teams").update({ external_source: SOURCE, external_team_id: fixture.awayTeam?.id }).eq("id", local.away_team_id),
     ]);
+  }
+
+  // Ticker news (deduplicated by dedupe_key).
+  if (tickerNews.length) {
+    try {
+      const { data: seen } = await db.from("news_items").select("dedupe_key").in("dedupe_key", tickerNews.map((n) => n.key));
+      const seenKeys = new Set((seen || []).map((r: any) => r.dedupe_key));
+      const rows = tickerNews.filter((n) => !seenKeys.has(n.key)).map((n) => ({ tournament_id: UEFA_TOURNAMENT_ID, match_id: n.matchId,
+        title: n.text, content: n.text, dedupe_key: n.key, display_mode: "internal", source_type: "legacy", category: "official",
+        editorial_status: "published", published_at: now.toISOString(), is_visible: true }));
+      if (rows.length) await db.from("news_items").insert(rows);
+    } catch (_) { /* ticker is best-effort */ }
   }
 
   // Start/end push notifications (deduplicated server-side per match + type).
