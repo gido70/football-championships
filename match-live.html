@@ -197,7 +197,7 @@ a{text-decoration:none;color:inherit}
 .pchip{display:inline-flex;align-items:center;gap:8px;background:rgba(0,0,0,.03);border:1px solid #EDEAE0;border-radius:30px;padding:5px 12px 5px 6px;max-width:100%;color:#2C2C2A;text-decoration:none}
 .pchip-photo{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid #E0DCCF}
 .pchip-av{width:30px;height:30px;border-radius:50%;background:#EDEAE0;border:1.5px solid #E0DCCF;font-size:11px;font-weight:800;color:#79786A;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.pchip-num{font-size:10px;font-weight:900;color:#c9a84c;flex-shrink:0}
+.pchip-num{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;padding:0 5px;border-radius:6px;background:rgba(201,168,76,.14);color:#a8842e;font-size:11px!important;line-height:1!important;font-weight:900;flex-shrink:0;font-family:"Tajawal",sans-serif!important}
 .pchip-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pchip-role{font-size:10px;font-weight:800;color:#9C9A8D;margin-right:4px;flex-shrink:0}
 .pchip.goal{border-color:rgba(63,185,80,.4);background:rgba(63,185,80,.06)}
@@ -249,7 +249,7 @@ a{text-decoration:none;color:inherit}
 @media(max-width:760px){.float-back{display:flex;align-items:center;gap:6px}}
 </style>
 <link rel="stylesheet" href="public-ui.css?v=20260912-6">
-<link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
+<link rel="stylesheet" href="tournament-theme.css?v=20261105-1">
 </head>
 <body class="public-match">
 
@@ -1020,7 +1020,7 @@ function pchip(name,photo,number,role,variant='',color,playerId,teamId,lookupNam
   return `<${tag} class="pchip ${variant}"${href}>
     ${photo?`<img class="pchip-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
     <span class="pchip-av"${teamId?` data-uefa-player-name="${esc(lookupName||name)}" data-uefa-player-alt="${esc(name)}" data-uefa-team-id="${esc(teamId)}"`:''} style="${photo?'display:none':'overflow:hidden'}">${fallback}</span>
-    ${number?`<span class="pchip-num">#${number}</span>`:''}
+    ${number?`<span class="pchip-num">${number}</span>`:''}
     <span class="pchip-name">${sn}</span>
     ${role?`<span class="pchip-role">${role}</span>`:''}
   </${tag}>`;

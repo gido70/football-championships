@@ -15,6 +15,7 @@
 <script src="uefa-player-images.js?v=20260913-2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{font-family:"Tajawal",sans-serif;background:#0d1117;color:#e6edf3;direction:rtl;min-height:100vh}
 a{text-decoration:none;color:inherit}
 .nav{background:#161b22;border-bottom:1px solid #21262d;padding:calc(8px + env(safe-area-inset-top,0px)) 18px 8px;min-height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
@@ -46,7 +47,7 @@ a{text-decoration:none;color:inherit}
 .lead-av{position:relative;flex-shrink:0}
 .lead-photo{width:32px;height:32px;border-radius:50%;object-fit:cover;border:1.5px solid #30363d;display:block}
 .lead-ph{width:32px;height:32px;border-radius:50%;background:#21262d;border:1.5px solid #30363d;font-size:11px;font-weight:800;color:#6e7b8f;align-items:center;justify-content:center}
-.lead-num{font-size:10px;font-weight:900;color:#c9a84c;flex-shrink:0}
+.lead-num{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;padding:0 5px;border-radius:6px;background:rgba(201,168,76,.14);color:#a8842e;font-size:11px!important;line-height:1!important;font-weight:900;flex-shrink:0;font-family:"Tajawal",sans-serif!important}
 .lead-info{flex:1;min-width:0}
 .lead-name{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lead-team{font-size:11px;color:#8b949e;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -72,7 +73,7 @@ a{text-decoration:none;color:inherit}
 .pchip{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.04);border:1px solid #21262d;border-radius:30px;padding:4px 10px 4px 5px;max-width:100%}
 .pchip-photo{width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1.5px solid #30363d}
 .pchip-av{width:26px;height:26px;border-radius:50%;background:#21262d;border:1.5px solid #30363d;font-size:10px;font-weight:800;color:#8b949e;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.pchip-num{font-size:10px;font-weight:900;color:#c9a84c;flex-shrink:0}
+.pchip-num{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;padding:0 5px;border-radius:6px;background:rgba(201,168,76,.14);color:#a8842e;font-size:11px!important;line-height:1!important;font-weight:900;flex-shrink:0;font-family:"Tajawal",sans-serif!important}
 .pchip-name{font-size:12px;font-weight:700}
 .pchip-role{font-size:10px;color:#6e7b8f;margin-right:2px}
 .pchip.goal{border-color:rgba(63,185,80,.35);background:rgba(63,185,80,.06)}
@@ -102,7 +103,7 @@ a{text-decoration:none;color:inherit}
 .float-back{display:none;position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));right:16px;z-index:199;background:rgba(6,14,26,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(201,168,76,.3);border-radius:30px;padding:10px 18px;font-size:13px;font-weight:800;color:#c9a84c;text-decoration:none;box-shadow:0 4px 18px rgba(0,0,0,.4)}
 @media(max-width:760px){.float-back{display:flex;align-items:center;gap:6px}}
 </style>
-<link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
+<link rel="stylesheet" href="tournament-theme.css?v=20261105-1">
 <link rel="stylesheet" href="public-navigation.css?v=20260911-1">
 </head>
 <body>
@@ -165,11 +166,14 @@ function pchip(name,photo,number,role,variant=''){
   return `<span class="pchip ${variant}">
     ${photo?`<img class="pchip-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
     <span class="pchip-av" style="${photo?'display:none':''}">${ini}</span>
-    ${number?`<span class="pchip-num">#${number}</span>`:''}
+    ${number?`<span class="pchip-num">${number}</span>`:''}
     <span class="pchip-name">${sn}</span>
     ${role?`<span class="pchip-role">${role}</span>`:''}
   </span>`;
 }
+
+// ترتيب مشترك: من يتساوى في العدد يأخذ نفس المركز (1، 2، 2، 4)
+function rankOf(list,i){let j=i;while(j>0&&list[j-1].count===list[i].count)j--;return j+1;}
 
 function leadRow(rank,name,sub,val,unit,photo,extraClass,number,teamId,lookupName){
   const rClass=rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
@@ -183,7 +187,7 @@ function leadRow(rank,name,sub,val,unit,photo,extraClass,number,teamId,lookupNam
       ${photo?`<img class="lead-photo" src="${photo}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
       <div class="lead-ph"${teamId?` data-uefa-player-name="${esc(lookupName||name)}" data-uefa-player-alt="${esc(name)}" data-uefa-team-id="${esc(teamId)}"`:''} style="${photo?'display:none':'display:flex'};overflow:hidden">${ini}</div>
     </div>
-    ${number?`<span class="lead-num">#${number}</span>`:''}
+    ${number?`<span class="lead-num" title="رقم القميص">${number}</span>`:''}
     <div class="lead-info">
       <div class="lead-name">${sn}</div>
       ${sub?`<div class="lead-team">${sub}</div>`:''}
@@ -273,14 +277,14 @@ function tally(events,type,teamName={}){
     if(!map[key].team&&tm)map[key].team=tm;
     map[key].count++;
   });
-  return Object.values(map).sort((a,b)=>b.count-a.count);
+  return Object.values(map).sort((a,b)=>b.count-a.count||String(a.name).localeCompare(String(b.name)));
 }
 
 function buildScorers(events,teamName){
   const list=tally((events||[]).filter(e=>e.event_subtype!=='own_goal'),'goal',teamName);
   const wrap=document.getElementById('scorersWrap');
   if(!list.length){wrap.innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف مسجلة بعد</p></div>';return;}
-  wrap.innerHTML=list.slice(0,20).map((p,i)=>leadRow(i+1,p.name,p.team||'',p.count,'هدف',p.photo,'goal',p.number,p.teamId,p.lookupName)).join('');
+  wrap.innerHTML=list.slice(0,20).map((p,i)=>leadRow(rankOf(list,i),p.name,p.team||'',p.count,'هدف',p.photo,'goal',p.number,p.teamId,p.lookupName)).join('');
   window.UefaPlayerImages?.hydrate(wrap);
 }
 
@@ -289,9 +293,9 @@ function buildCards(events,teamName){
   const red=tally(events,'red_card',teamName);
   let html='';
   html+='<div class="sec-title">🟨 الأكثر حصولاً على بطاقات صفراء</div>';
-  html+=yellow.length?yellow.slice(0,15).map((p,i)=>leadRow(i+1,p.name,p.team||'',p.count,'بطاقة',p.photo,'yellow',p.number,p.teamId,p.lookupName)).join(''):'<div class="empty" style="padding:20px 0"><span>🟨</span><p>لا توجد بطاقات صفراء بعد</p></div>';
+  html+=yellow.length?yellow.slice(0,15).map((p,i)=>leadRow(rankOf(yellow,i),p.name,p.team||'',p.count,'بطاقة',p.photo,'yellow',p.number,p.teamId,p.lookupName)).join(''):'<div class="empty" style="padding:20px 0"><span>🟨</span><p>لا توجد بطاقات صفراء بعد</p></div>';
   html+='<div class="sec-title">🟥 البطاقات الحمراء</div>';
-  html+=red.length?red.slice(0,15).map((p,i)=>leadRow(i+1,p.name,p.team||'',p.count,'بطاقة',p.photo,'red',p.number,p.teamId,p.lookupName)).join(''):'<div class="empty" style="padding:20px 0"><span>🟥</span><p>لا توجد بطاقات حمراء — انضباط ممتاز</p></div>';
+  html+=red.length?red.slice(0,15).map((p,i)=>leadRow(rankOf(red,i),p.name,p.team||'',p.count,'بطاقة',p.photo,'red',p.number,p.teamId,p.lookupName)).join(''):'<div class="empty" style="padding:20px 0"><span>🟥</span><p>لا توجد بطاقات حمراء — انضباط ممتاز</p></div>';
   document.getElementById('cardsWrap').innerHTML=html;
   window.UefaPlayerImages?.hydrate(document.getElementById('cardsWrap'));
 }
@@ -302,15 +306,15 @@ async function buildMotm(matches,teamName){
   if(!withStar.length){wrap.innerHTML='<div class="empty"><span>⭐</span><p>لم يُختر نجم مباراة بعد</p></div>';return;}
 
   const ids=withStar.map(m=>m.player_of_match_id);
-  const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url,team_id').in('id',[...new Set(ids)]);
+  const {data:players}=await sb.from('players').select('id,name,full_name_ar,jersey_photo_url,team_id,number').in('id',[...new Set(ids)]);
   const pMap={}; (players||[]).forEach(p=>pMap[p.id]=p);
 
   const count={};
   ids.forEach(id=>count[id]=(count[id]||0)+1);
-  const leaderboard=Object.entries(count).map(([id,c])=>({id,count:c,...pMap[id]})).sort((a,b)=>b.count-a.count);
+  const leaderboard=Object.entries(count).map(([id,c])=>({id,count:c,...pMap[id]})).sort((a,b)=>b.count-a.count||String(a.full_name_ar||a.name).localeCompare(String(b.full_name_ar||b.name)));
 
   let html='<div class="sec-title">🏆 الأكثر اختيارًا كنجم مباراة</div>';
-  html+=leaderboard.map((p,i)=>leadRow(i+1,p.full_name_ar||p.name||'—',teamName[p.team_id]||'',p.count,'مرة',p.jersey_photo_url,'motm',p.number,p.team_id,p.name)).join('');
+  html+=leaderboard.map((p,i)=>leadRow(rankOf(leaderboard,i),p.full_name_ar||p.name||'—',teamName[p.team_id]||'',p.count,'مرة',p.jersey_photo_url,'motm',p.number,p.team_id,p.name)).join('');
 
   html+='<div class="sec-title">📅 نجم كل مباراة</div>';
   html+=withStar.map(m=>{

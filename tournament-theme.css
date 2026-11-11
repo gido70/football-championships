@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700;800;900&display=swap');
 :root{--theme-primary:#0b4f7c;--theme-secondary:#d7b348;--theme-primary-deep:#041623;--theme-primary-dark:#07314c;--theme-primary-mid:#33729a;--theme-primary-soft:#e7f0f5;--theme-secondary-soft:#f4e9c4;--theme-on-primary:#fff;--theme-on-secondary:#10233c}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body.tournament-themed,body.public-tournament{font-family:"Noto Naskh Arabic",serif!important}
 body.tournament-themed button,body.tournament-themed input,body.tournament-themed select,body.tournament-themed textarea,body.public-tournament button,body.public-tournament input,body.public-tournament select,body.public-tournament textarea{font-family:inherit!important}
 body.tournament-themed :where(h1,h2,h3,h4,h5,h6,p,span,a,button,input,select,textarea,label,small,strong,em,li,td,th,.tab),body.public-tournament :where(h1,h2,h3,h4,h5,h6,p,span,a,button,input,select,textarea,label,small,strong,em,li,td,th,.tab){font-family:"Noto Naskh Arabic",serif!important}

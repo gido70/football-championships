@@ -95,7 +95,7 @@ a{text-decoration:none;color:inherit}
   .hero{padding:28px 14px 14px}
 }
 </style>
-<link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
+<link rel="stylesheet" href="tournament-theme.css?v=20261105-1">
 <link rel="stylesheet" href="public-navigation.css?v=20260911-1">
 </head>
 <body>
@@ -177,7 +177,7 @@ async function init(){
       </div>
       <div class="award-body">
         <div class="award-type">${def.ic} ${def.title}</div>
-        <div class="award-name">${name||'—'}${number!=null?` <span style="opacity:.7">#${number}</span>`:''}</div>
+        <div class="award-name">${name||'—'}${number!=null?` <span style="opacity:.7;font-size:.8em">(${number})</span>`:''}</div>
         ${team?`<div class="award-team">👥 ${team}</div>`:''}
       </div>
     </div>`;

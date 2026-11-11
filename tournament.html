@@ -19,7 +19,7 @@
   document.write('<meta name="apple-mobile-web-app-title" id="appTitle" content="'+app[2]+'"><link rel="manifest" id="appManifest" href="'+app[0]+'"><link rel="apple-touch-icon" id="appTouchIcon" href="'+app[1]+'"><title>'+app[2]+'</title>');
 })();
 </script>
-<link rel="stylesheet" href="tournament-theme.css?v=20260910-2">
+<link rel="stylesheet" href="tournament-theme.css?v=20261105-1">
 <link rel="stylesheet" href="public-navigation.css?v=20260911-1">
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <script src="vendor/supabase.min.js?v=20260910-1"></script>
@@ -307,7 +307,7 @@ body{font-family:"Tajawal",sans-serif;background:#F5F3EE;color:#2C2C2A;direction
 .sc-av-wrap{position:relative;flex-shrink:0}
 .sc-photo{width:34px;height:34px;border-radius:50%;object-fit:cover;border:1.5px solid #E0DCCF}
 .sc-ph{width:34px;height:34px;border-radius:50%;background:#EDEAE0;border:1.5px solid #E0DCCF;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#9C9A8D}
-.sc-num{font-size:10px;font-weight:900;color:#c9a84c;flex-shrink:0}
+.sc-num{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:18px;padding:0 5px;border-radius:6px;background:rgba(201,168,76,.14);color:#a8842e;font-size:11px!important;line-height:1!important;font-weight:900;flex-shrink:0;font-family:"Tajawal",sans-serif!important}
 .sc-ph{width:44px;height:44px;border-radius:50%;background:#EDEAE0;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid #E0DCCF;flex-shrink:0}
 .sc-info{flex:1}
 .sc-name{font-size:12px;font-weight:800;color:#2C2C2A}
@@ -1358,7 +1358,7 @@ async function loadScorers(){
     cnt[key].g++;
   });
   countUpTo('hG',tot);
-  const sorted=Object.values(cnt).sort((a,b)=>b.g-a.g).slice(0,25);
+  const sorted=Object.values(cnt).sort((a,b)=>b.g-a.g||String(a.name).localeCompare(String(b.name))).slice(0,25);
   if(!sorted.length){document.getElementById('scWrap').innerHTML='<div class="empty"><span>⚽</span><p>لا توجد أهداف بعد</p></div>';return;}
   
   const ini=n=>(n||'؟').trim().split(' ').map(w=>w[0]).slice(0,2).join('');
@@ -1372,7 +1372,7 @@ async function loadScorers(){
   const rColor={1:'#ffd700',2:'#c0c0c0',3:'#cd7f32'};
   
   document.getElementById('scWrap').innerHTML='<div class="sec-hd">⚽ الهدافون</div>'+sorted.map((p,i)=>{
-    const rank=i+1;
+    let j=i;while(j>0&&sorted[j-1].g===p.g)j--;const rank=j+1; // ترتيب مشترك عند التساوي
     const rc=rColor[rank]||'#3a4150';
     const sn=(p.name||'').split(' ').slice(0,2).join(' ');
     const big=rank===1;
@@ -1384,7 +1384,7 @@ async function loadScorers(){
           :''}
         <div class="sc-ph" data-uefa-player-name="${motdEsc(p.lookupName||p.name)}" data-uefa-player-alt="${motdEsc(p.name)}" data-uefa-team-id="${motdEsc(p.teamId||'')}" style="${p.photo?'display:none':''}${big?'width:46px;height:46px;font-size:16px':''}background:${p.col}22;border-color:${p.col}55;color:${p.col};overflow:hidden">${ini(p.name)}</div>
       </div>
-      ${p.number?`<span class="sc-num">#${p.number}</span>`:''}
+      ${p.number?`<span class="sc-num" title="رقم القميص">${p.number}</span>`:''}
       <div class="sc-info"><div class="sc-name" style="${big?'font-size:14px':''}">${sn}</div><div class="sc-team"><div class="sc-tdot" style="background:${p.col}"></div>${p.team}</div></div>
       <div class="sc-g"><div class="sc-gn" style="${big?'font-size:20px;color:'+rc:''}">${p.g}</div><div class="sc-gl">هدف</div></div>
     </${p.id?'a':'div'}>`;
